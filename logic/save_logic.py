@@ -28,6 +28,7 @@ import numpy as np
 import os
 import sys
 import time
+import pickle
 
 from collections import OrderedDict
 from core.configoption import ConfigOption
@@ -152,12 +153,19 @@ class SaveLogic(GenericLogic):
         'axes.edgecolor': '0.3',
         'xtick.color': '0.3',
         'ytick.color': '0.3',
+        'xtick.labelsize': '15',
+        'ytick.labelsize': '15',
         'axes.labelcolor': 'black',
-        'font.size': '14',
-        'lines.linewidth': '2',
+        'axes.grid': True,
+        'grid.color': '#E68F6B',
+        'grid.alpha': '0.8',
+        'grid.linestyle': '--',
+        'axes.labelsize':'20',
+        'font.size': '15',
+        'lines.linewidth': '1',
         'figure.figsize': '12, 6',
         'lines.markeredgewidth': '0',
-        'lines.markersize': '5',
+        'lines.markersize': '2',
         'axes.spines.right': True,
         'axes.spines.top': True,
         'xtick.minor.visible': True,
@@ -661,3 +669,58 @@ class SaveLogic(GenericLogic):
         self._additional_parameters.pop(key, None)
         return
 
+
+    def save_dict(self, dic, filepath=None, filename=None, filelabel=None,
+                  timestamp=None):
+        """Saves the dict as pickle."""
+        start_time = time.time()
+        # Create timestamp if none is present
+        if timestamp is None:
+            timestamp = datetime.datetime.now()
+
+        # try to trace back the functioncall to the class which was calling it.
+        try:
+            frm = inspect.stack()[1]
+            # this will get the object, which called the save_data function.
+            mod = inspect.getmodule(frm[0])
+            # that will extract the name of the class.
+            module_name = mod.__name__.split('.')[-1]
+        except:
+            # Sometimes it is not possible to get the object which called the save_data function
+            # (such as when calling this from the console).
+            module_name = 'UNSPECIFIED'
+
+        # determine proper file path
+        if filepath is None:
+            filepath = self.get_path_for_module(module_name)
+        elif not os.path.exists(filepath):
+            os.makedirs(filepath)
+            self.log.info('Custom filepath does not exist. Created directory "{0}"'
+                          ''.format(filepath))
+
+        # create filelabel if none has been passed
+        if filelabel is None:
+            filelabel = module_name
+
+        # determine proper unique filename to save if none has been passed
+        if filename is None:
+            filename = timestamp.strftime('%Y%m%d-%H%M-%S' + '_' + filelabel + '.dat')
+
+        # pickle the dict
+        outfile = open(filename, 'wb')
+        pickle.dump(dic, outfile)
+        outfile.close()
+
+    def load_dict(self, fname):
+        """Returns the dict in file fname.
+        
+        @param fname: Path to the pickled dict.
+        """
+        infile = open(fname,'rb')
+        new_dict = pickle.load(infile)
+        infile.close()
+
+        return new_dict
+                
+
+        

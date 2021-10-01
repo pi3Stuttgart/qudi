@@ -31,7 +31,10 @@ from core.statusvariable import StatusVar
 from qtwidgets.scan_plotwidget import ScanImageItem
 from gui.guibase import GUIBase
 from gui.guiutils import ColorBar
-from gui.colordefs import ColorScaleInferno
+#from gui.colordefs import ColorScaleInferno
+#from gui.colordefs import ColorScaleViridis
+from gui.colordefs import ColorScaleRdBu
+from gui.colordefs import ColorScaleRdBuRev
 from gui.colordefs import QudiPalettePale as palette
 from gui.fitsettings import FitParametersWidget
 from qtpy import QtCore
@@ -91,6 +94,29 @@ class OptimizerSettingDialog(QtWidgets.QDialog):
         super(OptimizerSettingDialog, self).__init__()
         uic.loadUi(ui_file, self)
 
+
+class ChangingToLTLimitsDialog(QtWidgets.QDialog):
+    def __init__(self):
+        # Get the path to the *.ui file
+        this_dir = os.path.dirname(__file__)
+        ui_file = os.path.join(this_dir, 'ui_change_to_LT.ui')
+
+        # Load it
+        super(ChangingToLTLimitsDialog, self).__init__()
+        uic.loadUi(ui_file, self)
+
+
+class ChangingToLTLimitsConfirmation(QtWidgets.QDialog):
+    def __init__(self):
+        # Get the path to the *.ui file
+        this_dir = os.path.dirname(__file__)
+        ui_file = os.path.join(this_dir, 'ui_confirm_change.ui')
+
+        # Load it
+        super(ChangingToLTLimitsConfirmation, self).__init__()
+        uic.loadUi(ui_file, self)
+
+
 class SaveDialog(QtWidgets.QDialog):
     """ Dialog to provide feedback and block GUI while saving """
     def __init__(self, parent, title="Please wait", text="Saving..."):
@@ -132,6 +158,7 @@ class ConfocalGui(GUIBase):
 
     # signals
     sigStartOptimizer = QtCore.Signal(list, str)
+    sigChangeLimits = QtCore.Signal(str)
 
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
@@ -147,6 +174,9 @@ class ConfocalGui(GUIBase):
         self._scanning_logic = self.confocallogic1()
         self._save_logic = self.savelogic()
         self._optimizer_logic = self.optimizerlogic1()
+
+        # connecting signals from logic
+        self._scanning_logic.sigLimitsChanged.connect(self.limits_changed)
 
         self._hardware_state = True
 
@@ -434,6 +464,13 @@ class ConfocalGui(GUIBase):
         self._scanning_logic.signal_history_event.connect(self.change_y_image_range)
         self._scanning_logic.signal_history_event.connect(self.change_z_image_range)
 
+        self._mw.actionSave_config.triggered.connect(self._scanning_logic.save_history_config)
+
+        # set voltage limits
+        self._mw.actionUse_LT_limits.changed.connect(self.change_piezo_voltage_limits)
+        self.sigChangeLimits.connect(self._scanning_logic.set_voltage_limits)
+        
+
         # Get initial tilt correction values
         self._mw.action_TiltCorrection.setChecked(
             self._scanning_logic._scanning_device.tiltcorrection)
@@ -566,7 +603,9 @@ class ConfocalGui(GUIBase):
         #           Connect the colorbar and their actions              #
         #################################################################
         # Get the colorscale and set the LUTs
-        self.my_colors = ColorScaleInferno()
+        #self.my_colors = ColorScaleInferno()
+        #self.my_colors = ColorScaleViridis()
+        self.my_colors = ColorScaleRdBuRev()
 
         self.xy_image.setLookupTable(self.my_colors.lut)
         self.depth_image.setLookupTable(self.my_colors.lut)
@@ -1313,6 +1352,55 @@ class ConfocalGui(GUIBase):
         self._scanning_logic.image_z_range = [
             self._mw.z_min_InputWidget.value(),
             self._mw.z_max_InputWidget.value()]
+
+    def change_piezo_voltage_limits(self):
+        """ Switches the voltage limits for the piezos from RT (0 to 4 V) to LT (0 to 10 V) and back. """
+        if self._mw.actionUse_LT_limits.isChecked():
+            # create the dialog window
+            self._clt = ChangingToLTLimitsDialog()
+            self._clt.show()
+            # connect the action of the dialog window with the code
+            self._clt.pushButton_confirm_LT.clicked.connect(self.change_piezo_voltage_limits_to_LT)
+            self._clt.pushButton_deny_LT.clicked.connect(self.change_piezo_voltage_limits_to_RT)
+        else:
+            self.change_piezo_voltage_limits_to_RT()
+    
+    def change_piezo_voltage_limits_to_LT(self):
+        """ Sets the voltage limits for the piezos to LT (0 to 10 V). """
+        print('LT, here we go')
+        self._clt.close() #close previous window
+        # emit signal to change limits to LT logic
+        self.sigChangeLimits.emit('LT')
+        # create the dialog window
+        self._ltconf = ChangingToLTLimitsConfirmation()
+        self._ltconf.show()
+        #closes window on click
+        self._ltconf.pushButton_okay.clicked.connect(self.close_confirmation_window)
+        
+
+    def change_piezo_voltage_limits_to_RT(self):
+        """ Sets the voltage limits for the piezos to RT (0 to 4 V). """
+        print('RT')
+        #emit signal to change limits to RT logic
+        self.sigChangeLimits.emit('RT')
+        self._mw.actionUse_LT_limits.setChecked(False)
+        self._clt.close()
+    
+    def limits_changed(self):
+        """Updates the plot with the new limits from hardware.
+        
+        Note: While the axes will be relabeled, the images won't. 
+        This might lead to features appearing to be bigger than they actually are.
+        """
+        # updates the limits on the xy scan
+        self.adjust_xy_window()
+        # updates the limits on the depth scan.
+        # We won't use it, since we do not know the scale of the depth scan.
+        # self.adjust_depth_window()
+
+    def close_confirmation_window(self):
+        self._ltconf.close()
+
 
     def update_tilt_correction(self):
         """ Update all tilt points from the scanner logic. """
