@@ -710,24 +710,24 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         chanlist.extend(self._scanner_counter_channels)
 
         devicelist = []
-        for channel in chanlist:
-            if channel is None:
-                continue
-            match = re.match(
-                '^/(?P<dev>[0-9A-Za-z\- ]+[0-9A-Za-z\-_ ]*)/(?P<chan>[0-9A-Za-z]+)',
-                channel)
-            if match:
-                devicelist.append(match.group('dev'))
-            else:
-                self.log.error('Did not find device name in {0}.'.format(channel))
-        for device in set(devicelist):
-            self.log.info('Reset device {0}.'.format(device))
-            try:
-                daq.DAQmxResetDevice(device)
-            except:
-                self.log.exception('Could not reset NI device {0}'.format(device))
-                retval = -1
-        return retval
+        # for channel in chanlist:
+        #     if channel is None:
+        #         continue
+        #     match = re.match(
+        #         '^/(?P<dev>[0-9A-Za-z\- ]+[0-9A-Za-z\-_ ]*)/(?P<chan>[0-9A-Za-z]+)',
+        #         channel)
+        #     if match:
+        #         devicelist.append(match.group('dev'))
+        #     else:
+        #         self.log.error('Did not find device name in {0}.'.format(channel))
+        # for device in set(devicelist):
+        #     self.log.info('Reset device {0}.'.format(device))
+        #     try:
+        #         daq.DAQmxResetDevice(device)
+        #     except:
+        #         self.log.exception('Could not reset NI device {0}'.format(device))
+        #         retval = -1
+        # return retval
 
     def get_scanner_axes(self):
         """ Scanner axes depends on how many channels tha analog output task has.

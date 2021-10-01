@@ -19,6 +19,7 @@ top-level directory of this distribution and at <https://github.com/Ulm-IQO/qudi
 """
 
 import copy
+from qtpy import QtCore
 
 from core.connector import Connector
 from logic.generic_logic import GenericLogic
@@ -31,6 +32,12 @@ class ScannerTiltInterfuse(GenericLogic, ConfocalScannerInterface):
 
     confocalscanner1 = Connector(interface='ConfocalScannerInterface')
 
+    # signal to hardware
+    sigChangeLimits = QtCore.Signal(str)
+
+    #signals to interfuse
+    sigLimitsChanged = QtCore.Signal()
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -39,11 +46,16 @@ class ScannerTiltInterfuse(GenericLogic, ConfocalScannerInterface):
         """
         self._scanning_device = self.confocalscanner1()
 
+        # connect signals from hardware
+        self._scanning_device.sigLimitsChanged.connect(self.limits_changed)
+
         self.tilt_variable_ax = 1
         self.tilt_variable_ay = 1
         self.tiltcorrection = False
         self.tilt_reference_x = 0
         self.tilt_reference_y = 0
+
+        self.sigChangeLimits.connect(self._scanning_device.set_voltage_limits)
 
     def on_deactivate(self):
         """ Deinitialisation performed during deactivation of the module.
@@ -210,3 +222,11 @@ class ScannerTiltInterfuse(GenericLogic, ConfocalScannerInterface):
                 + (y - self.tilt_reference_y) * self.tilt_variable_ay
             )
             return dz
+
+    def set_voltage_limits(self,RTLT):
+        """Passes signal from logic to hardware."""
+        self.sigChangeLimits.emit(RTLT)
+
+    def limits_changed(self):
+        """Passes signal from hardware to logic."""
+        self.sigLimitsChanged.emit()
