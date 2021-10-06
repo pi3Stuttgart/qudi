@@ -128,6 +128,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
     _sum_channels = ConfigOption('timetagger_sum_channels', True)
 
     _flip_mirror_channel = ConfigOption('flip_mirror_channel', 'Dev1/port0/line1', missing='warn')
+    _shutter_channel = ConfigOption('shutter_channel', 'Dev1/port0/line16', missing='warn')
 
     # odmr
     _odmr_trigger_channel = ConfigOption('odmr_trigger_channel', missing='error')
