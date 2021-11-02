@@ -129,6 +129,13 @@ class VoltScanGui(GUIBase):
             self._voltscan_logic.fit_y,
             pen=QtGui.QPen(QtGui.QColor(255, 255, 255, 255)))
 
+        #!OURS SHIT
+        # self.region_cursor = pg.LinearRegionItem([int(self._mw.start_f.text()), int(self._mw.stop_f.text())], swapMode='block')
+        # self.region_cursor.setBounds([int(self._mw.start_f.text()), int(self._mw.stop_f.text())])
+
+        # self.main_cursor = pg.InfiniteLine(pos = self._local_laser_scanner_logic._main_cursor_position, angle = 90, movable = True, bounds = [int(self._mw.start_f.text()), int(self._mw.stop_f.text())])
+
+
         # Add the display item to the xy and xz VieWidget, which was defined in
         # the UI file.
         self._mw.voltscan_ViewWidget.addItem(self.scan_image)
@@ -227,6 +234,11 @@ class VoltScanGui(GUIBase):
         self.refresh_plot()
         self.refresh_matrix()
         self.refresh_lines()
+
+    # def setCursorPosition(self):
+    #     self.main_cursor.setValue(int(self._mw.cursorposition.text()))
+    
+
 
     def refresh_plot(self):
         """ Refresh the xy-plot image """

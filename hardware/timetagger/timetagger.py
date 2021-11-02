@@ -18,8 +18,9 @@ class TT(Base):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.sample_rate = 50
-        chan_alphabet = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight']
-        self.channel_codes = dict(zip(chan_alphabet, list(range(1,9,1))))
+        chan_alphabet = ['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6', 'ch7', 'ch8', 'ch9', 'ch10', 
+        'ch11', 'ch12', 'ch13', 'ch14', 'ch15', 'ch16', 'ch17', 'ch18']
+        self.channel_codes = dict(zip(chan_alphabet, list(range(1,19,1))))
 
     def on_activate(self):
         self.setup_TT()
@@ -138,12 +139,11 @@ class TT(Base):
     def combiner(self, channels):
         return Combiner(self.tagger, channels)
 
-    def count_between_markers(self, click_channel, begin_channel, end_channel, n_values):
+    def count_between_markers(self, click_channel, begin_channel, n_values):
         return CountBetweenMarkers(self.tagger,
-                                click_channel,
-                                begin_channel,
-                                end_channel,
-                                n_values)     
+                                click_channel=click_channel,
+                                begin_channel=begin_channel,
+                                n_values=n_values)     
 
     def time_differences(self, click_channel, start_channel, next_channel, binwidth,n_bins, n_histograms):
         return TimeDifferences(self.tagger, 

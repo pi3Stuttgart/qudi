@@ -135,7 +135,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
     _odmr_trigger_line = ConfigOption('odmr_trigger_line', 'Dev1/port0/line0', missing='warn')
     _odmr_switch_line = ConfigOption('odmr_switch_line', 'Dev1/port0/line2', missing='warn')
 
-    _gate_in_channel = ConfigOption('gate_in_channel', missing='error')
+    _gate_in_channel = ConfigOption('gate_in_channel', missing='info')
     # number of readout samples, mainly used for gated counter
     _default_samples_number = ConfigOption('default_samples_number', 50, missing='info')
     # used as a default for expected maximum counts
@@ -1177,7 +1177,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
 
         self._line_length = length
         #Start instance of TimeTagger.CountBetweenMarkers with the correct channels. Does this every time a line is scanned
-        self.cbm = self._timetagger.count_between_markers(self._timetagger._combined_channels.getChannel(), self._pixel_start_ch, self._pixel_stop_ch, self._line_length)
+        self.cbm = self._timetagger.count_between_markers(self._timetagger._combined_channels.getChannel(), self._pixel_start_ch, self._line_length)
 
         try:
             # Just a formal check whether length is not a too huge number
@@ -1554,7 +1554,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
 
         try:
             #Initialises the actual CountBetweenMarkers object with the correct length and channels. Does this for every pass.
-            self.cbm = self._timetagger.count_between_markers(self._timetagger._combined_channels.getChannel(), self._pixel_start_ch, self._pixel_stop_ch, self._odmr_length)
+            self.cbm = self._timetagger.count_between_markers(self._timetagger._combined_channels.getChannel(), self._pixel_start_ch, self._odmr_length)
             # start the scanner counting task that acquires counts synchronously
             # if self._scanner_counter_channels:
             #     daq.DAQmxStartTask(self._scanner_counter_daq_tasks[0])
