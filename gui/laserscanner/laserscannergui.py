@@ -64,7 +64,6 @@ class VoltScanGui(GUIBase):
     sigChangeSpeed = QtCore.Signal(float)
     sigChangeLines = QtCore.Signal(int)
     sigSaveMeasurement = QtCore.Signal(str, list, list)
-    sigCursorLoopRepeat = QtCore.Signal()
 
     def on_deactivate(self):
         """ Reverse steps of activation
@@ -214,9 +213,7 @@ class VoltScanGui(GUIBase):
         self._mw.voltscan_ViewWidget.addItem(self.main_cursor)
         self.region_cursor.sigRegionChanged.connect(self.updateSweepRange)
         self.main_cursor.sigPositionChanged.connect(self.updateCursorPosition)
-        self.stopCursorLoopRequest = False
-        self.sigCursorLoopRepeat.emit()
-        self.sigCursorLoopRepeat.connect(self.cursorLoop, QtCore.Qt.QueuedConnection)
+
         self._mw.show()
 
     def show(self):
@@ -230,7 +227,6 @@ class VoltScanGui(GUIBase):
         self._mw.action_run_stop.setEnabled(False)
         if is_checked:
             self.sigStartScan.emit()
-            self.stopCursorLoopRequest = True
             self._mw.voltscan_ViewWidget.removeItem(self.scan_fit_image)
             self._mw.voltscan2_ViewWidget.removeItem(self.scan_fit_image)
             self._mw.voltscan_matrix_ViewWidget.removeItem(self.region_cursor)
@@ -266,7 +262,6 @@ class VoltScanGui(GUIBase):
         self._mw.constDoubleSpinBox.editingFinished.connect(self.setCursorPosition)
         self.region_cursor.sigRegionChanged.connect(self.updateSweepRange)
         self.main_cursor.sigPositionChanged.connect(self.updateCursorPosition)
-        self.sigCursorLoopRepeat.emit()
         self._mw.constDoubleSpinBox.editingFinished.emit()
 
     
@@ -431,12 +426,3 @@ class VoltScanGui(GUIBase):
         time.sleep(0.01)
         self.main_cursor.setValue(self._mw.constDoubleSpinBox.value())
         self.change_voltage()
-
-    def cursorLoop(self):
-
-        if self.stopCursorLoopRequest:
-            self.stopCursorLoopRequest = False
-            return
-
-        time.sleep(0.1)
-        self.sigCursorLoopRepeat.emit()
