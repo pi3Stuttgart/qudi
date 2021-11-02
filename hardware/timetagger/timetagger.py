@@ -14,6 +14,7 @@ class TT(Base):
     _combiner = ConfigOption('combiner', False, missing='warn')
     _test_channels = ConfigOption('test_channels', False, missing='warn')
     _channels_params = ConfigOption('channels_params', False, missing='warn')
+    _maxDumps =  ConfigOption('maxDumps', 1000000000, missing='warn')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -98,9 +99,10 @@ class TT(Base):
 
     def dump(self, dumpPath, filtered_channels=None): 
         if filtered_channels != None:
-            self.tagger.setConditionalFilter(filtered=[filtered_channels], trigger=self.apdChans)
-        return Dump(self.tagger, dumpPath, self.maxDumps,\
-                                    self.allChans)
+            self.tagger.setConditionalFilter(filtered=[filtered_channels], trigger=self._combiner["channels"])
+        allChans = self._combiner["channels"].copy().append(filtered_channels)
+        return Dump(self.tagger, dumpPath, self._maxDumps,
+                                    [1,2,4])
         
     def countrate(self, channels=None):
         """

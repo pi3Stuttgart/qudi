@@ -32,6 +32,7 @@ from qtpy import QtCore
 from qtpy import QtGui
 from qtpy import QtWidgets
 from qtpy import uic
+import time
 
 
 class VoltScanMainWindow(QtWidgets.QMainWindow):
@@ -63,6 +64,7 @@ class VoltScanGui(GUIBase):
     sigChangeSpeed = QtCore.Signal(float)
     sigChangeLines = QtCore.Signal(int)
     sigSaveMeasurement = QtCore.Signal(str, list, list)
+    sigCursorLoopRepeat = QtCore.Signal()
 
     def on_deactivate(self):
         """ Reverse steps of activation
@@ -129,11 +131,10 @@ class VoltScanGui(GUIBase):
             self._voltscan_logic.fit_y,
             pen=QtGui.QPen(QtGui.QColor(255, 255, 255, 255)))
 
-        #!OURS SHIT
-        # self.region_cursor = pg.LinearRegionItem([int(self._mw.start_f.text()), int(self._mw.stop_f.text())], swapMode='block')
-        # self.region_cursor.setBounds([int(self._mw.start_f.text()), int(self._mw.stop_f.text())])
+        self.region_cursor = pg.LinearRegionItem([int(self._voltscan_logic.a_range[0]), int(self._voltscan_logic.a_range[1])], swapMode='block')
+        self.region_cursor.setBounds([int(self._voltscan_logic.a_range[0]), int(self._voltscan_logic.a_range[1])])
+        self.main_cursor = pg.InfiniteLine(pos = self._voltscan_logic.get_current_voltage(), angle = 90, movable = True, bounds = [int(self._voltscan_logic.a_range[0]), int(self._voltscan_logic.a_range[1])])
 
-        # self.main_cursor = pg.InfiniteLine(pos = self._local_laser_scanner_logic._main_cursor_position, angle = 90, movable = True, bounds = [int(self._mw.start_f.text()), int(self._mw.stop_f.text())])
 
 
         # Add the display item to the xy and xz VieWidget, which was defined in
@@ -142,6 +143,7 @@ class VoltScanGui(GUIBase):
         #self._mw.voltscan_ViewWidget.addItem(self.scan_fit_image)
         self._mw.voltscan_ViewWidget.showGrid(x=True, y=True, alpha=0.8)
         self._mw.voltscan_matrix_ViewWidget.addItem(self.scan_matrix_image)
+
 
         self._mw.voltscan2_ViewWidget.addItem(self.scan_image2)
         #self._mw.voltscan2_ViewWidget.addItem(self.scan_fit_image)
@@ -171,17 +173,17 @@ class VoltScanGui(GUIBase):
         self._mw.startDoubleSpinBox.setValue(self._voltscan_logic.scan_range[0])
         self._mw.speedDoubleSpinBox.setValue(self._voltscan_logic._scan_speed)
         self._mw.stopDoubleSpinBox.setValue(self._voltscan_logic.scan_range[1])
-        self._mw.constDoubleSpinBox.setValue(self._voltscan_logic._static_v)
+        self._mw.constDoubleSpinBox.setValue(self._voltscan_logic.get_current_voltage())
         self._mw.resolutionSpinBox.setValue(self._voltscan_logic.resolution)
         self._mw.linesSpinBox.setValue(self._voltscan_logic.number_of_repeats)
 
         # Update the inputed/displayed numbers if the cursor has left the field:
-        self._mw.startDoubleSpinBox.editingFinished.connect(self.change_start_volt)
+        self._mw.startDoubleSpinBox.editingFinished.connect(self.setRegionCursorPosition)
         self._mw.speedDoubleSpinBox.editingFinished.connect(self.change_speed)
-        self._mw.stopDoubleSpinBox.editingFinished.connect(self.change_stop_volt)
+        self._mw.stopDoubleSpinBox.editingFinished.connect(self.setRegionCursorPosition)
         self._mw.resolutionSpinBox.editingFinished.connect(self.change_resolution)
         self._mw.linesSpinBox.editingFinished.connect(self.change_lines)
-        self._mw.constDoubleSpinBox.editingFinished.connect(self.change_voltage)
+        self._mw.constDoubleSpinBox.editingFinished.connect(self.setCursorPosition)
 
         #
         self._mw.voltscan_cb_max_InputWidget.valueChanged.connect(self.refresh_matrix)
@@ -207,6 +209,14 @@ class VoltScanGui(GUIBase):
 
         self._mw.action_run_stop.triggered.connect(self.run_stop)
         self._mw.action_Save.triggered.connect(self.save_data)
+        #############
+        self._mw.voltscan_matrix_ViewWidget.addItem(self.region_cursor)
+        self._mw.voltscan_ViewWidget.addItem(self.main_cursor)
+        self.region_cursor.sigRegionChanged.connect(self.updateSweepRange)
+        self.main_cursor.sigPositionChanged.connect(self.updateCursorPosition)
+        self.stopCursorLoopRequest = False
+        self.sigCursorLoopRepeat.emit()
+        self.sigCursorLoopRepeat.connect(self.cursorLoop, QtCore.Qt.QueuedConnection)
         self._mw.show()
 
     def show(self):
@@ -220,8 +230,19 @@ class VoltScanGui(GUIBase):
         self._mw.action_run_stop.setEnabled(False)
         if is_checked:
             self.sigStartScan.emit()
+            self.stopCursorLoopRequest = True
             self._mw.voltscan_ViewWidget.removeItem(self.scan_fit_image)
             self._mw.voltscan2_ViewWidget.removeItem(self.scan_fit_image)
+            self._mw.voltscan_matrix_ViewWidget.removeItem(self.region_cursor)
+            self._mw.voltscan_ViewWidget.removeItem(self.main_cursor)
+            self._mw.startDoubleSpinBox.editingFinished.disconnect()
+            self._mw.speedDoubleSpinBox.editingFinished.disconnect()
+            self._mw.stopDoubleSpinBox.editingFinished.disconnect()
+            self._mw.resolutionSpinBox.editingFinished.disconnect()
+            self._mw.linesSpinBox.editingFinished.disconnect()
+            self._mw.constDoubleSpinBox.editingFinished.disconnect()
+            self.region_cursor.sigRegionChanged.disconnect()
+            self.main_cursor.sigPositionChanged.disconnect()
         else:
             self.sigStopScan.emit()
 
@@ -234,11 +255,18 @@ class VoltScanGui(GUIBase):
         self.refresh_plot()
         self.refresh_matrix()
         self.refresh_lines()
-
-    # def setCursorPosition(self):
-    #     self.main_cursor.setValue(int(self._mw.cursorposition.text()))
+        self._mw.voltscan_matrix_ViewWidget.addItem(self.region_cursor)
+        self._mw.voltscan_ViewWidget.addItem(self.main_cursor)
+        self._mw.startDoubleSpinBox.editingFinished.connect(self.setRegionCursorPosition)
+        self._mw.speedDoubleSpinBox.editingFinished.connect(self.change_speed)
+        self._mw.stopDoubleSpinBox.editingFinished.connect(self.setRegionCursorPosition)
+        self._mw.resolutionSpinBox.editingFinished.connect(self.change_resolution)
+        self._mw.linesSpinBox.editingFinished.connect(self.change_lines)
+        self._mw.constDoubleSpinBox.editingFinished.connect(self.setCursorPosition)
+        self.region_cursor.sigRegionChanged.connect(self.updateSweepRange)
+        self.main_cursor.sigPositionChanged.connect(self.updateCursorPosition)
+        self.sigCursorLoopRepeat.emit()
     
-
 
     def refresh_plot(self):
         """ Refresh the xy-plot image """
@@ -377,3 +405,35 @@ class VoltScanGui(GUIBase):
             pcile_range = [low_centile, high_centile]
 
         self.sigSaveMeasurement.emit(filetag, cb_range, pcile_range)
+
+    def updateSweepRange(self):
+        self._mw.startDoubleSpinBox.setValue(int(self.region_cursor.getRegion()[0]))
+        self.change_start_volt()
+        self._mw.stopDoubleSpinBox.setValue(int(self.region_cursor.getRegion()[1]))
+        self.change_stop_volt()
+
+    def updateCursorPosition(self):
+        """ Update the display of cursor position
+        """
+        time.sleep(0.01)
+        self._mw.constDoubleSpinBox.setValue(int(self.main_cursor.value()))
+        self.change_voltage()
+    
+    def setRegionCursorPosition(self):
+        self.region_cursor.setRegion([self._mw.startDoubleSpinBox.value(),self._mw.stopDoubleSpinBox.value()])
+        self.change_start_volt()
+        self.change_stop_volt()
+
+    def setCursorPosition(self):
+        time.sleep(0.01)
+        self.main_cursor.setValue(self._mw.constDoubleSpinBox.value())
+        self.change_voltage()
+
+    def cursorLoop(self):
+
+        if self.stopCursorLoopRequest:
+            self.stopCursorLoopRequest = False
+            return
+
+        time.sleep(0.1)
+        self.sigCursorLoopRepeat.emit()

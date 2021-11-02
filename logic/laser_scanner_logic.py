@@ -48,11 +48,11 @@ class LaserScannerLogic(GenericLogic):
     confocalscanner1 = Connector(interface='ConfocalScannerInterface')
     savelogic = Connector(interface='SaveLogic')
 
-    scan_range = StatusVar('scan_range', [-10, 10])
+    scan_range = StatusVar('scan_range', [0, 30000])
     number_of_repeats = StatusVar(default=10)
-    resolution = StatusVar('resolution', 500)
-    _scan_speed = StatusVar('scan_speed', 10)
-    _static_v = StatusVar('goto_voltage', 5)
+    resolution = StatusVar('resolution', 5000)
+    _scan_speed = StatusVar('scan_speed', 15000)
+    _static_v = StatusVar('goto_voltage', 0)
 
     sigChangeVoltage = QtCore.Signal(float)
     sigVoltageChanged = QtCore.Signal(float)
@@ -202,9 +202,10 @@ class LaserScannerLogic(GenericLogic):
 
     def set_scan_range(self, scan_range):
         """ Set the scan rnage """
-        r_max = np.clip(scan_range[1], self.a_range[0], self.a_range[1])
-        r_min = np.clip(scan_range[0], self.a_range[0], r_max)
-        self.scan_range = [r_min, r_max]
+        # r_max = np.clip(scan_range[1], self.a_range[0], self.a_range[1])
+        # r_min = np.clip(scan_range[0], self.a_range[0], r_max)
+        # self.scan_range = [r_min, r_max]
+        self.scan_range = scan_range
 
     def set_voltage(self, volts):
         """ Set the channel idle voltage """
@@ -213,7 +214,7 @@ class LaserScannerLogic(GenericLogic):
 
     def set_scan_speed(self, scan_speed):
         """ Set scan speed in volt per second """
-        self._scan_speed = np.clip(scan_speed, 1e-9, 1e6)
+        self._scan_speed = np.clip(scan_speed, 1e-9, 2e6)
         self._goto_speed = self._scan_speed
 
     def set_scan_lines(self, scan_lines):
@@ -328,7 +329,7 @@ class LaserScannerLogic(GenericLogic):
             self._goto_during_scan(self.scan_range[0])
 
         if self.upwards_scan:
-            counts = self._scan_line(self._upwards_ramp)
+            counts = self._scan_line(self._upwards_ramp, pixel_clock=True)
             self.scan_matrix[self._scan_counter_up] = counts
             self.plot_y += counts
             self._scan_counter_up += 1
@@ -419,7 +420,7 @@ class LaserScannerLogic(GenericLogic):
 
         return scan_line
 
-    def _scan_line(self, line_to_scan=None):
+    def _scan_line(self, line_to_scan=None, pixel_clock = False):
         """do a single voltage scan from voltage1 to voltage2
 
         """
@@ -428,7 +429,10 @@ class LaserScannerLogic(GenericLogic):
             return -1
         try:
             # scan of a single line
-            counts_on_scan_line = self._scanning_device.scan_line(line_to_scan)
+            if pixel_clock:
+                counts_on_scan_line = self._scanning_device.scan_line(line_to_scan, pixel_clock = True)
+            else:
+                counts_on_scan_line = self._scanning_device.scan_line(line_to_scan)
             return counts_on_scan_line.transpose()[0]
 
         except Exception as e:
