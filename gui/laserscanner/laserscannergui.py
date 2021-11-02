@@ -255,6 +255,7 @@ class VoltScanGui(GUIBase):
         self.refresh_plot()
         self.refresh_matrix()
         self.refresh_lines()
+        self._mw.constDoubleSpinBox.setValue(self._voltscan_logic.get_current_voltage())
         self._mw.voltscan_matrix_ViewWidget.addItem(self.region_cursor)
         self._mw.voltscan_ViewWidget.addItem(self.main_cursor)
         self._mw.startDoubleSpinBox.editingFinished.connect(self.setRegionCursorPosition)
@@ -266,6 +267,8 @@ class VoltScanGui(GUIBase):
         self.region_cursor.sigRegionChanged.connect(self.updateSweepRange)
         self.main_cursor.sigPositionChanged.connect(self.updateCursorPosition)
         self.sigCursorLoopRepeat.emit()
+        self._mw.constDoubleSpinBox.editingFinished.emit()
+
     
 
     def refresh_plot(self):

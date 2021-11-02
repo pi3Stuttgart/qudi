@@ -379,10 +379,10 @@ class LaserScannerLogic(GenericLogic):
             v_max_linear = v_max - v_range_of_accel
 
             if v_min_linear > v_max_linear:
-                self.log.warning(
-                    'Voltage ramp too short to apply the '
-                    'configured smoothing_steps. A simple linear ramp '
-                    'was created instead.')
+                # self.log.warning(
+                #     'Voltage ramp too short to apply the '
+                #     'configured smoothing_steps. A simple linear ramp '
+                #     'was created instead.')
                 num_of_linear_steps = np.rint((v_max - v_min) / linear_v_step)
                 ramp = np.linspace(v_min, v_max, num_of_linear_steps)
 
