@@ -42,7 +42,7 @@ class TimeSeriesReaderLogic(GenericLogic):
 
     time_series_reader_logic:
         module.Class: 'time_series_reader_logic.TimeSeriesReaderLogic'
-        max_frame_rate: 10  # optional (10Hz by default)
+        max_frame_rate: 10  # optional (10Hz by default) should be > 2/trace_window_size
         calc_digital_freq: True  # optional (True by default)
         connect:
             _streamer_con: <streamer_name>
@@ -163,9 +163,9 @@ class TimeSeriesReaderLogic(GenericLogic):
     def _init_data_arrays(self):
         window_size = self.trace_window_size_samples
         self._trace_data = np.zeros(
-            [self.number_of_active_channels, window_size + self._moving_average_width // 2])
+            [self.number_of_active_channels, window_size + self.moving_average_width // 2])
         self._trace_data_averaged = np.zeros(
-            [len(self._averaged_channels), window_size - self._moving_average_width // 2])
+            [len(self._averaged_channels), window_size - self.moving_average_width // 2])      #self.trace_window_size * data_rate - self._moving_average_width//2 > self.data_rate/ self._max_frame_rate
         self._trace_times = np.arange(window_size) / self.data_rate
         self._recorded_data = list()
         return
@@ -251,10 +251,10 @@ class TimeSeriesReaderLogic(GenericLogic):
     def active_channel_units(self):
         unit_dict = dict()
         for ch in self._streamer.active_channels:
-            if self._calc_digital_freq and ch.type == StreamChannelType.DIGITAL:
-                unit_dict[ch.name] = 'Hz'
-            else:
-                unit_dict[ch.name] = ch.unit
+            # if self._calc_digital_freq and ch.type == StreamChannelType.DIGITAL:
+            #     unit_dict[ch.name] = 'Hz'
+            # else:
+            unit_dict[ch.name] = ch.unit
         return unit_dict
 
     @property
@@ -360,7 +360,7 @@ class TimeSeriesReaderLogic(GenericLogic):
                     else:
                         self._oversampling_factor = new_val
 
-            if 'moving_average_width' in settings_dict:
+            if 'moving_average_width' in settings_dict:         # moving_average_width<trace_window_size*data_rate
                 new_val = int(settings_dict['moving_average_width'])
                 if new_val < 1:
                     self.log.error('Moving average width must be integer value >= 1 '
@@ -448,11 +448,10 @@ class TimeSeriesReaderLogic(GenericLogic):
                     self._averaged_channels = new_val
 
             # Apply settings to hardware if needed
-            self._streamer.configure(sample_rate=data_rate * self.oversampling_factor,
-                                     streaming_mode=StreamingMode.CONTINUOUS,
-                                     active_channels=active_ch,
-                                     buffer_size=10000000,
-                                     use_circular_buffer=True)
+            self._streamer.configure(channel = active_ch,
+                                     sample_rate = data_rate * self.oversampling_factor,
+                                     buffer_size=2*self.trace_window_size_samples*self.number_of_active_channels+100,
+                                     )
 
             # update actually set values
             self._averaged_channels = tuple(
@@ -578,7 +577,8 @@ class TimeSeriesReaderLogic(GenericLogic):
 
     def _process_trace_data(self, data):
         """
-        Processes raw data from the streaming device
+        Update data from the streaming device into self._trace_data, data size should smaller than self._trace_data.
+        calculate averages and update self._trace_data_averaged.
         """
         # Down-sample and average according to oversampling factor
         if self.oversampling_factor > 1:
@@ -601,7 +601,7 @@ class TimeSeriesReaderLogic(GenericLogic):
         if self._data_recording_active:
             self._recorded_data.append(data.copy())
 
-        data = data[:, -self._trace_data.shape[1]:]
+        data = data[:, -self._trace_data.shape[1]:]     # Just in case data size is larger than self._trace_data, which should not happened.
         new_samples = data.shape[1]
 
         # Roll data array to have a continuously running time trace

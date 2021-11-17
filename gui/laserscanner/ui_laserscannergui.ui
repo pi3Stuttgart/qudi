@@ -144,22 +144,12 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>360</y>
+      <y>500</y>
       <width>258</width>
-      <height>231</height>
+      <height>91</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout_2">
-     <item row="0" column="0">
-      <widget class="QLabel" name="retraceLabel">
-       <property name="text">
-        <string>Retrace</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
      <item row="1" column="0">
       <widget class="PlotWidget" name="voltscan2_ViewWidget">
        <property name="sizePolicy">
@@ -177,6 +167,16 @@
          <horstretch>1</horstretch>
          <verstretch>1</verstretch>
         </sizepolicy>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="retraceLabel">
+       <property name="text">
+        <string>Retrace</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
        </property>
       </widget>
      </item>
@@ -204,7 +204,7 @@
       <x>10</x>
       <y>20</y>
       <width>761</width>
-      <height>321</height>
+      <height>471</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout">
@@ -220,6 +220,16 @@
      </item>
      <item>
       <widget class="PlotWidget" name="voltscan_ViewWidget">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>1</horstretch>
+         <verstretch>1</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="PlotWidget" name="voltscan_ViewWidget_2">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
          <horstretch>1</horstretch>

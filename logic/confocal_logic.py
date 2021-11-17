@@ -689,6 +689,8 @@ class ConfocalLogic(GenericLogic):
             self._current_z = z
         if a is not None:
             self._current_a = a
+        else:
+            self._current_a = self._scanning_device.get_scanner_position()[-1]
 
         # Checks if the scanner is still running
         if self.module_state() == 'locked' or self._scanning_device.module_state() == 'locked':
@@ -771,6 +773,9 @@ class ConfocalLogic(GenericLogic):
                 lsx = np.linspace(self._current_x, image[self._scan_counter, 0, 0], rs)
                 lsy = np.linspace(self._current_y, image[self._scan_counter, 0, 1], rs)
                 lsz = np.linspace(self._current_z, image[self._scan_counter, 0, 2], rs)
+                #! FIX THAT SOME TIME ?!?!?!?!?!?!?!?!?
+                self._current_a = self._scanning_device.get_scanner_position()[-1]
+
                 if n_ch <= 3:
                     start_line = np.vstack([lsx, lsy, lsz][0:n_ch])
                 else:

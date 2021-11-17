@@ -32,12 +32,32 @@ from logic.generic_logic import GenericLogic
 
 def automatic_flip(func):
     def wrapper(self, *arg, **kw):
-        if self._automatic_flip:
-            self._ello_flipper.move_forward()
-            res = func(self, *arg, **kw)
-            self._ello_flipper.home()
+        if self._automatic_flip_mirror:
+            print('mirror')
+            # flips flip mirror into next position
+            self.flip_mirror(mode=True)
+            self.flip_mirror(mode=False)
+            if self._automatic_flip:
+                print('filter')
+                self._ello_flipper.move_forward()
+                res = func(self, *arg, **kw)
+                self._ello_flipper.home()
+            else:
+                print('no filter')
+                res = func(self, *arg, **kw)
+            # flips flip mirror into next position
+            self.flip_mirror(mode=True)
+            self.flip_mirror(mode=False)
         else:
-            res = func(self, *arg, **kw)
+            print('no mirror')
+            if self._automatic_flip:
+                print('filter')
+                self._ello_flipper.move_forward()
+                res = func(self, *arg, **kw)
+                self._ello_flipper.home()
+            else:
+                print('no filter')
+                res = func(self, *arg, **kw)
         return res
     return wrapper
 
@@ -61,12 +81,13 @@ class SpectrumLogic(GenericLogic):
     odmrlogic = Connector(interface='ODMRLogic', optional=True)
     savelogic = Connector(interface='SaveLogic')
     fitlogic = Connector(interface='FitLogic')
-    nicard = Connector(interface='NationalInstrumentsXSeries')
-    ello_devices = Connector(interface='ThorlabsElloDevices')
+    nicard = Connector(interface='NationalInstrumentsXSeries', optional=True)
+    ello_devices = Connector(interface='ThorlabsElloDevices', optional=True)
     # cwavelaser = Connector(interface='CwaveLaser')
 
     # declare status variables
     _automatic_flip = False
+    _automatic_flip_mirror = False
     _spectrum_data = StatusVar('spectrum_data', np.empty((2, 0)))
     _spectrum_background = StatusVar('spectrum_background', np.empty((2, 0)))
     _background_correction = StatusVar('background_correction', False)
@@ -107,10 +128,11 @@ class SpectrumLogic(GenericLogic):
         self.integration_time = self._spectrometer_device._integration_time
         self._odmr_logic = self.odmrlogic()
         self._save_logic = self.savelogic()
-        self._ello_flipper = self.ello_devices().ello_flip
+        #self._ello_flipper = self.ello_devices().ello_flip
         # self._cwave = self.cwavelaser()
         # self.sig_cwave_shutter.connect(self._cwave.set_shutters_states)
-        self._nicard = self.nicard()
+
+        #self._nicard = self.nicard()
 
         self.sig_next_diff_loop.connect(self._loop_differential_spectrum)
         self.sig_specdata_updated.emit()
@@ -163,9 +185,9 @@ class SpectrumLogic(GenericLogic):
         else:
             self._spectrum_data = self._spectrometer_device.recordSpectrum()
         
-        lam, spec = self._spectrum_data[0, :], self._spectrum_data[1, :]
-        plot_range = (lam > self.plot_domain[0]) * (lam < self.plot_domain[1])
-        self._spectrum_data = self._spectrum_data[plot_range]
+        #lam, spec = self._spectrum_data[0, :], self._spectrum_data[1, :]
+        #plot_range = (lam > self.plot_domain[0]) * (lam < self.plot_domain[1])
+        #self._spectrum_data = self._spectrum_data[plot_range]
 
         self._calculate_corrected_spectrum()
         # Clearing the differential spectra data arrays so that they do not get
@@ -255,18 +277,18 @@ class SpectrumLogic(GenericLogic):
         # Toggle on, take spectrum and add data to the mod_on data
         self.toggle_modulation(on=True)
         these_data = netobtain(self._spectrometer_device.recordSpectrum())
-        self.diff_spec_data_mod_on[1, :] += these_data[1, :]
+        self.diff_spec_data_mod_on[1, :] = these_data[1, :]
 
         # Toggle off, take spectrum and add data to the mod_off data
         self.toggle_modulation(on=False)
         these_data = netobtain(self._spectrometer_device.recordSpectrum())
-        self.diff_spec_data_mod_off[1, :] += these_data[1, :]
+        self.diff_spec_data_mod_off[1, :] = these_data[1, :]
 
         self.repetition_count += 1    # increment the loop count
 
         # Calculate the differential spectrum
         self._spectrum_data[1, :] = self.diff_spec_data_mod_on[
-            1, :] - self.diff_spec_data_mod_off[1, :]
+            1, :]# - self.diff_spec_data_mod_off[1, :]
 
         self.sig_specdata_updated.emit()
 

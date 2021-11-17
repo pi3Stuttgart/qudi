@@ -120,6 +120,10 @@ class VoltScanGui(GUIBase):
         self.scan_image = pg.PlotDataItem(
             self._voltscan_logic.plot_x,
             self._voltscan_logic.plot_y)
+        
+        self.scan_image_2 = pg.PlotDataItem(
+            self._voltscan_logic.plot_x,
+            self._voltscan_logic.plot_y_2)
 
         self.scan_image2 = pg.PlotDataItem(
             self._voltscan_logic.plot_x,
@@ -141,6 +145,11 @@ class VoltScanGui(GUIBase):
         self._mw.voltscan_ViewWidget.addItem(self.scan_image)
         #self._mw.voltscan_ViewWidget.addItem(self.scan_fit_image)
         self._mw.voltscan_ViewWidget.showGrid(x=True, y=True, alpha=0.8)
+
+        self._mw.voltscan_ViewWidget_2.addItem(self.scan_image_2)
+        #self._mw.voltscan_ViewWidget.addItem(self.scan_fit_image)
+        self._mw.voltscan_ViewWidget_2.showGrid(x=True, y=True, alpha=0.8)
+
         self._mw.voltscan_matrix_ViewWidget.addItem(self.scan_matrix_image)
 
 
@@ -269,6 +278,7 @@ class VoltScanGui(GUIBase):
     def refresh_plot(self):
         """ Refresh the xy-plot image """
         self.scan_image.setData(self._voltscan_logic.plot_x, self._voltscan_logic.plot_y)
+        self.scan_image_2.setData(self._voltscan_logic.plot_x, self._voltscan_logic.plot_y_2)
         self.scan_image2.setData(self._voltscan_logic.plot_x, self._voltscan_logic.plot_y2)
 
     def refresh_matrix(self):

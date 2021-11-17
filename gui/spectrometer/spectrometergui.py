@@ -54,7 +54,8 @@ class SpectrometerGui(GUIBase):
 
     # declare connectors
     spectrumlogic = Connector(interface='SpectrumLogic')
-
+    sigRecordSpectrum = QtCore.Signal(bool)
+    
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
 
@@ -67,14 +68,22 @@ class SpectrometerGui(GUIBase):
         # setting up the window
         self._mw = SpectrometerWindow()
 
+        #Vlad updates
+        self.sigRecordSpectrum.connect(self._spectrum_logic.get_single_spectrum)
+        self._mw.integration_time_doubleSpinBox.editingFinished.connect(self.update_integration_time)
+        self.update_integration_time()
+
+        # ... 
         self._mw.stop_diff_spec_Action.setEnabled(False)
         self._mw.resume_diff_spec_Action.setEnabled(False)
         self._mw.correct_background_Action.setChecked(self._spectrum_logic.background_correction)
 
         # giving the plots names allows us to link their axes together
         self._pw = self._mw.plotWidget  # pg.PlotWidget(name='Counter1')
+        
         self._plot_item = self._pw.plotItem
-
+        self._plot_item.scene().sigMouseClicked.connect(self.onClick)
+        self.vb = self._plot_item.vb
         # create a new ViewBox, link the right axis to its coordinate system
         self._right_axis = pg.ViewBox()
         self._plot_item.showAxis('right')
@@ -103,7 +112,7 @@ class SpectrometerGui(GUIBase):
 
         self._curve2 = self._pw.plot()
         self._curve2.setPen(palette.c2, width=2)
-
+        self.set_plot_domain()
         self.update_data()
 
         # Connect singals
@@ -122,7 +131,9 @@ class SpectrometerGui(GUIBase):
         self._spectrum_logic.sig_specdata_updated.connect(self.update_data)
         self._spectrum_logic.spectrum_fit_updated_Signal.connect(self.update_fit)
         self._spectrum_logic.fit_domain_updated_Signal.connect(self.update_fit_domain)
-
+        
+        
+ 
         self._mw.show()
 
         self._save_PNG = True
@@ -130,6 +141,9 @@ class SpectrometerGui(GUIBase):
         # Internal user input changed signals
         self._mw.fit_domain_min_doubleSpinBox.valueChanged.connect(self.set_fit_domain)
         self._mw.fit_domain_max_doubleSpinBox.valueChanged.connect(self.set_fit_domain)
+
+        self._mw.spec_range_left_doubleSpinBox.valueChanged.connect(self.set_plot_domain)
+        self._mw.spec_range_right_doubleSpinBox.valueChanged.connect(self.set_plot_domain)
 
         # Internal trigger signals
         self._mw.do_fit_PushButton.clicked.connect(self.do_fit)
@@ -149,6 +163,21 @@ class SpectrometerGui(GUIBase):
 
         self._mw.close()
 
+    def onClick(self, event):
+        items = self._plot_item.scene().items(event.scenePos())
+        mousePoint = self.vb.mapSceneToView(event._scenePos)
+        print(mousePoint.x(), mousePoint.y())
+        # if self._plot_item.sceneBoundingRect().contains(event._scenePos):
+        #     mousePoint = self.vb.mapSceneToView(event._scenePos)
+        #     index = int(mousePoint.x())
+        #     print(index, mousePoint.x(), mousePoint.y())
+        #     data = self._spectrum_logic.spectrum_data
+        #     lam, spec = data[0, :], data[1, :]
+        #     if index > 0 and index < len(self._spectrum_logic.spectrum_data):
+        #         self.label.setText(
+        #             "<span style='font-size: 12pt'>x=%0.1f,   <span style='color: red'>y1=%0.1f</span>,   <span style='color: green'>y2=%0.1f</span>" % (
+        #             mousePoint.x(), lam[index], spec[index]))
+
     def show(self):
         """Make window visible and put it above all other windows.
         """
@@ -165,7 +194,9 @@ class SpectrometerGui(GUIBase):
         self._curve2.setData(x=[], y=[])
         
         # draw new data
-        self._curve1.setData(x=data[0, :], y=data[1, :])
+        lam, spec = data[0, :], data[1, :]
+        plot_range = (lam > self.plot_domain[0]) * (lam < self.plot_domain[1])
+        self._curve1.setData(x=lam[plot_range], y=spec[plot_range])
 
     def update_fit(self, fit_data, result_str_dict, current_fit):
         """ Update the drawn fit curve and displayed fit results.
@@ -182,10 +213,36 @@ class SpectrometerGui(GUIBase):
             # redraw the fit curve in the GUI plot.
             self._curve2.setData(x=fit_data[0, :], y=fit_data[1, :])
 
-    def record_single_spectrum(self):
+    def record_single_spectrum(self, background=False):
         """ Handle resume of the scanning without resetting the data.
         """
-        self._spectrum_logic.get_single_spectrum()
+        int_time = self._mw.integration_time_doubleSpinBox.value()
+        self.time_passed = 0
+        self._mw.progressBar.setMaximum(int_time)
+        self.sigRecordSpectrum.emit(background)
+        self._mw.rec_single_spectrum_Action.setEnabled(False)
+        self._mw.acquire_background_Action.setEnabled(False)
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.updateProgress)
+        self.update_time = 500
+        self.timer.start(self.update_time)
+    
+    def updateProgress(self):
+        int_time = self._mw.integration_time_doubleSpinBox.value()
+        self.time_passed += self.update_time/1000
+        if self.time_passed > int_time:
+            self.timer.stop()
+            self._mw.progressBar.setValue(int_time)
+            self._mw.rec_single_spectrum_Action.setEnabled(True)
+            self._mw.acquire_background_Action.setEnabled(True)
+            self.update_data()
+            return
+        self._mw.progressBar.setValue(self.time_passed)
+
+
+    def update_integration_time(self):
+        int_time = self._mw.integration_time_doubleSpinBox.value()
+        self._spectrum_logic.update_integration_time(int_time)
 
     def start_differential_measurement(self):
 
@@ -222,10 +279,18 @@ class SpectrometerGui(GUIBase):
         self._spectrum_logic.background_correction = self._mw.correct_background_Action.isChecked()
 
     def acquire_background(self):
-        self._spectrum_logic.get_single_spectrum(background=True)
+        self.record_single_spectrum(background=True)
+        # self._spectrum_logic.get_single_spectrum(background=True)
 
     def save_background_data(self):
         self._spectrum_logic.save_spectrum_data(background=True)
+
+    def set_plot_domain(self):
+       lambda_min = self._mw.spec_range_left_doubleSpinBox.value()  #nm
+       lambda_max = self._mw.spec_range_right_doubleSpinBox.value()  #nm
+
+       self.plot_domain = np.array([lambda_min, lambda_max])
+
 
     def do_fit(self):
         """ Command spectrum logic to do the fit with the chosen fit function.

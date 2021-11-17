@@ -401,6 +401,10 @@ class TimeSeriesGui(GUIBase):
         self._mw.curr_value_comboBox.blockSignals(False)
         self.current_value_channel_changed()
 
+        if update_logic:
+            self.sigSettingsChanged.emit(
+                {'active_channels': channels, 'averaged_channels': av_channels})
+
         # Update plot widget axes
         ch_list = self._time_series_logic.active_channels
         digital_channels = tuple(ch for ch in ch_list if ch.type == StreamChannelType.DIGITAL)
@@ -430,9 +434,7 @@ class TimeSeriesGui(GUIBase):
             # hide/show corresponding plot curves
             self._toggle_channel_data_plot(chnl, visible, av_visible)
 
-        if update_logic:
-            self.sigSettingsChanged.emit(
-                {'active_channels': channels, 'averaged_channels': av_channels})
+
         return
 
     @QtCore.Slot()
