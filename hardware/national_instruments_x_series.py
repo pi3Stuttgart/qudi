@@ -780,7 +780,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         """
         n_ch = len(self.get_scanner_axes())
         if myrange is None:
-            myrange = [[-10., 10.], [-10., 10.], [-10., 10.], [-10., 10.]][0:n_ch]
+            myrange = [[0., 1.], [0., 1.], [0., 1.], [0., 1.]][0:n_ch]
 
         if not isinstance(myrange, (frozenset, list, set, tuple, np.ndarray)):
             self.log.error('Given range is no array type.')
@@ -1049,6 +1049,8 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         my_position = np.vstack(self._current_position)
 
         # then directly write the position to the hardware
+        
+        #Scan to the desired position:
         try:
             self._write_scanner_ao(
                 voltages=self._scanner_position_to_volt(my_position),

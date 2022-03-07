@@ -20,6 +20,7 @@ Copyright (c) the Qudi Developers. See the COPYRIGHT.txt file at the
 top-level directory of this distribution and at <https://github.com/Ulm-IQO/qudi/>
 """
 
+from PyQt5.QtCore import pyqtPickleProtocol
 import numpy as np
 import os
 import pyqtgraph as pg
@@ -31,7 +32,10 @@ from core.statusvariable import StatusVar
 from qtwidgets.scan_plotwidget import ScanImageItem
 from gui.guibase import GUIBase
 from gui.guiutils import ColorBar
-from gui.colordefs import ColorScaleInferno
+#from gui.colordefs import ColorScaleInferno
+#from gui.colordefs import ColorScaleViridis
+from gui.colordefs import ColorScaleRdBu
+from gui.colordefs import ColorScaleRdBuRev
 from gui.colordefs import QudiPalettePale as palette
 from gui.fitsettings import FitParametersWidget
 from qtpy import QtCore
@@ -44,6 +48,7 @@ class ConfocalMainWindow(QtWidgets.QMainWindow):
     """ Create the Mainwindow based on the corresponding *.ui file. """
 
     sigPressKeyBoard = QtCore.Signal(QtCore.QEvent)
+    
     sigDoubleClick = QtCore.Signal()
 
     def __init__(self):
@@ -60,6 +65,8 @@ class ConfocalMainWindow(QtWidgets.QMainWindow):
     def keyPressEvent(self, event):
         """Pass the keyboard press event from the main window further. """
         self.sigPressKeyBoard.emit(event)
+
+
 
     def mouseDoubleClickEvent(self, event):
         self._doubleclicked = True
@@ -90,6 +97,29 @@ class OptimizerSettingDialog(QtWidgets.QDialog):
         # Load it
         super(OptimizerSettingDialog, self).__init__()
         uic.loadUi(ui_file, self)
+
+
+class ChangingToLTLimitsDialog(QtWidgets.QDialog):
+    def __init__(self):
+        # Get the path to the *.ui file
+        this_dir = os.path.dirname(__file__)
+        ui_file = os.path.join(this_dir, 'ui_change_to_LT.ui')
+
+        # Load it
+        super(ChangingToLTLimitsDialog, self).__init__()
+        uic.loadUi(ui_file, self)
+
+
+class ChangingToLTLimitsConfirmation(QtWidgets.QDialog):
+    def __init__(self):
+        # Get the path to the *.ui file
+        this_dir = os.path.dirname(__file__)
+        ui_file = os.path.join(this_dir, 'ui_confirm_change.ui')
+
+        # Load it
+        super(ChangingToLTLimitsConfirmation, self).__init__()
+        uic.loadUi(ui_file, self)
+
 
 class SaveDialog(QtWidgets.QDialog):
     """ Dialog to provide feedback and block GUI while saving """
@@ -122,7 +152,7 @@ class ConfocalGui(GUIBase):
     image_x_padding = ConfigOption('image_x_padding', 0.02)
     image_y_padding = ConfigOption('image_y_padding', 0.02)
     image_z_padding = ConfigOption('image_z_padding', 0.02)
-
+    _involves_cryostat = ConfigOption('involves_cryostat', False)
     default_meter_prefix = ConfigOption('default_meter_prefix', None)  # assume the unit prefix of position spinbox
 
     # status var
@@ -132,6 +162,8 @@ class ConfocalGui(GUIBase):
 
     # signals
     sigStartOptimizer = QtCore.Signal(list, str)
+    sigChangeLimits = QtCore.Signal(str)
+    sigUserMovedCrosshair = QtCore.Signal(list)
 
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
@@ -147,6 +179,10 @@ class ConfocalGui(GUIBase):
         self._scanning_logic = self.confocallogic1()
         self._save_logic = self.savelogic()
         self._optimizer_logic = self.optimizerlogic1()
+        self._scanning_logic.pois = np.array([])
+        # connecting signals from logic
+        self._scanning_logic.sigLimitsChanged.connect(self.limits_changed)
+        self.sigUserMovedCrosshair.connect(self._scanning_logic.store_crosshair_posi)
 
         self._hardware_state = True
 
@@ -178,7 +214,7 @@ class ConfocalGui(GUIBase):
         self.opt_channel = 0
 
         # Get the image for the display from the logic
-        raw_data_xy = self._scanning_logic.xy_image[:, :, 3 + self.xy_channel]
+        raw_data_xy = self._scanning_logic.xy_image[::-1, ::-1, 3 + self.xy_channel]
         raw_data_depth = self._scanning_logic.depth_image[:, :, 3 + self.depth_channel]
 
         # Set initial position for the crosshair, default is the middle of the
@@ -277,7 +313,7 @@ class ConfocalGui(GUIBase):
             (self._optimizer_logic.refocus_XY_size, self._optimizer_logic.refocus_XY_size))
         # connect the drag event of the crosshair with a change in scanner position:
         self._mw.xy_ViewWidget.sigCrosshairDraggedPosChanged.connect(self.update_from_roi_xy)
-
+        
         # Set up and connect xy channel combobox
         scan_channels = self._scanning_logic.get_scanner_count_channels()
         for n, ch in enumerate(scan_channels):
@@ -422,6 +458,7 @@ class ConfocalGui(GUIBase):
             )
 
         # history actions
+        self._mw.actionSetPOIs.triggered.connect(self.POImode)
         self._mw.actionForward.triggered.connect(self._scanning_logic.history_forward)
         self._mw.actionBack.triggered.connect(self._scanning_logic.history_back)
         self._scanning_logic.signal_history_event.connect(lambda: self.set_history_actions(True))
@@ -433,6 +470,14 @@ class ConfocalGui(GUIBase):
         self._scanning_logic.signal_history_event.connect(self.change_x_image_range)
         self._scanning_logic.signal_history_event.connect(self.change_y_image_range)
         self._scanning_logic.signal_history_event.connect(self.change_z_image_range)
+
+        self._mw.actionSave_config.triggered.connect(self._scanning_logic.save_history_config)
+
+        # set voltage limits
+        if self._involves_cryostat:
+            self._mw.actionUse_LT_limits.changed.connect(self.change_piezo_voltage_limits)
+            self.sigChangeLimits.connect(self._scanning_logic.set_voltage_limits)
+        
 
         # Get initial tilt correction values
         self._mw.action_TiltCorrection.setChecked(
@@ -566,7 +611,9 @@ class ConfocalGui(GUIBase):
         #           Connect the colorbar and their actions              #
         #################################################################
         # Get the colorscale and set the LUTs
-        self.my_colors = ColorScaleInferno()
+        #self.my_colors = ColorScaleInferno()
+        #self.my_colors = ColorScaleViridis()
+        self.my_colors = ColorScaleRdBuRev()
 
         self.xy_image.setLookupTable(self.my_colors.lut)
         self.depth_image.setLookupTable(self.my_colors.lut)
@@ -657,6 +704,31 @@ class ConfocalGui(GUIBase):
         self._mw.show()
         self._mw.activateWindow()
         self._mw.raise_()
+
+    def POImode(self):
+        if self._mw.actionSetPOIs.isChecked():
+            self._plot_item = self._mw.xy_ViewWidget.plotItem
+            self._plot_item.scene().sigMouseClicked.connect(self.addPOI)
+            self.vb = self._plot_item.vb
+            
+            self.g = Graph()
+            self._mw.xy_ViewWidget.addItem(self.g )
+            if len(self._scanning_logic.pois) > 0:
+                texts = (np.arange(len(self._scanning_logic.pois)) + 1).astype(str)
+                self.g.setData(pos=self._scanning_logic.pois[:,:2], size=self._optimizer_logic.refocus_XY_size, symbol='x', pxMode=False, text=texts)
+
+        else:
+            self._plot_item.scene().sigMouseClicked.disconnect()
+            self._mw.xy_ViewWidget.removeItem(self.g )
+    
+    def addPOI(self, event):
+        mousePoint = self.vb.mapSceneToView(event._scenePos)
+        scan_pos_z = self._scanning_logic.get_position()[2]
+        poi_pos =np.array([mousePoint.x(), mousePoint.y(), scan_pos_z])
+        self._scanning_logic.pois = np.array([poi_pos]) if self._scanning_logic.pois.shape[0] < 1 else np.vstack((self._scanning_logic.pois,poi_pos))
+        # self.label.setPos(self._position[0] + label_offset, self._position[1] + label_offset)
+        texts = (np.arange(len(self._scanning_logic.pois)) + 1).astype(str)
+        self.g.setData(pos=self._scanning_logic.pois[:,:2], size=self._optimizer_logic.refocus_XY_size, symbol='x', pxMode=False, text=texts)
 
     def keyPressEvent(self, event):
         """ Handles the passed keyboard events from the main window.
@@ -1025,6 +1097,19 @@ class ConfocalGui(GUIBase):
             self.update_input_y(y_pos)
             self.update_input_z(z_pos)
 
+    def get_crosshair_position(self):
+        """Returns the position of the crosshair in th gui.
+        
+        @return list: Returns the x,y and z coordinate of the crosshair in m an [x,y,z].
+        """
+        # get x and y from xy view
+        x = self._mw.xy_ViewWidget.crosshair_position[0]
+        y = self._mw.xy_ViewWidget.crosshair_position[1]
+        # get z from depth view
+        z = self._mw.depth_ViewWidget.crosshair_position[1]
+
+        return [x,y,z]
+
     def roi_xy_bounds_check(self, pos):
         """ Check if the focus cursor is oputside the allowed range after drag
             and set its position to the limit
@@ -1119,6 +1204,8 @@ class ConfocalGui(GUIBase):
 
         self._scanning_logic.set_position('roixy', x=h_pos, y=v_pos)
         self._optimizer_logic.set_position('roixy', x=h_pos, y=v_pos)
+        crosshair_posi = self.get_crosshair_position()
+        self.sigUserMovedCrosshair.emit(crosshair_posi)
 
     def update_from_roi_depth(self, pos):
         """The user manually moved the Z ROI, adjust all other GUI elements accordingly
@@ -1313,6 +1400,55 @@ class ConfocalGui(GUIBase):
         self._scanning_logic.image_z_range = [
             self._mw.z_min_InputWidget.value(),
             self._mw.z_max_InputWidget.value()]
+
+    def change_piezo_voltage_limits(self):
+        """ Switches the voltage limits for the piezos from RT (0 to 4 V) to LT (0 to 10 V) and back. """
+        if self._mw.actionUse_LT_limits.isChecked():
+            # create the dialog window
+            self._clt = ChangingToLTLimitsDialog()
+            self._clt.show()
+            # connect the action of the dialog window with the code
+            self._clt.pushButton_confirm_LT.clicked.connect(self.change_piezo_voltage_limits_to_LT)
+            self._clt.pushButton_deny_LT.clicked.connect(self.change_piezo_voltage_limits_to_RT)
+        else:
+            self.change_piezo_voltage_limits_to_RT()
+    
+    def change_piezo_voltage_limits_to_LT(self):
+        """ Sets the voltage limits for the piezos to LT (0 to 10 V). """
+        print('LT, here we go')
+        self._clt.close() #close previous window
+        # emit signal to change limits to LT logic
+        self.sigChangeLimits.emit('LT')
+        # create the dialog window
+        self._ltconf = ChangingToLTLimitsConfirmation()
+        self._ltconf.show()
+        #closes window on click
+        self._ltconf.pushButton_okay.clicked.connect(self.close_confirmation_window)
+        
+
+    def change_piezo_voltage_limits_to_RT(self):
+        """ Sets the voltage limits for the piezos to RT (0 to 4 V). """
+        print('RT')
+        #emit signal to change limits to RT logic
+        self.sigChangeLimits.emit('RT')
+        self._mw.actionUse_LT_limits.setChecked(False)
+        self._clt.close()
+    
+    def limits_changed(self):
+        """Updates the plot with the new limits from hardware.
+        
+        Note: While the axes will be relabeled, the images won't. 
+        This might lead to features appearing to be bigger than they actually are.
+        """
+        # updates the limits on the xy scan
+        self.adjust_xy_window()
+        # updates the limits on the depth scan.
+        # We won't use it, since we do not know the scale of the depth scan.
+        # self.adjust_depth_window()
+
+    def close_confirmation_window(self):
+        self._ltconf.close()
+
 
     def update_tilt_correction(self):
         """ Update all tilt points from the scanner logic. """
@@ -1897,3 +2033,78 @@ class ConfocalGui(GUIBase):
     def logic_finished_save(self):
         """ Hides modal dialog when save process done """
         self._save_dialog.hide()
+
+
+
+
+class Graph(pg.GraphItem):
+    def __init__(self):
+        self.dragPoint = None
+        self.dragOffset = None
+        self.textItems = []
+        self.font = QtGui.QFont()
+        
+        pg.GraphItem.__init__(self)
+        self.scatter.sigClicked.connect(self.clicked)
+        
+    def setData(self, **kwds):
+        self.text = kwds.pop('text', [])
+        self.data = kwds
+        if 'pos' in self.data:
+            npts = self.data['pos'].shape[0]
+            self.data['data'] = np.empty(npts, dtype=[('index', int)])
+            self.data['data']['index'] = np.arange(npts)
+        self.setTexts(self.text)
+        self.updateGraph()
+        
+    def setTexts(self, text):
+        
+        for i in self.textItems:
+            i.scene().removeItem(i)
+        self.textItems = []
+        for t in text:
+            item = pg.TextItem(t)
+            self.textItems.append(item)
+            item.setParentItem(self)
+        
+    def updateGraph(self):
+        self.font.setPixelSize(10)
+        pg.GraphItem.setData(self, **self.data)
+        for i,item in enumerate(self.textItems):
+            item.setPos(*self.data['pos'][i])
+            item.setFont(self.font)
+            item.setColor('k')
+        
+    def mouseDragEvent(self, ev):
+        if ev.button() != QtCore.Qt.MouseButton.LeftButton:
+            ev.ignore()
+            return
+        
+        if ev.isStart():
+            # We are already one step into the drag.
+            # Find the point(s) at the mouse cursor when the button was first 
+            # pressed:
+            pos = ev.buttonDownPos()
+            pts = self.scatter.pointsAt(pos)
+            if len(pts) == 0:
+                ev.ignore()
+                return
+            self.dragPoint = pts[0]
+            ind = pts[0].data()[0]
+            self.dragOffset = self.data['pos'][ind] - pos
+        elif ev.isFinish():
+            self.dragPoint = None
+            return
+        else:
+            if self.dragPoint is None:
+                ev.ignore()
+                return
+        
+        ind = self.dragPoint.data()[0]
+        self.data['pos'][ind] = ev.pos() + self.dragOffset
+        self.updateGraph()
+        ev.accept()
+        
+    def clicked(self, pts):
+        print("clicked: %s" % pts)
+
