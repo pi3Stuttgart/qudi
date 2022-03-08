@@ -24,7 +24,7 @@ import numpy as np
 import re
 
 import PyDAQmx as daq
-
+from qtpy import QtCore
 from core.module import Base
 from core.configoption import ConfigOption
 from interface.slow_counter_interface import SlowCounterInterface

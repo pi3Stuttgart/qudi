@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-
 """
 This file contains the Qudi logic class that captures and processes fluorescence spectra.
-
 Qudi is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
-
 Qudi is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-
 You should have received a copy of the GNU General Public License
 along with Qudi. If not, see <http://www.gnu.org/licenses/>.
-
 Copyright (c) the Qudi Developers. See the COPYRIGHT.txt file at the
 top-level directory of this distribution and at <https://github.com/Ulm-IQO/qudi/>
 """
@@ -23,20 +19,48 @@ from qtpy import QtCore
 from collections import OrderedDict
 import numpy as np
 import matplotlib.pyplot as plt
-
+from time import sleep
 from core.connector import Connector
 from core.statusvariable import StatusVar
 from core.util.mutex import Mutex
 from core.util.network import netobtain
 from logic.generic_logic import GenericLogic
 
+def automatic_flip(func):
+    def wrapper(self, *arg, **kw):
+        if self._automatic_flip_mirror:
+            print('mirror')
+            # flips flip mirror into next position
+            # self.flip_mirror(mode=True)
+            self.flip_mirror(mode=False)
+            if self._automatic_flip:
+                print('filter')
+                self._ello_flipper.move_forward()
+                res = func(self, *arg, **kw)
+                self._ello_flipper.home()
+            else:
+                print('no filter')
+                res = func(self, *arg, **kw)
+            # flips flip mirror into next position
+            self.flip_mirror(mode=True)
+            # self.flip_mirror(mode=False)
+        else:
+            print('no mirror')
+            if self._automatic_flip:
+                print('filter')
+                self._ello_flipper.move_forward()
+                res = func(self, *arg, **kw)
+                self._ello_flipper.home()
+            else:
+                print('no filter')
+                res = func(self, *arg, **kw)
+        return res
+    return wrapper
 
 class SpectrumLogic(GenericLogic):
 
     """This logic module gathers data from the spectrometer.
-
     Demo config:
-
     spectrumlogic:
         module.Class: 'spectrum.SpectrumLogic'
         connect:
@@ -48,27 +72,34 @@ class SpectrumLogic(GenericLogic):
 
     # declare connectors
     spectrometer = Connector(interface='SpectrometerInterface')
+    # spectrometer_fine = Connector(interface='SpectrometerInterface')
     odmrlogic = Connector(interface='ODMRLogic', optional=True)
     savelogic = Connector(interface='SaveLogic')
     fitlogic = Connector(interface='FitLogic')
+    nicard = Connector(interface='NationalInstrumentsXSeries', optional=True)
+    ello_devices = Connector(interface='ThorlabsElloDevices', optional=True)
+    pulser = Connector(interface='PulserClient', optional=True)
+    # cwavelaser = Connector(interface='CwaveLaser')
 
     # declare status variables
+    _use_fine_spectrometer = False
+    _automatic_flip = False
+    _automatic_flip_mirror = True
     _spectrum_data = StatusVar('spectrum_data', np.empty((2, 0)))
     _spectrum_background = StatusVar('spectrum_background', np.empty((2, 0)))
     _background_correction = StatusVar('background_correction', False)
     fc = StatusVar('fits', None)
-
+    plot_domain = (450, 900)
     # Internal signals
     sig_specdata_updated = QtCore.Signal()
     sig_next_diff_loop = QtCore.Signal()
-
+    # sig_cwave_shutter = QtCore.Signal()
     # External signals eg for GUI module
     spectrum_fit_updated_Signal = QtCore.Signal(np.ndarray, dict, str)
     fit_domain_updated_Signal = QtCore.Signal(np.ndarray)
 
     def __init__(self, **kwargs):
         """ Create SpectrometerLogic object with connectors.
-
           @param dict kwargs: optional parameters
         """
         super().__init__(**kwargs)
@@ -81,7 +112,7 @@ class SpectrumLogic(GenericLogic):
         """
         self._spectrum_data_corrected = np.array([])
         self._calculate_corrected_spectrum()
-
+       
         self.spectrum_fit = np.array([])
         self.fit_domain = np.array([])
 
@@ -90,11 +121,27 @@ class SpectrumLogic(GenericLogic):
         self.repetition_count = 0    # count loops for differential spectrum
 
         self._spectrometer_device = self.spectrometer()
+        self.integration_time = self._spectrometer_device._integration_time
         self._odmr_logic = self.odmrlogic()
         self._save_logic = self.savelogic()
+        #self._ello_flipper = self.ello_devices().ello_flip
+        # self._cwave = self.cwavelaser()
+        # self.sig_cwave_shutter.connect(self._cwave.set_shutters_states)
+        
+        # self._spectrometer_fine = self.spectrometer_fine()
+        #self._ello_flipper = self.ello_devices().ello_flip
+        # self._cwave = self.cwavelaser()
+        # self.sig_cwave_shutter.connect(self._cwave.set_shutters_states)
 
+        # self._nicard = self.nicard()
+        self._pulser = self.pulser()
         self.sig_next_diff_loop.connect(self._loop_differential_spectrum)
         self.sig_specdata_updated.emit()
+
+    def use_fine_spectrometer(self):
+        self._spectrometer_device = self.spectrometer_fine()
+    def use_oceanview(self):
+        self._spectrometer_device = self.spectrometer()
 
     def on_deactivate(self):
         """ Deinitialisation performed during deactivation of the module.
@@ -128,24 +175,34 @@ class SpectrumLogic(GenericLogic):
         else:
             return None
 
+    def flip_mirror(self, mode = True):
+	    # self._nicard.digital_channel_switch(self._nicard._flip_mirror_channel, mode=mode)
+        if mode:
+            self._pulser.set_channel_on(channels=['ch6'])
+        else: 
+            self._pulser.set_channel_off(channels=['ch6'])
+    @automatic_flip
     def get_single_spectrum(self, background=False):
         """ Record a single spectrum from the spectrometer.
         """
-        # Clear any previous fit
         self.fc.clear_result()
-
+        # clear spectro,eter buffer
+        self._spectrometer_device.clearBuffer()
+        # sleep(self._spectrometer_device._integration_time)
         if background:
-            self._spectrum_background = netobtain(self._spectrometer_device.recordSpectrum())
+            self._spectrum_background = self._spectrometer_device.recordSpectrum()
         else:
-            self._spectrum_data = netobtain(self._spectrometer_device.recordSpectrum())
+            self._spectrum_data = self._spectrometer_device.recordSpectrum()
+        
+        #lam, spec = self._spectrum_data[0, :], self._spectrum_data[1, :]
+        #plot_range = (lam > self.plot_domain[0]) * (lam < self.plot_domain[1])
+        #self._spectrum_data = self._spectrum_data[plot_range]
 
         self._calculate_corrected_spectrum()
-
         # Clearing the differential spectra data arrays so that they do not get
         # saved with this single spectrum.
         self.diff_spec_data_mod_on = np.array([])
         self.diff_spec_data_mod_off = np.array([])
-
         self.sig_specdata_updated.emit()
 
     def _calculate_corrected_spectrum(self):
@@ -229,22 +286,27 @@ class SpectrumLogic(GenericLogic):
         # Toggle on, take spectrum and add data to the mod_on data
         self.toggle_modulation(on=True)
         these_data = netobtain(self._spectrometer_device.recordSpectrum())
-        self.diff_spec_data_mod_on[1, :] += these_data[1, :]
+        self.diff_spec_data_mod_on[1, :] = these_data[1, :]
 
         # Toggle off, take spectrum and add data to the mod_off data
         self.toggle_modulation(on=False)
         these_data = netobtain(self._spectrometer_device.recordSpectrum())
-        self.diff_spec_data_mod_off[1, :] += these_data[1, :]
+        self.diff_spec_data_mod_off[1, :] = these_data[1, :]
 
         self.repetition_count += 1    # increment the loop count
 
         # Calculate the differential spectrum
         self._spectrum_data[1, :] = self.diff_spec_data_mod_on[
-            1, :] - self.diff_spec_data_mod_off[1, :]
+            1, :]# - self.diff_spec_data_mod_off[1, :]
 
         self.sig_specdata_updated.emit()
 
         self.sig_next_diff_loop.emit()
+
+    def update_integration_time(self, integration_time):
+        self._spectrometer_device._integration_time = integration_time
+        self._spectrometer_device.setExposure(self._spectrometer_device._integration_time)
+
 
     def stop_differential_spectrum(self):
         """Stop an ongoing differential spectrum acquisition
@@ -266,11 +328,8 @@ class SpectrumLogic(GenericLogic):
 
     def save_spectrum_data(self, background=False, name_tag='', custom_header = None):
         """ Saves the current spectrum data to a file.
-
         @param bool background: Whether this is a background spectrum (dark field) or not.
-
         @param string name_tag: postfix name tag for saved filename.
-
         @param OrderedDict custom_header:
             This ordered dictionary is added to the default data file header. It allows arbitrary
             additional experimental information to be included in the saved data file header.
@@ -331,10 +390,9 @@ class SpectrumLogic(GenericLogic):
 
     def draw_figure(self):
         """ Draw the summary plot to save with the data.
-
         @return fig fig: a matplotlib figure object to be saved to file.
         """
-        wavelength = self.spectrum_data[0, :] * 1e9 # convert m to nm for plot
+        wavelength = self.spectrum_data[0, :] # convert m to nm for plot
         spec_data = self.spectrum_data[1, :]
 
         prefix = ['', 'k', 'M', 'G', 'T']
@@ -355,13 +413,13 @@ class SpectrumLogic(GenericLogic):
 
         ax1.plot(wavelength,
                  spec_data / rescale_factor,
-                 linestyle=':',
-                 linewidth=0.5
-                )
-        
+                 linestyle='-')
+                #  linewidth=1
+                # )
+        # ax1.grid('--', )
         # If there is a fit, plot it also
         if self.fc.current_fit_result is not None:
-            ax1.plot(self.spectrum_fit[0] * 1e9,  # convert m to nm for plot
+            ax1.plot(self.spectrum_fit[0],  # convert m to nm for plot
                      self.spectrum_fit[1] / rescale_factor,
                      marker='None'
                     )
@@ -385,11 +443,8 @@ class SpectrumLogic(GenericLogic):
     def do_fit(self, fit_function=None, x_data=None, y_data=None):
         """
         Execute the currently configured fit on the measurement data. Optionally on passed data
-
         @param string fit_function: The name of one of the defined fit functions.
-
         @param array x_data: wavelength data for spectrum.
-
         @param array y_data: intensity data for spectrum.
         """
         if (x_data is None) or (y_data is None):
@@ -428,10 +483,8 @@ class SpectrumLogic(GenericLogic):
 
     def _find_nearest_idx(self, array, value):
         """ Find array index of element nearest to given value
-
         @param list array: array to be searched.
         @param float value: desired value.
-
         @return index of nearest element.
         """
 
@@ -440,9 +493,7 @@ class SpectrumLogic(GenericLogic):
 
     def set_fit_domain(self, domain=None):
         """ Set the fit domain to a user specified portion of the data.
-
         If no domain is given, then this method sets the fit domain to match the full data domain.
-
         @param np.array domain: two-element array containing min and max of domain.
         """
         if domain is not None:

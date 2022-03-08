@@ -44,7 +44,7 @@ class TimeTaggerClient(Base):
         
 
     def on_activate(self):
-        self.host_ip, self.server_port = "localhost", 1243
+        self.host_ip, self.server_port = "localhost", 1244
         self.sig_send_request.connect(self.send_request, QtCore.Qt.QueuedConnection)
 
 
@@ -55,7 +55,7 @@ class TimeTaggerClient(Base):
         action = None if action == '' else action
         self.tcp_client.sendall(request.encode())
         try:
-            received = self.tcp_client.recv(1024) #TODO add length header and listen only to the specified bits!
+            received = self.tcp_client.recv(50000) #TODO add length header and listen only to the specified bits!
         except EOFError as e:
             raise e
         # response = pickle.loads(, encoding='bytes')
@@ -76,6 +76,7 @@ class TimeTaggerClient(Base):
                 print("Set action! ")
         elif flag == 'u':
             return response
+            
     
     def on_deactivate(self):
         self.tcp_client.close()
@@ -85,6 +86,14 @@ class TimeTaggerClient(Base):
         if counter_params is None:
             counter_params = self._counter
         return self.send_request("set_counter", action=counter_params)
+
+    def set_correlation(self, corr_params=None):
+        if corr_params is None:
+            corr_params = self._corr
+        return self.send_request("set_correlation", action=corr_params)
+
+    def get_correlation(self):
+        return self.send_request("get_correlation")
 
     def get_counter(self):
         return self.send_request("get_counter")

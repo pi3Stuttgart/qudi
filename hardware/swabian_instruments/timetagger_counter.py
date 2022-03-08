@@ -106,6 +106,17 @@ class TimeTaggerCounter(Base, SlowCounterInterface):
 
         self.log.info('set up counter with {0}'.format(self._count_frequency))
         return 0
+    def set_up_correlation(self, bins_width = 1000, n_values = 1000):
+        self.corr_params = {
+            "channels":[self._channel_apd_0, self._channel_apd_1],
+            "bins_width": bins_width,
+            "n_values":n_values
+            }
+        self.corr = self._tagger.set_correlation(self.corr_params)
+    
+    def get_correlation(self):
+        # time.sleep(2 / self._count_frequency)
+        return self._tagger.get_correlation() #should get  self._corr.getIndex(), np.nan_to_num(self._corr.getDataNormalized())
 
     def get_counter_channels(self):
             return [self._channel_apd_0, self._channel_apd_1, self._tagger.get_combined_channels()]

@@ -11,106 +11,21 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>qudi: Slow Counter</string>
+   <string>qudi: Correlation</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QDockWidget" name="trace_selection_DockWidget">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>50</y>
-      <width>421</width>
-      <height>109</height>
-     </rect>
-    </property>
-    <property name="floating">
-     <bool>true</bool>
-    </property>
-    <property name="windowTitle">
-     <string>Trace Selection</string>
-    </property>
-    <widget class="QWidget" name="dockWidgetContents_3">
-     <widget class="QWidget" name="horizontalLayoutWidget">
-      <property name="geometry">
-       <rect>
-        <x>-1</x>
-        <y>0</y>
-        <width>421</width>
-        <height>109</height>
-       </rect>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="PlotWidget" name="correlation_hist_PlotWidget">
+      <property name="minimumSize">
+       <size>
+        <width>782</width>
+        <height>331</height>
+       </size>
       </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_2">
-       <item>
-        <widget class="QCheckBox" name="trace_1_checkbox">
-         <property name="text">
-          <string>Trace 1</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="trace_2_checkbox">
-         <property name="text">
-          <string>Trace 2</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="trace_3_checkbox">
-         <property name="text">
-          <string>Trace 3</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="trace_4_checkbox">
-         <property name="text">
-          <string>Trace 4</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QVBoxLayout" name="verticalLayout_2">
-         <item>
-          <widget class="QLabel" name="show_couts_label">
-           <property name="text">
-            <string>Show counts from:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="trace_1_radiobutton">
-           <property name="text">
-            <string>Trace 1</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="trace_2_radiobutton">
-           <property name="text">
-            <string>Trace 2</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="trace_3_radiobutton">
-           <property name="text">
-            <string>Trace 3</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="trace_4_radiobutton">
-           <property name="text">
-            <string>Trace 4</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-      </layout>
      </widget>
-    </widget>
-   </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -125,25 +40,13 @@
     <property name="title">
      <string>&amp;View</string>
     </property>
-    <widget class="QMenu" name="menuToolbars">
-     <property name="title">
-      <string>&amp;Toolbars</string>
-     </property>
-     <addaction name="counting_controls_view_Action"/>
-    </widget>
-    <addaction name="slow_counter_view_Action"/>
-    <addaction name="slow_counter_parameters_view_Action"/>
-    <addaction name="trace_selection_view_Action"/>
-    <addaction name="actionCorrelation"/>
     <addaction name="separator"/>
-    <addaction name="menuToolbars"/>
     <addaction name="separator"/>
-    <addaction name="restore_default_view_Action"/>
     <addaction name="actionClose"/>
    </widget>
    <addaction name="menuView"/>
   </widget>
-  <widget class="QDockWidget" name="counter_trace_DockWidget">
+  <widget class="QDockWidget" name="correlation_DockWidget">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
      <horstretch>1</horstretch>
@@ -151,37 +54,16 @@
     </sizepolicy>
    </property>
    <property name="windowTitle">
-    <string>Slow Counter</string>
+    <string>Correlation</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>4</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents">
-    <layout class="QVBoxLayout" name="verticalLayout">
-     <item>
-      <widget class="QLabel" name="count_value_Label">
-       <property name="font">
-        <font>
-         <pointsize>60</pointsize>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string>0</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="PlotWidget" name="counter_trace_PlotWidget"/>
-     </item>
-    </layout>
+    <layout class="QVBoxLayout" name="verticalLayout"/>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="slow_counter_parameters_DockWidget">
+  <widget class="QDockWidget" name="correlation_control_DockWidget">
    <property name="maximumSize">
     <size>
      <width>524287</width>
@@ -189,7 +71,7 @@
     </size>
    </property>
    <property name="windowTitle">
-    <string>Slow counter control</string>
+    <string>Correlation Control</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>8</number>
@@ -199,46 +81,52 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Count length (#):</string>
+        <string>Bin Width</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="count_length_SpinBox">
-       <property name="minimum">
-        <number>1</number>
+      <widget class="QDoubleSpinBox" name="bin_width_DoubleSpinBox">
+       <property name="locale">
+        <locale language="English" country="UnitedStates"/>
+       </property>
+       <property name="suffix">
+        <string>ns</string>
+       </property>
+       <property name="decimals">
+        <number>3</number>
        </property>
        <property name="maximum">
-        <number>1000000</number>
+        <double>1000000000000.000000000000000</double>
        </property>
        <property name="singleStep">
-        <number>10</number>
+        <double>1.000000000000000</double>
        </property>
        <property name="value">
-        <number>300</number>
+        <double>1.000000000000000</double>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>Count frequency (Hz):</string>
+        <string>No. of bins</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="count_freq_SpinBox">
+      <widget class="QSpinBox" name="no_of_bins_SpinBox">
        <property name="minimum">
         <number>1</number>
        </property>
        <property name="maximum">
-        <number>1000000</number>
+        <number>1000000000</number>
        </property>
        <property name="singleStep">
         <number>10</number>
        </property>
        <property name="value">
-        <number>50</number>
+        <number>1000</number>
        </property>
       </widget>
      </item>
@@ -250,25 +138,27 @@ Use for extremely fast counting, since all the raw data is saved.
 Timestamps in oversampling interval are all equal to the averaging time.</string>
        </property>
        <property name="text">
-        <string>Oversampling (#):</string>
+        <string>Runtime(s): </string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="oversampling_SpinBox">
+      <widget class="QLabel" name="runtime_Label">
+       <property name="font">
+        <font>
+         <family>Arial</family>
+         <pointsize>13</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
        <property name="toolTip">
         <string>If bigger than 1, the number of samples is averaged over the given number and then displayed. 
 Use for extremely fast counting, since all the raw data is saved. 
 Timestamps in oversampling interval are all equal to the averaging time.</string>
        </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>10000</number>
-       </property>
-       <property name="value">
-        <number>1</number>
+       <property name="text">
+        <string>0</string>
        </property>
       </widget>
      </item>
@@ -289,12 +179,13 @@ Timestamps in oversampling interval are all equal to the averaging time.</string
     <bool>false</bool>
    </attribute>
    <addaction name="start_counter_Action"/>
-   <addaction name="record_counts_Action"/>
+   <addaction name="pause_counter_Action"/>
+   <addaction name="save_Action"/>
   </widget>
   <action name="start_counter_Action">
-   <property name="checkable">
+   <!-- <property name="checkable">
     <bool>true</bool>
-   </property>
+   </property> -->
    <property name="icon">
     <iconset>
      <normaloff>../../artwork/icons/qudiTheme/22x22/start-counter.png</normaloff>../../artwork/icons/qudiTheme/22x22/start-counter.png</iconset>
@@ -306,16 +197,28 @@ Timestamps in oversampling interval are all equal to the averaging time.</string
     <string>Start the counter</string>
    </property>
   </action>
-  <action name="record_counts_Action">
-   <property name="checkable">
+  <action name="pause_counter_Action">
+   <!-- <property name="checkable">
     <bool>true</bool>
+   </property> -->
+   <property name="icon">
+    <iconset>
+     <normaloff>../../artwork/icons/qudiTheme/22x22/restart-counter.png</normaloff>../../artwork/icons/qudiTheme/22x22/restart-counter.png</iconset>
    </property>
+   <property name="text">
+    <string>Pause counter</string>
+   </property>
+   <property name="toolTip">
+    <string>Pause/Resume the counter</string>
+   </property>
+  </action>
+  <action name="save_Action">
    <property name="icon">
     <iconset>
      <normaloff>../../artwork/icons/qudiTheme/22x22/record-counter.png</normaloff>../../artwork/icons/qudiTheme/22x22/record-counter.png</iconset>
    </property>
    <property name="text">
-    <string>Record counts</string>
+    <string>Save</string>
    </property>
    <property name="toolTip">
     <string>Save count trace to file</string>
@@ -326,7 +229,7 @@ Timestamps in oversampling interval are all equal to the averaging time.</string
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>&amp;Slow counter</string>
+    <string>Histogram</string>
    </property>
    <property name="toolTip">
     <string>Show the Slow counter</string>
@@ -337,7 +240,7 @@ Timestamps in oversampling interval are all equal to the averaging time.</string
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Slow &amp;counter parameters</string>
+    <string>Show parameters</string>
    </property>
    <property name="toolTip">
     <string>Show Slow counter parameters</string>
@@ -376,14 +279,6 @@ Timestamps in oversampling interval are all equal to the averaging time.</string
     <string>Trace Selection</string>
    </property>
   </action>
-  <action name="actionCorrelation">
-   <property name="checkable">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Correlation</string>
-   </property>
-  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -397,7 +292,7 @@ Timestamps in oversampling interval are all equal to the averaging time.</string
   <connection>
    <sender>slow_counter_view_Action</sender>
    <signal>triggered(bool)</signal>
-   <receiver>counter_trace_DockWidget</receiver>
+   <receiver>correlation_DockWidget</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -411,7 +306,7 @@ Timestamps in oversampling interval are all equal to the averaging time.</string
    </hints>
   </connection>
   <connection>
-   <sender>counter_trace_DockWidget</sender>
+   <sender>correlation_DockWidget</sender>
    <signal>visibilityChanged(bool)</signal>
    <receiver>slow_counter_view_Action</receiver>
    <slot>setChecked(bool)</slot>
@@ -429,7 +324,7 @@ Timestamps in oversampling interval are all equal to the averaging time.</string
   <connection>
    <sender>slow_counter_parameters_view_Action</sender>
    <signal>triggered(bool)</signal>
-   <receiver>slow_counter_parameters_DockWidget</receiver>
+   <receiver>correlation_control_DockWidget</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -443,7 +338,7 @@ Timestamps in oversampling interval are all equal to the averaging time.</string
    </hints>
   </connection>
   <connection>
-   <sender>slow_counter_parameters_DockWidget</sender>
+   <sender>correlation_control_DockWidget</sender>
    <signal>visibilityChanged(bool)</signal>
    <receiver>slow_counter_parameters_view_Action</receiver>
    <slot>setChecked(bool)</slot>
@@ -503,38 +398,6 @@ Timestamps in oversampling interval are all equal to the averaging time.</string
     <hint type="destinationlabel">
      <x>399</x>
      <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>trace_selection_view_Action</sender>
-   <signal>triggered(bool)</signal>
-   <receiver>trace_selection_DockWidget</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>39</x>
-     <y>463</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>trace_selection_DockWidget</sender>
-   <signal>visibilityChanged(bool)</signal>
-   <receiver>trace_selection_view_Action</receiver>
-   <slot>setChecked(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>39</x>
-     <y>463</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>-1</x>
-     <y>-1</y>
     </hint>
    </hints>
   </connection>
