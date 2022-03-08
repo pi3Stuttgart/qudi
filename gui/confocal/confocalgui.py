@@ -148,6 +148,8 @@ class ConfocalGui(GUIBase):
         self._save_logic = self.savelogic()
         self._optimizer_logic = self.optimizerlogic1()
 
+        # connect signals to logic
+
         self._hardware_state = True
 
         self.initMainUI()      # initialize the main GUI

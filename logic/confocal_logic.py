@@ -28,10 +28,12 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
+
 from logic.generic_logic import GenericLogic
 from core.util.mutex import Mutex
 from core.connector import Connector
 from core.statusvariable import StatusVar
+from core.pi3_utils import printdebug
 
 
 class OldConfigFileError(Exception):
@@ -288,6 +290,8 @@ class ConfocalLogic(GenericLogic):
 
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
+
+        self.debug = True
 
         #locking for thread safety
         self.threadlock = Mutex()
@@ -718,6 +722,9 @@ class ConfocalLogic(GenericLogic):
         """
         # stops scanning
         if self.stopRequested:
+            # return scanner to crosshair position. 
+            # If you don't do this the scanner will jump and shake the sample.
+            self.return_to_crosshair_slowly()
             with self.threadlock:
                 self.kill_scanner()
                 self.stopRequested = False
@@ -837,6 +844,8 @@ class ConfocalLogic(GenericLogic):
 
             # stop scanning when last line scan was performed and makes scan not continuable
             if self._scan_counter >= np.size(self._image_vert_axis):
+                # return scanner to crosshair posi
+                self.return_to_crosshair_slowly()
                 if not self.permanent_scan:
                     self.stop_scanning()
                     if self._zscan:
@@ -851,6 +860,37 @@ class ConfocalLogic(GenericLogic):
             self.log.exception('The scan went wrong, killing the scanner.')
             self.stop_scanning()
             self.signal_scan_lines_next.emit()
+
+    def return_to_crosshair_slowly(self):
+        """Slowly moves the position of the scanner back to the position of the crosshair.
+
+        Counts are discarded.
+        """
+        printdebug(self.debug,'returning slowly')
+        # get parameters for scan line
+        current_pos = self.get_position()
+        crosshair_pos = [self._current_x,self._current_y,self._current_z]
+        printdebug(self.debug,f'returning slowly to {crosshair_pos}')
+        rs = self.return_slowness
+        n_ch = len(self.get_scanner_axes())
+        npointsshape = self._return_XL.shape
+        # build return line to crosshar posi
+        if n_ch <= 3:
+            return_line = np.vstack([
+                np.linspace(current_pos[0], crosshair_pos[0],rs),
+                np.linspace(current_pos[1], crosshair_pos[1],rs),
+                np.linspace(current_pos[2], crosshair_pos[2],rs)
+            ][0:n_ch])
+        else:
+            return_line = np.vstack([
+                np.linspace(current_pos[0], crosshair_pos[0],rs),
+                np.linspace(current_pos[1], crosshair_pos[1],rs),
+                np.linspace(current_pos[2], crosshair_pos[2],rs),
+                np.ones(npointsshape) * self._current_a # _current_a is _current_x/y/z extended to more dimensions.
+            ])
+        return_line_counts = self._scanning_device.scan_line(return_line)
+        return
+
 
     def save_xy_data(self, colorscale_range=None, percentile_range=None, block=True):
         """ Save the current confocal xy data to file.
