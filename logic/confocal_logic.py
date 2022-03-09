@@ -28,12 +28,10 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-
 from logic.generic_logic import GenericLogic
 from core.util.mutex import Mutex
 from core.connector import Connector
 from core.statusvariable import StatusVar
-from core.pi3_utils import printdebug
 
 
 class OldConfigFileError(Exception):
@@ -263,7 +261,7 @@ class ConfocalLogic(GenericLogic):
     _clock_frequency = StatusVar('clock_frequency', 500)
     return_slowness = StatusVar(default=50)
     max_history_length = StatusVar(default=10)
-
+    _smoothing_steps = StatusVar('smoothing_steps', 10)  # steps to accelerate between 0 and scan_speed
     # signals
     signal_start_scanning = QtCore.Signal(str)
     signal_continue_scanning = QtCore.Signal(str)
@@ -288,11 +286,16 @@ class ConfocalLogic(GenericLogic):
 
     signal_history_event = QtCore.Signal()
 
+    # signals to hardware
+    sigChangeLimits = QtCore.Signal(str)
+
+    #signals to gui
+    sigLimitsChanged = QtCore.Signal()
+
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
 
         self.debug = True
-
         #locking for thread safety
         self.threadlock = Mutex()
 
@@ -303,6 +306,7 @@ class ConfocalLogic(GenericLogic):
         self.depth_scan_dir_is_xz = True
         self.depth_img_is_xz = True
         self.permanent_scan = False
+
 
     def on_activate(self):
         """ Initialisation performed during activation of the module.
@@ -351,6 +355,12 @@ class ConfocalLogic(GenericLogic):
         self._signal_save_xy.connect(self._save_xy_data, QtCore.Qt.QueuedConnection)
         self._signal_save_depth.connect(self._save_depth_data, QtCore.Qt.QueuedConnection)
 
+        # connect signals to hardware
+        self.sigChangeLimits.connect(self._scanning_device.set_voltage_limits)
+
+        # connect signals fro hardware
+        self._scanning_device.sigLimitsChanged.connect(self.limits_changed)
+
         self._change_position('activation')
 
     def on_deactivate(self):
@@ -366,6 +376,15 @@ class ConfocalLogic(GenericLogic):
             self._statusVariables['history_{0}'.format(histindex)] = state.serialize()
             histindex += 1
         return 0
+
+    def save_history_config(self):
+        state_config = ConfocalHistoryEntry(self)
+        state_config.snapshot(self)
+        self.history.append(state_config)
+        histindex = 0
+        for state in reversed(self.history):
+            self._statusVariables['history_{0}'.format(histindex)] = state.serialize()
+            histindex += 1
 
     def switch_hardware(self, to_on=False):
         """ Switches the Hardware off or on.
@@ -681,6 +700,59 @@ class ConfocalLogic(GenericLogic):
             self.signal_change_position.emit(tag)
             return 0
 
+    def go_to_position(self, tag, x=None, y=None, z=None, a=None, rs = None):
+        """ Threaded method to change the hardware voltage for a goto.
+        slowness in mu m
+
+        @return int: error code (0:OK, -1:error)
+        """
+        self._initialise_scanner()
+        spatial_pos = self._scanning_device.get_scanner_position()
+        rs = self.return_slowness if rs is None else rs
+        lsx = np.linspace(self._current_x, x if x!= None else self._current_x, rs)
+        lsy = np.linspace(self._current_y, y if y!= None else self._current_y, rs)
+        lsz = np.linspace(self._current_z, z if z!= None else self._current_z, rs)
+
+        n_ch = len(self.get_scanner_axes())
+        if n_ch <= 3:
+            start_line = np.vstack([lsx, lsy, lsz][0:n_ch])
+        else:
+            start_line = np.vstack(
+                [lsx, lsy, lsz, np.ones(lsx.shape) * self._current_a])
+        # move to the start position of the scan, counts are thrown away
+        start_line_counts = self._scanning_device.scan_line(start_line)
+        self._close_scanner()
+        self.set_position(tag, x, y, z, a)
+        return 0
+
+    def _initialise_scanner(self):
+        """Initialise the clock and locks for a scan"""
+        self.module_state.lock()
+        self._scanning_device.module_state.lock()
+
+        returnvalue = self._scanning_device.set_up_scanner_clock(
+            clock_frequency=self._clock_frequency)
+        if returnvalue < 0:
+            self._scanning_device.module_state.unlock()
+            self.module_state.unlock()
+            return -1
+
+        returnvalue = self._scanning_device.set_up_scanner()
+        if returnvalue < 0:
+            self._scanning_device.module_state.unlock()
+            self.module_state.unlock()
+            return -1
+
+        return 0
+
+    def _close_scanner(self):
+        """Close the scanner and unlock"""
+        with self.threadlock:
+            self.kill_scanner()
+            self.stopRequested = False
+            if self.module_state.can('unlock'):
+                self.module_state.unlock()
+
     def _change_position(self, tag):
         """ Threaded method to change the hardware position.
 
@@ -792,7 +864,29 @@ class ConfocalLogic(GenericLogic):
                 return
 
             # make a line to go to the starting position of the next scan line
+            # if last line is scanned, make return line to cursor position
+            #------------------------------------------------------------------------------------
+            #
+            # PLAY HERE
+            # if we are in the last line
+            # if self._scan_counter >= np.size(self._image_vert_axis)-1:
+            #     # take x as before, but change y and z
+            #     # get current position
+            #     current_pos = image[self._scan_counter, 0, :]
+            #     #get position of crosshair
+            #     crosshair_pos = self.get_position()
+            #     npoints = self._return_XL.shape[0]
+            #     return_line = np.vstack([
+            #         self._return_XL,
+            #         np.linspace(current_pos[1], crosshair_pos[1],npoints),
+            #         np.linspace(current_pos[2], crosshair_pos[1],npoints)
+            #     ][0:n_ch])
+            #
+            #------------------------------------------------------------------------------------
+
+
             if self.depth_img_is_xz or not self._zscan:
+
                 if n_ch <= 3:
                     return_line = np.vstack([
                         self._return_XL,
@@ -801,10 +895,10 @@ class ConfocalLogic(GenericLogic):
                     ][0:n_ch])
                 else:
                     return_line = np.vstack([
-                            self._return_XL,
-                            image[self._scan_counter, 0, 1] * np.ones(self._return_XL.shape),
-                            image[self._scan_counter, 0, 2] * np.ones(self._return_XL.shape),
-                            np.ones(self._return_XL.shape) * self._current_a
+                        self._return_XL,
+                        image[self._scan_counter, 0, 1] * np.ones(self._return_XL.shape),
+                        image[self._scan_counter, 0, 2] * np.ones(self._return_XL.shape),
+                        np.ones(self._return_XL.shape) * self._current_a
                         ])
             else:
                 if n_ch <= 3:
@@ -1171,7 +1265,7 @@ class ConfocalLogic(GenericLogic):
 
         # Create image plot
         cfimage = ax.imshow(image_data,
-                            cmap=plt.get_cmap('inferno'), # reference the right place in qd
+                            cmap=plt.cm.RdBu_r,#plt.get_cmap('coolwarm'), # reference the right place in qd
                             origin="lower",
                             vmin=draw_cb_range[0],
                             vmax=draw_cb_range[1],
@@ -1309,3 +1403,22 @@ class ConfocalLogic(GenericLogic):
             self._change_position('history')
             self.signal_change_position.emit('history')
             self.signal_history_event.emit()
+
+    def set_voltage_limits(self,RTLT):
+        """Passes signal from gui to interfuse."""
+        self.sigChangeLimits.emit(RTLT)
+
+    def limits_changed(self):
+        """Passes signal from interfuse to gui and updates ranges."""
+
+        # Reads in the maximal scanning range. The unit of that scan range is meters!
+        self.x_range = self._scanning_device.get_position_range()[0]
+        self.y_range = self._scanning_device.get_position_range()[1]
+        self.z_range = self._scanning_device.get_position_range()[2]
+
+        # Sets the size of the image to the maximal scanning range
+        self.image_x_range = self.x_range
+        self.image_y_range = self.y_range
+        self.image_z_range = self.z_range
+
+        self.sigLimitsChanged.emit()
