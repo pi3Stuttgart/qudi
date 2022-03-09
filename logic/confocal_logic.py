@@ -32,6 +32,7 @@ from logic.generic_logic import GenericLogic
 from core.util.mutex import Mutex
 from core.connector import Connector
 from core.statusvariable import StatusVar
+from core.pi3_utils import printdebug
 
 
 class OldConfigFileError(Exception):
