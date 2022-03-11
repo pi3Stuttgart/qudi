@@ -37,22 +37,71 @@ class TimeTaggerClient(Base):
 
     sig_send_request = QtCore.Signal(str, str)
 
+    queryInterval = ConfigOption('query_interval', 50)
+    sigUpdate = QtCore.Signal()
+
+
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
         
-        pass
+        self.countrate = np.array([1])
         
 
     def on_activate(self):
         self.host_ip, self.server_port = "localhost", 1244
         self.sig_send_request.connect(self.send_request, QtCore.Qt.QueuedConnection)
+        self.stopRequest = False
+        
+        self.queryTimer = QtCore.QTimer()
+        self.queryTimer.setInterval(self.queryInterval)
+        self.queryTimer.setSingleShot(True)
+        self.queryTimer.timeout.connect(self.query_loop, QtCore.Qt.QueuedConnection)
+        self.set_counter()
+        self.start_query_loop()
 
+    @QtCore.Slot()
+    def query_loop(self):
+        """ Get power, current, shutter state and temperatures from laser. """
+        if self.stopRequest:
+            if self.module_state.can('stop'):
+                self.module_state.stop()
+            self.stopRequest = False
+            return
+        qi = self.queryInterval
+        try:
+            
+            if self._counter is not None:
+                
+                self.countrate = self._get_counter()
+        except:
+            qi = 3000
+            self.log.exception("Exception in laser status loop, throttling refresh rate.")
+
+        self.queryTimer.start(qi)
+        self.sigUpdate.emit()
+
+    @QtCore.Slot()
+    def start_query_loop(self):
+        """ Start the readout loop. """
+        self.module_state.run()
+        self.queryTimer.start(self.queryInterval)
+
+    @QtCore.Slot()
+    def stop_query_loop(self):
+        """ Stop the readout loop. """
+        self.stopRequest = True
+        for i in range(10):
+            if not self.stopRequest:
+                return
+            QtCore.QCoreApplication.processEvents()
+            time.sleep(self.queryInterval/1000)
 
 
     @connect
     @QtCore.Slot(str, str)
     def send_request(self, request, action=None):
         action = None if action == '' else action
+        
         self.tcp_client.sendall(request.encode())
         try:
             received = self.tcp_client.recv(50000) #TODO add length header and listen only to the specified bits!
@@ -80,11 +129,16 @@ class TimeTaggerClient(Base):
     
     def on_deactivate(self):
         self.tcp_client.close()
+        self.stop_query_loop()
+        for i in range(5):
+            time.sleep(self.queryInterval / 1000)
+            QtCore.QCoreApplication.processEvents()
     # setExposure(self, exposureTime):
         # return self.send_request("set_exposure_time", action=str(exposureTime* 1000))
     def set_counter(self, counter_params=None):
         if counter_params is None:
             counter_params = self._counter
+        counter_params['n_vals'] = 1000 #bigg buffer
         return self.send_request("set_counter", action=counter_params)
 
     def set_correlation(self, corr_params=None):
@@ -95,8 +149,10 @@ class TimeTaggerClient(Base):
     def get_correlation(self):
         return self.send_request("get_correlation")
 
-    def get_counter(self):
+    def _get_counter(self):
         return self.send_request("get_counter")
+    def get_counter(self):
+        return np.array([[cc[-1]] for cc in self.countrate])
         
     def get_server_time(self):
         return self.send_request("get_server_time")

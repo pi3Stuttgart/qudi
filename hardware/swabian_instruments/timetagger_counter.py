@@ -95,9 +95,9 @@ class TimeTaggerCounter(Base, SlowCounterInterface):
 
         # currently, parameters passed to this function are ignored -- the channels used and clock frequency are
         # set at startup
-        self._tagger.set_combined_channels([self._channel_apd_0, self._channel_apd_1])
+        #self._tagger.set_combined_channels([self._channel_apd_0, self._channel_apd_1])
         self.params = {
-            "channels":[self._channel_apd_0, self._channel_apd_1, self._tagger.get_combined_channels()],
+            "channels":[self._channel_apd_0, self._channel_apd_1],# self._tagger.get_combined_channels()],
             "bins_width":int((1 / self._count_frequency) * 1e12),
             "n_values":1
             }
@@ -119,7 +119,7 @@ class TimeTaggerCounter(Base, SlowCounterInterface):
         return self._tagger.get_correlation() #should get  self._corr.getIndex(), np.nan_to_num(self._corr.getDataNormalized())
 
     def get_counter_channels(self):
-            return [self._channel_apd_0, self._channel_apd_1, self._tagger.get_combined_channels()]
+            return [self._channel_apd_0, self._channel_apd_1]#, self._tagger.get_combined_channels()]
 
     def get_constraints(self):
         """ Get hardware limits the device

@@ -102,8 +102,8 @@ class OptimizerLogic(GenericLogic):
         self.optim_sigma_y = 0.
         self.optim_sigma_z = 0.
 
-        self._max_offset = 3.
-
+        self._max_offset_z = 1.
+        self._max_offset_xy = 0.6
         # Sets the current position to the center of the maximal scanning range
         self._current_x = (self.x_range[0] + self.x_range[1]) / 2
         self._current_y = (self.y_range[0] + self.y_range[1]) / 2
@@ -304,7 +304,7 @@ class OptimizerLogic(GenericLogic):
         else:
             move_to_start_line = np.vstack((lsx, lsy, lsz, np.ones(lsx.shape) * scanner_pos[3]))
 
-        counts = self._scanning_device.scan_line(move_to_start_line)
+        counts = self._scanning_device.scan_line(move_to_start_line, True)
         if np.any(counts == -1):
             return -1
 
@@ -349,7 +349,7 @@ class OptimizerLogic(GenericLogic):
         else:
             line = np.vstack((lsx, lsy, lsz, np.zeros(lsx.shape)))
 
-        line_counts = self._scanning_device.scan_line(line)
+        line_counts = self._scanning_device.scan_line(line, True)
         if np.any(line_counts == -1):
             self.log.error('The scan went wrong, killing the scanner.')
             self.stop_refocus()
@@ -364,7 +364,7 @@ class OptimizerLogic(GenericLogic):
         else:
             return_line = np.vstack((lsx, lsy, lsz, np.zeros(lsx.shape)))
 
-        return_line_counts = self._scanning_device.scan_line(return_line)
+        return_line_counts = self._scanning_device.scan_line(return_line, True)
         if np.any(return_line_counts == -1):
             self.log.error('The scan went wrong, killing the scanner.')
             self.stop_refocus()
@@ -403,14 +403,55 @@ class OptimizerLogic(GenericLogic):
             self.optim_sigma_x = 0.
             self.optim_sigma_y = 0.
         else:
-            #                @reviewer: Do we need this. With constraints not one of these cases will be possible....
-            if abs(self._initial_pos_x - result_2D_gaus.best_values['center_x']) < self._max_offset and abs(self._initial_pos_x - result_2D_gaus.best_values['center_x']) < self._max_offset:
+            # lower left corner of refocus window
+            xmin = self.xy_refocus_image[0, 0, 0]
+            ymin = self.xy_refocus_image[0, 0, 1]
+            # upper right corner of refocus window
+            xmax = self.xy_refocus_image[-1, -1, 0]
+            ymax = self.xy_refocus_image[-1, -1, 1]
+            
+            # @reviewer: Do we need this. With constraints not one of these cases will be possible....
+            if abs(self._initial_pos_x - result_2D_gaus.best_values['center_x']) < self._max_offset_xy and abs(self._initial_pos_x - result_2D_gaus.best_values['center_x']) < self._max_offset_xy:
+                # check if x value is within range for the device
                 if self.x_range[0] <= result_2D_gaus.best_values['center_x'] <= self.x_range[1]:
+                    # check if y value is within range for the device
                     if self.y_range[0] <= result_2D_gaus.best_values['center_y'] <= self.y_range[1]:
-                        self.optim_pos_x = result_2D_gaus.best_values['center_x']
-                        self.optim_pos_y = result_2D_gaus.best_values['center_y']
-                        self.optim_sigma_x = result_2D_gaus.best_values['sigma_x']
-                        self.optim_sigma_y = result_2D_gaus.best_values['sigma_y']
+                        # check if x value is within optimizer window
+                        # if not, go to edge of optimizer window
+                        if result_2D_gaus.best_values['center_x'] <= xmin:
+                            self.optim_pos_x = xmin
+                            self.optim_sigma_x = 0.
+                            print('fitted x was too small, going to lower edge of optimizer window.')
+                        elif result_2D_gaus.best_values['center_x'] >= xmax:
+                            self.optim_pos_x = xmax
+                            self.optim_sigma_x = 0.
+                            print('fitted x was too large, going to higher edge of optimizer window.')
+                        else:
+                            self.optim_pos_x = result_2D_gaus.best_values['center_x']
+                            self.optim_sigma_x = result_2D_gaus.best_values['sigma_x']
+                        # check if y value is within optimizer window
+                        # if not, go to edge of optimizer window
+                        if result_2D_gaus.best_values['center_y'] <= ymin:
+                            self.optim_pos_y = ymin
+                            self.optim_sigma_y = 0.
+                            print('fitted y was too small, going to lower edge of optimizer window.')
+                        elif result_2D_gaus.best_values['center_y'] >= ymax:
+                            self.optim_pos_y = ymax
+                            self.optim_sigma_y = 0.
+                            print('fitted y was too large, going to higher edge of optimizer window.')
+                        else:
+                            self.optim_pos_y = result_2D_gaus.best_values['center_y']
+                            self.optim_sigma_y = result_2D_gaus.best_values['sigma_y'] 
+                    else: # if resulting position is outside device specification (in y), do not move at all
+                        self.optim_pos_x = self._initial_pos_x
+                        self.optim_pos_y = self._initial_pos_y
+                        self.optim_sigma_x = 0.
+                        self.optim_sigma_y = 0.
+                else: # if resulting position is outside device specification (in x), do not move at all
+                    self.optim_pos_x = self._initial_pos_x
+                    self.optim_pos_y = self._initial_pos_y
+                    self.optim_sigma_x = 0.
+                    self.optim_sigma_y = 0.
             else:
                 self.optim_pos_x = self._initial_pos_x
                 self.optim_pos_y = self._initial_pos_y
@@ -462,7 +503,7 @@ class OptimizerLogic(GenericLogic):
         else:  # move to new position
             #                @reviewer: Do we need this. With constraints not one of these cases will be possible....
             # checks if new pos is too far away
-            if abs(self._initial_pos_z - result.best_values['center']) < self._max_offset:
+            if abs(self._initial_pos_z - result.best_values['center']) < self._max_offset_z:
                 # checks if new pos is within the scanner range
                 if self.z_range[0] <= result.best_values['center'] <= self.z_range[1]:
                     self.optim_pos_z = result.best_values['center']
@@ -533,7 +574,7 @@ class OptimizerLogic(GenericLogic):
             line = np.vstack((scan_x_line, scan_y_line, scan_z_line, np.zeros(scan_x_line.shape)))
 
         # Perform scan
-        line_counts = self._scanning_device.scan_line(line)
+        line_counts = self._scanning_device.scan_line(line, True)
         if np.any(line_counts == -1):
             self.log.error('Z scan went wrong, killing the scanner.')
             self.stop_refocus()
@@ -565,7 +606,7 @@ class OptimizerLogic(GenericLogic):
                      scan_z_line,
                      np.zeros(scan_x_line.shape)))
 
-            line_bg_counts = self._scanning_device.scan_line(line_bg)
+            line_bg_counts = self._scanning_device.scan_line(line_bg, True)
             if np.any(line_bg_counts[0] == -1):
                 self.log.error('The scan went wrong, killing the scanner.')
                 self.stop_refocus()

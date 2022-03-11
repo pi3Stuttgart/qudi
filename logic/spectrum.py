@@ -92,6 +92,7 @@ class SpectrumLogic(GenericLogic):
     plot_domain = (450, 900)
     # Internal signals
     sig_specdata_updated = QtCore.Signal()
+    sig_specdata_taken = QtCore.Signal()
     sig_next_diff_loop = QtCore.Signal()
     # sig_cwave_shutter = QtCore.Signal()
     # External signals eg for GUI module
@@ -137,6 +138,7 @@ class SpectrumLogic(GenericLogic):
         self._pulser = self.pulser()
         self.sig_next_diff_loop.connect(self._loop_differential_spectrum)
         self.sig_specdata_updated.emit()
+        
 
     def use_fine_spectrometer(self):
         self._spectrometer_device = self.spectrometer_fine()
@@ -204,7 +206,9 @@ class SpectrumLogic(GenericLogic):
         self.diff_spec_data_mod_on = np.array([])
         self.diff_spec_data_mod_off = np.array([])
         self.sig_specdata_updated.emit()
+        self.sig_specdata_taken.emit()
 
+        
     def _calculate_corrected_spectrum(self):
         self._spectrum_data_corrected = np.copy(self._spectrum_data)
         if len(self._spectrum_background) == 2 \
@@ -326,7 +330,7 @@ class SpectrumLogic(GenericLogic):
         else:
             print("Parameter 'on' needs to be boolean")
 
-    def save_spectrum_data(self, background=False, name_tag='', custom_header = None):
+    def save_spectrum_data(self, background=False, filepath=None, name_tag='', custom_header = None):
         """ Saves the current spectrum data to a file.
         @param bool background: Whether this is a background spectrum (dark field) or not.
         @param string name_tag: postfix name tag for saved filename.
@@ -334,7 +338,8 @@ class SpectrumLogic(GenericLogic):
             This ordered dictionary is added to the default data file header. It allows arbitrary
             additional experimental information to be included in the saved data file header.
         """
-        filepath = self._save_logic.get_path_for_module(module_name='spectra')
+        if filepath is None:
+            filepath = self._save_logic.get_path_for_module(module_name='spectra')
         if background:
             filelabel = 'background'
             spectrum_data = self._spectrum_background
