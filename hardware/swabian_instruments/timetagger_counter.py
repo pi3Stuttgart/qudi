@@ -41,7 +41,7 @@ class TimeTaggerCounter(Base, SlowCounterInterface):
     _channel_apd_0 = ConfigOption('timetagger_channel_apd_0', missing='error')
     _channel_apd_1 = ConfigOption('timetagger_channel_apd_1', None, missing='warn')
     timetagger = Connector(interface='TimeTaggerClient')
-
+    timetagger_sum_channels = ConfigOption('timetagger_sum_channels', False, missing='warn')
     def on_activate(self):
         """ Start up TimeTagger interface
         """
@@ -119,7 +119,10 @@ class TimeTaggerCounter(Base, SlowCounterInterface):
         return self._tagger.get_correlation() #should get  self._corr.getIndex(), np.nan_to_num(self._corr.getDataNormalized())
 
     def get_counter_channels(self):
-            return [self._channel_apd_0, self._channel_apd_1]#, self._tagger.get_combined_channels()]
+        if self.timetagger_sum_channels:
+            return [self._channel_apd_0, self._channel_apd_1, 100]#, self._tagger.get_combined_channels()]
+        else:
+            return [self._channel_apd_0, self._channel_apd_1]
 
     def get_constraints(self):
         """ Get hardware limits the device
@@ -140,8 +143,11 @@ class TimeTaggerCounter(Base, SlowCounterInterface):
         """
 
         time.sleep(2 / self._count_frequency)
-        return np.array(self._tagger.get_counter()) * self._count_frequency
-
+        ctr = np.array(self._tagger.get_counter()) * self._count_frequency
+        if self.timetagger_sum_channels:
+            return np.vstack(([ctr.sum()], ctr))
+        else:
+            return ctr
     def close_counter(self):
         """ Closes the counter and cleans up afterwards.
         @return int: error code (0:OK, -1:error)
