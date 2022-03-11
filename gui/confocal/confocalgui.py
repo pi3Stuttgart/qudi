@@ -23,6 +23,7 @@ top-level directory of this distribution and at <https://github.com/Ulm-IQO/qudi
 from PyQt5.QtCore import pyqtPickleProtocol
 import numpy as np
 import os
+from core.pi3_utils import printdebug
 import pyqtgraph as pg
 import time
 
@@ -181,11 +182,15 @@ class ConfocalGui(GUIBase):
 
         self._hardware_state = True
 
+        self.savefolder_str = 'not specified'
+
         self.initMainUI()      # initialize the main GUI
         self.initSettingsUI()  # initialize the settings GUI
         self.initOptimizerSettingsUI()  # initialize the optimizer settings GUI
 
         self._save_dialog = SaveDialog(self._mw)
+
+        self.debug = True
 
     def initMainUI(self):
         """ Definition, configuration and initialisation of the confocal GUI.
@@ -517,6 +522,9 @@ class ConfocalGui(GUIBase):
         # RadioButtons in Main tab
         self._mw.depth_cb_manual_RadioButton.clicked.connect(self.update_depth_cb_range)
         self._mw.depth_cb_centiles_RadioButton.clicked.connect(self.update_depth_cb_range)
+
+        # Connect buttons of savepath widget
+        self._mw.choose_savefolder_pushButton.clicked.connect(self.choose_folder_for_save)
 
         # input edits in Main tab
         self._mw.depth_cb_min_DoubleSpinBox.valueChanged.connect(self.shortcut_to_depth_cb_manual)
@@ -1694,6 +1702,7 @@ class ConfocalGui(GUIBase):
 
     def save_xy_scan_data(self):
         """ Run the save routine from the logic to save the xy confocal data."""
+        printdebug(self.debug, 'confocalgui: save_xy_scan_data called')
         self._save_dialog.show()
 
         cb_range = self.get_xy_cb_range()
@@ -1708,7 +1717,9 @@ class ConfocalGui(GUIBase):
         self._scanning_logic.save_xy_data(colorscale_range=cb_range, percentile_range=pcile_range, block=False)
 
         # TODO: find a way to produce raw image in savelogic.  For now it is saved here.
-        filepath = self._save_logic.get_path_for_module(module_name='Confocal')
+        # printdebug(self.debug, 'confocalgui: get_path_for_module called by save_xy_scan_data')
+        # filepath = self._save_logic.get_path_for_module(module_name='Confocal')
+        filepath = self.get_savefolder_from_gui()
         filename = os.path.join(
             filepath,
             time.strftime('%Y%m%d-%H%M-%S_confocal_xy_scan_raw_pixel_image'))
@@ -1726,6 +1737,7 @@ class ConfocalGui(GUIBase):
 
     def save_depth_scan_data(self):
         """ Run the save routine from the logic to save the xy confocal pic."""
+        printdebug(self.debug, 'save_depth_scan_data called')
         self._save_dialog.show()
 
         cb_range = self.get_depth_cb_range()
@@ -1740,7 +1752,9 @@ class ConfocalGui(GUIBase):
         self._scanning_logic.save_depth_data(colorscale_range=cb_range, percentile_range=pcile_range, block=False)
 
         # TODO: find a way to produce raw image in savelogic.  For now it is saved here.
-        filepath = self._save_logic.get_path_for_module(module_name='Confocal')
+        # printdebug(self.debug, 'confocalgui: get_path_for_module called by save_depth_scan_data')
+        # filepath = self._save_logic.get_path_for_module(module_name='Confocal')
+        filepath = self.get_savefolder_from_gui()
         filename = os.path.join(
             filepath,
             time.strftime('%Y%m%d-%H%M-%S_confocal_depth_scan_raw_pixel_image'))
@@ -1755,6 +1769,25 @@ class ConfocalGui(GUIBase):
         specific task to save the used PlotObject.
         """
         self.log.warning('Deprecated, use normal save method instead!')
+
+    def choose_folder_for_save(self):
+        dir_path = QtWidgets.QFileDialog.getExistingDirectory()
+        printdebug(self.debug, f'Chosen filepath is {dir_path}')
+        if dir_path != '':
+            self.savefolder_str = dir_path
+            self._scanning_logic.savefolder_str = dir_path
+            self._mw.savefolder_label.setText(dir_path)
+            self._mw.savefolder_label.adjustSize()
+        return
+
+    def get_savefolder_from_gui(self):
+        """Returns the path to the folder that has been selected in the gui for saving as a string."""
+        dir_path = self.savefolder_str
+        if dir_path == ('' or '-' or 'not specified'):
+            # if no folder is selected (e.g. because Gui was freshly started), throw error
+            raise RuntimeError('No folder for saving has been specified.')
+        else:
+            return dir_path
 
     def switch_hardware(self):
         """ Switches the hardware state. """

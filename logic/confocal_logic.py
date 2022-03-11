@@ -19,6 +19,7 @@ Copyright (c) the Qudi Developers. See the COPYRIGHT.txt file at the
 top-level directory of this distribution and at <https://github.com/Ulm-IQO/qudi/>
 """
 
+# from asyncore import file_dispatcher
 from qtpy import QtCore
 from collections import OrderedDict
 from copy import copy
@@ -314,6 +315,8 @@ class ConfocalLogic(GenericLogic):
         """
         self._scanning_device = self.confocalscanner1()
         self._save_logic = self.savelogic()
+
+        self.savefolder_str = ''
 
         # Reads in the maximal scanning range. The unit of that scan range is micrometer!
         self.x_range = self._scanning_device.get_position_range()[0]
@@ -1012,8 +1015,11 @@ class ConfocalLogic(GenericLogic):
     def _save_xy_data(self, colorscale_range=None, percentile_range=None):
         """ Execute save operation. Slot for _signal_save_xy.
         """
+        printdebug(self.debug, 'confocallogic: _save_xy_data called')
         self.signal_save_started.emit()
-        filepath = self._save_logic.get_path_for_module('Confocal')
+        # printdebug(self.debug, 'confocallogic: get_path_for_module called by _save_xy_data')
+        # filepath = self._save_logic.get_path_for_module('Confocal')
+        filepath = self.get_savefolder_from_gui()
         timestamp = datetime.datetime.now()
         # Prepare the metadata parameters (common to both saved files):
         parameters = OrderedDict()
@@ -1059,6 +1065,7 @@ class ConfocalLogic(GenericLogic):
                 'of entries where the Signal is in counts/s:'] = self.xy_image[:, :, 3 + n]
 
             filelabel = 'confocal_xy_image_{0}'.format(ch.replace('/', ''))
+            printdebug(self.debug, 'save_data for image_data called by _save_xy_data')
             self._save_logic.save_data(image_data,
                                        filepath=filepath,
                                        timestamp=timestamp,
@@ -1079,6 +1086,7 @@ class ConfocalLogic(GenericLogic):
 
         # Save the raw data to file
         filelabel = 'confocal_xy_data'
+        printdebug(self.debug, 'save_data for data called by _save_xy_data')
         self._save_logic.save_data(data,
                                    filepath=filepath,
                                    timestamp=timestamp,
@@ -1114,8 +1122,11 @@ class ConfocalLogic(GenericLogic):
     @QtCore.Slot(object, object)
     def _save_depth_data(self, colorscale_range=None, percentile_range=None):
         """ Execute save operation. Slot for _signal_save_depth. """
+        printdebug(self.debug, '_save_depth_data called')
         self.signal_save_started.emit()
-        filepath = self._save_logic.get_path_for_module('Confocal')
+        # printdebug(self.debug, 'get_path_for_module called by _save_depth_data')
+        # filepath = self._save_logic.get_path_for_module('Confocal')
+        filepath = self.get_savefolder_from_gui()
         timestamp = datetime.datetime.now()
         # Prepare the metadata parameters (common to both saved files):
         parameters = OrderedDict()
@@ -1199,6 +1210,15 @@ class ConfocalLogic(GenericLogic):
         self.log.debug('Confocal Image saved.')
         self.signal_depth_data_saved.emit()
         return
+
+    def get_savefolder_from_gui(self):
+        """Returns the path to the folder that has been selected in the gui and stored in the logic for saving as a string."""
+        dir_path = self.savefolder_str
+        if dir_path == ('' or '-' or 'not specified'):
+            # if no folder is selected (e.g. because Gui was freshly started), throw error
+            raise RuntimeError('No folder for saving has been specified.')
+        else:
+            return dir_path
 
     def draw_figure(self, data, image_extent, scan_axis=None, cbar_range=None, percentile_range=None,  crosshair_pos=None):
         """ Create a 2-D color map figure of the scan image.
