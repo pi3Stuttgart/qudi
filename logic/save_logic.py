@@ -38,6 +38,7 @@ from logic.generic_logic import GenericLogic
 from matplotlib.backends.backend_pdf import PdfPages
 from PIL import Image
 from PIL import PngImagePlugin
+from core.pi3_utils import printdebug
 
 
 class DailyLogHandler(logging.FileHandler):
@@ -169,6 +170,8 @@ class SaveLogic(GenericLogic):
 
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
+
+        self.debug = True
 
         # locking for thread safety
         self.lock = Mutex()
@@ -329,6 +332,7 @@ class SaveLogic(GenericLogic):
         YOU ARE RESPONSIBLE FOR THE IDENTIFIER! DO NOT FORGET THE UNITS FOR THE SAVED TIME
         TRACE/MATRIX.
         """
+        printdebug(self.debug, 'save_data called')
         start_time = time.time()
         # Create timestamp if none is present
         if timestamp is None:
@@ -398,6 +402,7 @@ class SaveLogic(GenericLogic):
 
         # determine proper file path
         if filepath is None:
+            printdebug(self.debug, 'get_path_for_module called by save_data')
             filepath = self.get_path_for_module(module_name)
         elif not os.path.exists(filepath):
             os.makedirs(filepath)

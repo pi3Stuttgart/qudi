@@ -23,6 +23,7 @@ top-level directory of this distribution and at <https://github.com/Ulm-IQO/qudi
 from PyQt5.QtCore import pyqtPickleProtocol
 import numpy as np
 import os
+from core.pi3_utils import printdebug
 import pyqtgraph as pg
 import time
 
@@ -32,9 +33,6 @@ from core.statusvariable import StatusVar
 from qtwidgets.scan_plotwidget import ScanImageItem
 from gui.guibase import GUIBase
 from gui.guiutils import ColorBar
-#from gui.colordefs import ColorScaleInferno
-#from gui.colordefs import ColorScaleViridis
-from gui.colordefs import ColorScaleRdBu
 from gui.colordefs import ColorScaleRdBuRev
 from gui.colordefs import QudiPalettePale as palette
 from gui.fitsettings import FitParametersWidget
@@ -152,7 +150,7 @@ class ConfocalGui(GUIBase):
     image_x_padding = ConfigOption('image_x_padding', 0.02)
     image_y_padding = ConfigOption('image_y_padding', 0.02)
     image_z_padding = ConfigOption('image_z_padding', 0.02)
-    _involves_cryostat = ConfigOption('involves_cryostat', False)
+    
     default_meter_prefix = ConfigOption('default_meter_prefix', None)  # assume the unit prefix of position spinbox
 
     # status var
@@ -163,7 +161,6 @@ class ConfocalGui(GUIBase):
     # signals
     sigStartOptimizer = QtCore.Signal(list, str)
     sigChangeLimits = QtCore.Signal(str)
-    sigUserMovedCrosshair = QtCore.Signal(list)
 
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
@@ -182,15 +179,18 @@ class ConfocalGui(GUIBase):
         self._scanning_logic.pois = np.array([])
         # connecting signals from logic
         self._scanning_logic.sigLimitsChanged.connect(self.limits_changed)
-        self.sigUserMovedCrosshair.connect(self._scanning_logic.store_crosshair_posi)
 
         self._hardware_state = True
+
+        self.savefolder_str = 'not specified'
 
         self.initMainUI()      # initialize the main GUI
         self.initSettingsUI()  # initialize the settings GUI
         self.initOptimizerSettingsUI()  # initialize the optimizer settings GUI
 
         self._save_dialog = SaveDialog(self._mw)
+
+        self.debug = True
 
     def initMainUI(self):
         """ Definition, configuration and initialisation of the confocal GUI.
@@ -474,9 +474,8 @@ class ConfocalGui(GUIBase):
         self._mw.actionSave_config.triggered.connect(self._scanning_logic.save_history_config)
 
         # set voltage limits
-        if self._involves_cryostat:
-            self._mw.actionUse_LT_limits.changed.connect(self.change_piezo_voltage_limits)
-            self.sigChangeLimits.connect(self._scanning_logic.set_voltage_limits)
+        self._mw.actionUse_LT_limits.changed.connect(self.change_piezo_voltage_limits)
+        self.sigChangeLimits.connect(self._scanning_logic.set_voltage_limits)
         
 
         # Get initial tilt correction values
@@ -523,6 +522,9 @@ class ConfocalGui(GUIBase):
         # RadioButtons in Main tab
         self._mw.depth_cb_manual_RadioButton.clicked.connect(self.update_depth_cb_range)
         self._mw.depth_cb_centiles_RadioButton.clicked.connect(self.update_depth_cb_range)
+
+        # Connect buttons of savepath widget
+        self._mw.choose_savefolder_pushButton.clicked.connect(self.choose_folder_for_save)
 
         # input edits in Main tab
         self._mw.depth_cb_min_DoubleSpinBox.valueChanged.connect(self.shortcut_to_depth_cb_manual)
@@ -611,8 +613,6 @@ class ConfocalGui(GUIBase):
         #           Connect the colorbar and their actions              #
         #################################################################
         # Get the colorscale and set the LUTs
-        #self.my_colors = ColorScaleInferno()
-        #self.my_colors = ColorScaleViridis()
         self.my_colors = ColorScaleRdBuRev()
 
         self.xy_image.setLookupTable(self.my_colors.lut)
@@ -1097,19 +1097,6 @@ class ConfocalGui(GUIBase):
             self.update_input_y(y_pos)
             self.update_input_z(z_pos)
 
-    def get_crosshair_position(self):
-        """Returns the position of the crosshair in th gui.
-        
-        @return list: Returns the x,y and z coordinate of the crosshair in m an [x,y,z].
-        """
-        # get x and y from xy view
-        x = self._mw.xy_ViewWidget.crosshair_position[0]
-        y = self._mw.xy_ViewWidget.crosshair_position[1]
-        # get z from depth view
-        z = self._mw.depth_ViewWidget.crosshair_position[1]
-
-        return [x,y,z]
-
     def roi_xy_bounds_check(self, pos):
         """ Check if the focus cursor is oputside the allowed range after drag
             and set its position to the limit
@@ -1204,8 +1191,6 @@ class ConfocalGui(GUIBase):
 
         self._scanning_logic.set_position('roixy', x=h_pos, y=v_pos)
         self._optimizer_logic.set_position('roixy', x=h_pos, y=v_pos)
-        crosshair_posi = self.get_crosshair_position()
-        self.sigUserMovedCrosshair.emit(crosshair_posi)
 
     def update_from_roi_depth(self, pos):
         """The user manually moved the Z ROI, adjust all other GUI elements accordingly
@@ -1717,6 +1702,7 @@ class ConfocalGui(GUIBase):
 
     def save_xy_scan_data(self):
         """ Run the save routine from the logic to save the xy confocal data."""
+        printdebug(self.debug, 'confocalgui: save_xy_scan_data called')
         self._save_dialog.show()
 
         cb_range = self.get_xy_cb_range()
@@ -1731,7 +1717,9 @@ class ConfocalGui(GUIBase):
         self._scanning_logic.save_xy_data(colorscale_range=cb_range, percentile_range=pcile_range, block=False)
 
         # TODO: find a way to produce raw image in savelogic.  For now it is saved here.
-        filepath = self._save_logic.get_path_for_module(module_name='Confocal')
+        # printdebug(self.debug, 'confocalgui: get_path_for_module called by save_xy_scan_data')
+        # filepath = self._save_logic.get_path_for_module(module_name='Confocal')
+        filepath = self.get_savefolder_from_gui()
         filename = os.path.join(
             filepath,
             time.strftime('%Y%m%d-%H%M-%S_confocal_xy_scan_raw_pixel_image'))
@@ -1749,6 +1737,7 @@ class ConfocalGui(GUIBase):
 
     def save_depth_scan_data(self):
         """ Run the save routine from the logic to save the xy confocal pic."""
+        printdebug(self.debug, 'save_depth_scan_data called')
         self._save_dialog.show()
 
         cb_range = self.get_depth_cb_range()
@@ -1763,7 +1752,9 @@ class ConfocalGui(GUIBase):
         self._scanning_logic.save_depth_data(colorscale_range=cb_range, percentile_range=pcile_range, block=False)
 
         # TODO: find a way to produce raw image in savelogic.  For now it is saved here.
-        filepath = self._save_logic.get_path_for_module(module_name='Confocal')
+        # printdebug(self.debug, 'confocalgui: get_path_for_module called by save_depth_scan_data')
+        # filepath = self._save_logic.get_path_for_module(module_name='Confocal')
+        filepath = self.get_savefolder_from_gui()
         filename = os.path.join(
             filepath,
             time.strftime('%Y%m%d-%H%M-%S_confocal_depth_scan_raw_pixel_image'))
@@ -1778,6 +1769,25 @@ class ConfocalGui(GUIBase):
         specific task to save the used PlotObject.
         """
         self.log.warning('Deprecated, use normal save method instead!')
+
+    def choose_folder_for_save(self):
+        dir_path = QtWidgets.QFileDialog.getExistingDirectory()
+        printdebug(self.debug, f'Chosen filepath is {dir_path}')
+        if dir_path != '':
+            self.savefolder_str = dir_path
+            self._scanning_logic.savefolder_str = dir_path
+            self._mw.savefolder_label.setText(dir_path)
+            self._mw.savefolder_label.adjustSize()
+        return
+
+    def get_savefolder_from_gui(self):
+        """Returns the path to the folder that has been selected in the gui for saving as a string."""
+        dir_path = self.savefolder_str
+        if dir_path == ('' or '-' or 'not specified'):
+            # if no folder is selected (e.g. because Gui was freshly started), throw error
+            raise RuntimeError('No folder for saving has been specified.')
+        else:
+            return dir_path
 
     def switch_hardware(self):
         """ Switches the hardware state. """
