@@ -20,8 +20,11 @@ def connect(func):
         try:
             # Establish connection to TCP server and exchange data
             self.tcp_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.tcp_client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.tcp_client.connect((self.host_ip, self.server_port))
             res = func(self, *arg, **kw)
+        except:
+            return
         finally:
             self.tcp_client.close()
         return res
@@ -45,6 +48,7 @@ class TimeTaggerClient(Base):
         super().__init__(config=config, **kwargs)
         
         self.countrate = np.array([1])
+        self.corr_data = np.array([1])
         
 
     def on_activate(self):
@@ -70,9 +74,8 @@ class TimeTaggerClient(Base):
         qi = self.queryInterval
         try:
             
-            if self._counter is not None:
-                
-                self.countrate = self._get_counter()
+            self.countrate = self._get_counter()
+            self.corr_data = self._get_correlation()
         except:
             qi = 3000
             self.log.exception("Exception in laser status loop, throttling refresh rate.")
@@ -149,11 +152,21 @@ class TimeTaggerClient(Base):
     def get_correlation(self):
         return self.send_request("get_correlation")
 
+    def _get_correlation(self):
+        return self.send_request("get_correlation")
+    
     def _get_counter(self):
         return self.send_request("get_counter")
+    
     def get_counter(self):
-        return np.array([[cc[-1]] for cc in self.countrate])
-        
+        if self.countrate is not None:
+            return np.array([[cc[-1]] for cc in self.countrate])
+        else:
+            return np.array([[0], [0], [0]])
+    
+    def get_correlation(self):
+        return self.corr_data
+
     def get_server_time(self):
         return self.send_request("get_server_time")
 
