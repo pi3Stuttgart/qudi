@@ -198,6 +198,7 @@ class rabi_default_values_and_widget_functions:
                 self.rabi_cb_min=value
 
         def rabi_Save_Button_Clicked(self,on):
+                self.save_rabi_data()
                 print('done something with rabi_Save_Button')
 
         def rabi_MW1_Freq_LineEdit_textEdited(self,text):

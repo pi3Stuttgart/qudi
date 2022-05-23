@@ -6,7 +6,7 @@ sys.path.append('C:\src\qudi\hardware\Keysight_AWG_M8190\pyarbtools_master') #qu
 
 from core.module import Base
 from core.connector import Connector
-from hardware.swabian_instruments.timetagger import TT as TimeTagger
+#from hardware.swabian_instruments.timetagger import TT as TimeTagger
 from logic.generic_logic import GenericLogic
 #import hardware.Keysight_AWG_M8190.pyarbtools_master.pyarbtools as pyarbtools
 
@@ -20,7 +20,10 @@ import inspect
 import logging
 logger = logging.getLogger(__name__)
 import time
-import pandas as pd
+#import pandas as pd
+from collections import OrderedDict
+import matplotlib.pyplot as plt
+import datetime
 
 class RabiLogic(GenericLogic,rabi_default):
     #declare connectors
@@ -54,18 +57,20 @@ class RabiLogic(GenericLogic,rabi_default):
 
 
     def on_activate(self):
-        self.Time_Tagger=self.counter_device()
-        self.Time_Tagger.setup_TT()
-        self.awg = self.mcas_holder()#mcas_dict()
-        self.stop_awg = self.awg.mcas_dict.stop_awgs
+        self._time_tagger=self.counter_device()
+        self._time_tagger.setup_TT()
+        self._save_logic = self.savelogic()
+        self._awg = self.mcas_holder()#mcas_dict()
+        
+        self.stop_awg = self._awg.mcas_dict.stop_awgs
         self.Timer = RepeatedTimer(1, self.clock) # this clock is not very precise, maybe the solution proposed on https://stackoverflow.com/questions/474528/what-is-the-best-way-to-repeatedly-execute-a-function-every-x-seconds can be helpful.
         #self.SigCheckReady_Beacon.connect(self.print_counter)
         self.CheckReady_Beacon = RepeatedTimer(1, self.get_data)
         #self.CheckReady_Beacon.start()
-        self.number_of_points_per_line=self.Time_Tagger._time_diff["n_histograms"]
+        self.number_of_points_per_line=self._time_tagger._time_diff["n_histograms"]
         self.measurement_running=False
-        self.counter=self.Time_Tagger.counter()
-        self.time_differences = self.Time_Tagger.time_differences()
+        self.counter=self._time_tagger.counter()
+        self.time_differences = self._time_tagger.time_differences()
         self.scanmatrix=np.zeros(np.array(self.time_differences.getData(),dtype=object).shape)
         self.SigCheckReady_Beacon.connect(self.get_data)
    
@@ -77,6 +82,7 @@ class RabiLogic(GenericLogic,rabi_default):
     def on_deactivate(self):
         self.Timer.stop()
         self.CheckReady_Beacon.stop()
+        self.stop_awg()
         try: #checkready_beacon may not be launched
             self.checkready.stop()
         except:
@@ -92,13 +98,13 @@ class RabiLogic(GenericLogic,rabi_default):
         else:
             indexes=np.array(self.time_differences.getIndex()) #readout binwidth (ps)
             self.scanmatrix=np.array(self.time_differences.getData(),dtype=object) #readout data from timetagger
-            measured_times_ns=indexes/1e3 #indexes is in ps
-            mask=((measured_times_ns>=self.rabi_AOMDelay) & (measured_times_ns<=self.rabi_IntegrationTime+self.rabi_AOMDelay)) #create mask to filter counts depending on arrival time
-            data_sine=np.sum(self.scanmatrix[:,mask],axis=1) #sum up the readout-histogram after a single Tau
-            data_detect=np.sum(self.scanmatrix,axis=0) #sum up the histograms to see the emission decay
+            self.measured_times_ns=indexes/1e3 #indexes is in ps
+            mask=((self.measured_times_ns>=self.rabi_AOMDelay) & (self.measured_times_ns<=self.rabi_IntegrationTime+self.rabi_AOMDelay)) #create mask to filter counts depending on arrival time
+            self.data=np.sum(self.scanmatrix[:,mask],axis=1) #sum up the readout-histogram after a single Tau
+            self.data_detect=np.sum(self.scanmatrix,axis=0) #sum up the histograms to see the emission decay
             print(np.shape(self.scanmatrix))
-            measured_times=indexes/1e12 #binwidth in seconds
-            self.sigRabiPlotsUpdated.emit(self.tau_duration*1e-9,data_sine,self.scanmatrix, measured_times, data_detect)
+            self.measured_times=indexes/1e12 #binwidth in seconds
+            self.sigRabiPlotsUpdated.emit(self.tau_duration*1e-9, self.data, self.scanmatrix, self.measured_times, self.data_detect)
 
 
     def clock(self):
@@ -108,8 +114,227 @@ class RabiLogic(GenericLogic,rabi_default):
         self.SigCheckReady_Beacon.emit()
 
     def setup_time_tagger(self,**kwargs):
-        self.Time_Tagger._time_diff.update(**kwargs)
-        return self.Time_Tagger.time_differences()
+        self._time_tagger._time_diff.update(**kwargs)
+        return self._time_tagger.time_differences()
+
+    def save_rabi_data(self, tag=None, colorscale_range=None, percentile_range=None):
+        """ Saves the current ODMR data to a file."""
+        timestamp = datetime.datetime.now()
+        filepath = self._save_logic.get_path_for_module(module_name='Rabi')
+
+        if tag is None:
+            tag = ''
+
+        if len(tag) > 0:
+            filelabel_raw = '{0}_rabi_data_raw'.format(tag)
+            filelabel_detection = '{0}_rabi_data_detection'.format(tag)
+            filelabel_matrix = '{0}_rabi_data_matrix'.format(tag)
+        else:
+            filelabel_raw = '_rabi_data_raw'
+            filelabel_detection = '_rabi_data_detection'
+            filelabel_matrix = '_rabi_data_matrix'
+
+        data_raw = OrderedDict()
+        data_detection = OrderedDict()
+        data_matrix = OrderedDict()
+        data_raw['count data (counts)'] = self.data
+        data_raw['Tau (ns)'] = self.tau_duration
+        data_detection['Detection Time (ns)'] = self.measured_times*1e9 # save in [ns]
+        data_detection['Detection Counts (counts)'] = self.data_detect
+        data_matrix['Detection Time + Tau'] = self.scanmatrix
+
+        parameters = OrderedDict()
+        parameters['Enable Microwave1 (bool)'] = self.rabi_MW1
+        parameters['Enable Microwave2 (bool)'] = self.rabi_MW2
+        parameters['Enable Microwave3 (bool)'] = self.rabi_MW3
+        parameters['Microwave1 CW Power (dBm)'] = self.rabi_MW1_Power
+        parameters['Microwave2 CW Power (dBm)'] = self.rabi_MW2_Power
+        parameters['Microwave3 CW Power (dBm)'] = self.rabi_MW3_Power
+        parameters['Microwave1 CW Power (dBm)'] = self.rabi_MW1_Freq
+        parameters['Microwave2 CW Power (dBm)'] = self.rabi_MW2_Freq
+        parameters['Microwave3 CW Power (dBm)'] = self.rabi_MW3_Freq
+        parameters['Tau min (ns)'] = self.rabi_Tau_Min
+        parameters['Tau max (ns)'] = self.rabi_Tau_Max
+        parameters['Tau Step (ns)'] = self.rabi_Tau_Step
+        parameters['Tau Decay (ns)'] = self.rabi_Tau_Decay
+        parameters['A1 (bool)'] = self.rabi_A1
+        parameters['A2 (bool)'] = self.rabi_A2
+        parameters['Pulsed Repump (bool)'] = self.rabi_PulsedRepump
+        parameters['Pulsed Duration (µs)'] = self.rabi_RepumpDuration
+        parameters['Pulsed Decay (µs)'] = self.rabi_RepumpDecay
+        parameters['CW Repump (bool)'] = self.rabi_CWRepump
+        parameters['Init Time (µs)'] = self.rabi_InitTime
+        parameters['Init Decay (µs)'] = self.rabi_DecayInit
+        parameters['Readout Time (µs)'] = self.rabi_ReadoutTime
+        parameters['Readout Decay (µs)'] = self.rabi_ReadoutDecay
+        parameters['Readout via A1 (bool)'] = self.rabi_A1Readout
+        parameters['Readout via A2 (bool)'] = self.rabi_A2Readout
+        parameters['AOM Delay (ns)'] = self.rabi_AOMDelay
+        parameters['Integration Window (ns)'] = self.rabi_IntegrationTime
+        parameters['Binning (ns)'] = self.rabi_Binning
+
+        fig = self.draw_figure(data_raw['count data (counts)'],
+                                data_raw['Tau (ns)'],
+                                data_matrix['Detection Time + Tau'],
+                                data_detection['Detection Time (ns)'],
+                                data_detection['Detection Counts (counts)'],
+                                cbar_range=colorscale_range,
+                                percentile_range=percentile_range)
+
+        self._save_logic.save_data(data_matrix,
+                                    filepath=filepath,
+                                    parameters=parameters,
+                                    filelabel=filelabel_matrix,
+                                    fmt='%.6e',
+                                    delimiter='\t',
+                                    timestamp=timestamp)
+        
+        self._save_logic.save_data(data_detection,
+                                    filepath=filepath,
+                                    parameters=parameters,
+                                    filelabel=filelabel_detection,
+                                    fmt='%.6e',
+                                    delimiter='\t',
+                                    timestamp=timestamp)
+        
+        self._save_logic.save_data(data_raw,
+                                    filepath=filepath,
+                                    parameters=parameters,
+                                    filelabel=filelabel_raw,
+                                    fmt='%.6e',
+                                    delimiter='\t',
+                                    timestamp=timestamp,
+                                    plotfig=fig)
+
+        self.log.info('ODMR data saved to:\n{0}'.format(filepath))
+        return
+
+
+    def draw_figure(self, data, tau, matrix, detection_time, detection_counts, cbar_range=None, percentile_range=None):
+        """ Draw the summary figure to save with the data.
+
+        @param: list cbar_range: (optional) [color_scale_min, color_scale_max].
+                                 If not supplied then a default of data_min to data_max
+                                 will be used.
+
+        @param: list percentile_range: (optional) Percentile range of the chosen cbar_range.
+
+        @return: fig fig: a matplotlib figure object to be saved to file.
+        """
+        #key = 'range: {1}'.format(frequencies)
+        count_data = data
+        tau_data = tau
+        matrix_data = matrix
+        
+        # If no colorbar range was given, take full range of data
+        if cbar_range is None:
+            cbar_range = np.array([np.min(matrix_data), np.max(matrix_data)])
+        else:
+            cbar_range = np.array(cbar_range)
+
+        prefix = ['', 'k', 'M', 'G', 'T']
+        prefix_index = 0
+
+        # Rescale counts data with SI prefix
+        while np.max(count_data) > 1000:
+            count_data = count_data / 1000
+            #fit_count_vals = fit_count_vals / 1000
+            prefix_index = prefix_index + 1
+
+        counts_prefix = prefix[prefix_index]
+
+        # Rescale frequency data with SI prefix
+        prefix_index = 0
+
+        while np.max(tau_data) > 1000:
+            tau_data = tau_data / 1000
+            #fit_freq_vals = fit_freq_vals / 1000
+            prefix_index = prefix_index + 1
+
+        mw_prefix = prefix[prefix_index]
+
+        # Rescale matrix counts data with SI prefix
+        prefix_index = 0
+
+        while np.max(matrix_data) > 1000:
+            matrix_data = matrix_data / 1000
+            cbar_range = cbar_range / 1000
+            prefix_index = prefix_index + 1
+
+        cbar_prefix = prefix[prefix_index]
+
+        # Use qudi style
+        plt.style.use(self._save_logic.mpl_qd_style)
+
+        # Create figure
+        #fig, (ax_mean, ax_matrix, ax_detection) = plt.subplots(nrows=3, ncols=1)
+        fig, (ax_mean, ax_detection) = plt.subplots(nrows=2, ncols=1)
+
+        ax_mean.plot(tau_data, count_data, linestyle=':', linewidth=0.5)
+        ax_mean.set_ylabel('Fluorescence (' + counts_prefix + 'counts)')
+        ax_mean.set_xlim(np.min(tau_data), np.max(tau_data))
+        
+        # matrixplot = ax_matrix.imshow(
+        #     matrix_data,
+        #     cmap=plt.get_cmap('inferno'),  # reference the right place in qd
+        #     origin='lower',
+        #     vmin=cbar_range[0],
+        #     vmax=cbar_range[1],
+        #     extent=[np.min(detection_time),
+        #             np.max(detection_time),
+        #             0,
+        #             np.shape(matrix_data)[0]
+        #             ],
+        #     aspect='auto',
+        #     interpolation='nearest')
+
+        # ax_matrix.set_xlabel('Frequency (' + mw_prefix + 'Hz)')
+        # ax_matrix.set_ylabel('Scan #')
+
+        ax_detection.plot(detection_time, detection_counts, linestyle=':', linewidth=0.5)
+        ax_detection.set_ylabel('Fluorescence (' + counts_prefix + 'counts)')
+        ax_detection.set_xlim(np.min(detection_time), np.max(detection_time))
+
+        # # Adjust subplots to make room for colorbar
+        # fig.subplots_adjust(right=0.8)
+
+        # # Add colorbar axis to figure
+        # cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
+
+        # # Draw colorbar
+        # cbar = fig.colorbar(matrixplot, cax=cbar_ax)
+        # cbar.set_label('Fluorescence (' + cbar_prefix + 'c/s)')
+
+        # # remove ticks from colorbar for cleaner image
+        # cbar.ax.tick_params(which=u'both', length=0)
+
+        # # If we have percentile information, draw that to the figure
+        # if percentile_range is not None:
+        #     cbar.ax.annotate(str(percentile_range[0]),
+        #                      xy=(-0.3, 0.0),
+        #                      xycoords='axes fraction',
+        #                      horizontalalignment='right',
+        #                      verticalalignment='center',
+        #                      rotation=90
+        #                      )
+        #     cbar.ax.annotate(str(percentile_range[1]),
+        #                      xy=(-0.3, 1.0),
+        #                      xycoords='axes fraction',
+        #                      horizontalalignment='right',
+        #                      verticalalignment='center',
+        #                      rotation=90
+        #                      )
+        #     cbar.ax.annotate('(percentile)',
+        #                      xy=(-0.3, 0.5),
+        #                      xycoords='axes fraction',
+        #                      horizontalalignment='right',
+        #                      verticalalignment='center',
+        #                      rotation=90
+        #                      )
+
+        return fig
+
+
 
 
     def power_to_amp(self, power_dBm, impedance=50):
@@ -192,7 +417,7 @@ class RabiLogic(GenericLogic,rabi_default):
             logger.error("Combined Microwavepower of all active channels too high! Need value below 1. Value of {} was given.", np.sum(self.power))
             raise Exception
         
-        seq = self.awg.mcas(name="Rabi", ch_dict={"2g": [1,2],"ps": [1]})
+        seq = self._awg.mcas(name="Rabi", ch_dict={"2g": [1,2],"ps": [1]})
         # generate segment of repump which starts at each repetition of the sequence.
         seq.start_new_segment("Start")
         if self.rabi_PulsedRepump:
@@ -236,10 +461,10 @@ class RabiLogic(GenericLogic,rabi_default):
             seq.asc(name='readout_decay'+str(duration), length_mus=self.rabi_ReadoutDecay/1000, A1=False, A2=False, tt_trigger=False)
         
         #self.awg.mcas.status = 1
-        self.awg.mcas_dict.stop_awgs()
-        self.awg.mcas_dict['Rabi'] = seq
-        self.awg.mcas_dict.print_info()
-        self.awg.mcas_dict['Rabi'].run()
+        self._awg.mcas_dict.stop_awgs()
+        self._awg.mcas_dict['Rabi'] = seq
+        self._awg.mcas_dict.print_info()
+        self._awg.mcas_dict['Rabi'].run()
         for key,val in ancient_self_variables.items(): # restore the ancient variables
             exec(f"self.{key}={val}")
 

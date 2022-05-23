@@ -89,7 +89,7 @@ class RabiGUI(GUIBase,rabi_default_functions):
         self.rabi_logic.SigClock.connect(self.Update_Runtime, QtCore.Qt.QueuedConnection)
         
         #get the number of points the Timetagger counter will return:
-        self.number_of_points_per_line=self.rabi_logic.Time_Tagger._counter["n_values"]
+        self.number_of_points_per_line=self.rabi_logic._time_tagger._counter["n_values"]
 
         #################### setup graphics for rabi
         self.rabi_matrix_image = pg.ImageItem(

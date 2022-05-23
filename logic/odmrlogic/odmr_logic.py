@@ -141,7 +141,7 @@ class ODMRLogic_holder(GenericLogic):
         parameters['Green (bool)'] = self.ODMRLogic.enable_green
         parameters['Seconds per Point (s)'] = self.ODMRLogic.cw_SecondsPerPoint
 
-        fig = self.draw_figure(data_raw['count data (counts)'],data_raw['Frequency (MHz)'],data_matrix['Frequency (MHz) + Scanline'],
+        fig = self.draw_cw_figure(data_raw['count data (counts)'],data_raw['Frequency (MHz)'],data_matrix['Frequency (MHz) + Scanline'],
                                 cbar_range=colorscale_range,
                                 percentile_range=percentile_range)
 
@@ -221,7 +221,7 @@ class ODMRLogic_holder(GenericLogic):
         parameters['AOM Delay (ns)'] = self.pulsedODMRLogic.pulsed_AOMDelay
         parameters['Binning (s)'] = self.pulsedODMRLogic.pulsed_Binning
 
-        fig = self.draw_figure(data_raw['count data (counts)'],
+        fig = self.draw_pulsed_figure(data_raw['count data (counts)'],
                                 data_raw['Frequency (MHz)'],
                                 data_matrix['Frequency (MHz) + Scanline'],
                                 data_detection['Detection Time (ns)'],
@@ -258,7 +258,126 @@ class ODMRLogic_holder(GenericLogic):
         return
 
 
-    def draw_figure(self, data, frequencies, matrix, detection_time, detection_counts, cbar_range=None, percentile_range=None):
+    def draw_cw_figure(self, data, frequencies, matrix, cbar_range=None, percentile_range=None):
+        """ Draw the summary figure to save with the data.
+
+        @param: list cbar_range: (optional) [color_scale_min, color_scale_max].
+                                 If not supplied then a default of data_min to data_max
+                                 will be used.
+
+        @param: list percentile_range: (optional) Percentile range of the chosen cbar_range.
+
+        @return: fig fig: a matplotlib figure object to be saved to file.
+        """
+        #key = 'range: {1}'.format(frequencies)
+        count_data = data
+        freq_data = frequencies
+        matrix_data = matrix
+        
+        # If no colorbar range was given, take full range of data
+        if cbar_range is None:
+            cbar_range = np.array([np.min(matrix_data), np.max(matrix_data)])
+        else:
+            cbar_range = np.array(cbar_range)
+
+        prefix = ['', 'k', 'M', 'G', 'T']
+        prefix_index = 0
+
+        # Rescale counts data with SI prefix
+        while np.max(count_data) > 1000:
+            count_data = count_data / 1000
+            #fit_count_vals = fit_count_vals / 1000
+            prefix_index = prefix_index + 1
+
+        counts_prefix = prefix[prefix_index]
+
+        # Rescale frequency data with SI prefix
+        prefix_index = 0
+
+        while np.max(freq_data) > 1000:
+            freq_data = freq_data / 1000
+            fit_freq_vals = fit_freq_vals / 1000
+            prefix_index = prefix_index + 1
+
+        mw_prefix = prefix[prefix_index]
+
+        # Rescale matrix counts data with SI prefix
+        prefix_index = 0
+
+        while np.max(matrix_data) > 1000:
+            matrix_data = matrix_data / 1000
+            cbar_range = cbar_range / 1000
+            prefix_index = prefix_index + 1
+
+        cbar_prefix = prefix[prefix_index]
+
+        # Use qudi style
+        plt.style.use(self._save_logic.mpl_qd_style)
+
+        # Create figure
+        fig, (ax_mean, ax_matrix) = plt.subplots(nrows=2, ncols=1)
+
+        ax_mean.plot(freq_data, count_data, linestyle=':', linewidth=0.5)
+
+        ax_mean.set_ylabel('Fluorescence (' + counts_prefix + 'counts)')
+        ax_mean.set_xlim(np.min(freq_data), np.max(freq_data))
+        matrixplot = ax_matrix.imshow(
+            matrix_data,
+            cmap=plt.get_cmap('inferno'),  # reference the right place in qd
+            origin='lower',
+            vmin=cbar_range[0],
+            vmax=cbar_range[1],
+            extent=[np.min(freq_data),
+                    np.max(freq_data),
+                    0,
+                    np.shape(matrix_data)[0]
+                    ],
+            aspect='auto',
+            interpolation='nearest')
+
+        ax_matrix.set_xlabel('Frequency (' + mw_prefix + 'Hz)')
+        ax_matrix.set_ylabel('Scan #')
+
+        # Adjust subplots to make room for colorbar
+        fig.subplots_adjust(right=0.8)
+
+        # Add colorbar axis to figure
+        cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
+
+        # Draw colorbar
+        cbar = fig.colorbar(matrixplot, cax=cbar_ax)
+        cbar.set_label('Fluorescence (' + cbar_prefix + 'c/s)')
+
+        # remove ticks from colorbar for cleaner image
+        cbar.ax.tick_params(which=u'both', length=0)
+
+        # If we have percentile information, draw that to the figure
+        if percentile_range is not None:
+            cbar.ax.annotate(str(percentile_range[0]),
+                             xy=(-0.3, 0.0),
+                             xycoords='axes fraction',
+                             horizontalalignment='right',
+                             verticalalignment='center',
+                             rotation=90
+                             )
+            cbar.ax.annotate(str(percentile_range[1]),
+                             xy=(-0.3, 1.0),
+                             xycoords='axes fraction',
+                             horizontalalignment='right',
+                             verticalalignment='center',
+                             rotation=90
+                             )
+            cbar.ax.annotate('(percentile)',
+                             xy=(-0.3, 0.5),
+                             xycoords='axes fraction',
+                             horizontalalignment='right',
+                             verticalalignment='center',
+                             rotation=90
+                             )
+
+        return fig
+
+    def draw_pulsed_figure(self, data, frequencies, matrix, detection_time, detection_counts, cbar_range=None, percentile_range=None):
         """ Draw the summary figure to save with the data.
 
         @param: list cbar_range: (optional) [color_scale_min, color_scale_max].
