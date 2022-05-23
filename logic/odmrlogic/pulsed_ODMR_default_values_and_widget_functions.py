@@ -248,6 +248,7 @@ class pulsed_ODMR_default_values_and_widget_functions:
                         pass
 
         def pulsed_Save_Button_Clicked(self,on):
+                self.holder.save_pulsed_odmr_data()
                 print('done something with pulsed_Save_Button')
 
         def pulsed_Run_Button_Clicked(self,on):

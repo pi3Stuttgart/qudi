@@ -140,13 +140,7 @@ class ODMRLogic_holder(GenericLogic):
         parameters['CW Repump (bool)'] = self.ODMRLogic.cw_CWRepump
         parameters['Green (bool)'] = self.ODMRLogic.enable_green
         parameters['Seconds per Point (s)'] = self.ODMRLogic.cw_SecondsPerPoint
-        # self._save_logic.save_data(data_raw,
-        #                             filepath=filepath,
-        #                             parameters=parameters,
-        #                             filelabel=filelabel_raw,
-        #                             fmt='%.6e',
-        #                             delimiter='\t',
-        #                             timestamp=timestamp)
+
         fig = self.draw_figure(data_raw['count data (counts)'],data_raw['Frequency (MHz)'],data_matrix['Frequency (MHz) + Scanline'],
                                 cbar_range=colorscale_range,
                                 percentile_range=percentile_range)
@@ -180,49 +174,24 @@ class ODMRLogic_holder(GenericLogic):
             tag = ''
 
         if len(tag) > 0:
-            filelabel_raw = '{0}_cw_ODMR_data_raw'.format(tag)
-            filelabel_matrix = '{0}_cw_ODMR_data_matrix'.format(tag)
+            filelabel_raw = '{0}_pulsed_ODMR_data_raw'.format(tag)
+            filelabel_detection = '{0}_pulsed_ODMR_data_detection'.format(tag)
+            filelabel_matrix = '{0}_pulsed_ODMR_data_matrix'.format(tag)
         else:
-            filelabel_raw = '_cw_ODMR_data_raw'
-            filelabel_matrix = '_cw_ODMR_data_matrix'
+            filelabel_raw = '_pulsed_ODMR_data_raw'
+            filelabel_detection = '_pulsed_ODMR_data_detection'
+            filelabel_matrix = '_pulsed_ODMR_data_matrix'
             
         data_raw = OrderedDict()
+        data_detection = OrderedDict()
         data_matrix = OrderedDict()
-        data_raw['count data (counts)'] = self.ODMRLogic.data
-        data_raw['Frequency (MHz)'] = self.ODMRLogic.mw1_freq
-        data_matrix['Frequency (MHz) + Scanline'] = self.ODMRLogic.scanmatrix
-        
-        parameters = OrderedDict()
-        '''
-        
-        pulsed_StartFreq=None,
-        pulsed_StopFreq=None,
-        pulsed_Stepsize=None,
-        pulsed_MW2_Freq=None,
-        pulsed_MW3_Freq=None,
-        pulsed_MW1_Power=None,
-        pulsed_MW2_Power=None,
-        pulsed_MW3_Power=None,
-        pulsed_piPulseDuration=None,
-        pulsed_PiDecay=None,
-        pulsed_A1=None,
-        pulsed_A2=None,
-        pulsed_PulsedRepump=None,
-        pulsed_RepumpDuration = None, 
-        pulsed_RepumpDecay = None, 
-        pulsed_CWRepump=None,
-        enable_green=False,
-        pulsed_AOMDelay = None,
-        pulsed_InitTime = None,
-        pulsed_DecayInit = None,
-        pulsed_ReadoutTime = None,
-        pulsed_ReadoutDecay = None,
-        pulsed_A1Readout = None,
-        pulsed_A2Readout = None,
-        pulsed_SecondsPerPoint=None,
-        pulsed_Binning = None
-        '''
+        data_raw['count data (counts)'] = self.pulsedODMRLogic.data
+        data_raw['Frequency (MHz)'] = self.pulsedODMRLogic.mw1_freq
+        data_detection['Detection Time (ns)'] = self.pulsedODMRLogic.indexes/1e3 #save data in [ns]
+        data_detection['Detection Counts (counts)'] = self.pulsedODMRLogic.data_detect
+        data_matrix['Frequency (MHz) + Scanline'] = self.pulsedODMRLogic.scanmatrix
 
+        parameters = OrderedDict()
 
         parameters['Enable Microwave1 (bool)'] = self.pulsedODMRLogic.pulsed_MW1
         parameters['Enable Microwave2 (bool)'] = self.pulsedODMRLogic.pulsed_MW2
@@ -230,27 +199,33 @@ class ODMRLogic_holder(GenericLogic):
         parameters['Microwave1 CW Power (dBm)'] = self.pulsedODMRLogic.pulsed_MW1_Power
         parameters['Microwave2 CW Power (dBm)'] = self.pulsedODMRLogic.pulsed_MW2_Power
         parameters['Microwave3 CW Power (dBm)'] = self.pulsedODMRLogic.pulsed_MW3_Power
-        parameters['Microwave1 Start (MHz)'] = self.pulsedODMRLogic.cw_StartFreq
-        parameters['Microwave1 Stop (MHz)'] = self.pulsedODMRLogic.cw_StopFreq
-        parameters['Microwave1 Stepsize (MHz)'] = self.pulsedODMRLogic.cw_Stepsize
-        parameters['Microwave2 CW Power (dBm)'] = self.pulsedODMRLogic.cw_MW2_Freq
-        parameters['Microwave3 CW Power (dBm)'] = self.pulsedODMRLogic.cw_MW3_Freq
-        parameters['A1 (bool)'] = self.pulsedODMRLogic.cw_A1
-        parameters['A2 (bool)'] = self.pulsedODMRLogic.cw_A2
-        parameters['Pulsed Repump (bool)'] = self.pulsedODMRLogic.cw_PulsedRepump
-        parameters['Pulsed Duration (µs)'] = self.pulsedODMRLogic.cw_RepumpDuration
-        parameters['Pulsed Decay (µs)'] = self.pulsedODMRLogic.cw_RepumpDecay
-        parameters['CW Repump (bool)'] = self.pulsedODMRLogic.cw_CWRepump
-        parameters['Green (bool)'] = self.pulsedODMRLogic.enable_green
-        parameters['Seconds per Point (s)'] = self.pulsedODMRLogic.cw_SecondsPerPoint
-        # self._save_logic.save_data(data_raw,
-        #                             filepath=filepath,
-        #                             parameters=parameters,
-        #                             filelabel=filelabel_raw,
-        #                             fmt='%.6e',
-        #                             delimiter='\t',
-        #                             timestamp=timestamp)
-        fig = self.draw_figure(data_raw['count data (counts)'],data_raw['Frequency (MHz)'],data_matrix['Frequency (MHz) + Scanline'],
+        parameters['Microwave1 Start (MHz)'] = self.pulsedODMRLogic.pulsed_StartFreq
+        parameters['Microwave1 Stop (MHz)'] = self.pulsedODMRLogic.pulsed_StopFreq
+        parameters['Microwave1 Stepsize (MHz)'] = self.pulsedODMRLogic.pulsed_Stepsize
+        parameters['Microwave2 CW Power (dBm)'] = self.pulsedODMRLogic.pulsed_MW2_Freq
+        parameters['Microwave3 CW Power (dBm)'] = self.pulsedODMRLogic.pulsed_MW3_Freq
+        parameters['Pi Pulse Duration (ns)'] = self.pulsedODMRLogic.pulsed_piPulseDuration
+        parameters['Pi Pulse Decay (ns)'] = self.pulsedODMRLogic.pulsed_PiDecay
+        parameters['A1 (bool)'] = self.pulsedODMRLogic.pulsed_A1
+        parameters['A2 (bool)'] = self.pulsedODMRLogic.pulsed_A2
+        parameters['Pulsed Repump (bool)'] = self.pulsedODMRLogic.pulsed_PulsedRepump
+        parameters['Pulsed Duration (µs)'] = self.pulsedODMRLogic.pulsed_RepumpDuration
+        parameters['Pulsed Decay (µs)'] = self.pulsedODMRLogic.pulsed_RepumpDecay
+        parameters['CW Repump (bool)'] = self.pulsedODMRLogic.pulsed_CWRepump
+        parameters['Init Time (µs)'] = self.pulsedODMRLogic.pulsed_InitTime
+        parameters['Init Decay (µs)'] = self.pulsedODMRLogic.pulsed_DecayInit
+        parameters['Readout Time (µs)'] = self.pulsedODMRLogic.pulsed_ReadoutTime
+        parameters['Readout Decay (µs)'] = self.pulsedODMRLogic.pulsed_ReadoutDecay
+        parameters['Readout via A1 (bool)'] = self.pulsedODMRLogic.pulsed_A1Readout
+        parameters['Readout via A2 (bool)'] = self.pulsedODMRLogic.pulsed_A2Readout
+        parameters['AOM Delay (ns)'] = self.pulsedODMRLogic.pulsed_AOMDelay
+        parameters['Binning (s)'] = self.pulsedODMRLogic.pulsed_Binning
+
+        fig = self.draw_figure(data_raw['count data (counts)'],
+                                data_raw['Frequency (MHz)'],
+                                data_matrix['Frequency (MHz) + Scanline'],
+                                data_detection['Detection Time (ns)'],
+                                data_detection['Detection Counts (counts)'],
                                 cbar_range=colorscale_range,
                                 percentile_range=percentile_range)
 
@@ -258,6 +233,14 @@ class ODMRLogic_holder(GenericLogic):
                                     filepath=filepath,
                                     parameters=parameters,
                                     filelabel=filelabel_matrix,
+                                    fmt='%.6e',
+                                    delimiter='\t',
+                                    timestamp=timestamp)
+        
+        self._save_logic.save_data(data_detection,
+                                    filepath=filepath,
+                                    parameters=parameters,
+                                    filelabel=filelabel_detection,
                                     fmt='%.6e',
                                     delimiter='\t',
                                     timestamp=timestamp)
@@ -275,7 +258,7 @@ class ODMRLogic_holder(GenericLogic):
         return
 
 
-    def draw_figure(self, data, frequencies, matrix, cbar_range=None, percentile_range=None):
+    def draw_figure(self, data, frequencies, matrix, detection_time, detection_counts, cbar_range=None, percentile_range=None):
         """ Draw the summary figure to save with the data.
 
         @param: list cbar_range: (optional) [color_scale_min, color_scale_max].
@@ -290,7 +273,7 @@ class ODMRLogic_holder(GenericLogic):
         count_data = data
         freq_data = frequencies
         matrix_data = matrix
-
+        
         # If no colorbar range was given, take full range of data
         if cbar_range is None:
             cbar_range = np.array([np.min(matrix_data), np.max(matrix_data)])
@@ -332,11 +315,11 @@ class ODMRLogic_holder(GenericLogic):
         plt.style.use(self._save_logic.mpl_qd_style)
 
         # Create figure
-        fig, (ax_mean, ax_matrix) = plt.subplots(nrows=2, ncols=1)
+        fig, (ax_mean, ax_matrix, ax_detection) = plt.subplots(nrows=3, ncols=1)
 
         ax_mean.plot(freq_data, count_data, linestyle=':', linewidth=0.5)
 
-        ax_mean.set_ylabel('Fluorescence (' + counts_prefix + 'c/s)')
+        ax_mean.set_ylabel('Fluorescence (' + counts_prefix + 'counts)')
         ax_mean.set_xlim(np.min(freq_data), np.max(freq_data))
         matrixplot = ax_matrix.imshow(
             matrix_data,
@@ -354,6 +337,10 @@ class ODMRLogic_holder(GenericLogic):
 
         ax_matrix.set_xlabel('Frequency (' + mw_prefix + 'Hz)')
         ax_matrix.set_ylabel('Scan #')
+
+        ax_detection.plot(detection_time, detection_counts, linestyle=':', linewidth=0.5)
+        ax_detection.set_ylabel('Fluorescence (' + counts_prefix + 'counts)')
+        ax_detection.set_xlim(np.min(detection_time), np.max(detection_time))
 
         # Adjust subplots to make room for colorbar
         fig.subplots_adjust(right=0.8)
@@ -604,7 +591,7 @@ class pulsedODMRLogic(pulsed_default):
             
         else:
             data=self.time_differences.getData()-self.ancient_data
-            indexes=np.array(self.time_differences.getIndex())
+            self.indexes=np.array(self.time_differences.getIndex())
             #print(data)
             data=np.array(data,dtype=object)
             self.ancient_data=data+self.ancient_data
@@ -625,7 +612,7 @@ class pulsedODMRLogic(pulsed_default):
             self.data=self.data+data
             self.data_detect=self.data_detect+data_detect
             
-            self.holder.sigOdmrPlotsUpdated.emit(self.mw1_freq*1e6,self.data,self.scanmatrix,indexes/1e12,self.data_detect)
+            self.holder.sigOdmrPlotsUpdated.emit(self.mw1_freq*1e6,self.data,self.scanmatrix,self.indexes/1e12,self.data_detect)
         #print("ploting matrix")
                 
 
@@ -667,7 +654,6 @@ class pulsedODMRLogic(pulsed_default):
         pulsed_ReadoutDecay = None,
         pulsed_A1Readout = None,
         pulsed_A2Readout = None,
-        pulsed_SecondsPerPoint=None,
         pulsed_Binning = None
         ):
 
