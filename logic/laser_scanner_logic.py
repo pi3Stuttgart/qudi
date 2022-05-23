@@ -23,6 +23,7 @@ Copyright (c) the Qudi Developers. See the COPYRIGHT.txt file at the
 top-level directory of this distribution and at <https://github.com/Ulm-IQO/qudi/>
 """
 
+from cgitb import enable
 from collections import OrderedDict
 import datetime
 import matplotlib.pyplot as plt
@@ -47,6 +48,7 @@ class LaserScannerLogic(GenericLogic):
     # declare connectors
     confocalscanner1 = Connector(interface='ConfocalScannerInterface')
     savelogic = Connector(interface='SaveLogic')
+    setupcontrollogic= Connector(interface='SetupControlLogic')
 
     scan_range = StatusVar('scan_range', [-10, 10])
     number_of_repeats = StatusVar(default=10)
@@ -61,6 +63,10 @@ class LaserScannerLogic(GenericLogic):
     sigScanFinished = QtCore.Signal()
     sigScanStarted = QtCore.Signal()
 
+    # to cut the scan line into smaller parts:
+    slices=11
+
+
     def __init__(self, **kwargs):
         """ Create VoltageScanningLogic object with connectors.
 
@@ -71,6 +77,25 @@ class LaserScannerLogic(GenericLogic):
         # locking for thread safety
         self.threadlock = Mutex()
         self.stopRequested = False
+        self.AbortRequested=False
+        self.repump_on_during_retrace=True
+        self.repump_Duration=0
+        self.repump_Decay=0
+        self.A2_on_during_retrace=0
+        self.A1_on_during_retrace=0
+        self.local_counts=[]
+        self.slice_number=0
+
+        self.enable_MW1=False
+        self.enable_MW2=False
+        self.enable_MW3=False
+        self.MW1_freq=70
+        self.MW2_freq=70
+        self.MW3_freq=70
+        self.MW1_power=-20
+        self.MW2_power=-20
+        self.MW3_power=-20
+
 
         self.fit_x = []
         self.fit_y = []
@@ -121,7 +146,7 @@ class LaserScannerLogic(GenericLogic):
         self.set_resolution(self.resolution)
         self._goto_speed = 10  # 0.01  # volt / second
         self.set_scan_speed(self._scan_speed)
-        self._smoothing_steps = 10  # steps to accelerate between 0 and scan_speed
+        self._smoothing_steps = 0  # steps to accelerate between 0 and scan_speed
         self._max_step = 0.01  # volt
 
         ##############################
@@ -133,6 +158,7 @@ class LaserScannerLogic(GenericLogic):
         """ Deinitialisation performed during deactivation of the module.
         """
         self.stopRequested = True
+        self.AbortRequested = False
 
     @QtCore.Slot(float)
     def goto_voltage(self, volts=None):
@@ -142,7 +168,6 @@ class LaserScannerLogic(GenericLogic):
 
         @return int: error code (0:OK, -1:error)
         """
-        # print(tag, x, y, z)
         # Changes the respective value
         if volts is not None:
             self._static_v = volts
@@ -161,7 +186,7 @@ class LaserScannerLogic(GenericLogic):
 
         @return int: error code (0:OK, -1:error)
         """
-        ramp_scan = self._generate_ramp(self.get_current_voltage(), new_voltage, self._goto_speed)
+        ramp_scan = self._generate_ramp(self.get_current_voltage(), new_voltage, 0.75)
         self._initialise_scanner()
         ignored_counts = self._scan_line(ramp_scan)
         self._close_scanner()
@@ -169,13 +194,16 @@ class LaserScannerLogic(GenericLogic):
         return 0
 
     def _goto_during_scan(self, voltage=None):
-
         if voltage is None:
             return -1
 
-        goto_ramp = self._generate_ramp(self.get_current_voltage(), voltage, self._goto_speed)
-        ignored_counts = self._scan_line(goto_ramp)
+        if abs(self.get_current_voltage()-voltage)<0.01: #avoid a strange situation where we get an error
+            goto_ramp = self._generate_ramp(self.get_current_voltage(), voltage+0.05, 0.75)
+            ignored_counts = self._scan_line(goto_ramp)
 
+        goto_ramp = self._generate_ramp(self.get_current_voltage(), voltage, 0.75)
+        ignored_counts = self._scan_line(goto_ramp)
+        
         return 0
 
     def set_clock_frequency(self, clock_frequency):
@@ -201,7 +229,7 @@ class LaserScannerLogic(GenericLogic):
         return self.set_clock_frequency(new_clock)
 
     def set_scan_range(self, scan_range):
-        """ Set the scan rnage """
+        """ Set the scan range """
         r_max = np.clip(scan_range[1], self.a_range[0], self.a_range[1])
         r_min = np.clip(scan_range[0], self.a_range[0], r_max)
         self.scan_range = [r_min, r_max]
@@ -263,7 +291,6 @@ class LaserScannerLogic(GenericLogic):
         """
 
         self.current_position = self._scanning_device.get_scanner_position()
-        print(self.current_position)
 
         if v_min is not None:
             self.scan_range[0] = v_min
@@ -280,7 +307,11 @@ class LaserScannerLogic(GenericLogic):
 
         # TODO: Generate Ramps
         self._upwards_ramp = self._generate_ramp(v_min, v_max, self._scan_speed)
-        self._downwards_ramp = self._generate_ramp(v_max, v_min, self._scan_speed)
+        self._downwards_ramp = self._generate_ramp(v_max, v_min, 0.75)
+
+        #this part is used to be able to abort the scanning process more rapidly
+        self._upwards_ramp_slices=self.slice_array(self._upwards_ramp)
+        self.slice_number=0
 
         self._initialise_data_matrix(len(self._upwards_ramp[3]))
 
@@ -294,21 +325,41 @@ class LaserScannerLogic(GenericLogic):
         self.sigScanStarted.emit()
         return 0
 
+    def slice_array(self,x):
+        arr=np.arange(0,len(x[0]))
+        propor=(len(x[0])+1)/self.slices
+        parts=[x[:,(i*propor<=arr) & (arr<(i+1)*propor)] for i in range(self.slices)]
+        return parts
+
+
     def stop_scanning(self):
         """Stops the scan
 
         @return int: error code (0:OK, -1:error)
         """
+        print("stopping")
         with self.threadlock:
             if self.module_state() == 'locked':
+                #self._close_scanner() # hope this will not destroy something
+                #self._initialise_scanner()
                 self.stopRequested = True
+                #self._do_next_line()
         return 0
+
+    def abort_scanning(self):
+        print("Aborting")
+        with self.threadlock:
+            if self.module_state() == 'locked':
+                self.AbortRequested = True
+        return 0
+
 
     def _close_scanner(self):
         """Close the scanner and unlock"""
         with self.threadlock:
             self.kill_scanner()
             self.stopRequested = False
+            self.AbortRequested = False
             if self.module_state.can('unlock'):
                 self.module_state.unlock()
 
@@ -316,32 +367,57 @@ class LaserScannerLogic(GenericLogic):
         """ If stopRequested then finish the scan, otherwise perform next repeat of the scan line
         """
         # stops scanning
-        if self.stopRequested or self._scan_counter_down >= self.number_of_repeats:
-            print(self.current_position)
+        if ((self.stopRequested and self.slice_number==0) or self._scan_counter_down >= self.number_of_repeats or self.AbortRequested):
             self._goto_during_scan(self._static_v)
             self._close_scanner()
             self.sigScanFinished.emit()
+            self.local_counts=[]
+            self.slice_number=0
             return
 
-        if self._scan_counter_up == 0:
+        if self._scan_counter_up == 0 and self.slice_number==0:
             # move from current voltage to start of scan range.
             self._goto_during_scan(self.scan_range[0])
 
         if self.upwards_scan:
-            counts = self._scan_line(self._upwards_ramp)
-            self.scan_matrix[self._scan_counter_up] = counts
-            self.plot_y += counts
-            self._scan_counter_up += 1
-            self.upwards_scan = False
-        else:
+            counts = self._scan_line(self._upwards_ramp_slices[self.slice_number])
+            self.local_counts=self.local_counts+list(counts)
+            self.slice_number+=1
+            if self.slice_number==self.slices:
+                self.scan_matrix[self._scan_counter_up] =self.local_counts
+                self.plot_y = self.plot_y + np.array(self.local_counts)
+                self.local_counts=[]
+                self._scan_counter_up += 1
+                self.upwards_scan = False
+                self.slice_number=0 
+
+        
+        else: #retrace
+            self.setupcontrollogic().setup_seq(enable_A1=self.A1_on_during_retrace,
+                enable_A2=self.A2_on_during_retrace,
+                enable_Repump=self.repump_on_during_retrace,
+                enable_MW1=self.enable_MW1,
+                enable_MW2=self.enable_MW2,
+                enable_MW3=self.enable_MW3,
+                MW1_freq= self.MW1_freq,
+                MW2_freq= self.MW2_freq,
+                MW3_freq= self.MW3_freq,
+                MW1_power=self.MW1_power,
+                MW2_power=self.MW2_power,
+                MW3_power=self.MW3_power
+                )
             counts = self._scan_line(self._downwards_ramp)
+            counts=np.ones(self.scan_matrix2[self._scan_counter_down].shape[0])
             self.scan_matrix2[self._scan_counter_down] = counts
             self.plot_y2 += counts
             self._scan_counter_down += 1
             self.upwards_scan = True
+            self.setupcontrollogic().setup_seq()
+
 
         self.sigUpdatePlots.emit()
         self.sigScanNextLine.emit()
+        
 
     def _generate_ramp(self, voltage1, voltage2, speed):
         """Generate a ramp vrom voltage1 to voltage2 that
@@ -416,7 +492,6 @@ class LaserScannerLogic(GenericLogic):
             np.ones((len(ramp), )) * spatial_pos[2],
             ramp
             ))
-
         return scan_line
 
     def _scan_line(self, line_to_scan=None):
@@ -671,4 +746,3 @@ class LaserScannerLogic(GenericLogic):
                              )
 
         return fig
-

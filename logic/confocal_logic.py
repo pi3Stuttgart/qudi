@@ -1129,6 +1129,10 @@ class ConfocalLogic(GenericLogic):
         # Create figure
         fig, ax = plt.subplots()
 
+        # if self._zscan:
+        #     print("zscan flipped")
+        #     image_data=image_data[:,::-1]# Changed
+        
         # Create image plot
         cfimage = ax.imshow(image_data,
                             cmap=plt.get_cmap('inferno'), # reference the right place in qd

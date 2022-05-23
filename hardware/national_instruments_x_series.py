@@ -1018,8 +1018,9 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         """
 
         if self.module_state() == 'locked':
-            self.log.error('Another scan_line is already running, close this one first.')
-            return -1
+            #self.log.error('Another scan_line is already running, close this one first.')
+            #return -1
+            print("error overridden") #Changed
 
         if x is not None:
             if not(self._scanner_position_ranges[0][0] <= x <= self._scanner_position_ranges[0][1]):

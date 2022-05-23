@@ -101,6 +101,10 @@ class cw_ODMR_default_values_and_widget_functions:
                         pass
 
         def cw_Save_Button_Clicked(self,on):
+<<<<<<< Updated upstream
+=======
+                self.holder.save_cw_odmr_data()
+>>>>>>> Stashed changes
                 print('done something with cw_Save_Button')
 
         def cw_MW3_Power_LineEdit_textEdited(self,text):

@@ -28,6 +28,10 @@ from interface.pulser_interface import PulserInterface, PulserConstraints
 from collections import OrderedDict
 import numpy as np
 
+import os
+#print("os.environ=",os.environ['CONDA_DEFAULT_ENV']) #UNFUG
+#print("os.cwd=",os.getcwd())
+
 import pulsestreamer as ps
 
 
@@ -46,7 +50,7 @@ class PulseStreamer(Base, PulserInterface):
         external_clock_option: 0
     """
 
-    _pulsestreamer_ip = ConfigOption('pulsestreamer_ip', '192.168.1.100', missing='warn')
+    _pulsestreamer_ip = ConfigOption('pulsestreamer_ip', '129.69.46.51', missing='warn')
     _laser_channel = ConfigOption('laser_channel', 1, missing='warn')
     _uw_x_channel = ConfigOption('uw_x_channel', 3, missing='warn')
     _use_external_clock = ConfigOption('use_external_clock', False, missing='info')
@@ -65,7 +69,10 @@ class PulseStreamer(Base, PulserInterface):
         self.__currently_loaded_waveform = ''  # loaded and armed waveform name
         self.__samples_written = 0
         self._trigger = ps.TriggerStart.SOFTWARE
-        self._laser_mw_on_state = ps.OutputState([self._laser_channel, self._uw_x_channel], 0, 0)
+        #self._laser_mw_on_state = ps.OutputState([self._laser_channel, self._uw_x_channel], 0, 0)
+        self._laser_mw_on_state = ps.OutputState([])
+
+
 
     def on_activate(self):
         """ Establish connection to pulse streamer and tell it to cancel all operations """
@@ -294,7 +301,7 @@ class PulseStreamer(Base, PulserInterface):
         else:
             self.log.error('Method load_waveform expects a list of waveform names or a dict.')
             return self.get_loaded_assets()[0]
-
+        
         if len(waveforms) != 1:
             self.log.error('pulsestreamer pulser expects exactly one waveform name for load_waveform.')
             return self.get_loaded_assets()[0]
@@ -306,8 +313,8 @@ class PulseStreamer(Base, PulserInterface):
             return self.get_loaded_assets()[0]
 
         self._seq = self.pulse_streamer.createSequence()
+
         for channel_number, pulse_pattern in self.__current_waveform.items():
-            #print(pulse_pattern)
             swabian_channel_number = int(channel_number[-1])-1
             self._seq.setDigital(swabian_channel_number,pulse_pattern)
 
@@ -641,7 +648,6 @@ class PulseStreamer(Base, PulserInterface):
         @return (int, list): Number of samples written (-1 indicates failed process) and list of
                              created waveform names
         """
-
         if analog_samples:
             self.log.debug('Analog not yet implemented for pulse streamer')
             return -1, list()

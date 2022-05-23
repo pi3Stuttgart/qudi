@@ -119,6 +119,7 @@ class ConfocalGui(GUIBase):
     # config options for gui
     fixed_aspect_ratio_xy = ConfigOption('fixed_aspect_ratio_xy', True)
     fixed_aspect_ratio_depth = ConfigOption('fixed_aspect_ratio_depth', True)
+    fixed_aspect_ratio_depth=False
     image_x_padding = ConfigOption('image_x_padding', 0.02)
     image_y_padding = ConfigOption('image_y_padding', 0.02)
     image_z_padding = ConfigOption('image_z_padding', 0.02)
