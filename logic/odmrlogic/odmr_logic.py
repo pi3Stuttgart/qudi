@@ -6,11 +6,7 @@ sys.path.append('C:\src\qudi\hardware\Keysight_AWG_M8190\pyarbtools_master') #qu
 
 from core.module import Base
 from core.connector import Connector
-<<<<<<< Updated upstream
-from hardware.swabian_instruments.timetagger import TT as TimeTagger
-=======
 #from hardware.swabian_instruments.timetagger import TT as TimeTagger
->>>>>>> Stashed changes
 from logic.generic_logic import GenericLogic
 #import hardware.Keysight_AWG_M8190.pyarbtools_master.pyarbtools as pyarbtools
 
@@ -22,14 +18,10 @@ import inspect
 import logging
 logger = logging.getLogger(__name__)
 import time
-<<<<<<< Updated upstream
-import pandas as pd
-=======
 import datetime
 from collections import OrderedDict
 import matplotlib.pyplot as plt
 #import pandas as pd
->>>>>>> Stashed changes
 
 class ODMRLogic_holder(GenericLogic):
     #declare connectors
@@ -62,14 +54,6 @@ class ODMRLogic_holder(GenericLogic):
     SigCheckReady_Beacon = QtCore.Signal()
 
     def on_activate(self):
-<<<<<<< Updated upstream
-        self.Time_Tagger=self.counter_device()
-        self.Time_Tagger.setup_TT()
-        self.pulsedODMRLogic = pulsedODMRLogic(self)
-        self.ODMRLogic = ODMRLogic(self)
-        self.awg = self.mcas_holder()#mcas_dict()
-        self.stop_awg = self.awg.mcas_dict.stop_awgs
-=======
         """
         Initialisation performed during activation of the module.
         """
@@ -82,7 +66,6 @@ class ODMRLogic_holder(GenericLogic):
         self.stop_awg = self._awg.mcas_dict.stop_awgs
         self.pulsedODMRLogic = pulsedODMRLogic(self)
         self.ODMRLogic = ODMRLogic(self)
->>>>>>> Stashed changes
         self.Timer = RepeatedTimer(1, self.clock) # this clock is not very precise, maybe the solution proposed on https://stackoverflow.com/questions/474528/what-is-the-best-way-to-repeatedly-execute-a-function-every-x-seconds can be helpful.
         #self.SigCheckReady_Beacon.connect(self.print_counter)
         self.CheckReady_Beacon = RepeatedTimer(1, self.CheckReady)
@@ -91,17 +74,12 @@ class ODMRLogic_holder(GenericLogic):
         return 
 
     def on_deactivate(self):
-<<<<<<< Updated upstream
-        self.Timer.stop()
-        self.CheckReady_Beacon.stop()
-=======
         """
         Deinitialisation performed during deactivation of the module.
         """
         self.Timer.stop()
         self.CheckReady_Beacon.stop()
         self.stop_awg()
->>>>>>> Stashed changes
         try: #checkready_beacon may not be launched
             self.checkready.stop()
         except:
@@ -118,12 +96,6 @@ class ODMRLogic_holder(GenericLogic):
         self.SigCheckReady_Beacon.emit()
 
     def setup_time_tagger(self,**kwargs):
-<<<<<<< Updated upstream
-        self.Time_Tagger._time_diff.update(**kwargs)
-        return self.Time_Tagger.time_differences()
-
-
-=======
         self._time_tagger._time_diff.update(**kwargs)
         return self._time_tagger.time_differences()
 
@@ -421,7 +393,6 @@ class ODMRLogic_holder(GenericLogic):
                              )
 
         return fig
->>>>>>> Stashed changes
 
 
 class ODMRLogic(cw_default):
@@ -429,31 +400,18 @@ class ODMRLogic(cw_default):
     def __init__(self,holder):
         self.measurement_running=False
         self.holder=holder
-<<<<<<< Updated upstream
-        self.counter=self.holder.Time_Tagger.counter()
-        self.time_differences = self.holder.Time_Tagger.time_differences()
-        self.number_of_points_per_line=self.holder.Time_Tagger._time_diff["n_histograms"]
-        self.scanmatrix=np.zeros((self.cw_NumberOfLines,self.number_of_points_per_line))
-        self.data=0
-        self.holder.SigCheckReady_Beacon.connect(self.check_ready)
-=======
         self.counter=self.holder._time_tagger.counter()
         self.time_differences = self.holder._time_tagger.time_differences()
         self.number_of_points_per_line=self.holder._time_tagger._time_diff["n_histograms"]
         self.scanmatrix=np.zeros((self.cw_NumberOfLines,self.number_of_points_per_line))
         self.data=0
         self.holder.SigCheckReady_Beacon.connect(self.data_readout)
->>>>>>> Stashed changes
         self.ancient_data=np.array(self.time_differences.getData(),dtype=object)
         self.syncing=False
 
         self.continuing=False
 
-<<<<<<< Updated upstream
-    def check_ready(self):
-=======
     def data_readout(self):
->>>>>>> Stashed changes
         #print("checkready:",self.measurement_running)
         if not(self.measurement_running or self.syncing):
             #if not(self.syncing):
@@ -465,11 +423,7 @@ class ODMRLogic(cw_default):
             
         else:
             data=self.time_differences.getData()-self.ancient_data
-<<<<<<< Updated upstream
-            print(data)
-=======
             #print(data)
->>>>>>> Stashed changes
             data=np.array(data,dtype=object)
             self.ancient_data=data+self.ancient_data
             data=np.sum(data,axis=1)
@@ -571,11 +525,7 @@ class ODMRLogic(cw_default):
             
         # generate a single MW sequence with the needed mw frequencies and play is continuously until the measurement is stopped,
         # either by the stop button, the runtime, or number of sequence repetitions. 
-<<<<<<< Updated upstream
-        seq = self.holder.awg.mcas(name="cwODMR", ch_dict={"2g": [1,2],"ps": [1]})
-=======
         seq = self.holder._awg.mcas(name="cwODMR", ch_dict={"2g": [1,2],"ps": [1]})
->>>>>>> Stashed changes
 
         # generate segment of repump which starts at each repetition of the sequence.
         seq.start_new_segment("Start")
@@ -585,14 +535,8 @@ class ODMRLogic(cw_default):
 
         # short pulses to SYNC and TRIGGER the timedifferences module of TimeTagger.
         seq.asc(name='tt_sync1', length_mus=0.01, tt_sync=True)        
-<<<<<<< Updated upstream
-        #seq.asc(name='tt_sync2', length_mus=0.01, tt_trigger=True)        
-        #seq.asc(name='tt_sync3', length_mus=0.01, tt_trigger=False) 
-
-=======
         seq.asc(name='tt_sync2', length_mus=0.01, tt_trigger=True)        
         seq.asc(name='tt_sync3', length_mus=0.01, tt_trigger=False) 
->>>>>>> Stashed changes
 
 
         # generate multiple segments, each containing one of the microwave frequencies. Length of each segment is determined by the loop-count.      
@@ -618,20 +562,11 @@ class ODMRLogic(cw_default):
                 length_mus=0.01
                 )
 
-<<<<<<< Updated upstream
-        #self.holder.awg.mcas.status = 1
-        self.holder.awg.mcas_dict.stop_awgs()
-        self.holder.awg.mcas_dict['cwODMR'] = seq
-        self.holder.awg.mcas_dict.print_info()
-        self.holder.awg.mcas_dict['cwODMR'].run()
-        
-=======
         #self.holder._awg.mcas.status = 1
         self.holder._awg.mcas_dict.stop_awgs()
         self.holder._awg.mcas_dict['cwODMR'] = seq
         self.holder._awg.mcas_dict.print_info()
         self.holder._awg.mcas_dict['cwODMR'].run()        
->>>>>>> Stashed changes
         print("running sequence cwODMR")
 
 
@@ -640,15 +575,6 @@ class pulsedODMRLogic(pulsed_default):
     def __init__(self,holder):
         self.measurement_running=False
         self.holder=holder
-<<<<<<< Updated upstream
-        self.counter=self.holder.Time_Tagger.counter()
-        self.time_differences = self.holder.Time_Tagger.time_differences()
-        self.number_of_points_per_line=self.holder.Time_Tagger._time_diff["n_histograms"]
-        self.scanmatrix=np.zeros((self.pulsed_NumberOfLines,self.number_of_points_per_line))
-        self.data=0
-        self.data_detect=0
-        self.holder.SigCheckReady_Beacon.connect(self.check_ready)
-=======
         self.counter=self.holder._time_tagger.counter()
         self.time_differences = self.holder._time_tagger.time_differences()
         self.number_of_points_per_line=self.holder._time_tagger._time_diff["n_histograms"]
@@ -656,7 +582,6 @@ class pulsedODMRLogic(pulsed_default):
         self.data=0
         self.data_detect=0
         self.holder.SigCheckReady_Beacon.connect(self.data_readout)
->>>>>>> Stashed changes
         self.ancient_data=np.array(self.time_differences.getData(),dtype=object)
         self.syncing=False
 
@@ -667,11 +592,7 @@ class pulsedODMRLogic(pulsed_default):
         self.continuing=False # variable to discard first getdata after pressing continue.
 
 
-<<<<<<< Updated upstream
-    def check_ready(self):
-=======
     def data_readout(self):
->>>>>>> Stashed changes
         #print("checkready:",self.measurement_running)
         if not(self.measurement_running or self.syncing):
                 return
@@ -684,11 +605,7 @@ class pulsedODMRLogic(pulsed_default):
         else:
             data=self.time_differences.getData()-self.ancient_data
             indexes=np.array(self.time_differences.getIndex())
-<<<<<<< Updated upstream
-            print(data)
-=======
             #print(data)
->>>>>>> Stashed changes
             data=np.array(data,dtype=object)
             self.ancient_data=data+self.ancient_data
             data_detect=np.sum(data,axis=0)
@@ -795,11 +712,7 @@ class pulsedODMRLogic(pulsed_default):
             logger.error("Combined Microwavepower of all active channels too high! Need value below 1. Value of {} was given.", np.sum(self.power))
             raise Exception
         
-<<<<<<< Updated upstream
-        seq = self.holder.awg.mcas(name="pulsedODMR", ch_dict={"2g": [1,2],"ps": [1]})
-=======
         seq = self.holder._awg.mcas(name="pulsedODMR", ch_dict={"2g": [1,2],"ps": [1]})
->>>>>>> Stashed changes
         # generate segment of repump which starts at each repetition of the sequence.
         if self.pulsed_PulsedRepump:
             seq.start_new_segment("Repump")
@@ -841,17 +754,10 @@ class pulsedODMRLogic(pulsed_default):
             seq.asc(name='readout_decay'+str(freq), length_mus=self.pulsed_ReadoutDecay, A1=False, A2=False, tt_trigger=True)
 
         #self.holder.awg.mcas.status = 1
-<<<<<<< Updated upstream
-        self.holder.awg.mcas_dict.stop_awgs()
-        self.holder.awg.mcas_dict['pulsedODMR'] = seq
-        self.holder.awg.mcas_dict.print_info()
-        self.holder.awg.mcas_dict['pulsedODMR'].run()
-=======
         self.holder._awg.mcas_dict.stop_awgs()
         self.holder._awg.mcas_dict['pulsedODMR'] = seq
         self.holder._awg.mcas_dict.print_info()
         self.holder._awg.mcas_dict['pulsedODMR'].run()
->>>>>>> Stashed changes
         print("running sequence pulsedODMR")
 
 
