@@ -165,7 +165,14 @@ class SaveLogic(GenericLogic):
         'ytick.minor.visible': True,
         'savefig.dpi': '180'
         }
-
+    current_setup_parameters = {
+        "current_path" : "",
+        "power": "",
+        "laser": "",
+        "sample": "",
+        "region": "",
+        "other_info": ""
+    }
     _additional_parameters = {}
 
     def __init__(self, config, **kwargs):

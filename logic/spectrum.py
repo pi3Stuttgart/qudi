@@ -329,8 +329,8 @@ class SpectrumLogic(GenericLogic):
             self._odmr_logic.mw_off()
         else:
             print("Parameter 'on' needs to be boolean")
-
-    def save_spectrum_data(self, background=False, filepath=None, name_tag='', custom_header = None):
+    @QtCore.Slot(str, object)
+    def save_spectrum_data(self,filepath=None,info_params=None, background=False,  name_tag='', custom_header = None):
         """ Saves the current spectrum data to a file.
         @param bool background: Whether this is a background spectrum (dark field) or not.
         @param string name_tag: postfix name tag for saved filename.
@@ -354,6 +354,8 @@ class SpectrumLogic(GenericLogic):
         # write experimental parameters
         parameters = OrderedDict()
         parameters['Spectrometer acquisition repetitions'] = self.repetition_count
+        print(info_params)
+        
 
         # add all fit parameter to the saved data:
         if self.fc.current_fit_result is not None:
@@ -366,7 +368,7 @@ class SpectrumLogic(GenericLogic):
         if custom_header is not None:
             for key in custom_header:
                 parameters[key] = custom_header[key]
-
+        
         # prepare the data in an OrderedDict:
         data = OrderedDict()
 
@@ -384,7 +386,11 @@ class SpectrumLogic(GenericLogic):
             data['corrected'] = self._spectrum_data_corrected[1, :]
 
         fig = self.draw_figure()
-
+        if info_params is not None:
+            parameters.update(info_params)
+            self._save_logic.current_setup_parameters['current_path'] = filepath
+            self._save_logic.current_setup_parameters.update(info_params)
+        print("Params:", parameters)
         # Save to file
         self._save_logic.save_data(data,
                                    filepath=filepath,

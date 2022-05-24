@@ -43,6 +43,67 @@ class SpectrometerWindow(QtWidgets.QMainWindow):
         uic.loadUi(ui_file, self)
         self.show()
 
+class SaveDialog(QtWidgets.QDialog):
+    """ Dialog to provide feedback and block GUI while saving """
+    save_path = ""
+    power = "0 mW"
+    laser = ""
+    sample = ""
+    region = ""
+    other_info = ""
+    
+    sigSavePlot = QtCore.Signal(str, object)
+    def __init__(self, parent, title="Please wait", text="Saving..."):
+        super().__init__(parent)
+        this_dir = os.path.dirname(__file__)
+        ui_file = os.path.join(this_dir, 'ui_save.ui')
+        uic.loadUi(ui_file, self)
+    
+        self.setWindowTitle(title)
+        self.setWindowModality(QtCore.Qt.WindowModal)
+        self.setAttribute(QtCore.Qt.WA_ShowWithoutActivating)
+        self.save_toolButton.clicked.connect(self.choose_folder_for_save)
+        self.accepted.connect(self.save)
+        
+        # self.rejected.connect()
+        # Load it
+        # super(SaveDialog, self).__init__()
+    
+    def load_params(self, params):
+        self.power_lineEdit.setText(params['power'])
+        self.laser_lineEdit.setText(params['laser'])
+        self.sample_lineEdit.setText(params['sample'])
+        self.region_lineEdit.setText(params['region'])
+        self.other_textEdit.setText(params['other_info'])
+        self.save_path_lineEdit.setText(params['current_path'])
+        self.dir_path = params['current_path']
+        
+    def choose_folder_for_save(self):
+        self.dir_path = QtWidgets.QFileDialog.getExistingDirectory()
+        # printdebug(self.debug, f'Chosen filepath is {dir_path}')
+        print(self.dir_path)
+        self.save_path_lineEdit.setText(self.dir_path)
+        return self.dir_path
+   
+   
+    def save(self):
+        self.power = self.power_lineEdit.text()
+        self.laser = self.laser_lineEdit.text()
+        self.sample = self.sample_lineEdit.text()
+        self.region = self.region_lineEdit.text()
+        self.integration_time = str(self.parent().integration_time_doubleSpinBox.value())
+        self.average_time = str(self.parent().spinBox.value())
+        self.other_info = self.other_textEdit.toPlainText()
+        info_params = {
+            "power": self.power,
+            "sample": self.sample,
+            "region": self.region,
+            "laser": self.laser,
+            "integration time": self.integration_time,
+            "average_time": self.average_time,
+            "other_info": self.other_info
+        }
+        self.sigSavePlot.emit(self.dir_path, info_params)
 
 class SpectrometerGui(GUIBase):
     """
@@ -60,7 +121,7 @@ class SpectrometerGui(GUIBase):
         """
 
         self._spectrum_logic = self.spectrumlogic()
-
+        
         # setting up the window
         self._mw = SpectrometerWindow()
 
@@ -117,7 +178,7 @@ class SpectrometerGui(GUIBase):
         self._mw.stop_diff_spec_Action.triggered.connect(self.stop_differential_measurement)
         self._mw.resume_diff_spec_Action.triggered.connect(self.resume_differential_measurement)
 
-        self._mw.save_spectrum_Action.triggered.connect(self.save_spectrum_data)
+        
         self._mw.correct_background_Action.triggered.connect(self.correct_background)
         self._mw.acquire_background_Action.triggered.connect(self.acquire_background)
         self._mw.save_background_Action.triggered.connect(self.save_background_data)
@@ -128,7 +189,9 @@ class SpectrometerGui(GUIBase):
         self._spectrum_logic.spectrum_fit_updated_Signal.connect(self.update_fit)
         self._spectrum_logic.fit_domain_updated_Signal.connect(self.update_fit_domain)
         
-        
+        self._save_dialog = SaveDialog(self._mw)
+        self._mw.save_spectrum_Action.triggered.connect(self.save_spectrum_data)
+        self._save_dialog.sigSavePlot.connect(self._spectrum_logic.save_spectrum_data)
  
         self._mw.show()
 
@@ -269,7 +332,11 @@ class SpectrometerGui(GUIBase):
         self._mw.resume_diff_spec_Action.setEnabled(False)
 
     def save_spectrum_data(self):
-        self._spectrum_logic.save_spectrum_data()
+        # self._spectrum_logic.save_spectrum_data()
+        
+        params = self._spectrum_logic._save_logic.current_setup_parameters
+        self._save_dialog.load_params(params)
+        self._save_dialog.show()
 
     def correct_background(self):
         self._spectrum_logic.background_correction = self._mw.correct_background_Action.isChecked()

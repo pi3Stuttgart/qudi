@@ -121,19 +121,67 @@ class ChangingToLTLimitsConfirmation(QtWidgets.QDialog):
 
 class SaveDialog(QtWidgets.QDialog):
     """ Dialog to provide feedback and block GUI while saving """
-    def __init__(self, parent, title="Please wait", text="Saving..."):
+    save_path = ""
+    power = "0 mW"
+    laser = ""
+    sample = ""
+    region = ""
+    other_info = ""
+    axis = "XY"
+    sigSaveXYplot = QtCore.Signal(str, object)
+    sigSaveZplot = QtCore.Signal(str, object)
+    def __init__(self, parent, title="Set saving params", text="Saving..."):
         super().__init__(parent)
+        this_dir = os.path.dirname(__file__)
+        ui_file = os.path.join(this_dir, 'ui_save.ui')
+        uic.loadUi(ui_file, self)
+    
         self.setWindowTitle(title)
         self.setWindowModality(QtCore.Qt.WindowModal)
         self.setAttribute(QtCore.Qt.WA_ShowWithoutActivating)
+        self.save_toolButton.clicked.connect(self.choose_folder_for_save)
+        
+        self.accepted.connect(self.save)    
 
-        # Dialog layout
-        self.text = QtWidgets.QLabel("<font size='16'>" + text + "</font>")
-        self.hbox = QtWidgets.QHBoxLayout()
-        self.hbox.addSpacerItem(QtWidgets.QSpacerItem(50, 0))
-        self.hbox.addWidget(self.text)
-        self.hbox.addSpacerItem(QtWidgets.QSpacerItem(50, 0))
-        self.setLayout(self.hbox)
+        # self.rejected.connect()
+        # Load it
+        # super(SaveDialog, self).__init__()
+    def load_params(self, params):
+        self.power_lineEdit.setText(params['power'])
+        self.laser_lineEdit.setText(params['laser'])
+        self.sample_lineEdit.setText(params['sample'])
+        self.region_lineEdit.setText(params['region'])
+        self.other_textEdit.setText(params['other_info'])
+        self.save_path_lineEdit.setText(params['current_path'])
+        self.dir_path = params['current_path']
+
+    def choose_folder_for_save(self):
+        self.dir_path = QtWidgets.QFileDialog.getExistingDirectory()
+        # printdebug(self.debug, f'Chosen filepath is {dir_path}')
+        self.save_path_lineEdit.setText(self.dir_path)
+        return self.dir_path
+   
+   
+    def save(self):
+        self.power = self.power_lineEdit.text()
+        self.laser = self.laser_lineEdit.text()
+        self.sample = self.sample_lineEdit.text()
+        self.region = self.region_lineEdit.text()
+        self.other_info = self.other_textEdit.toPlainText()
+        info_params = {
+            "power": self.power,
+            "sample": self.sample,
+            "region": self.region,
+            "laser": self.laser,
+            "other_info": self.other_info
+        }
+        if self.axis == "XY":
+            self.sigSaveXYplot.emit(self.dir_path, info_params)
+        elif self.axis == "Z":
+            self.sigSaveZplot.emit(self.dir_path, info_params)
+        
+            
+    
 
 class ConfocalGui(GUIBase):
     """ Main Confocal Class for xy and depth scans.
@@ -189,7 +237,8 @@ class ConfocalGui(GUIBase):
         self.initOptimizerSettingsUI()  # initialize the optimizer settings GUI
 
         self._save_dialog = SaveDialog(self._mw)
-
+        self._save_dialog.sigSaveXYplot.connect(self.save_xy_scan_data_plot)
+        self._save_dialog.sigSaveZplot.connect(self.save_depth_scan_data_plot)
         self.debug = True
 
     def initMainUI(self):
@@ -524,7 +573,7 @@ class ConfocalGui(GUIBase):
         self._mw.depth_cb_centiles_RadioButton.clicked.connect(self.update_depth_cb_range)
 
         # Connect buttons of savepath widget
-        self._mw.choose_savefolder_pushButton.clicked.connect(self.choose_folder_for_save)
+        # self._mw.choose_savefolder_pushButton.clicked.connect(self.choose_folder_for_save)
 
         # input edits in Main tab
         self._mw.depth_cb_min_DoubleSpinBox.valueChanged.connect(self.shortcut_to_depth_cb_manual)
@@ -565,8 +614,9 @@ class ConfocalGui(GUIBase):
         # with the methods:
         self._mw.action_Settings.triggered.connect(self.menu_settings)
         self._mw.action_optimizer_settings.triggered.connect(self.menu_optimizer_settings)
-        self._mw.actionSave_XY_Scan.triggered.connect(self.save_xy_scan_data)
-        self._mw.actionSave_Depth_Scan.triggered.connect(self.save_depth_scan_data)
+        self._mw.actionSave_XY_Scan.triggered.connect(self.save_xy)
+        self._mw.actionSave_Depth_Scan.triggered.connect(self.save_z)
+        # self._mw.actionSave_Depth_Scan.triggered.connect(self.save_depth_scan_data)
 
         # Configure and connect the zoom actions with the desired buttons and
         # functions if
@@ -1699,32 +1749,48 @@ class ConfocalGui(GUIBase):
         depth_viewbox.updateAutoRange()
         depth_viewbox.updateViewRange()
         self.update_roi_depth()
-
-    def save_xy_scan_data(self):
-        """ Run the save routine from the logic to save the xy confocal data."""
-        printdebug(self.debug, 'confocalgui: save_xy_scan_data called')
-        self._save_dialog.show()
-
+    
+    @QtCore.Slot(str, object)
+    def save_xy_scan_data_plot(self, path, info_params):
         cb_range = self.get_xy_cb_range()
-
+        info_params = dict(info_params)
         # Percentile range is None, unless the percentile scaling is selected in GUI.
         pcile_range = None
         if not self._mw.xy_cb_manual_RadioButton.isChecked():
             low_centile = self._mw.xy_cb_low_percentile_DoubleSpinBox.value()
             high_centile = self._mw.xy_cb_high_percentile_DoubleSpinBox.value()
             pcile_range = [low_centile, high_centile]
-
-        self._scanning_logic.save_xy_data(colorscale_range=cb_range, percentile_range=pcile_range, block=False)
+        filename = os.path.join(
+            path,
+            time.strftime('%Y%m%d-%H%M-%S_confocal_xy_scan_raw_pixel_image'))
+        self._scanning_logic.save_xy_data(colorscale_range=cb_range, percentile_range=pcile_range, block=False, filepath=path, info_params=info_params)
 
         # TODO: find a way to produce raw image in savelogic.  For now it is saved here.
         # printdebug(self.debug, 'confocalgui: get_path_for_module called by save_xy_scan_data')
         # filepath = self._save_logic.get_path_for_module(module_name='Confocal')
-        filepath = self.get_savefolder_from_gui()
-        filename = os.path.join(
-            filepath,
-            time.strftime('%Y%m%d-%H%M-%S_confocal_xy_scan_raw_pixel_image'))
+        #self.get_savefolder_from_gui()
+        
         if self._sd.save_purePNG_checkBox.isChecked():
             self.xy_image.save(filename + '_raw.png')
+
+    def save_xy(self, path = None):
+        """ Run the save routine from the logic to save the xy confocal data."""
+        printdebug(self.debug, 'confocalgui: save_xy_scan_data called')
+        params = self._save_logic.current_setup_parameters
+        self._save_dialog.axis = "XY"
+        self._save_dialog.load_params(params)
+        
+        self._save_dialog.show()
+    
+    def save_z(self, path = None):
+        """ Run the save routine from the logic to save the xy confocal data."""
+        printdebug(self.debug, 'confocalgui: save_xy_scan_data called')
+        params = self._save_logic.current_setup_parameters
+        self._save_dialog.axis = "Z"
+        self._save_dialog.load_params(params)
+
+        self._save_dialog.show()
+
 
     def save_xy_scan_image(self):
         """ Save the image and according to that the data.
@@ -1735,10 +1801,11 @@ class ConfocalGui(GUIBase):
         """
         self.log.warning('Deprecated, use normal save method instead!')
 
-    def save_depth_scan_data(self):
+    @QtCore.Slot(str, object)
+    def save_depth_scan_data_plot(self, path, info_params):
         """ Run the save routine from the logic to save the xy confocal pic."""
         printdebug(self.debug, 'save_depth_scan_data called')
-        self._save_dialog.show()
+        # self._save_dialog.show()
 
         cb_range = self.get_depth_cb_range()
 
@@ -1749,14 +1816,20 @@ class ConfocalGui(GUIBase):
             high_centile = self._mw.depth_cb_high_percentile_DoubleSpinBox.value()
             pcile_range = [low_centile, high_centile]
 
-        self._scanning_logic.save_depth_data(colorscale_range=cb_range, percentile_range=pcile_range, block=False)
+        self._scanning_logic.save_depth_data(
+            colorscale_range=cb_range, 
+            percentile_range=pcile_range, 
+            block=False,
+            filepath=path, 
+            info_params=info_params
+        )
 
         # TODO: find a way to produce raw image in savelogic.  For now it is saved here.
         # printdebug(self.debug, 'confocalgui: get_path_for_module called by save_depth_scan_data')
         # filepath = self._save_logic.get_path_for_module(module_name='Confocal')
-        filepath = self.get_savefolder_from_gui()
+        # filepath = self.get_savefolder_from_gui()
         filename = os.path.join(
-            filepath,
+            path,
             time.strftime('%Y%m%d-%H%M-%S_confocal_depth_scan_raw_pixel_image'))
         if self._sd.save_purePNG_checkBox.isChecked():
             self.depth_image.save(filename + '_raw.png')
@@ -1770,24 +1843,24 @@ class ConfocalGui(GUIBase):
         """
         self.log.warning('Deprecated, use normal save method instead!')
 
-    def choose_folder_for_save(self):
-        dir_path = QtWidgets.QFileDialog.getExistingDirectory()
-        printdebug(self.debug, f'Chosen filepath is {dir_path}')
-        if dir_path != '':
-            self.savefolder_str = dir_path
-            self._scanning_logic.savefolder_str = dir_path
-            self._mw.savefolder_label.setText(dir_path)
-            self._mw.savefolder_label.adjustSize()
-        return
+    # def choose_folder_for_save(self):
+    #     dir_path = QtWidgets.QFileDialog.getExistingDirectory()
+    #     printdebug(self.debug, f'Chosen filepath is {dir_path}')
+    #     if dir_path != '':
+    #         self.savefolder_str = dir_path
+    #         self._scanning_logic.savefolder_str = dir_path
+    #         self._mw.savefolder_label.setText(dir_path)
+    #         self._mw.savefolder_label.adjustSize()
+    #     return
 
-    def get_savefolder_from_gui(self):
-        """Returns the path to the folder that has been selected in the gui for saving as a string."""
-        dir_path = self.savefolder_str
-        if dir_path == ('' or '-' or 'not specified'):
-            # if no folder is selected (e.g. because Gui was freshly started), throw error
-            raise RuntimeError('No folder for saving has been specified.')
-        else:
-            return dir_path
+    # def get_savefolder_from_gui(self):
+    #     """Returns the path to the folder that has been selected in the gui for saving as a string."""
+    #     dir_path = self.savefolder_str
+    #     if dir_path == ('' or '-' or 'not specified'):
+    #         # if no folder is selected (e.g. because Gui was freshly started), throw error
+    #         raise RuntimeError('No folder for saving has been specified.')
+    #     else:
+    #         return dir_path
 
     def switch_hardware(self):
         """ Switches the hardware state. """
@@ -2038,7 +2111,8 @@ class ConfocalGui(GUIBase):
 
     def logic_started_save(self):
         """ Displays modal dialog when save process starts """
-        self._save_dialog.show()
+        # self._save_dialog.show()
+        pass
 
     def logic_finished_save(self):
         """ Hides modal dialog when save process done """
