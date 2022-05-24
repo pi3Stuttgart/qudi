@@ -3,7 +3,7 @@ from qtpy import QtCore
 
 from core.module import Base
 from core.configoption import ConfigOption
-#from core.pi3_utils import delay
+from core.pi3_utils import delay
 from logic.generic_logic import GenericLogic
 
 
@@ -61,8 +61,9 @@ class TimeTaggerClient(Base):
         self.queryTimer.setSingleShot(True)
         self.queryTimer.timeout.connect(self.query_loop, QtCore.Qt.QueuedConnection)
         self.set_counter()
+        self.set_correlation()
+        delay(2000)
         self.start_query_loop()
-
     @QtCore.Slot()
     def query_loop(self):
         """ Get power, current, shutter state and temperatures from laser. """
@@ -141,7 +142,6 @@ class TimeTaggerClient(Base):
     def set_counter(self, counter_params=None):
         if counter_params is None:
             counter_params = self._counter
-        counter_params['n_vals'] = 1000 #bigg buffer
         return self.send_request("set_counter", action=counter_params)
 
     def set_correlation(self, corr_params=None):
