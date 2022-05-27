@@ -414,7 +414,7 @@
   <action name="actionClose">
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/YY3/artwork/icons/oxygen/22x22/application-exit.png</normaloff>C:/Users/YY3/artwork/icons/oxygen/22x22/application-exit.png</iconset>
+     <normaloff>../../../Users/YY3/artwork/icons/oxygen/22x22/application-exit.png</normaloff>../../../Users/YY3/artwork/icons/oxygen/22x22/application-exit.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Close</string>
@@ -423,7 +423,7 @@
   <action name="rec_single_spectrum_Action">
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/YY3/artwork/icons/qudiTheme/22x22/record-counter.png</normaloff>C:/Users/YY3/artwork/icons/qudiTheme/22x22/record-counter.png</iconset>
+     <normaloff>../../../Users/YY3/artwork/icons/qudiTheme/22x22/record-counter.png</normaloff>../../../Users/YY3/artwork/icons/qudiTheme/22x22/record-counter.png</iconset>
    </property>
    <property name="text">
     <string>Record spectrum</string>
@@ -462,7 +462,7 @@
   <action name="save_spectrum_Action">
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/YY3/artwork/icons/oxygen/22x22/document-save.png</normaloff>C:/Users/YY3/artwork/icons/oxygen/22x22/document-save.png</iconset>
+     <normaloff>../../../Users/YY3/artwork/icons/oxygen/22x22/document-save.png</normaloff>../../../Users/YY3/artwork/icons/oxygen/22x22/document-save.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Save spectrum</string>
@@ -502,8 +502,8 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>C:/Users/YY3/artwork/styles/application/qdark/checkbox_unchecked.png</normaloff>
-     <normalon>C:/Users/YY3/artwork/styles/application/qdark/checkbox_checked.png</normalon>C:/Users/YY3/artwork/styles/application/qdark/checkbox_unchecked.png</iconset>
+     <normaloff>../../../Users/YY3/artwork/styles/application/qdark/checkbox_unchecked.png</normaloff>
+     <normalon>../../../Users/YY3/artwork/styles/application/qdark/checkbox_checked.png</normalon>../../../Users/YY3/artwork/styles/application/qdark/checkbox_unchecked.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Correct Background</string>
