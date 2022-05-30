@@ -102,7 +102,6 @@ class RabiLogic(GenericLogic,rabi_default):
             mask=((self.measured_times_ns>=self.rabi_AOMDelay) & (self.measured_times_ns<=self.rabi_IntegrationTime+self.rabi_AOMDelay)) #create mask to filter counts depending on arrival time
             self.data=np.sum(self.scanmatrix[:,mask],axis=1) #sum up the readout-histogram after a single Tau
             self.data_detect=np.sum(self.scanmatrix,axis=0) #sum up the histograms to see the emission decay
-            print(np.shape(self.scanmatrix))
             self.measured_times=indexes/1e12 #binwidth in seconds
             self.sigRabiPlotsUpdated.emit(self.tau_duration*1e-9, self.data, self.scanmatrix, self.measured_times, self.data_detect)
 
@@ -121,18 +120,18 @@ class RabiLogic(GenericLogic,rabi_default):
         """ Saves the current ODMR data to a file."""
         timestamp = datetime.datetime.now()
         filepath = self._save_logic.get_path_for_module(module_name='Rabi')
-
+        tag = self.rabi_Filename
         if tag is None:
             tag = ''
 
         if len(tag) > 0:
-            filelabel_raw = '{0}_rabi_data_raw'.format(tag)
-            filelabel_detection = '{0}_rabi_data_detection'.format(tag)
-            filelabel_matrix = '{0}_rabi_data_matrix'.format(tag)
+            filelabel_raw = '{0}_raw'.format(tag)
+            filelabel_detection = '{0}_detection'.format(tag)
+            filelabel_matrix = '{0}_matrix'.format(tag)
         else:
-            filelabel_raw = '_rabi_data_raw'
-            filelabel_detection = '_rabi_data_detection'
-            filelabel_matrix = '_rabi_data_matrix'
+            filelabel_raw = '_raw'
+            filelabel_detection = '_detection'
+            filelabel_matrix = '_matrix'
 
         data_raw = OrderedDict()
         data_detection = OrderedDict()
@@ -272,6 +271,7 @@ class RabiLogic(GenericLogic,rabi_default):
 
         ax_mean.plot(tau_data, count_data, linestyle=':', linewidth=0.5)
         ax_mean.set_ylabel('Fluorescence (' + counts_prefix + 'counts)')
+        ax_mean.set_xlabel('Tau (ns)')
         ax_mean.set_xlim(np.min(tau_data), np.max(tau_data))
         
         # matrixplot = ax_matrix.imshow(
@@ -293,6 +293,7 @@ class RabiLogic(GenericLogic,rabi_default):
 
         ax_detection.plot(detection_time, detection_counts, linestyle=':', linewidth=0.5)
         ax_detection.set_ylabel('Fluorescence (' + counts_prefix + 'counts)')
+        ax_detection.set_xlabel('Time (ns)')
         ax_detection.set_xlim(np.min(detection_time), np.max(detection_time))
 
         # # Adjust subplots to make room for colorbar
@@ -426,7 +427,7 @@ class RabiLogic(GenericLogic,rabi_default):
 
         # short pulses to SYNC and TRIGGER the timedifferences module of TimeTagger.
         seq.asc(name='tt_sync1', length_mus=0.01, tt_sync=True) #Set histogram index to 0       
-        seq.asc(name='tt_sync2', length_mus=0.01, tt_trigger=True)
+        seq.asc(name='tt_sync2', length_mus=0.01, tt_trigger=True) #increment histogram index
 
         freq_init = np.array([self.rabi_MW2_Freq, self.rabi_MW3_Freq])[self.rabi_MW2, self.rabi_MW3]
         power_init = self.power_to_amp(np.array([self.rabi_MW2_Power, self.rabi_MW3_Power])[self.rabi_MW2, self.rabi_MW3])
@@ -458,7 +459,7 @@ class RabiLogic(GenericLogic,rabi_default):
 
             seq.start_new_segment("Readout")
             seq.asc(name='readout'+str(duration), length_mus=self.rabi_ReadoutTime/1000, A1=self.rabi_A1Readout, A2=self.rabi_A2Readout, tt_trigger=True)
-            seq.asc(name='readout_decay'+str(duration), length_mus=self.rabi_ReadoutDecay/1000, A1=False, A2=False, tt_trigger=False)
+            seq.asc(name='readout_decay'+str(duration), length_mus=self.rabi_ReadoutDecay/1000, A1=False, A2=False, tt_trigger=True)
         
         #self.awg.mcas.status = 1
         self._awg.mcas_dict.stop_awgs()

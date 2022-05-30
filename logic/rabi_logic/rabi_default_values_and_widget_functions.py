@@ -40,7 +40,7 @@ class rabi_default_values_and_widget_functions:
         rabi_Stoptime:float=0 #ns
 
         rabi_ReadoutTime:float=3000 #ns
-        rabi_ReadoutDecay:float=1000 #ns
+        rabi_ReadoutDecay:float=500 #ns
 
         rabi_MaxIterations:float=20
         rabi_PerformFit:bool=F
