@@ -10,7 +10,7 @@ from .elements import __BLM__
 settings_folder = os.path.join(os.path.dirname(__file__), 'hardware_settings')
 ch_dict_full = {'2g': [1, 2],'ps':[1]}
 ch_dict_awgs = {'2g': [1, 2]}
-awg_instrument_adress = {'2g': 'TCPIP0::129.69.46.24::inst0::INSTR',
+awg_instrument_adress = {'2g': 'TCPIP0::localhost::inst0::INSTR',
                          # 'ps':'http://169.254.8.2:8050/json-rpc'}
                           'ps':'129.69.46.36'}
 master_awg = '2g'

@@ -48,13 +48,15 @@ class LaserScannerLogic(GenericLogic):
     # declare connectors
     confocalscanner1 = Connector(interface='ConfocalScannerInterface')
     savelogic = Connector(interface='SaveLogic')
-    setupcontrollogic= Connector(interface='SetupControlLogic')
+    #setupcontrollogic= Connector(interface='SetupControlLogic')
 
-    scan_range = StatusVar('scan_range', [-10, 10])
+    mcas_holder = Connector(interface='McasDictHolderInterface')
+
+    scan_range = StatusVar('scan_range', [-4, 4])
     number_of_repeats = StatusVar(default=10)
-    resolution = StatusVar('resolution', 500)
-    _scan_speed = StatusVar('scan_speed', 10)
-    _static_v = StatusVar('goto_voltage', 5)
+    resolution = StatusVar('resolution', 100)
+    _scan_speed = StatusVar('scan_speed', 0.1)
+    _static_v = StatusVar('goto_voltage', 0)
 
     sigChangeVoltage = QtCore.Signal(float)
     sigVoltageChanged = QtCore.Signal(float)
@@ -79,8 +81,6 @@ class LaserScannerLogic(GenericLogic):
         self.stopRequested = False
         self.AbortRequested=False
         self.repump_on_during_retrace=True
-        self.repump_Duration=0
-        self.repump_Decay=0
         self.A2_on_during_retrace=0
         self.A1_on_during_retrace=0
         self.local_counts=[]
@@ -108,7 +108,8 @@ class LaserScannerLogic(GenericLogic):
         """
         self._scanning_device = self.confocalscanner1()
         self._save_logic = self.savelogic()
-
+        self.awg = self.mcas_holder()
+        self.stop_awg = self.awg.mcas_dict.stop_awgs
         # Reads in the maximal scanning range. The unit of that scan range is
         # micrometer!
         self.a_range = self._scanning_device.get_position_range()[3]
@@ -377,6 +378,7 @@ class LaserScannerLogic(GenericLogic):
 
         if self._scan_counter_up == 0 and self.slice_number==0:
             # move from current voltage to start of scan range.
+
             self._goto_during_scan(self.scan_range[0])
 
         if self.upwards_scan:
@@ -384,7 +386,7 @@ class LaserScannerLogic(GenericLogic):
             self.local_counts=self.local_counts+list(counts)
             self.slice_number+=1
             if self.slice_number==self.slices:
-                self.scan_matrix[self._scan_counter_up] =self.local_counts
+                self.scan_matrix[self._scan_counter_up] =self.local_counts # Here occurs an error "cannot copy sequence with size 21 to array axis with dimension 20"
                 self.plot_y = self.plot_y + np.array(self.local_counts)
                 self.local_counts=[]
                 self._scan_counter_up += 1
@@ -393,31 +395,50 @@ class LaserScannerLogic(GenericLogic):
 
         
         else: #retrace
-            self.setupcontrollogic().setup_seq(enable_A1=self.A1_on_during_retrace,
-                enable_A2=self.A2_on_during_retrace,
-                enable_Repump=self.repump_on_during_retrace,
-                enable_MW1=self.enable_MW1,
-                enable_MW2=self.enable_MW2,
-                enable_MW3=self.enable_MW3,
-                MW1_freq= self.MW1_freq,
-                MW2_freq= self.MW2_freq,
-                MW3_freq= self.MW3_freq,
-                MW1_power=self.MW1_power,
-                MW2_power=self.MW2_power,
-                MW3_power=self.MW3_power
-                )
+            # self.setupcontrollogic().setup_seq(enable_A1=self.A1_on_during_retrace,
+            #     enable_A2=self.A2_on_during_retrace,
+            #     enable_Repump=self.repump_on_during_retrace,
+            #     enable_MW1=self.enable_MW1,
+            #     enable_MW2=self.enable_MW2,
+            #     enable_MW3=self.enable_MW3,
+            #     MW1_freq= self.MW1_freq,
+            #     MW2_freq= self.MW2_freq,
+            #     MW3_freq= self.MW3_freq,
+            #     MW1_power=self.MW1_power,
+            #     MW2_power=self.MW2_power,
+            #     MW3_power=self.MW3_power
+            #     )
+            self.setup_seq()
             counts = self._scan_line(self._downwards_ramp)
             counts=np.ones(self.scan_matrix2[self._scan_counter_down].shape[0])
             self.scan_matrix2[self._scan_counter_down] = counts
             self.plot_y2 += counts
             self._scan_counter_down += 1
             self.upwards_scan = True
-            self.setupcontrollogic().setup_seq()
+            #self.setupcontrollogic().setup_seq()
+            self.awg.mcas_dict["setupcontrol"].run() 
 
 
         self.sigUpdatePlots.emit()
         self.sigScanNextLine.emit()
-        
+
+
+    def setup_seq(self):
+        self.stop_awg()
+        # generate a single MW sequence with the needed mw frequencies and play is continuously until the measurement is stopped,
+        # either by the stop button, the runtime, or number of sequence repetitions.
+        seq = self.awg.mcas(name="PLE", ch_dict={"2g": [1,2], "ps":[1]})
+        seq.start_new_segment("sequence")
+        seq.asc(name="without MW",
+                A1=self.A1_on_during_retrace,
+                A2=self.A2_on_during_retrace,
+                repump=self.repump_on_during_retrace,
+                length_mus=5
+                )
+        self.awg.mcas_dict["PLE"] = seq
+
+        #self.awg.mcas_dict.print_info()
+        self.awg.mcas_dict["PLE"].run()
 
     def _generate_ramp(self, voltage1, voltage2, speed):
         """Generate a ramp vrom voltage1 to voltage2 that

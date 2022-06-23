@@ -1020,7 +1020,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         if self.module_state() == 'locked':
             #self.log.error('Another scan_line is already running, close this one first.')
             #return -1
-            print("error overridden") #Changed
+            print("error overridden in hardware.national_instuments_x_series.py") #This makes it possible to change the cross on the confocal while still scanning the PLE channel
 
         if x is not None:
             if not(self._scanner_position_ranges[0][0] <= x <= self._scanner_position_ranges[0][1]):

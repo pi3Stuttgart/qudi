@@ -1,0 +1,19 @@
+            kdd5(phase=0.0, shift=0.0, nkdd5=0)
+            kdd5(phase=0.0, shift=np.pi / 2.0, nkdd5=1)
+            kdd5(phase=0.0, shift=0.0, nkdd5=2)
+            kdd5(phase=0.0, shift=np.pi / 2.0, nkdd5=3)
+
+            kdd5(phase=0.0, shift=np.pi / 2.0, nkdd5=0)
+            kdd5(phase=0.0, shift=0.0, nkdd5=1)
+            kdd5(phase=0.0, shift=np.pi / 2.0, nkdd5=2)
+            kdd5(phase=0.0, shift=0.0, nkdd5=3)
+
+            kdd5(phase=0.0, shift=0.0 + np.pi, nkdd5=0)
+            kdd5(phase=0.0, shift=np.pi / 2.0 + np.pi, nkdd5=1)
+            kdd5(phase=0.0, shift=0.0 + np.pi, nkdd5=2)
+            kdd5(phase=0.0, shift=np.pi / 2.0 + np.pi, nkdd5=3)
+
+            kdd5(phase=0.0, shift=np.pi / 2.0 + np.pi, nkdd5=0)
+            kdd5(phase=0.0, shift=0.0 + np.pi, nkdd5=1)
+            kdd5(phase=0.0, shift=np.pi / 2.0 + np.pi, nkdd5=2)
+            kdd5(phase=0.0, shift=0.0 + np.pi, nkdd5=3)

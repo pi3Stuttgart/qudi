@@ -1,0 +1,697 @@
+(dp1
+S'__traits_version__'
+p2
+S'3.5.0'
+p3
+sS'current_ms_transition'
+p4
+cnumpy.core.multiarray
+scalar
+p5
+(cnumpy
+dtype
+p6
+(S'f8'
+I0
+I1
+tRp7
+(I3
+S'<'
+NNNI-1
+I-1
+I0
+tbS'L\x86\x00\x9d{\xd8\xc8@'
+tRp8
+sS'transitions'
+p9
+ccopy_reg
+_reconstructor
+p10
+(ctraits.trait_handlers
+TraitListObject
+p11
+c__builtin__
+list
+p12
+(lp13
+ctraits.traits
+__newobj__
+p14
+(cTransitionTracker
+Transition
+p15
+tRp16
+(dp17
+S'ms_state'
+p18
+I0
+sS'current_frequency'
+p19
+F6.6593600000000004
+sS'rabi_period'
+p20
+F236
+sS'name'
+p21
+V14N+1 mS0
+p22
+sS'spin_type'
+p23
+S'14N +1'
+p24
+sS'date'
+p25
+S'2013-03-02 07:01'
+p26
+sS'ms_transition_at'
+p27
+F14261.799999999999
+sS'frequency'
+p28
+F6.8263176787999997
+sS'rabi_parameters'
+p29
+g10
+(g11
+g12
+(lp30
+g14
+(cTransitionTracker
+RabiParameters
+p31
+tRp32
+(dp33
+g25
+S'2013-05-02 09:42'
+p34
+sg2
+S'4.3.0'
+p35
+sS'period'
+p36
+F88
+sS'power'
+p37
+V0.4 * 0.6 V, 100%
+p38
+sbag14
+(g31
+tRp39
+(dp40
+g25
+S'2013-06-28 13:11'
+p41
+sg2
+g35
+sg36
+F94.5
+sg37
+V0.4 * 0.66 V, 100%
+p42
+sbag14
+(g31
+tRp43
+(dp44
+g25
+S'2013-10-11 11:12'
+p45
+sg2
+g35
+sg36
+F87.700000000000003
+sg37
+V0.4*0.7V, 100%
+p46
+sbatRp47
+(dp48
+S'name_items'
+p49
+S'rabi_parameters_items'
+p50
+sg21
+g29
+sbsS'rabi_power'
+p51
+V0.2*0.7 V
+p52
+sg2
+g35
+sbag14
+(g15
+tRp53
+(dp54
+g18
+I0
+sg19
+F3.2325699999999999
+sg20
+F534
+sg21
+V14N-1 mS0
+p55
+sg23
+S'14N -1'
+p56
+sg25
+S'2013-03-01 13:32'
+p57
+sg27
+F14257.969999999999
+sg28
+F3.0660299000000002
+sg29
+g10
+(g11
+g12
+(lp58
+g14
+(g31
+tRp59
+(dp60
+g25
+S'2013-05-02 09:50'
+p61
+sg2
+g35
+sg36
+F216
+sg37
+V0.4 * 0.6 V, 100%
+p62
+sbag14
+(g31
+tRp63
+(dp64
+g25
+S'2013-06-28 13:21'
+p65
+sg2
+g35
+sg36
+F226
+sg37
+V0.4 * 0.66 V, 100%
+p66
+sbatRp67
+(dp68
+g49
+S'rabi_parameters_items'
+p69
+sg21
+g29
+sbsg51
+V0.2*0.7 V
+p70
+sg2
+g35
+sbag14
+(g15
+tRp71
+(dp72
+g18
+I-1
+sg19
+F4.49336
+sg20
+F238
+sg21
+V14N+1 mS-1
+p73
+sg23
+S'14N +1'
+p74
+sg25
+S'2013-03-01 17:22'
+p75
+sg27
+F14261.9
+sg28
+F4.6603298922
+sg29
+g10
+(g11
+g12
+(lp76
+g14
+(g31
+tRp77
+(dp78
+g25
+S'2013-05-02 10:05'
+p79
+sg2
+g35
+sg36
+F160
+sg37
+V1 * 0.6 V, 100%
+p80
+sbag14
+(g31
+tRp81
+(dp82
+g25
+S'2013-05-02 16:43'
+p83
+sg2
+g35
+sg36
+F161
+sg37
+V1 * 0.6 V, 100%
+p84
+sbag14
+(g31
+tRp85
+(dp86
+g25
+S'2013-05-06 10:47'
+p87
+sg2
+g35
+sg36
+F162
+sg37
+V1 * 0.6 V, 100%
+p88
+sbatRp89
+(dp90
+g49
+S'rabi_parameters_items'
+p91
+sg21
+g29
+sbsg51
+V1*0.7 V
+p92
+sg2
+g35
+sbag14
+(g15
+tRp93
+(dp94
+g18
+I-1
+sg19
+F5.3978200000000003
+sg20
+F227
+sg21
+V14N-1 mS-1
+p95
+sg23
+S'14N -1'
+p96
+sg25
+S'2013-03-01 17:44'
+p97
+sg27
+F14525.299999999999
+sg28
+F5.2019359515000003
+sg29
+g10
+(g11
+g12
+(lp98
+g14
+(g31
+tRp99
+(dp100
+g25
+S'2013-05-02 10:11'
+p101
+sg2
+g35
+sg36
+F140
+sg37
+V1 * 0.6 V, 100%
+p102
+sbag14
+(g31
+tRp103
+(dp104
+g25
+S'2013-05-08 11:01'
+p105
+sg2
+g35
+sg36
+F144
+sg37
+V1, Tomography
+p106
+sbag14
+(g31
+tRp107
+(dp108
+g25
+S'2013-05-16 18:49'
+p109
+sg2
+g35
+sg36
+F146.19999999999999
+sg37
+V0.98, Tomography
+p110
+sbatRp111
+(dp112
+g49
+S'rabi_parameters_items'
+p113
+sg21
+g29
+sbsg51
+V1*0.7 V
+p114
+sg2
+g35
+sbag14
+(g15
+tRp115
+(dp116
+g18
+I-1
+sg19
+F6.3755499999999996
+sg20
+F34.299999999999997
+sg21
+V13C414 mS-1
+p117
+sg23
+S'13C'
+p118
+sg25
+S'2013-03-01 13:35'
+p119
+sg27
+F14542.799999999999
+sg28
+F7.0638120000000004
+sg29
+g10
+(g11
+g12
+(lp120
+g14
+(g31
+tRp121
+(dp122
+g25
+S'2013-05-02 09:37'
+p123
+sg2
+g35
+sg36
+F39.200000000000003
+sg37
+V0.5 * 0.6 V, 100%
+p124
+sbag14
+(g31
+tRp125
+(dp126
+g25
+S'2013-05-02 15:06'
+p127
+sg2
+g35
+sg36
+F40.5
+sg37
+V0.5, Tomography
+p128
+sbag14
+(g31
+tRp129
+(dp130
+g25
+S'2013-05-02 16:56'
+p131
+sg2
+g35
+sg36
+F39.600000000000001
+sg37
+V0.5, Tomography
+p132
+sbag14
+(g31
+tRp133
+(dp134
+g25
+S'2013-05-06 09:41'
+p135
+sg2
+g35
+sg36
+F39.600000000000001
+sg37
+V0.5, Tomography
+p136
+sbag14
+(g31
+tRp137
+(dp138
+g25
+S'2013-05-08 11:24'
+p139
+sg2
+g35
+sg36
+F40.700000000000003
+sg37
+V0.5, Tomography
+p140
+sbag14
+(g31
+tRp141
+(dp142
+g25
+S'2013-05-16 18:50'
+p143
+sg2
+g35
+sg36
+F37
+sg37
+V0.58, Tomography
+p144
+sbatRp145
+(dp146
+g49
+S'rabi_parameters_items'
+p147
+sg21
+g29
+sbsg51
+V1*0.7 V
+p148
+sg2
+g35
+sbag14
+(g15
+tRp149
+(dp150
+g18
+I0
+sg19
+F5.9624899999999998
+sg20
+F37.100000000000001
+sg21
+V13C mS0
+p151
+sg23
+S'13C'
+p152
+sg25
+S'2013-03-01 17:06'
+p153
+sg27
+F14543.120000000001
+sg28
+F6.6508760000000002
+sg29
+g10
+(g11
+g12
+(lp154
+g14
+(g31
+tRp155
+(dp156
+g25
+S'2013-05-02 09:24'
+p157
+sg2
+g35
+sg36
+F70
+sg37
+V0.2 * 0.6 V, 100 %
+p158
+sbag14
+(g31
+tRp159
+(dp160
+g25
+S'2013-06-28 13:30'
+p161
+sg2
+g35
+sg36
+F117
+sg37
+V0.2 * 0.66 V, 100 %
+p162
+sbag14
+(g31
+tRp163
+(dp164
+g25
+S'2013-10-11 11:51'
+p165
+sg2
+g35
+sg36
+F67.299999999999997
+sg37
+V0.4*0.7V, 100%
+p166
+sbatRp167
+(dp168
+g49
+S'rabi_parameters_items'
+p169
+sg21
+g29
+sbsg51
+V0.8*0.7 V
+p170
+sg2
+g35
+sbag14
+(g15
+tRp171
+(dp172
+g18
+I-1
+sg19
+F6.0512800000000002
+sg20
+F31.600000000000001
+sg21
+V13C90 mS-1
+p173
+sg23
+S'13C'
+p174
+sg25
+S'2013-03-02 11:36'
+p175
+sg27
+F14257.93
+sg28
+F6.6307320000000001
+sg29
+g10
+(g11
+g12
+(lp176
+g14
+(g31
+tRp177
+(dp178
+g25
+S'2013-05-02 13:13'
+p179
+sg2
+g35
+sg36
+F43.200000000000003
+sg37
+V0.5, Tomography
+p180
+sbag14
+(g31
+tRp181
+(dp182
+g25
+S'2013-05-02 17:11'
+p183
+sg2
+g35
+sg36
+F43
+sg37
+V0.5, Tomography
+p184
+sbag14
+(g31
+tRp185
+(dp186
+g25
+S'2013-05-06 09:59'
+p187
+sg2
+g35
+sg36
+F43.5
+sg37
+V0.5, Tomography
+p188
+sbag14
+(g31
+tRp189
+(dp190
+g25
+S'2013-05-08 12:08'
+p191
+sg2
+g35
+sg36
+F43.799999999999997
+sg37
+V0.5, Tomography
+p192
+sbag14
+(g31
+tRp193
+(dp194
+g25
+S'2013-05-16 12:45'
+p195
+sg2
+g35
+sg36
+F36.950000000000003
+sg37
+V0.64, Tomography
+p196
+sbatRp197
+(dp198
+g49
+S'rabi_parameters_items'
+p199
+sg21
+g29
+sbsg51
+V1*0.7 V
+p200
+sg2
+g35
+sbatRp201
+(dp202
+g49
+S'transitions_items'
+p203
+sg21
+g9
+sbsS'mw_mixing_frequency'
+p204
+F20
+s.
