@@ -155,6 +155,9 @@ class LaserScannerLogic(GenericLogic):
         # Initialie data matrix
         self._initialise_data_matrix(100)
 
+        # Create AWG Sequence which turns on repump during retrace
+        self.retrace_seq()
+
     def on_deactivate(self):
         """ Deinitialisation performed during deactivation of the module.
         """
@@ -374,11 +377,11 @@ class LaserScannerLogic(GenericLogic):
             self.sigScanFinished.emit()
             self.local_counts=[]
             self.slice_number=0
+            self.stop_awg()
             return
 
         if self._scan_counter_up == 0 and self.slice_number==0:
             # move from current voltage to start of scan range.
-
             self._goto_during_scan(self.scan_range[0])
 
         if self.upwards_scan:
@@ -395,39 +398,26 @@ class LaserScannerLogic(GenericLogic):
 
         
         else: #retrace
-            # self.setupcontrollogic().setup_seq(enable_A1=self.A1_on_during_retrace,
-            #     enable_A2=self.A2_on_during_retrace,
-            #     enable_Repump=self.repump_on_during_retrace,
-            #     enable_MW1=self.enable_MW1,
-            #     enable_MW2=self.enable_MW2,
-            #     enable_MW3=self.enable_MW3,
-            #     MW1_freq= self.MW1_freq,
-            #     MW2_freq= self.MW2_freq,
-            #     MW3_freq= self.MW3_freq,
-            #     MW1_power=self.MW1_power,
-            #     MW2_power=self.MW2_power,
-            #     MW3_power=self.MW3_power
-            #     )
-            self.setup_seq()
+
+            if self.repump_on_during_retrace:
+                self.awg.mcas_dict["retrace"].run()
+            else:
+                self.awg.mcas_dict["wait"].run()
             counts = self._scan_line(self._downwards_ramp)
-            counts=np.ones(self.scan_matrix2[self._scan_counter_down].shape[0])
+            counts = np.ones(self.scan_matrix2[self._scan_counter_down].shape[0])
             self.scan_matrix2[self._scan_counter_down] = counts
             self.plot_y2 += counts
             self._scan_counter_down += 1
             self.upwards_scan = True
-            #self.setupcontrollogic().setup_seq()
-            self.awg.mcas_dict["setupcontrol"].run() 
+            self.awg.mcas_dict["setupcontrol"].run()
 
 
         self.sigUpdatePlots.emit()
         self.sigScanNextLine.emit()
 
 
-    def setup_seq(self):
-        self.stop_awg()
-        # generate a single MW sequence with the needed mw frequencies and play is continuously until the measurement is stopped,
-        # either by the stop button, the runtime, or number of sequence repetitions.
-        seq = self.awg.mcas(name="PLE", ch_dict={"2g": [1,2], "ps":[1]})
+    def retrace_seq(self):
+        seq = self.awg.mcas(name="retrace", ch_dict={"2g": [1, 2], "ps": [1]})
         seq.start_new_segment("sequence")
         seq.asc(name="without MW",
                 A1=self.A1_on_during_retrace,
@@ -435,10 +425,7 @@ class LaserScannerLogic(GenericLogic):
                 repump=self.repump_on_during_retrace,
                 length_mus=5
                 )
-        self.awg.mcas_dict["PLE"] = seq
-
-        #self.awg.mcas_dict.print_info()
-        self.awg.mcas_dict["PLE"].run()
+        self.awg.mcas_dict["retrace"] = seq
 
     def _generate_ramp(self, voltage1, voltage2, speed):
         """Generate a ramp vrom voltage1 to voltage2 that
