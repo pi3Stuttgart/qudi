@@ -31,7 +31,8 @@ from logic.pulsed.pulse_analyzer import PulseAnalyzer
 
 class DataGeneration(GenericLogic):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, config, **kwargs):
+        super().__init__(config=config, **kwargs)
         self.date_of_creation = datetime.datetime.now()
 
     current_idx_str = ret_property_typecheck('current_idx_str', str)

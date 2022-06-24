@@ -10,9 +10,11 @@ else:
 #TODO connect the objects, e.g. gated counter.
 #from pi3diamond import pi3d
 
+import importlib
 import zipfile
 import time
-import misc; reload(misc)
+import logic.misc as misc
+importlib.reload(misc)
 import traceback
 import datetime
 import os
@@ -25,10 +27,10 @@ from numbers import Number
 from logic.generic_logic import GenericLogic
 from core.connector import Connector
 #TODO replace import with a connector to that
-from qudip_enhanced.data_generation import DataGeneration
-from qudip_enhanced.util import ret_property_list_element
-from qudip_enhanced import save_qutip_enhanced
-import qudip_enhanced.data_handling as data_handling
+from logic.qudip_enhanced.data_generation import DataGeneration
+#from qudip_enhanced.util import ret_property_list_element
+#from qudip_enhanced import save_qutip_enhanced
+import logic.qudip_enhanced.data_handling as data_handling
 
 #import qutip_enhanced.pddata
 from collections import OrderedDict
@@ -36,26 +38,26 @@ from collections import OrderedDict
 class NuclearOPs(DataGeneration):
 
     #TODO make a connector to MCAS and TT, confocal, ODMR, wavemeter, power_detector_laser, etc., gated_counter, PLE_A1,A2,repump.
-    confocal = Connector('ConfocalLogic')
-    transition_tracker = Connector('TransitionTracker')
-    mcas_dict = Connector('McasDictHolderInterface')
+    # confocal = Connector('ConfocalLogic')
+    # transition_tracker = Connector('TransitionTracker')
+    # mcas_dict = Connector('McasDictHolderInterface')
     #gated_counter = Connector()
 
+    # TODO use the qudi state machine instead.
+    # state = ret_property_list_element('state', ['idle', 'run', 'sequence_testing', 'sequence_debug_interrupted', 'sequence_ok'])
+    #
+    # # Tracking stuff:
+    # refocus_interval = misc.ret_property_typecheck('refocus_interval', int)
+    # odmr_interval = misc.ret_property_typecheck('odmr_interval', Number)
+    # additional_recalibration_interval = misc.ret_property_typecheck('additional_recalibration_interval', int)
 
-    def on_activate(self):
+    __TITLE_DATE_FORMAT__ = '%Y%m%dh%Hm%Ms%S'
 
-        self._confocal = self.confocal()
-        self._tt = self.transition_tracker()
-        self._mcas_dict = self.mcas_dict()
-        #self._gated_counter = self.gated_counter()
 
-        #activate connectors..
 
-    def on_deactivate(self):
-        pass
+    def __init__(self, config, **kwargs):
 
-    def __init__(self):
-        super(NuclearOPs, self).__init__()
+        super().__init__(config=config, **kwargs)
         # TODO for future ODMR refocus parameters.
         # self.odmr_pd = dict(
         #     n=0,
@@ -70,43 +72,45 @@ class NuclearOPs(DataGeneration):
         #     repeat=False,
         # )
 
-        self.do_ple_refocusEx = False
-        self.do_ple_refocusA1 = False
-        self.do_ple_refocus = False
-        self.do_confocal_red_refocus = False
-        self.do_confocal_zpl_refocus = False
+        # self.do_ple_refocusEx = False
+        # self.do_ple_refocusA1 = False
+        # self.do_ple_refocus = False
+        # self.do_confocal_red_refocus = False
+        # self.do_confocal_zpl_refocus = False
+        #
+        # self.do_odmr_refocus = False
+        #
+        # self.do_interferometerPhase_locking = False
+        # self.wavemeter_lock = False
+        #
+        # self.yellow_repump_compensation = False
+        #
+        # self.last_red_confocal_refocus = - 10000
+        # self.confocal_red_refocus_interval = 0
+        # self.last_ple_refocus = - 10000
+        # self.ple_refocus_interval = 0
+        # self.last_interferometer_refocus = - 10000
+        # self.interferometer_refocus_interval = 0
+        #
+        # self.save_smartly = False
+        # self.delay_ps_list = []
+        # self.window_ps_list = []
+        #
+        # self.two_zpl_apd = False
+        # self.raw_clicks_processing = False
+        # self.raw_clicks_processing_channels = [0,1,2,3,4,5,6,7]
 
-        self.do_odmr_refocus = False
+    def on_activate(self):
+        pass
+        #self._confocal = self.confocal()
+        #self._tt = self.transition_tracker()
+        #self._mcas_dict = self.mcas_dict()
+        #self._gated_counter = self.gated_counter()
 
-        self.do_interferometerPhase_locking = False
-        self.wavemeter_lock = False
+        #activate connectors..
 
-        self.yellow_repump_compensation = False
-
-        self.last_red_confocal_refocus = - 10000
-        self.confocal_red_refocus_interval = 0
-        self.last_ple_refocus = - 10000
-        self.ple_refocus_interval = 0
-        self.last_interferometer_refocus = - 10000
-        self.interferometer_refocus_interval = 0
-
-        self.save_smartly = False
-        self.delay_ps_list = []
-        self.window_ps_list = []
-
-        self.two_zpl_apd = False
-        self.raw_clicks_processing = False
-        self.raw_clicks_processing_channels = [0,1,2,3,4,5,6,7]
-
-    # TODO use the qudi state machine instead.
-    state = ret_property_list_element('state', ['idle', 'run', 'sequence_testing', 'sequence_debug_interrupted', 'sequence_ok'])
-
-    # Tracking stuff:
-    refocus_interval = misc.ret_property_typecheck('refocus_interval', int)
-    odmr_interval = misc.ret_property_typecheck('odmr_interval', Number)
-    additional_recalibration_interval = misc.ret_property_typecheck('additional_recalibration_interval', int)
-
-    __TITLE_DATE_FORMAT__ = '%Y%m%dh%Hm%Ms%S'
+    def on_deactivate(self):
+        pass
 
     @property
     def ana_trace(self):

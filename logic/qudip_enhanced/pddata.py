@@ -27,7 +27,7 @@ else:
 
 
 def ptrepack(file, folder, tempfile=None, lock=None):
-    # C:\Users\yy3\AppData\Local\conda\conda\envs\py27\Scripts\ptrepack.exe -o --chunkshape=auto --propindexes --complevel=0 --complib=blosc data.hdf data_tmp.hdf
+    # C:\Users\yy3\AppData\Local\conda\conda\envs\py27\UserScripts\ptrepack.exe -o --chunkshape=auto --propindexes --complevel=0 --complib=blosc data.hdf data_tmp.hdf
 
     if lock is not None and not lock.acquire(False):
         print('Trying to run ptrepack on {}'.format(os.path.join(folder, file)))
