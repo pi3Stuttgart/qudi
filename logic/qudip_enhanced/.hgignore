@@ -1,0 +1,36 @@
+# use glob syntax.
+syntax: glob
+
+history.sqlite
+iterate.dat
+log/**
+tmp_trash/**
+.idea/**
+.ropeproject/**
+*.pyc
+*.pyd
+*.orig
+*.egg-info
+*.pot
+*-checkpoint.ipynb
+*.py[co]
+__pycache__
+MANIFEST
+dist/
+docs/_build/
+docs/locale/
+node_modules/
+tests/coverage_html/
+tests/.coverage
+build/
+tests/report/
+
+
+
+
+
+# switch to regexp syntax.
+ipython_log.py
+ipython-profile/security/kernel-3852.json
+syntax: regexp
+[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-h..m..s..
