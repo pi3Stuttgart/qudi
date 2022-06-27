@@ -27,7 +27,7 @@ import threading
 import time
 import traceback
 from logic.generic_logic import GenericLogic
-
+from core.connector import Connector
 import multiprocess
 import numpy as np
 
@@ -114,6 +114,10 @@ class ScriptQueueList(collections.MutableSequence):
 
 
 class queue_logic(GenericLogic):
+    mcas_holder = Connector(interface='McasDictHolderInterface')
+    somesignal = pyqtSignal()
+    somesignal2 = pyqtSignal()
+
     def __init__(self, config , **kwargs):
         super(queue_logic, self).__init__(config,**kwargs)
         # for property_name in ['confocal', 'nidaq', 'fast_counter', 'odmr', 'timetagger', 'pp',
@@ -124,14 +128,19 @@ class queue_logic(GenericLogic):
         # setattr(self.__class__, property_name, property(attrgetter(property_name)))
 
 
+
         self.script_history = []
         # self.init_run()
-
-
-
-
         # if os.path.exists(self.log_single_val_dir + 'single_values.hdf'):
         #     dh.ptrepack('single_values.hdf', self.log_single_val_dir)
+
+    def on_activate(self):
+
+        self._mcas_dict = self.mcas_holder()  # mcas_dict()
+
+    def on_deactivate(self):
+        pass
+        #FIXME what else to do here?
 
     @property
     def md(self):

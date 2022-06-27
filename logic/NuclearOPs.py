@@ -58,6 +58,8 @@ class NuclearOPs(DataGeneration):
     def __init__(self, config, **kwargs):
 
         super().__init__(config=config, **kwargs)
+        ## TODO give all the handles for the interfaces from queue here...
+
         # TODO for future ODMR refocus parameters.
         # self.odmr_pd = dict(
         #     n=0,

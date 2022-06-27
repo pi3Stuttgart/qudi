@@ -15,7 +15,8 @@ from PyQt5.QtCore import pyqtSignal
 import PyQt5.uic
 import PyQt5.QtWidgets
 from qutip_enhanced import *
-import multi_channel_awg_seq as MCAS; reload(MCAS)
+import importlib
+import multi_channel_awg_seq as MCAS; importlib.reload(MCAS)
 
 
 import sip

@@ -25,14 +25,14 @@ from core.util.mutex import Mutex
 from core.util.network import netobtain
 from core.util import units
 from core.util.math import compute_ft
-from logic.generic_logic import GenericLogic
+#from logic.generic_logic import GenericLogic
 from logic.pulsed.pulse_extractor import PulseExtractor
 from logic.pulsed.pulse_analyzer import PulseAnalyzer
 
-class DataGeneration(GenericLogic):
+class DataGeneration:
 
-    def __init__(self, config, **kwargs):
-        super().__init__(config=config, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.date_of_creation = datetime.datetime.now()
 
     current_idx_str = ret_property_typecheck('current_idx_str', str)
