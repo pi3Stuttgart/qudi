@@ -114,9 +114,43 @@ class ScriptQueueList(collections.MutableSequence):
 
 
 class queue_logic(GenericLogic):
+    #TODO replace with qudi
+    #log_level = logging.INFO
+
+    # connections
+    # MCAS
+
     mcas_holder = Connector(interface='McasDictHolderInterface')
+    # Transition tracker
+
+    transition_tracker = Connector(interface = 'TransitionTracker')
+
+    # FIXME add here later connectors and give them to NuclearOps somehow.
+    # confocal = Connector('ConfocalLogic')
+    # gated_counter = Connector()
+
     somesignal = pyqtSignal()
     somesignal2 = pyqtSignal()
+    user_script_list = misc.ret_property_array_like_typ('user_script_list', str)
+    guis = []  # stores names of all open guis (later on used to dump them periodically)
+
+    _StopTimeout = 60.
+
+    # workspace_dir = 'log/'
+
+    __TIME_FORMAT_STR__ = '%Y%m%d-h%Hm%Ms%S'
+
+    # scanner_xrange = (0.0, 30.0)
+    # scanner_yrange = (0.0, 30.0)
+    # scanner_zrange = (-25, 25.0)
+
+    # colormaps = {'default': Spectral, 'confocal': jet}
+    # smiq_visa_device = 'GPIB0::28::INSTR'
+    # app_dir = r'D:/Python/pi3diamond'
+    # log_dir = '{}/log/'.format(app_dir)
+    # log_archive_dir = '{}/log/archive/'.format(app_dir)
+    # log_single_val_dir = '{}/log/single_values/'.format(app_dir)
+    # log_tmp = '{}/log/temp/'.format(app_dir)
 
     def __init__(self, config , **kwargs):
         super(queue_logic, self).__init__(config,**kwargs)
@@ -130,13 +164,19 @@ class queue_logic(GenericLogic):
 
 
         self.script_history = []
-        # self.init_run()
+
         # if os.path.exists(self.log_single_val_dir + 'single_values.hdf'):
         #     dh.ptrepack('single_values.hdf', self.log_single_val_dir)
 
     def on_activate(self):
 
         self._mcas_dict = self.mcas_holder()  # mcas_dict()
+        self._transition_tracker = self.transition_tracker()
+
+        self.init_run()
+        # TODO we are adding this later.
+        #self._confocal = self.confocal()
+        #self._gated_counter = self.gated_counter()
 
     def on_deactivate(self):
         pass
@@ -162,34 +202,9 @@ class queue_logic(GenericLogic):
         self.run_thread()
         # self.track_memory_usage_thread()
 
-    # app_dir = r'D:/Python/pi3diamond'
-    # log_dir = '{}/log/'.format(app_dir)
-    # log_archive_dir = '{}/log/archive/'.format(app_dir)
-    # log_single_val_dir = '{}/log/single_values/'.format(app_dir)
-    # log_tmp = '{}/log/temp/'.format(app_dir)
-
-    guis = []  # stores names of all open guis (later on used to dump them periodically)
-
-    _StopTimeout = 60.
-
-    log_level = logging.INFO
-
-    workspace_dir = 'log/'
-
-    __TIME_FORMAT_STR__ = '%Y%m%d-h%Hm%Ms%S'
-
-    scanner_xrange = (0.0, 30.0)
-    scanner_yrange = (0.0, 30.0)
-    scanner_zrange = (-25, 25.0)
-
-    #colormaps = {'default': Spectral, 'confocal': jet}
-    #smiq_visa_device = 'GPIB0::28::INSTR'
-
     @property
     def script_queue(self):
         return self._script_queue
-
-    user_script_list = misc.ret_property_array_like_typ('user_script_list', str)
 
     @property
     def nowstr(self):
@@ -206,8 +221,6 @@ class queue_logic(GenericLogic):
     @property
     def awgs(self):
         return self._mcas_dict.awgs
-
-
 
     ####################################################################################################################
     # dump and restore
@@ -237,7 +250,6 @@ class queue_logic(GenericLogic):
                 self.logger.exception(str(inst))
                 self.logger.warning('[FAILED]')
                 raise inst
-
 
     def dump(self, model):
         filename = self.persistent_file_name(model)
@@ -284,175 +296,6 @@ class queue_logic(GenericLogic):
     @property
     def cun(self):
         return self.cun_modules.nuclear
-
-    # ####################################################################################################################
-    # # single values
-    # ####################################################################################################################
-    # def latest_file_fn(self, fn_no_date, folder):
-    #     file_list = sorted(os.listdir((folder)))
-    #     return [s for s in file_list if fn_no_date in s][-1]
-    #
-    # def get_path_for_save_value_to_file(self, filename):
-    #     now = datetime.datetime.now()
-    #     full_path = self.log_single_val_dir + os.path.splitext(filename)[0] + '/' + now.strftime('%Y%m') + filename + '.dat'
-    #     return full_path
-    #
-    # def date_str_in(self, date_str, start_date_str=None, end_date_str=None):
-    #     date = datetime.datetime.strptime(date_str, self.__TIME_FORMAT_STR__)
-    #     start_date = datetime.datetime.min if start_date_str is None else datetime.datetime.strptime(start_date_str, self.__TIME_FORMAT_STR__)
-    #     end_date = datetime.datetime.now() if end_date_str is None else datetime.datetime.strptime(end_date_str, self.__TIME_FORMAT_STR__)
-    #     return start_date <= date <= end_date
-    #
-    # def save_value_to_file(self, val, filename):
-    #     """Appends a given value 'val' to a text file with filename 'yymmdd_filename' (e.g. 130101_temperature.dat) and adds the current date and time (format'yymmdd hhmmss) separated by a tab. '
-    #     """
-    #     full_path = self.get_path_for_save_value_to_file(filename)
-    #     folder = os.path.dirname(full_path)
-    #     if not os.path.isdir(self.log_single_val_dir):
-    #         os.mkdir(self.log_single_val_dir)
-    #     if not os.path.isdir(folder):
-    #         os.mkdir(folder)
-    #     now = datetime.datetime.now()
-    #     fil = open(full_path, 'a')
-    #     fil.write(now.strftime('%Y%m%d-h%Hm%Ms%S') + '\t' + str(val) + '\n')
-    #     fil.close()
-    #
-    # def save_values_to_file(self, val, filename, full_path=None):
-    #     full_path = self.get_path_for_save_value_to_file(filename) if full_path is None else full_path
-    #     folder = os.path.dirname(full_path)
-    #     if not os.path.isdir(self.log_single_val_dir):
-    #         os.mkdir(self.log_single_val_dir)
-    #     if not os.path.isdir(folder):
-    #         os.mkdir(folder)
-    #     now = datetime.datetime.now()
-    #     fil = open(full_path, 'a')
-    #     fil.write(now.strftime('%Y%m%d-h%Hm%Ms%S') + '\t' + '\t'.join(str(v) for v in val) + '\n')
-    #     fil.close()
-    #
-    # def get_last_value_from_file(self, filename, flg_out_date=False):
-    #     folder = os.path.dirname(self.get_path_for_save_value_to_file(filename))
-    #     file_list = sorted(os.listdir((folder)))
-    #     last_file_name = [s for s in file_list if filename in s][-1]
-    #     fil = open(folder + '\\' + last_file_name, 'r')
-    #     line_str_list = fil.readlines()[-1].split('\t')
-    #     fil.close()
-    #
-    #     if 'fit_params' in filename or 'history' in filename:
-    #         val = np.array(line_str_list[-1].rstrip('\n'))
-    #     else:
-    #         val = float(line_str_list[-1].rstrip('\n'))
-    #     if flg_out_date == True:
-    #         date = datetime.datetime.strptime(line_str_list[0], '%Y%m%d-h%Hm%Ms%S')
-    #         return val, date
-    #     return val
-    #
-    # def get_last_values_from_file(self, filename, flg_out_date=False, full_path=None):
-    #     if full_path is None:
-    #         folder = os.path.dirname(self.get_path_for_save_value_to_file(filename))
-    #         file_list = sorted(os.listdir((folder)))
-    #         last_file_name = [s for s in file_list if filename in s][-1]
-    #         full_path = folder + '\\' + last_file_name
-    #     else:
-    #         full_path = self.get_path_for_save_value_to_file(filename) if full_path is None else full_path
-    #     fil = open(full_path, 'r')
-    #
-    #     line_str_list = fil.readlines()[-1].split('\t')
-    #     line_str_list[-1].rstrip('\n')
-    #     fil.close()
-    #     val = []
-    #     for i in line_str_list[1:]:
-    #         try:
-    #             val.append(float(i))
-    #         except:
-    #             val.append(i.rstrip('\n'))
-    #     if flg_out_date is True:
-    #         date = datetime.datetime.strptime(line_str_list[0], '%Y%m%d-h%Hm%Ms%S')
-    #         return val, date
-    #     return val
-    #
-    # def get_values_time_span(self, filename, start_date_str, end_date_str=None):
-    #     folder = os.path.dirname(self.get_path_for_save_value_to_file(filename))
-    #     file_list = sorted(os.listdir(folder))
-    #     result = {'dates': [], 'data': []}
-    #     for fn in file_list:
-    #         try:
-    #             file_date_str = datetime.datetime.strptime(fn[0:6], '%Y%m').strftime(self.__TIME_FORMAT_STR__)
-    #         except:
-    #             file_list.remove(fn)
-    #             continue
-    #         with open("{}/{}".format(folder, fn), 'r') as f:
-    #             for l in f:
-    #                 l = l.rstrip('\n').split('\t')
-    #
-    #                 if self.date_str_in(l[0], start_date_str, end_date_str):
-    #                     result['dates'].append(datetime.datetime.strptime(l[0], self.__TIME_FORMAT_STR__))
-    #                     result['data'].append(l[1:])
-    #     result['data'] = np.array(result['data'])
-    #     return result
-
-    # def plot_single_values(self, filename, start_date_str, end_date_str=None, grating='m'):
-    #     values = self.get_values_time_span(filename=filename, start_date_str=start_date_str, end_date_str=end_date_str)
-    #     if end_date_str is None:
-    #         end_date_str = datetime.datetime.now()
-    #     else:
-    #         end_date_str = datetime.datetime.strptime(end_date_str, self.__TIME_FORMAT_STR__)
-    #     grating_dict = {'h': 1. / 60. / 60., 'm': 1. / 60., 's': 1.}
-    #     labeldict = {'magnet_gradients': ['x', 'y'], 'confocal_pos': ['x', 'y', 'z'], 'magnet_pos': ['x', 'y', 'z', 'phi'], 'current_local_oscillator_freq': 'local oscillator'}
-    #     legenddict = {'magnet_gradients': 'MHz/mu m', 'confocal_pos': 'mu m', 'magnet_pos': 'mu m', 'current_local_oscillator_freq': 'MHz'}
-    #     precisiondict = {'magnet_gradients': 6, 'confocal_pos': 4, 'magnet_pos': 4, 'current_local_oscillator_freq': 3}
-    #     tdelta = np.array([(values['dates'][i] - end_date_str).total_seconds() for i in range(len(values['dates']))]) * grating_dict['{}'.format(grating)]
-    #     num_single_values = len(values['data'][0])
-    #     num_dp = len(tdelta)
-    #     data = dict()
-    #     for num in range(num_single_values):
-    #         data[num] = np.array([values['data'][i][num] for i in range(num_dp)]).astype(float)
-    #     import matplotlib.pyplot as plt
-    #     import matplotlib.ticker
-    #     fig, axes = plt.subplots(num_single_values)
-    #     fig.suptitle(filename + ' since ' + '{}'.format(values['dates'][0].strftime('%Y%m%d-h%Hm%Ms%S')))
-    #     if num_single_values != 1:
-    #         for sv in range(num_single_values):
-    #             axes[sv].plot(tdelta, data[sv], 'o-', label=labeldict[filename][sv])
-    #             axes[sv].yaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter('%.{}f'.format(precisiondict[filename])))
-    #             axes[sv].legend()
-    #             axes[sv].set_ylabel(legenddict[filename])
-    #             axes[sv].set_xlabel('time [{}]'.format(grating))
-    #     else:
-    #         axes.plot(tdelta, data[0], 'o-', label=labeldict[filename])
-    #         axes.legend()
-    #         axes.yaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter('%.{}f'.format(precisiondict[filename])))
-    #         axes.set_ylabel(legenddict[filename])
-    #         axes.set_xlabel('time [s]')
-    #     plt.show()
-
-    # def save_values_hdf(self, classifier, vd, dt=None, full_path=None):
-    #     # classifier='concal_pos'
-    #     # vd=dict(x=11, y=12)
-    #     # dt=None
-    #     # full_path=None
-    #     # import time
-    #     # t0 = time.time()
-    #     # import datetime
-    #     # self = pi3d
-    #     # import pandas as pd
-    #     # import subprocess
-    #     #
-    #     #
-    #     # for i in range(1000):
-    #     dt = datetime.datetime.now() if dt is None else dt
-    #     full_path = "{}/single_values.hdf".format(self.log_single_val_dir) if full_path is None else full_path
-    #     folder = os.path.dirname(full_path)
-    #     if not os.path.isdir(self.log_single_val_dir):
-    #         os.mkdir(self.log_single_val_dir)
-    #     if not os.path.isdir(folder):
-    #         os.mkdir(folder)
-    #     sdt = pd.Series([dt]*len(vd), name='datetime')
-    #     cdt = pd.Series([classifier]*len(vd), name='classifier')
-    #     dfd = pd.DataFrame(vd.items(), columns=['subclassifier', 'value'])
-    #     df = pd.concat([sdt, cdt, dfd], axis=1)
-    #     store = pd.HDFStore(full_path)
-    #     store.append(key='df', value=df, table=True, append=True, index=False, mode='w')
-    #     store.close()
 
     def track_memory_usage(self):
         while True:
@@ -507,8 +350,10 @@ class queue_logic(GenericLogic):
                 self.thread.stop_request.clear()
             try:
                 self.current_script = self.q.get()
-                self.thread.stop_request.clear() # this is necessary although it shouldnt be.
-                self.logger.info("Starting Userscript {}...{}".format(self.current_script['module_name'][10:], pi3d.thread.stop_request.is_set()))
+                self.thread.stop_request.clear() # this is necessary although it shouldn't be.
+                self.logger.info("Starting Userscript {}...{}".format(
+                    self.current_script['module_name'][10:],
+                    self.thread.stop_request.is_set()))
                 sys.modules[self.current_script['module_name']].run_fun(self.thread.stop_request, **self.current_script['pd'])
                 self.script_history.append(self.current_script)
                 self.script_queue.pop(0)
@@ -632,81 +477,23 @@ class queue_logic(GenericLogic):
     def dl(self, key, *args, **kwargs):
         return self._mcas_dict[key].dl(*args, **kwargs)
 
-
-
-
-    ####################################################################################################################
-    # GUI
-    ####################################################################################################################
-    # def show_gui(self, module_names):
-    #     for module_name in module_names:
-    #         self.show_subgui(module_name)
-
-    # def get_odmr(self):
-    #     if not hasattr(self, 'odmr'):
-    #         # from ODMR_3T import ODMR
-    #         from ODMR import ODMR
-    #         self.odmr = ODMR()
-    #     return self.odmr
-
-
-    # def show_subgui(self, name):
-    #     if name == 'confocal':
-    #         getattr(self, 'confocal').edit_traits(view='MainView')
-    #         getattr(self, 'confocal').edit_traits(view='TrackerView')
-    #         getattr(self, 'confocal').edit_traits(view='TraceView')
-    #         self.restore(model=getattr(self, name))
-    #         self.confocal.reset_settings()
-    #         self.guis.append(name)
-    #     elif name == 'oxxius_laser':
-    #         print('no gui available for oxxius_laser')
-    #
-    #     elif name == 'ple_Ex':
-    #         # print('name == ple should show gui')
-    #         getattr(self, name).edit_traits()
-    #     elif name == 'ple_repump':
-    #         # print('name == ple should show gui')
-    #         getattr(self, name).edit_traits()
-    #
-    #     elif name == 'ple_A1':
-    #         # print('name == ple should show gui')
-    #         getattr(self, name).edit_traits()
-    #     elif name == 'gated_counter':
-    #         pi3d.gated_counter.gui.show()
-    #     elif name == 'corr_meas':
-    #         pi3d.corr_meas.gui.show()
-    #     elif name == 'interferometer':
-    #         pi3d.interferometer.gui.show()
-    #
-    #
-    #     elif name == 'tt':
-    #         pi3d.tt.show()
-    #     elif name == 'odmr':
-    #         # self.show_odmr()
-    #
-    #         if hasattr(pi3d.odmr.pld, '_gui'):
-    #             pi3d.odmr.pld.gui.show()
-    #     elif name == 'orabi':
-    #         # self.show_odmr()
-    #
-    #         if hasattr(pi3d.orabi.pld, '_gui'):
-    #             pi3d.orabi.pld.gui.show()
-    #     elif 'mcas_dict' in name:
-    #         return
-    #     else:
-    #         getattr(self, name).edit_traits()
-    #         if name not in ['tt', 'nuclear', 'gated_counter']:
-    #             self.restore(model=getattr(self, name))
-    #         if name not in self.guis:
-    #             self.guis.append(name)
-
     def save_pi3diamond(self, destination_dir):
         src = os.getcwd()
         f = '{}/qudi.zip'.format(destination_dir)
         if not os.path.isfile(f):
             zf = zipfile.ZipFile(f, 'a')
             for root, dirs, files in os.walk(src):
-                if (not any([i in root for i in ['__pycache__', 'awg_settings', 'currently_unused', ".idea", ".hg", 'UserScripts', 'log']])) or root.endswith('transition_tracker_log') or root.endswith('helpers'):
+                if (not any([i in root for i in ['__pycache__',
+                                                 'awg_settings',
+                                                 'currently_unused',
+                                                 ".idea",
+                                                 ".hg",
+                                                 'UserScripts',
+                                                 'log'
+                                                 ]
+                             ]
+                            )
+                ) or root.endswith('transition_tracker_log') or root.endswith('helpers'):
                     for file in files:
                         if any([file.endswith(i) for i in ['.py', '.dat', '.ui']]):
                             zf.write(os.path.join(root, file), os.path.join(root.replace(os.path.commonprefix([root, src]), ""), file))

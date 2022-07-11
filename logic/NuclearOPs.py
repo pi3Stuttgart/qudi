@@ -37,13 +37,13 @@ from collections import OrderedDict
 
 class NuclearOPs(DataGeneration):
 
-    #TODO make a connector to MCAS and TT, confocal, ODMR, wavemeter, power_detector_laser, etc., gated_counter, PLE_A1,A2,repump.
+    # instead of connectors it will be given from queue module.
     # confocal = Connector('ConfocalLogic')
     # transition_tracker = Connector('TransitionTracker')
     # mcas_dict = Connector('McasDictHolderInterface')
     #gated_counter = Connector()
 
-    # TODO use the qudi state machine instead.
+    # TODO use the qudi state machine instead maybe?
     # state = ret_property_list_element('state', ['idle', 'run', 'sequence_testing', 'sequence_debug_interrupted', 'sequence_ok'])
     #
     # # Tracking stuff:
@@ -54,12 +54,10 @@ class NuclearOPs(DataGeneration):
     __TITLE_DATE_FORMAT__ = '%Y%m%dh%Hm%Ms%S'
 
 
-
     def __init__(self, config, **kwargs):
 
         super().__init__(config=config, **kwargs)
         ## TODO give all the handles for the interfaces from queue here...
-
         # TODO for future ODMR refocus parameters.
         # self.odmr_pd = dict(
         #     n=0,
@@ -555,7 +553,7 @@ class NuclearOPs(DataGeneration):
         self.init_run(**kwargs)
         self.state = 'sequence_testing'
         try:
-            pi3d.mcas_dict.debug_mode = True
+            self._mcas_dict.debug_mode = True
             for idx, _ in enumerate(self.iterator()):
                 if abort.is_set(): break
                 self.data.set_observations([OrderedDict(start_time=datetime.datetime.now())] * self.number_of_simultaneous_measurements)
@@ -569,13 +567,14 @@ class NuclearOPs(DataGeneration):
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb)
         finally:
-            pi3d.mcas_dict.debug_mode = False
-            pi3d.multi_channel_awg_sequence.stop_awgs(pi3d.awgs)
+            self._mcas_dict.debug_mode = False
+            self.multi_channel_awg_sequence.stop_awgs(self._awgs) ##FIXME
             self.update_current_str()
             if os.path.exists(self.save_dir) and not os.listdir(self.save_dir):
                 os.rmdir(self.save_dir)
 
     def confocal_pos_moving_average(self, n):
+        #FIXME ?
         return self.df_refocus_pos[['confocal_x', 'confocal_y', 'confocal_z']].rolling(n, win_type='boxcar', center=True).sum().dropna()/n
 
     @property
