@@ -54,9 +54,9 @@ class NuclearOPs(DataGeneration):
     __TITLE_DATE_FORMAT__ = '%Y%m%dh%Hm%Ms%S'
 
 
-    def __init__(self, config, **kwargs):
+    def __init__(self):#TODO - revert back here from the pi3d.
 
-        super().__init__(config=config, **kwargs)
+        super().__init__()
         ## TODO give all the handles for the interfaces from queue here...
         # TODO for future ODMR refocus parameters.
         # self.odmr_pd = dict(
@@ -100,17 +100,13 @@ class NuclearOPs(DataGeneration):
         # self.raw_clicks_processing = False
         # self.raw_clicks_processing_channels = [0,1,2,3,4,5,6,7]
 
-    def on_activate(self):
-        pass
+
         #self._confocal = self.confocal()
         #self._tt = self.transition_tracker()
         #self._mcas_dict = self.mcas_dict()
         #self._gated_counter = self.gated_counter()
 
         #activate connectors..
-
-    def on_deactivate(self):
-        pass
 
     @property
     def ana_trace(self):

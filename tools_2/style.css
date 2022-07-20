@@ -1,0 +1,54 @@
+ext_container {
+    position: absolute;
+    top: 50px;
+}
+
+#fig1_container {
+    position: absolute;
+    float: left;
+}
+
+#fig2_container {
+    position: absolute;
+    
+    left: 500px;
+}
+
+#fig3_container {
+    position: absolute;
+    top:500px ;
+    
+}
+
+#fig4_container {
+    position: absolute;
+    top:500px ;
+    left: 500px;
+}
+
+#fig5_container {
+    position: absolute;
+    top:1000px ;
+    float: left;
+}
+
+#fig6_container {
+    position: absolute;
+    top:1500px ;
+
+}
+
+
+#row2 {
+    position: absolute;
+    
+}
+#row3 {
+    position: absolute;
+    
+}
+
+img {
+    max-width: 600px;
+    max-height: 600px;
+}

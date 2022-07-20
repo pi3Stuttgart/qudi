@@ -1,12 +1,11 @@
 # coding=utf-8
 from __future__ import print_function, absolute_import, division
-
 __metaclass__ = type
 
 import sys, os
-import misc
+import logic.misc
 import imp
-from Queue import Queue
+from gui.queue.Queue import queue_gui
 
 from PyQt5.QtWidgets import QAbstractItemView, QMainWindow, QFileDialog
 from PyQt5 import QtGui
@@ -14,10 +13,9 @@ from PyQt5.QtCore import pyqtSignal
 import PyQt5.uic
 import PyQt5.QtWidgets
 from logic.qudip_enhanced import *
-
 # FIXME
 # import multi_channel_awg_seq as MCAS; reload(MCAS)
-
+import logic.misc as misc
 import datetime
 import logging.handlers
 import os
@@ -30,6 +28,7 @@ from logic.generic_logic import GenericLogic
 from core.connector import Connector
 import multiprocess
 import numpy as np
+import logging
 
 import collections
 
@@ -112,7 +111,6 @@ class ScriptQueueList(collections.MutableSequence):
     def __repr__(self):
         return str(self.list)
 
-
 class queue_logic(GenericLogic):
     #TODO replace with qudi
     #log_level = logging.INFO
@@ -122,7 +120,7 @@ class queue_logic(GenericLogic):
 
     mcas_holder = Connector(interface='McasDictHolderInterface')
     # Transition tracker
-
+    #queue_gui = Connector(interface = 'queue_gui') ## Can't connect to the gui! only gui to logic.
     transition_tracker = Connector(interface = 'TransitionTracker')
 
     # FIXME add here later connectors and give them to NuclearOps somehow.
@@ -131,6 +129,7 @@ class queue_logic(GenericLogic):
 
     somesignal = pyqtSignal()
     somesignal2 = pyqtSignal()
+    update_selected_user_script_combo_box_signal = pyqtSignal(collections.OrderedDict)
     user_script_list = misc.ret_property_array_like_typ('user_script_list', str)
     guis = []  # stores names of all open guis (later on used to dump them periodically)
 
@@ -153,15 +152,13 @@ class queue_logic(GenericLogic):
     # log_tmp = '{}/log/temp/'.format(app_dir)
 
     def __init__(self, config , **kwargs):
-        super(queue_logic, self).__init__(config,**kwargs)
+        super(queue_logic, self).__init__(config=config, **kwargs)
         # for property_name in ['confocal', 'nidaq', 'fast_counter', 'odmr', 'timetagger', 'pp',
         #                       'gated_counter', 'nuclear', 'magnet', 'tt', 'pulsed', 'powermeter', 'oxxius_laser',
         #                       'rf_amp', 'misc', 'Fit', 'Analysis', 'multi_channel_awg_sequence', 'magnet_stage_micos',
         #                       'microwave', 'mcas_dict']:
 
         # setattr(self.__class__, property_name, property(attrgetter(property_name)))
-
-
 
         self.script_history = []
 
@@ -170,8 +167,8 @@ class queue_logic(GenericLogic):
 
     def on_activate(self):
 
-        self._mcas_dict = self.mcas_holder()  # mcas_dict()
-        self._transition_tracker = self.transition_tracker()
+        self._mcas_dict = float(9)#self.mcas_holder()  # mcas_dict()
+        self._transition_tracker = float(10)#self.transition_tracker()
 
         self.init_run()
         # TODO we are adding this later.
@@ -181,7 +178,6 @@ class queue_logic(GenericLogic):
     def on_deactivate(self):
         pass
         #FIXME what else to do here?
-
     @property
     def md(self):
         return self._mcas_dict
@@ -196,9 +192,9 @@ class queue_logic(GenericLogic):
     #     self._timetagger = TimeTaggerHandler.init_timetagger()
 
     def init_run(self):
-        self.user_script_folder = r'D:/Python/pi3diamond/UserScripts/'
+        self.user_script_folder = r"/Users/vvv/Documents/GitHub/qudi/notebooks/UserScripts"
         self._script_queue = ScriptQueueList(oktypes=(ScriptQueueStep), list_owner=self)
-        self.q = Queue()
+        #self.q = self.queue_gui() # use connector
         self.run_thread()
         # self.track_memory_usage_thread()
 
@@ -232,36 +228,36 @@ class queue_logic(GenericLogic):
         return self.log_dir + str(model.__class__).replace('>', '').replace('<',
 
                                                                             '') + '.pyd'  # windows does not allow '>' and '<' in filenames
-
+    #
     def restore(self, model, fp=None):
         filename = self.persistent_file_name(model) if fp is None else fp
 
         if os.access(filename, os.F_OK):
 
-            self.logger.info('Restoring state of ' + model.__str__() + '\nfrom ' + filename + '..')
+            self.log.info('Restoring state of ' + model.__str__() + '\nfrom ' + filename + '..')
 
             try:
                 a = pickle.load(open(filename, 'rb'))
                 a = a if type(a) is dict else a.__getstate__()
                 model.set_items(a)
-                self.logger.info('[DONE1]')
+                self.log.info('[DONE1]')
 
             except Exception as inst:
-                self.logger.exception(str(inst))
-                self.logger.warning('[FAILED]')
+                self.log.exception(str(inst))
+                self.log.warning('[FAILED]')
                 raise inst
 
     def dump(self, model):
         filename = self.persistent_file_name(model)
-        self.logger.info('attempting to save state of ' + model.__str__() + '\nto ' + filename + '..', )
+        self.log.info('attempting to save state of ' + model.__str__() + '\nto ' + filename + '..', )
         try:
             fil = open(filename, 'wb')
             pickle.dump(model.__getstate__(), fil)
             fil.close()
-            self.logger.info('[DONE]')
+            self.log.info('[DONE]')
         except Exception:
-            self.logger.exception(str(Exception))
-            self.logger.warning('[FAILED]')
+            self.log.exception(str(Exception))
+            self.log.warning('[FAILED]')
 
     # @property
     # def current_nuclear(self):
@@ -335,33 +331,36 @@ class queue_logic(GenericLogic):
     ####################################################################################################################
     def run(self):
 
-        from tools import emod
-        emod.JobManager().start()
+
+        ## Why this is needed??????
+
+        #from tools_2 import emod
+        #emod.JobManager().start()
 
         # start the CronDaemon
-        from tools import cron
-        cron.CronDaemon().start()
+        #from tools_2 import cron
+        #cron.CronDaemon().start()
 
 
         while True:
             if self.thread.stop_request.is_set():
-                self.q.queue.clear()
+                #self.q.queue.clear()
                 self.script_queue.list = []
                 self.thread.stop_request.clear()
-            try:
-                self.current_script = self.q.get()
+            try: ### runs the measurement!
+                self.current_script = 'Try1.py'#self.q.get()
                 self.thread.stop_request.clear() # this is necessary although it shouldn't be.
-                self.logger.info("Starting Userscript {}...{}".format(
-                    self.current_script['module_name'][10:],
-                    self.thread.stop_request.is_set()))
-                sys.modules[self.current_script['module_name']].run_fun(self.thread.stop_request, **self.current_script['pd'])
-                self.script_history.append(self.current_script)
-                self.script_queue.pop(0)
-                self.logger.info("Userscript {} has finished...".format(self.current_script['module_name'][10:]))
+                #self.log.info("Starting Userscript {}...{}".format(
+                #    self.current_script['module_name'][10:],
+                 #   self.thread.stop_request.is_set()))
+                #sys.modules[self.current_script['module_name']].run_fun(self.thread.stop_request, **self.current_script['pd'])
+                #self.script_history.append(self.current_script)
+                #self.script_queue.pop(0)
+                #self.log.info("Userscript {} has finished...".format(self.current_script['module_name'][10:]))
                 del self.current_script
-                self.q.task_done()
-            except Exception:
-                self.q.queue.clear()
+                #self.q.task_done()
+            except Exception: #Not running the measurement.
+                #self.q.queue.clear()
                 self.script_queue.list = []
                 exc_type, exc_value, exc_tb = sys.exc_info()
                 traceback.print_exception(exc_type, exc_value, exc_tb)
@@ -380,9 +379,12 @@ class queue_logic(GenericLogic):
         self._user_script_list = file_list
         if len(self.user_script_list) > 0:
             self._selected_user_script = self.user_script_list[0]
-            if hasattr(self, '_gui'):
-                val = collections.OrderedDict([('user_script_list', self.user_script_list), ('selected_user_script', self.selected_user_script)])
-                self.gui.update_selected_user_script_combo_box(val)
+            #if hasattr(self, '_gui'):
+            val = collections.OrderedDict([('user_script_list', self.user_script_list), ('selected_user_script', self.selected_user_script)])
+
+            #self.update_selected_user_script_combo_box(val)
+            #Instead emit a signal which will updates it.
+            self.update_selected_user_script_combo_box_signal.emit(val)
 
     @property
     def selected_user_script(self):
@@ -394,9 +396,10 @@ class queue_logic(GenericLogic):
             if val not in self.user_script_list:
                 raise Exception('Script {} not in {}'.format(val, self.user_script_list))
             self._selected_user_script = val
-            if hasattr(self, '_gui'):
-                val = collections.OrderedDict([('selected_user_script', self.selected_user_script)])
-                self.gui.update_selected_user_script_combo_box(val)
+            #if hasattr(self, '_gui'):
+            val = collections.OrderedDict([('selected_user_script', self.selected_user_script)])
+            self.update_selected_user_script_combo_box_signal.emit(val)
+            #self.gui.update_selected_user_script_combo_box(val)
 
     @property
     def user_script_params(self):
@@ -415,12 +418,13 @@ class queue_logic(GenericLogic):
         if os.path.isdir(val):
             self._user_script_folder = val
             self.set_user_script_list()
-            if hasattr(self, '_gui'):
-                self.gui.update_user_script_folder_text_field(val)
+            #This now is done in gui automatically.
+            #if hasattr(self, '_gui'):
+                #self.gui.update_user_script_folder_text_field(val)
 
     def add_to_queue(self, name=None, pd=None, folder=None):
-        self.confocal.counter_state = 'idle'
-        self.md.stop_awgs()
+        #self.confocal.counter_state = 'idle'
+        #self.md.stop_awgs()
         folder = self.user_script_folder if folder is None else folder
         name = self.selected_user_script if name is None else name
         pd = self.user_script_params if pd is None else pd
@@ -428,14 +432,14 @@ class queue_logic(GenericLogic):
             return
         try:
             module_name = self.init_task(name, folder)
-            self.q.put({'module_name': module_name, 'pd': pd})
+            #self.q.put({'module_name': module_name, 'pd': pd})
             self.script_queue.append(ScriptQueueStep(module_name[10:], self.user_script_params))
         except Exception:
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb)
 
     def add_rco(self):
-        folder = 'D:/Python/pi3diamond/UserScripts/'
+        folder = r"/Users/vvv/Documents/GitHub/qudi/notebooks/UserScripts"
         name = 'refocus_confocal_odmr'
         pd = self.user_script_params
         self.add_to_queue(name, pd, folder)
@@ -457,9 +461,9 @@ class queue_logic(GenericLogic):
         #     self.get_user_script(name).evaluate(**pd)
 
     def remove_last_script(self):
-        if self.q.qsize() > 0:
+        if 1:#self.q.qsize() > 0:
             del self.script_queue[-1]
-            self.q.get()
+            #self.q.get()
 
     def init_task(self, name, folder=None):
         folder = self.user_script_folder if folder is None else folder

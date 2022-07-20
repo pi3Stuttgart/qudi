@@ -11,9 +11,11 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from .util import printexception
 from . import pddata
 try:
-    import qutip_enhanced.qtgui.gui_helpers
-except:
-    pass
+    import logic.qudip_enhanced.qtgui.gui_helpers
+    from logic import qudip_enhanced as qudip_enhanced
+except Exception as e:
+    print(e)
+
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
@@ -280,8 +282,9 @@ class FitResultTable(DataTable):
     def selected_indices_default(self, selected_indices=None):
         return collections.OrderedDict()
 
+from logic.qudip_enhanced import qtgui
 
-class PlotData(qutip_enhanced.qtgui.gui_helpers.WithQt):
+class PlotData(qudip_enhanced.qtgui.gui_helpers.WithQt):
 
     @printexception
     def __init__(self, title=None, parent=None, gui=True, **kwargs):
@@ -832,7 +835,7 @@ class FitResultTableQt(TableQt):
             widget.blockSignals(False)
 
 
-class PlotDataQt(qutip_enhanced.qtgui.gui_helpers.QtGuiClass):
+class PlotDataQt(qudip_enhanced.qtgui.gui_helpers.QtGuiClass):
     def __init__(self, parent=None, no_qt=None):
         self.observation_list = SelectableListQt(name='observation_list', widget_name='observation_widget', parent=self)
         self.average_parameter_list = SelectableListQt(name='average_parameter_list', widget_name='average_parameter_widget', parent=self)

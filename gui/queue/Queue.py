@@ -3,22 +3,17 @@ from __future__ import print_function, absolute_import, division
 __metaclass__ = type
 
 import sys, os
-import misc
-
-
-import imp
-from Queue import Queue
+import logic.misc
 
 from PyQt5.QtWidgets import QAbstractItemView, QMainWindow, QFileDialog
 from PyQt5 import QtGui
 from PyQt5.QtCore import pyqtSignal
 import PyQt5.uic
 import PyQt5.QtWidgets
-from qutip_enhanced import *
+from logic.qudip_enhanced import *
 import importlib
-import multi_channel_awg_seq as MCAS; importlib.reload(MCAS)
-
-
+setup = False
+#import multi_channel_awg_seq as MCAS; importlib.reload(MCAS)
 import sip
 
 try:
@@ -41,13 +36,14 @@ import shutil
 import sys
 import threading
 import time
+from core.connector import Connector
+from gui.guibase import GUIBase
 import traceback
-import TimeTaggerHandler
+#import TimeTaggerHandler
 import numpy as np
 import psutil
 import collections
-
-
+from PyQt5 import QtCore, QtWidgets
 
 class ScriptQueueStep:
     def __init__(self, name, pd):
@@ -127,65 +123,96 @@ class ScriptQueueList(collections.MutableSequence):
     def __repr__(self):
         return str(self.list)
 
-class queue_gui(QMainWindow):
+class window(QtWidgets.QMainWindow):
+    """ Create the Main Window based on the *.ui file. """
+
+    def __init__(self):
+        # Get the path to the *.ui file
+        super().__init__()
+        # Load it
+        this_dir = os.path.dirname(__file__)
+        ui_file = os.path.join(this_dir,'pi3d_main_window.ui')
+        # Load ui
+        PyQt5.uic.loadUi(ui_file, self)
+        self.show()
+
+
+class queue_gui(GUIBase):
 
     update_user_script_folder_text_field_signal = pyqtSignal(str)
     update_selected_user_script_combo_box_signal = pyqtSignal(collections.OrderedDict)
     update_script_queue_table_data_signal = pyqtSignal(collections.OrderedDict)
     update_user_script_params_text_field_signal = pyqtSignal(collections.OrderedDict)
 
+    #Connect to the Queue.
+    queue_logic = Connector(interface="queue_logic")  # class name
 
-    def __init__(self, title=None, parent=None, no_qt=None, gui=True):
-        super(queue_gui, self).__init__(parent=parent)
-        self.no_qt = no_qt
-        PyQt5.uic.loadUi(os.path.join(self.no_qt.app_dir, 'qtgui/pi3d_main_window.ui'), self)
-        self.init_gui()
-
+    def __init__(self, config, title=None, parent=None, no_qt=None, gui=True, **kwargs):
+        super(queue_gui, self).__init__(config = config, **kwargs)
 
     def init_gui(self):
-        self.setWindowTitle('Pi3Diamond')
-        icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(r"D:\Python\pi3diamond\qtgui\folder_icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
-        self.user_script_folder_pushButton.setIcon(icon)
+        self._mw.setWindowTitle('nuclear ops queue')
+        # icon = QtGui.QIcon()
+        # icon.addPixmap(QtGui.QPixmap(r"D:\Python\pi3diamond\qtgui\folder_icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
+        # self.user_script_folder_pushButton.setIcon(icon)
 
         for name in [
             'update_user_script_folder_text_field',
             'update_selected_user_script_combo_box',
             'update_script_queue_table_data',
         ]:
-            getattr(getattr(self, "{}_signal".format(name)), 'connect')(getattr(self, "{}_signal_emitted".format(name)))
+            getattr(getattr(self, "{}_signal".format(name)), 'connect')(
+                getattr(self, "{}_signal_emitted".format(name)))
+        self._mw.selected_user_script_combo_box.currentIndexChanged.connect(
+            self.update_selected_user_script_from_combo_box)
+        self._mw.remove_next_script_button.clicked.connect(self.no_qt.remove_last_script)
+        self._mw.set_stop_request_button.clicked.connect(self.no_qt.set_stop_request)
+        self._mw.add_to_queue_button.clicked.connect(self.add_to_queue)
+        self._mw.add_rco_button.clicked.connect(self.no_qt.add_rco)
+        self._mw.evaluate_button.clicked.connect(self.no_qt.evaluate)
+        self._mw.write_standard_awg_sequences_button.clicked.connect(self.no_qt.write_standard_awg_sequences)
+        #self._mw.user_script_folder_text_field.textChanged.connect(self.user_script_folder_text_field_text_changed)
+        self._mw.user_script_folder_pushButton.clicked.connect(self.open_user_script_folder_file_dialog)
+        #self.show()
+        self.no_qt.update_selected_user_script_combo_box_signal.connect(self.update_selected_user_script_combo_box)
 
-        self.selected_user_script_combo_box.currentIndexChanged.connect(self.update_selected_user_script_from_combo_box)
-        self.remove_next_script_button.clicked.connect(self.no_qt.remove_last_script)
-        self.set_stop_request_button.clicked.connect(self.no_qt.set_stop_request)
-        self.add_to_queue_button.clicked.connect(self.add_to_queue)
-        self.add_rco_button.clicked.connect(self.no_qt.add_rco)
-        self.evaluate_button.clicked.connect(self.no_qt.evaluate)
-        self.write_standard_awg_sequences_button.clicked.connect(self.no_qt.write_standard_awg_sequences)
-        self.user_script_folder_text_field.textChanged.connect(self.user_script_folder_text_field_text_changed)
-        self.user_script_folder_pushButton.clicked.connect(self.open_user_script_folder_file_dialog)
+    def on_activate(self):
+        self._mw = window()
+        self.no_qt = self.queue_logic()
+        self.init_gui()
+
+    def show(self):
+        """ Make window visible and put it above all other windows.
+        """
+        QtWidgets.QMainWindow.show(self._mw)
+        self._mw.activateWindow()
+        self._mw.raise_()
+
+
+    def on_deactivate(self):
+        self._mw.close()
 
 
     def add_to_queue(self, stupid_argument_emitted_by_qt_signal):
         self.no_qt.add_to_queue()
 
 
-    def update_selected_user_script_combo_box(self, val):
+    def update_selected_user_script_combo_box(self,val):
         self.update_selected_user_script_combo_box_signal.emit(val)
 
 
     def update_selected_user_script_combo_box_signal_emitted(self, val):
-        self.selected_user_script_combo_box.blockSignals(True)
+        self._mw.selected_user_script_combo_box.blockSignals(True)
         if 'user_script_list' in val:
-            self.selected_user_script_combo_box.clear()
-            self.selected_user_script_combo_box.addItems(
+            self._mw.selected_user_script_combo_box.clear()
+            self._mw.selected_user_script_combo_box.addItems(
                 val['user_script_list'])  # currentIndexChanged is triggered, value is first item (e.g. sweeps)
-        self.selected_user_script_combo_box.setCurrentText(val['selected_user_script'])
-        self.selected_user_script_combo_box.blockSignals(False)
+        self._mw.selected_user_script_combo_box.setCurrentText(val['selected_user_script'])
+        self._mw.selected_user_script_combo_box.blockSignals(False)
 
 
     def update_selected_user_script_from_combo_box(self):
-        self.no_qt.selected_user_script = str(self.selected_user_script_combo_box.currentText())
+        self.no_qt.selected_user_script = str(self._mw.selected_user_script_combo_box.currentText())
 
 
     def update_script_queue_table_data(self, val):
@@ -193,16 +220,16 @@ class queue_gui(QMainWindow):
 
 
     def update_script_queue_table_data_signal_emitted(self, val):
-        self.script_queue_table.blockSignals(True)
-        self.script_queue_table.clear_table_contents()
-        self.script_queue_table.set_column_names(['name', 'pd'])
-        self.script_queue_table.setColumnWidth(0, 400)
-        self.script_queue_table.setColumnWidth(1, 100)
-        self.script_queue_table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.script_queue_table.setSelectionMode(QAbstractItemView.SingleSelection)
+        self._mw.script_queue_table.blockSignals(True)
+        self._mw.script_queue_table.clear_table_contents()
+        self._mw.script_queue_table.set_column_names(['name', 'pd'])
+        self._mw.script_queue_table.setColumnWidth(0, 400)
+        self._mw.script_queue_table.setColumnWidth(1, 100)
+        self._mw.script_queue_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self._mw.script_queue_table.setSelectionMode(QAbstractItemView.SingleSelection)
         for cn, cp in val.items():
-            self.script_queue_table.set_column(cn, data=cp, )
-        self.script_queue_table.blockSignals(False)
+            self._mw.script_queue_table.set_column(cn, data=cp, )
+        self._mw.script_queue_table.blockSignals(False)
 
 
     def update_user_script_folder_text_field(self, val):
@@ -210,18 +237,22 @@ class queue_gui(QMainWindow):
 
 
     def update_user_script_folder_text_field_signal_emitted(self, val):
-        self.user_script_folder_text_field.blockSignals(True)
-        self.user_script_folder_text_field.setText(val)
-        self.user_script_folder_text_field.blockSignals(False)
+        self._mw.user_script_folder_text_field.blockSignals(True)
+        self._mw.user_script_folder_text_field.setText(val)
+        self._mw.user_script_folder_text_field.blockSignals(False)
 
 
-    def user_script_folder_text_field_text_changed(self):
-        self.user_script_folder = self.user_script_folder_text_field.toPlainText()
-
+    #def user_script_folder_text_field_text_changed(self):
+        #self.user_script_folder = self._mw.user_script_folder_text_field.toPlainText()
+        # needs to be cleaned up, and separated from logic# TODO
 
     def open_user_script_folder_file_dialog(self):
-        self.no_qt.user_script_folder = QFileDialog.getExistingDirectory(
-            self,
+        self.user_script_folder = QFileDialog.getExistingDirectory(
+            self._mw,
             'Select user_script_folder',
-            r"D:\Python\pi3diamond\UserScripts",
+            r"/Users/vvv/Documents/GitHub/qudi/notebooks/UserScripts",
         )
+        self.no_qt.user_script_folder = self.user_script_folder
+        #this is working - need to do now the gui, no?
+        #it calls a setter which then updates the text, why not update it here?
+        self.update_user_script_folder_text_field(self.user_script_folder)

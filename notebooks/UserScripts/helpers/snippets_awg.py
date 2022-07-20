@@ -59,7 +59,7 @@ __PERIODS__ = {'14n+1': 1.6, '14n-1': 1.6, '14n': 1.6, '14n0': 1.6, '13c414': 6.
                '2opt_withMW_pi':0.0,'entanglement':0.0,'entanglement_for_tests':0.0,'HOM':0.0}
 __WAVE_FILE_SCALING_FACTOR_DICT__ = {'14n+1': 2.5, '14n-1': 2.5, '14n': 2.5, '14n0': 2.5, '13c414': 1.0,'charge_state_A1_aom_Ex':1.0, 'charge_state': 1.0,'ple_Ex': 1.0,'ple_A1': 0.0}
 __STANDARD_WAVEFILE__ = 'D:\data\Robust_Pulses\single_pulse_ON03_OFF05_Rabi10_02.dat'
-__STANDARD_WAVEFILES__ = {'14n+1': "D:\data\NuclearOPs\Robust\test_pi_three_nitrogen\20171204-h18m52s32CnROTe-gateFN3.08e-01_selective_to_all\MW.dat"}
+__STANDARD_WAVEFILES__ = {'14n+1': r"D:\data\NuclearOPs\Robust\test_pi_three_nitrogen\20171204-h18m52s32CnROTe-gateFN3.08e-01_selective_to_all\MW.dat"}
 
 __WAIT_SWITCH__ = 0.0
 __IQ_MIXER__ = False

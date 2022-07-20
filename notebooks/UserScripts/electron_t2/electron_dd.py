@@ -7,9 +7,9 @@ import importlib
 import notebooks.UserScripts.helpers.sequence_creation_helpers as sch; importlib.reload(sch)
 import notebooks.UserScripts.helpers.shared as shared
 #import hardware.multi_channel_awg_seq as MCAS
-import notebooks.UserScripts.helpers.snippets_awg as sna
+#import notebooks.UserScripts.helpers.snippets_awg as sna
 
-importlib.reload(sna)
+#importlib.reload(sna)
 importlib.reload(shared)
 #importlib.reload(MCAS)
 import notebooks.UserScripts.helpers.shared as ush;importlib.reload(ush)
@@ -32,36 +32,36 @@ def ret_ret_mcas(pdc):
     def ret_mcas(current_iterator_df):
         sequence_name = 'Electron_t2_red_Tst'
 
-        mcas = MCAS.MultiChSeq(name=sequence_name, ch_dict={'2g': [1, 2], 'ps': [1]})
-        mcas.start_new_segment('start_sequence')
-        mcas.asc(length_mus=0.1)  # Starting... histogram 0
+        #mcas = MCAS.MultiChSeq(name=sequence_name, ch_dict={'2g': [1, 2], 'ps': [1]})
+        #mcas.start_new_segment('start_sequence')
+        #mcas.asc(length_mus=0.1)  # Starting... histogram 0
 
 
 
 
-        def erabi(freq, length, amp, phase=0.0):
-            sna.electron_rabi(mcas,
-                              name='electron rabi',
-                              length_mus=length,
-                              amplitudes=[amp],
-                              frequencies=freq,
-                              phases=np.rad2deg(phase),
-                              new_segment=False,
-                              mixer_deg=-90,
-                              )
+        #def erabi(freq, length, amp, phase=0.0):
+        #    sna.electron_rabi(mcas,
+        #                      name='electron rabi',
+        #                      length_mus=length,
+         #                     amplitudes=[amp],
+        #                      frequencies=freq,
+        #                      phases=np.rad2deg(phase),
+        #                      new_segment=False,
+        #                      mixer_deg=-90,
+        #                      )
 
-        def waveform(seq):
-            mcas.start_new_segment('waveform')
-            sna.polarize(mcas, new_segment=False)
-            mw = seq.times_fields_aphi('mw')
-            wait = seq.times_fields_aphi('wait')
-            for step in seq.sequence_steps:
-                idx = int(step[1]) - 1
-                if step[0] == 'mw':
-                    erabi(freq=freq, length=mw[idx, 0],
-                          amp=pi3d.tt.rp('e_rabi', period=1 / mw[idx, 1], mixer_deg=-90).amp, phase=mw[idx, 2])
-                elif step[0] == 'wait':
-                    mcas.asc(length_mus=wait[idx, 0])
+        #def waveform(seq):
+         #   mcas.start_new_segment('waveform')
+         #   sna.polarize(mcas, new_segment=False)
+         #   mw = seq.times_fields_aphi('mw')
+        #    wait = seq.times_fields_aphi('wait')
+         #   for step in seq.sequence_steps:
+         #       idx = int(step[1]) - 1
+         #       if step[0] == 'mw':
+         #           erabi(freq=freq, length=mw[idx, 0],
+         #                 amp=pi3d.tt.rp('e_rabi', period=1 / mw[idx, 1], mixer_deg=-90).amp, phase=mw[idx, 2])
+         #       elif step[0] == 'wait':
+          #          mcas.asc(length_mus=wait[idx, 0])
 
         def dd():
             pi2x = sc.Rabi(t_rabi=0.25 * rabi_period, omega=1.0 / rabi_period, phase=0.0, control_field='mw')
@@ -72,7 +72,7 @@ def ret_ret_mcas(pdc):
             print(_I_["ddt"])
             seq = sc.Concatenated([pi2x, dd, pi2_2], controls=['mw', 'wait'])
             print([steps[0] for steps in seq.sequence_steps])
-            waveform(seq)
+            #waveform(seq)
 
 
 

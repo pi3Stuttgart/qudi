@@ -9,11 +9,11 @@ import fractions
 import copy
 import types
 # import Analysis
-import NuclearOPs
+import logic.NuclearOPs
 import os
 # import cPickle
 import collections
-from qutip_enhanced import data_handling
+from logic.qudip_enhanced import data_handling
 import datetime
 
 # def full_wavelength(flf, target_length_mus):
@@ -121,12 +121,12 @@ def file_notes_frequencies():
 def create_nuclear(script_path):
     if not os.path.isfile(script_path):
         raise Exception('Error: ', script_path)
-    nuclear = NuclearOPs.NuclearOPs()
+    nuclear = logic.NuclearOPs.NuclearOPs()#TODO fill config here
     nuclear.make_save_location_params(script_path=script_path, folder=r"D:/data/NuclearOps", sub_folder_kw="UserScripts")
     nuclear_name = "NuclearOPs{}_{}".format(nuclear.file_name, datetime.datetime.strftime(nuclear.date_of_creation, nuclear.__TITLE_DATE_FORMAT__))
     nuclear.pld = data_handling.PlotData(title=nuclear_name, gui=True)
     nuclear.file_notes = file_notes_frequencies()
-    setattr(pi3d, nuclear_name, nuclear)
+    #setattr(pi3d, nuclear_name, nuclear)
     return nuclear
 
 
