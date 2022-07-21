@@ -53,7 +53,7 @@ class RabiWindow(QtWidgets.QMainWindow):
 class RabiGUI(GUIBase,rabi_default_functions):
 
     ## declare connectors
-    _rabi_logic = Connector(interface='RabiLogic')
+    rabi_logic = Connector(interface='RabiLogic')
 
     # sigA1 = QtCore.Signal(bool)
     # sigA2 = QtCore.Signal(bool)
@@ -81,15 +81,16 @@ class RabiGUI(GUIBase,rabi_default_functions):
         # Configuring the dock widgets
         # Use the inherited class 'CounterMainWindow' to create the GUI window
         self._mw = RabiWindow()
-        self.rabi_logic= self._rabi_logic()
-        self.initialize_connections_and_defaultvalues()
+        self._rabi_logic= self.rabi_logic()
+        self.initialize_connections_and_defaultvalues() #outsource all the connectors into a second file, to keep the GUI file clean
+
 
         #connect the signals:
-        self.rabi_logic.sigRabiPlotsUpdated.connect(self.update_plots, QtCore.Qt.QueuedConnection)
-        self.rabi_logic.SigClock.connect(self.Update_Runtime, QtCore.Qt.QueuedConnection)
+        self._rabi_logic.sigRabiPlotsUpdated.connect(self.update_plots, QtCore.Qt.QueuedConnection)
+        self._rabi_logic.SigClock.connect(self.Update_Runtime, QtCore.Qt.QueuedConnection)
         
         #get the number of points the Timetagger counter will return:
-        self.number_of_points_per_line=self.rabi_logic._time_tagger._counter["n_values"]
+        self.number_of_points_per_line=self._rabi_logic._time_tagger._counter["n_values"]
 
         #################### setup graphics for rabi
         self.rabi_matrix_image = pg.ImageItem(
@@ -168,16 +169,16 @@ class RabiGUI(GUIBase,rabi_default_functions):
         self._mw.rabi_cb_high_percentile_DoubleSpinBox.valueChanged.connect(self.update_colorbar)
         self._mw.rabi_cb_min_DoubleSpinBox.valueChanged.connect(self.update_colorbar)
         self._mw.rabi_cb_max_DoubleSpinBox.valueChanged.connect(self.update_colorbar)
-        self.cb_min = self.rabi_logic.rabi_cb_low_percentile
-        self.cb_max = self.rabi_logic.rabi_cb_high_percentile
+        self.cb_min = self._rabi_logic.rabi_cb_low_percentile
+        self.cb_max = self._rabi_logic.rabi_cb_high_percentile
 
     def on_deactivate(self):
         """ Deactivate the module properly.
         """
         self.disconnect_all()
         
-        self.rabi_logic.sigRabiPlotsUpdated.disconnect()
-        self.rabi_logic.SigClock.disconnect()
+        self._rabi_logic.sigRabiPlotsUpdated.disconnect()
+        self._rabi_logic.SigClock.disconnect()
         self._mw.close()
 
     def show(self):
@@ -207,8 +208,8 @@ class RabiGUI(GUIBase,rabi_default_functions):
             low_centile = self._mw.rabi_cb_low_percentile_DoubleSpinBox.value()
             high_centile = self._mw.rabi_cb_high_percentile_DoubleSpinBox.value()
 
-            self.cb_min = np.percentile(self.rabi_logic.scanmatrix, low_centile)
-            self.cb_max = np.percentile(self.rabi_logic.scanmatrix, high_centile)
+            self.cb_min = np.percentile(self._rabi_logic.scanmatrix, low_centile)
+            self.cb_max = np.percentile(self._rabi_logic.scanmatrix, high_centile)
         else:
             self.cb_min = self._mw.rabi_cb_min_DoubleSpinBox.value()
             self.cb_max = self._mw.rabi_cb_max_DoubleSpinBox.value()
@@ -216,7 +217,7 @@ class RabiGUI(GUIBase,rabi_default_functions):
         self.scan_cb.refresh_colorbar(self.cb_min, self.cb_max)
         self._mw.rabi_cb_PlotWidget.update()
         self.rabi_matrix_image.setImage(
-                image=self.rabi_logic.scanmatrix,
+                image=self._rabi_logic.scanmatrix,
                 axisOrder='row-major',
                 levels=(self.cb_min, self.cb_max)
             )
@@ -225,7 +226,7 @@ class RabiGUI(GUIBase,rabi_default_functions):
 
 
     def update_plots(self,rabi_data_x=None, rabi_data_y=None, rabi_matrix=None, rabi_detect_x=None, rabi_detect_y=None):
-        if self.rabi_logic.measurement_running:
+        if self._rabi_logic.measurement_running:
             #print(rabi_data_x, rabi_data_y, rabi_matrix)
             self.rabi_data_image.setData(rabi_data_x, rabi_data_y)
 
@@ -248,8 +249,8 @@ class RabiGUI(GUIBase,rabi_default_functions):
             self.update_colorbar() # update the colorbar
 
     def Update_Runtime(self):
-        if self.rabi_logic.measurement_running:
-            runtime=time.time()-self.rabi_logic.starting_time
+        if self._rabi_logic.measurement_running:
+            runtime=time.time()-self._rabi_logic.starting_time
             hours=int(runtime//3600)
             minutes=int((runtime//60)%60)
             secs=int(runtime%60)

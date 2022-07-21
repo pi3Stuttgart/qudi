@@ -1,10 +1,10 @@
 import re
 
-fi= open("C:\src\qudi\gui\\rabi\\ui_rabi_gui.ui","r")
+fi= open("C:\src\qudi\gui\\laserscanner\\ui_laserscanner_gui.ui","r")
 lines=fi.readlines()
 fi.close()
 
-logicstring="self.rabi_logic" # the path to the logic from the gui
+logicstring="self._voltscan_logic" # the path to the logic from the gui
 
 connectorstring="" # should be used in the gui on_activate
 disconnectorstring="" # should be used in the gui on_deactivate
@@ -15,7 +15,7 @@ setdefault="" # should be used in the gui on_activate
 
 for line in lines:
     	#print(line)
-        if "rabi_" in line and("NumberOfLines" in line):
+        if "ple_" in line:# and("NumberOfLines" in line):
             if "_Button" in line or "_pushButton" in line :
                 #print(line)
                 result = re.search('name="(.*?)"', line)

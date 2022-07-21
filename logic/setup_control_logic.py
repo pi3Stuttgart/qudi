@@ -21,6 +21,7 @@ class SetupControlLogic(GenericLogic):
     sigUpdate = QtCore.Signal()
 
     mcas_holder = Connector(interface='McasDictHolderInterface')
+    powercontrol = Connector(interface='LaserPowerHolder')
 
     MW1_power:float=-21
     MW3_freq:float=210
@@ -28,7 +29,8 @@ class SetupControlLogic(GenericLogic):
     MW2_power:float=-21
     MW2_freq:float=140
     MW1_freq:float=70
-    set_power:float=10
+    set_power:float=1
+    read_power:str='-'
     enable_MW1:bool=False
     enable_MW2:bool=False
     enable_MW3:bool=False
@@ -37,18 +39,23 @@ class SetupControlLogic(GenericLogic):
     enable_Repump:bool=False
     enable_Green:bool=False
 
+    SigReadPower= QtCore.Signal()
+
     def on_activate(self):
         """ Prepare logic module for work.
         """
 
         self.awg = self.mcas_holder()
+        self._powercontrol = self.powercontrol()
         self.stop_awg = self.awg.mcas_dict.stop_awgs
+        #self._photodiode = self.photodiode
 
     def on_deactivate(self):
         """ Deactivate module.
         """
-        #self.pulser.pulser_off()
-        pass
+        del self.awg
+        del self._powercontrol
+        return
     
     def power_to_amp(self, power_dBm, impedance=50):
         power_dBm = np.atleast_1d(power_dBm)
@@ -101,24 +108,24 @@ class SetupControlLogic(GenericLogic):
             
         # generate a single MW sequence with the needed mw frequencies and play is continuously until the measurement is stopped,
         # either by the stop button, the runtime, or number of sequence repetitions.
-        seq = self.awg.mcas(name="setupcontrol", ch_dict={"2g": [1,2], "ps":[1]})
-        frequencies=np.array([self.MW1_freq, self.MW2_freq,self.MW3_freq])[[self.enable_MW1,self.enable_MW2,self.enable_MW3]]
-        seq.start_new_segment("Microwaves"+str(frequencies))
-        if len(self.power)==0:
+        seq = self.awg.mcas(name="setupcontrol", ch_dict={"2g": [1, 2], "ps": [1]})
+        frequencies = np.array([self.MW1_freq, self.MW2_freq, self.MW3_freq])[[self.enable_MW1, self.enable_MW2, self.enable_MW3]]
+        seq.start_new_segment("Microwaves"+str(frequencies), loop_count=100)
+        if len(self.power) == 0:
             seq.asc(name="without MW",
                     A1=self.enable_A1,
                     A2=self.enable_A2,
                     repump=self.enable_Repump,
                     green=self.enable_Green,
-                    length_mus=5
+                    length_mus=50
                     )
         else:
-            seq.asc(name="with MW", pd2g1 = {"type":"sine", "frequencies":frequencies, "amplitudes":self.power},
+            seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": frequencies, "amplitudes": self.power},
                     A1=self.enable_A1,
                     A2=self.enable_A2,
                     repump=self.enable_Repump,
                     green=self.enable_Green,
-                    length_mus=5
+                    length_mus=50
                     )
 
         self.awg.mcas_dict["setupcontrol"] = seq
@@ -187,15 +194,20 @@ class SetupControlLogic(GenericLogic):
     def Flipmirror_Button_Clicked(self,on):
         print('done something with Flipmirror_Button')
 
-    def PD_zero_Button_Clicked(self,on):
-        print('done something with PD_zero_Button')
-
     def Autofocus_Button_Clicked(self,on):
         print('done something with Autofocus_Button')
 
-    def Set_Power_Button_Clicked(self,on):
-        print('done something with Set_Power_Button')
+    def Read_Power_Button_Clicked(self,on):
+        self.read_power = str(self._powercontrol._laser_power._Read_Power_button_fired()) + " nW"
+        self.SigReadPower.emit()
 
-    def set_power_DoubleSpinBox_Edited(self,value):
+    def Set_Power_Button_Clicked(self,on):
+        self._powercontrol._laser_power.power_target = self.set_power
+        self._powercontrol._laser_power._run()
+        self.read_power = str(self._powercontrol._laser_power._Read_Power_button_fired()) + " nW"
+        self.SigReadPower.emit()
+
+    def Set_Power_DoubleSpinBox_Edited(self,value):
         #print('done something with set_power_DoubleSpinBox. Value=',value)
         self.set_power=value
+        

@@ -70,12 +70,12 @@ class VoltScanGui(GUIBase):
 
         @return int: error code (0:OK, -1:error)
         """
-        self._mw.A1_Button.clicked.disconnect()
-        self._mw.A2_Button.clicked.disconnect()
-        self._mw.Repump_Button.clicked.disconnect()
-        self._mw.MW1_on_Button.clicked.disconnect()
-        self._mw.MW2_on_Button.clicked.disconnect()
-        self._mw.MW3_on_Button.clicked.disconnect()
+        # self._mw.A1_Button.clicked.disconnect()
+        # self._mw.A2_Button.clicked.disconnect()
+        # self._mw.Repump_Button.clicked.disconnect()
+        # self._mw.MW1_on_Button.clicked.disconnect()
+        # self._mw.MW2_on_Button.clicked.disconnect()
+        # self._mw.MW3_on_Button.clicked.disconnect()
 
         self._mw.close()
         return 0
@@ -113,25 +113,25 @@ class VoltScanGui(GUIBase):
                 self._voltscan_logic.number_of_repeats)
         )
 
-        self.scan_matrix_image2 = pg.ImageItem(
-            self._voltscan_logic.scan_matrix2,
-            axisOrder='row-major')
+        # self.scan_matrix_image2 = pg.ImageItem(
+        #     self._voltscan_logic.scan_matrix2,
+        #     axisOrder='row-major')
 
-        self.scan_matrix_image2.setRect(
-            QtCore.QRectF(
-                self._voltscan_logic.scan_range[0],
-                0,
-                self._voltscan_logic.scan_range[1] - self._voltscan_logic.scan_range[0],
-                self._voltscan_logic.number_of_repeats)
-        )
+        # self.scan_matrix_image2.setRect(
+        #     QtCore.QRectF(
+        #         self._voltscan_logic.scan_range[0],
+        #         0,
+        #         self._voltscan_logic.scan_range[1] - self._voltscan_logic.scan_range[0],
+        #         self._voltscan_logic.number_of_repeats)
+        # )
 
         self.scan_image = pg.PlotDataItem(
             self._voltscan_logic.plot_x,
             self._voltscan_logic.plot_y)
 
-        self.scan_image2 = pg.PlotDataItem(
-            self._voltscan_logic.plot_x,
-            self._voltscan_logic.plot_y2)
+        # self.scan_image2 = pg.PlotDataItem(
+        #     self._voltscan_logic.plot_x,
+        #     self._voltscan_logic.plot_y2)
 
         self.scan_fit_image = pg.PlotDataItem(
             self._voltscan_logic.fit_x,
@@ -145,16 +145,16 @@ class VoltScanGui(GUIBase):
         self._mw.voltscan_ViewWidget.showGrid(x=True, y=True, alpha=0.8)
         self._mw.voltscan_matrix_ViewWidget.addItem(self.scan_matrix_image)
 
-        self._mw.voltscan2_ViewWidget.addItem(self.scan_image2)
+        #self._mw.voltscan2_ViewWidget.addItem(self.scan_image2)
         #self._mw.voltscan2_ViewWidget.addItem(self.scan_fit_image)
-        self._mw.voltscan2_ViewWidget.showGrid(x=True, y=True, alpha=0.8)
-        self._mw.voltscan_matrix2_ViewWidget.addItem(self.scan_matrix_image2)
+        #self._mw.voltscan2_ViewWidget.showGrid(x=True, y=True, alpha=0.8)
+        #self._mw.voltscan_matrix2_ViewWidget.addItem(self.scan_matrix_image2)
 
         # Get the colorscales at set LUT
         my_colors = ColorScaleInferno()
 
         self.scan_matrix_image.setLookupTable(my_colors.lut)
-        self.scan_matrix_image2.setLookupTable(my_colors.lut)
+        #self.scan_matrix_image2.setLookupTable(my_colors.lut)
 
         # Configuration of the Colorbar
         self.scan_cb = ColorBar(my_colors.cmap_normed, 100, 0, 100000)
@@ -178,12 +178,35 @@ class VoltScanGui(GUIBase):
         self._mw.linesSpinBox.setValue(self._voltscan_logic.number_of_repeats)
 
         # Update the inputed/displayed numbers if the cursor has left the field:
-        self._mw.startDoubleSpinBox.editingFinished.connect(self.change_start_volt)
-        self._mw.speedDoubleSpinBox.editingFinished.connect(self.change_speed)
-        self._mw.stopDoubleSpinBox.editingFinished.connect(self.change_stop_volt)
-        self._mw.resolutionSpinBox.editingFinished.connect(self.change_resolution)
-        self._mw.linesSpinBox.editingFinished.connect(self.change_lines)
-        self._mw.constDoubleSpinBox.editingFinished.connect(self.change_voltage)
+        self._mw.startDoubleSpinBox.valueChanged.connect(self.change_start_volt)
+        self._mw.speedDoubleSpinBox.valueChanged.connect(self.change_speed)
+        self._mw.stopDoubleSpinBox.valueChanged.connect(self.change_stop_volt)
+        self._mw.resolutionSpinBox.valueChanged.connect(self.change_resolution)
+        self._mw.linesSpinBox.valueChanged.connect(self.change_lines)
+        self._mw.constDoubleSpinBox.valueChanged.connect(self.change_voltage)
+
+        # self._mw.Repump_checkBox.stateChanged.connect(self.change_repump_state)
+        # self._mw.A2_checkBox.stateChanged.connect(self.change_A2_state)
+        # self._mw.A1_checkBox.stateChanged.connect(self.change_A1_state)
+
+        # self._mw.MW1FrequencyDoubleSpinBox.valueChanged.connect(self.change_MW1_freq)
+        # self._mw.MW2FrequencyDoubleSpinBox.valueChanged.connect(self.change_MW2_freq)
+        # self._mw.MW3FrequencyDoubleSpinBox.valueChanged.connect(self.change_MW3_freq)
+        # self._mw.MW1PowerDoubleSpinBox.valueChanged.connect(self.change_MW1_power)
+        # self._mw.MW2PowerDoubleSpinBox.valueChanged.connect(self.change_MW2_power)
+        # self._mw.MW3PowerDoubleSpinBox.valueChanged.connect(self.change_MW3_power)
+
+        self.updateButtonsEnabled()
+        # self._mw.MW1_on_Button.clicked.connect(self.changeMW1State)
+        # self._mw.MW2_on_Button.clicked.connect(self.changeMW2State)
+        # self._mw.MW3_on_Button.clicked.connect(self.changeMW3State)
+
+        # self._mw.MW1PowerDoubleSpinBox.setValue(-20)
+        # self._mw.MW2PowerDoubleSpinBox.setValue(-20)
+        # self._mw.MW3PowerDoubleSpinBox.setValue(-20)
+        # self._mw.MW1FrequencyDoubleSpinBox.setValue(70)
+        # self._mw.MW2FrequencyDoubleSpinBox.setValue(70)
+        # self._mw.MW3FrequencyDoubleSpinBox.setValue(70)
 
         #
         self._mw.voltscan_cb_max_InputWidget.valueChanged.connect(self.refresh_matrix)
@@ -207,16 +230,11 @@ class VoltScanGui(GUIBase):
         self.sigChangeResolution.connect(self._voltscan_logic.set_resolution)
         self.sigSaveMeasurement.connect(self._voltscan_logic.save_data)
 
-        self.updateButtonsEnabled()
-        self._mw.A1_Button.clicked.connect(self._setupcontrol_logic.changeA1State)
-        self._mw.A2_Button.clicked.connect(self._setupcontrol_logic.changeA2State)
-        self._mw.Repump_Button.clicked.connect(self._setupcontrol_logic.changeRepumpState)
-        self._mw.MW1_on_Button.clicked.connect(self._setupcontrol_logic.changeMW1State)
-        self._mw.MW2_on_Button.clicked.connect(self._setupcontrol_logic.changeMW2State)
-        self._mw.MW3_on_Button.clicked.connect(self._setupcontrol_logic.changeMW3State)
 
-        self._mw.action_run_stop.triggered.connect(self.run_stop)
+
+        #self._mw.action_run_stop.triggered.connect(self.run_stop)
         self._mw.action_Save.triggered.connect(self.save_data)
+        self._mw.action_Abort.triggered.connect(self._voltscan_logic.abort_scanning)
         self._mw.show()
 
     def show(self):
@@ -227,23 +245,20 @@ class VoltScanGui(GUIBase):
 
     def updateButtonsEnabled(self):
         # """ Logic told us to update our button states, so set the buttons accordingly. """
-        self._mw.A1_Button.setCheckable(True)
-        self._mw.A2_Button.setCheckable(True)
-        self._mw.Repump_Button.setCheckable(True)
         self._mw.MW1_on_Button.setCheckable(True)
         self._mw.MW2_on_Button.setCheckable(True)
         self._mw.MW3_on_Button.setCheckable(True)
-
-    def run_stop(self, is_checked):
-        """ Manages what happens if scan is started/stopped """
-        print('Start scanning')
-        self._mw.action_run_stop.setEnabled(False)
-        if is_checked:
-            self.sigStartScan.emit()
-            self._mw.voltscan_ViewWidget.removeItem(self.scan_fit_image)
-            self._mw.voltscan2_ViewWidget.removeItem(self.scan_fit_image)
-        else:
-            self.sigStopScan.emit()
+    
+    # def run_stop(self, is_checked):
+    #     """ Manages what happens if scan is started/stopped """
+    #     print('Start scanning')
+    #     self._mw.action_run_stop.setEnabled(False)
+    #     if is_checked:
+    #         self.sigStartScan.emit()
+    #         self._mw.voltscan_ViewWidget.removeItem(self.scan_fit_image) NEED THIS LINE FOR PLOT???
+    #         #self._mw.voltscan2_ViewWidget.removeItem(self.scan_fit_image)
+    #     else:
+    #         self.sigStopScan.emit()
 
     def scan_started(self):
         self._mw.action_run_stop.setEnabled(True)
@@ -258,7 +273,7 @@ class VoltScanGui(GUIBase):
     def refresh_plot(self):
         """ Refresh the xy-plot image """
         self.scan_image.setData(self._voltscan_logic.plot_x, self._voltscan_logic.plot_y)
-        self.scan_image2.setData(self._voltscan_logic.plot_x, self._voltscan_logic.plot_y2)
+        #self.scan_image2.setData(self._voltscan_logic.plot_x, self._voltscan_logic.plot_y2)
 
     def refresh_matrix(self):
         """ Refresh the xy-matrix image """
@@ -270,14 +285,14 @@ class VoltScanGui(GUIBase):
                 self._voltscan_logic.scan_range[1] - self._voltscan_logic.scan_range[0],
                 self._voltscan_logic.number_of_repeats)
             )
-        self.scan_matrix_image2.setImage(self._voltscan_logic.scan_matrix2, axisOrder='row-major')
-        self.scan_matrix_image2.setRect(
-            QtCore.QRectF(
-                self._voltscan_logic.scan_range[0],
-                0,
-                self._voltscan_logic.scan_range[1] - self._voltscan_logic.scan_range[0],
-                self._voltscan_logic.number_of_repeats)
-        )
+        # self.scan_matrix_image2.setImage(self._voltscan_logic.scan_matrix2, axisOrder='row-major')
+        # self.scan_matrix_image2.setRect(
+        #     QtCore.QRectF(
+        #         self._voltscan_logic.scan_range[0],
+        #         0,
+        #         self._voltscan_logic.scan_range[1] - self._voltscan_logic.scan_range[0],
+        #         self._voltscan_logic.number_of_repeats)
+        # )
         self.refresh_scan_colorbar()
 
         scan_image_data = self._voltscan_logic.scan_matrix
@@ -302,10 +317,10 @@ class VoltScanGui(GUIBase):
 
         scan_image_data2 = self._voltscan_logic.scan_matrix2
         # Now update image with new color scale, and update colorbar
-        self.scan_matrix_image2.setImage(
-            image=scan_image_data2,
-            levels=(cb_min, cb_max),
-            axisOrder='row-major')
+        # self.scan_matrix_image2.setImage(
+        #     image=scan_image_data2,
+        #     levels=(cb_min, cb_max),
+        #     axisOrder='row-major')
 
         self.refresh_scan_colorbar()
 
@@ -330,29 +345,72 @@ class VoltScanGui(GUIBase):
     def refresh_lines(self):
         self._mw.elapsed_lines_DisplayWidget.display(self._voltscan_logic._scan_counter_up)
 
-    def change_voltage(self):
+    def change_voltage(self,tmp=0):
         self.sigChangeVoltage.emit(self._mw.constDoubleSpinBox.value())
 
-    def change_start_volt(self):
+    def change_start_volt(self,tmp=0):
         self.sigChangeRange.emit([
             self._mw.startDoubleSpinBox.value(),
             self._mw.stopDoubleSpinBox.value()
         ])
 
-    def change_speed(self):
+    def change_speed(self,tmp=0):
         self.sigChangeSpeed.emit(self._mw.speedDoubleSpinBox.value())
 
-    def change_stop_volt(self):
+    def change_stop_volt(self,tmp=0):
         self.sigChangeRange.emit([
             self._mw.startDoubleSpinBox.value(),
             self._mw.stopDoubleSpinBox.value()
         ])
 
-    def change_lines(self):
+    def change_lines(self,tmp=0):
         self.sigChangeLines.emit(self._mw.linesSpinBox.value())
 
-    def change_resolution(self):
+    def change_resolution(self,tmp=0):
         self.sigChangeResolution.emit(self._mw.resolutionSpinBox.value())
+
+    def change_repump_state(self,on):
+        self._voltscan_logic.repump_on_during_retrace= on==2
+
+    def change_Repump_Duration(self,val):
+        self._voltscan_logic.repump_Duration=val
+
+    def change_Repump_Decay(self,val):
+        self._voltscan_logic.repump_Decay=val
+
+    def change_A2_state(self,on):
+        self._voltscan_logic.A2_on_during_retrace= on==2
+
+    def change_A1_state(self,on):
+        self._voltscan_logic.A1_on_during_retrace= on==2
+
+    def change_MW1_freq(self,val):
+        self._voltscan_logic.MW1_freq=val
+
+    def change_MW2_freq(self,val):
+        self._voltscan_logic.MW2_freq=val
+
+    def change_MW3_freq(self,val):
+        self._voltscan_logic.MW3_freq=val
+
+    def change_MW1_power(self,val):
+        self._voltscan_logic.MW1_power=val
+
+    def change_MW2_power(self,val):
+        self._voltscan_logic.MW2_power=val
+
+    def change_MW3_power(self,val):
+        self._voltscan_logic.MW3_power=val
+
+    def changeMW1State(self,on):
+        self._voltscan_logic.enable_MW1= on==2
+
+    def changeMW2State(self,on):
+        self._voltscan_logic.enable_MW2= on==2
+
+    def changeMW3State(self,on):
+        self._voltscan_logic.enable_MW2= on==2
+
 
     def get_matrix_cb_range(self):
         """

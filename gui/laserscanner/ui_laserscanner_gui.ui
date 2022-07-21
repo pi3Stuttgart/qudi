@@ -1,0 +1,747 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>811</width>
+    <height>608</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>qudi: PLE</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
+     <layout class="QGridLayout" name="gridLayout_7">
+      <item row="0" column="3">
+       <widget class="QPushButton" name="ple_Abort_Button">
+        <property name="text">
+         <string>Abort</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="4">
+       <widget class="QLabel" name="label_6">
+        <property name="text">
+         <string>Values per scan:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="5">
+       <widget class="QSpinBox" name="resolutionSpinBox">
+        <property name="minimum">
+         <number>2</number>
+        </property>
+        <property name="maximum">
+         <number>9999</number>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="2">
+       <widget class="QLabel" name="label_122">
+        <property name="text">
+         <string>Repump Duration (µs):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="3">
+       <widget class="QDoubleSpinBox" name="stopDoubleSpinBox">
+        <property name="minimum">
+         <double>-4.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>4.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="7">
+       <widget class="QLabel" name="label_120">
+        <property name="text">
+         <string>Number of Peaks:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="5">
+       <widget class="QLabel" name="label_112">
+        <property name="text">
+         <string>Periodic Saving:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="1">
+       <widget class="QDoubleSpinBox" name="startDoubleSpinBox">
+        <property name="minimum">
+         <double>-4.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>4.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="8">
+       <widget class="QLineEdit" name="ple_Stoptime_LineEdit">
+        <property name="text">
+         <string>Stoptime</string>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="0" colspan="8">
+       <widget class="PlotWidget" name="ple_data_PlotWidget">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>1</horstretch>
+          <verstretch>1</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="4">
+       <widget class="QLabel" name="label_117">
+        <property name="text">
+         <string>Frequency (MHz):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="5">
+       <widget class="QLabel" name="label_114">
+        <property name="text">
+         <string>Runtime:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="7">
+       <widget class="QLabel" name="ple_Runtime_Label">
+        <property name="frameShape">
+         <enum>QFrame::Box</enum>
+        </property>
+        <property name="text">
+         <string>Runtime</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="8">
+       <widget class="QLabel" name="ple_Frequencies_Fit_Label">
+        <property name="text">
+         <string>Frequencies_Fit</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="7">
+       <widget class="QLabel" name="label_127">
+        <property name="text">
+         <string>Frequencies:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="8">
+       <widget class="QLineEdit" name="ple_Interval_LineEdit">
+        <property name="text">
+         <string>Saving Interval</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="3">
+       <widget class="QLineEdit" name="ple_MW2_Power_LineEdit">
+        <property name="text">
+         <string>MW2 Power</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="4">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Frequency (MHz):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="2">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>Scanned Lines:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QCheckBox" name="ple_MW1_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="3">
+       <widget class="QLineEdit" name="ple_MW3_Power_LineEdit">
+        <property name="text">
+         <string>MW3 Power</string>
+        </property>
+       </widget>
+      </item>
+      <item row="13" column="0" colspan="8">
+       <widget class="PlotWidget" name="ple_matrix_PlotWidget">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>1</horstretch>
+          <verstretch>1</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="0">
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>Lines:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QCheckBox" name="ple_MW3_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="7">
+       <widget class="QLabel" name="label_125">
+        <property name="text">
+         <string>Max. Iterations:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="ple_Stop_Button">
+        <property name="text">
+         <string>Stop</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QPushButton" name="ple_Run_Button">
+        <property name="text">
+         <string>Run</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="8">
+       <widget class="QCheckBox" name="ple_PerformFit_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="7">
+       <widget class="QLabel" name="label_10">
+        <property name="text">
+         <string>Constant voltage (V):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="2">
+       <widget class="QLabel" name="label_132">
+        <property name="text">
+         <string>Power (dBm):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="8">
+       <widget class="QLineEdit" name="ple_NumberOfPeaks_LineEdit">
+        <property name="text">
+         <string>1</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="5">
+       <widget class="QLineEdit" name="ple_MW2_Freq_LineEdit">
+        <property name="text">
+         <string>MW2 Frequency</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="1">
+       <widget class="QSpinBox" name="linesSpinBox">
+        <property name="maximum">
+         <number>999</number>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="4">
+       <widget class="QLabel" name="label_9">
+        <property name="text">
+         <string>Speed (V):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="8">
+       <widget class="QLabel" name="ple_Linewidths_Fit_Label">
+        <property name="text">
+         <string>Linewidth_Fit</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>MW3:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="5">
+       <widget class="QLineEdit" name="ple_MW3_Freq_LineEdit">
+        <property name="text">
+         <string>MW3 Frequency</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="ple_Load_Button">
+        <property name="text">
+         <string>Load</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="7">
+       <widget class="QLabel" name="label_131">
+        <property name="text">
+         <string>Perform Fit:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="2">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Power (dBm):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="5">
+       <widget class="QCheckBox" name="ple_CWrepump_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="5">
+       <widget class="QDoubleSpinBox" name="speedDoubleSpinBox"/>
+      </item>
+      <item row="4" column="3">
+       <widget class="QLineEdit" name="ple_MW1_Power_LineEdit">
+        <property name="text">
+         <string>MW1 Power</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="label_115">
+        <property name="text">
+         <string>MW1:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1">
+       <widget class="QCheckBox" name="ple_MW2_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="3">
+       <widget class="QCheckBox" name="ple_A2_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="2">
+       <widget class="QLabel" name="label_8">
+        <property name="text">
+         <string>Stop (V):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="3">
+       <widget class="QLCDNumber" name="elapsed_lines_DisplayWidget"/>
+      </item>
+      <item row="3" column="4">
+       <widget class="QLabel" name="label_109">
+        <property name="text">
+         <string>Repump:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="0" colspan="9">
+       <widget class="Line" name="line_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
+       <widget class="QLabel" name="label_130">
+        <property name="text">
+         <string>MW2:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="5">
+       <widget class="QLineEdit" name="ple_RepumpDecay_LineEdit">
+        <property name="text">
+         <string>Repump Decay</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_121">
+        <property name="text">
+         <string>A1:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="7">
+       <widget class="QCheckBox" name="ple_PeriodicSaving_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="0">
+       <widget class="QLabel" name="label_7">
+        <property name="text">
+         <string>Start (V):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="ple_Save_Button">
+        <property name="text">
+         <string>Save</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="6" rowspan="5">
+       <widget class="Line" name="line">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="5">
+       <widget class="QLineEdit" name="ple_MW1_Freq_LineEdit">
+        <property name="text">
+         <string>MW1 Frequency</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1">
+       <widget class="QCheckBox" name="ple_PulsedRepump_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2" colspan="3">
+       <widget class="QLineEdit" name="ple_Filename_LineEdit">
+        <property name="text">
+         <string>Filename</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="2">
+       <widget class="QLabel" name="label_124">
+        <property name="text">
+         <string>Power (dBm):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="ple_Continue_Button">
+        <property name="text">
+         <string>Continue</string>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="0" colspan="13">
+       <widget class="Line" name="line_18">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="8">
+       <widget class="QLineEdit" name="ple_MaxIterations_LineEdit">
+        <property name="text">
+         <string>20</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="13">
+       <widget class="Line" name="line_16">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="4">
+       <widget class="QLabel" name="label_126">
+        <property name="text">
+         <string>Frequency (MHz):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QLabel" name="label_111">
+        <property name="text">
+         <string>A2:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0">
+       <widget class="QLabel" name="label_107">
+        <property name="text">
+         <string>Pulsed Repump:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QCheckBox" name="ple_A1_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="7">
+       <widget class="QLabel" name="label_110">
+        <property name="text">
+         <string>Linewidths:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="8" rowspan="2">
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="ScienDSpinBox" name="voltscan_cb_max_InputWidget">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="suffix">
+           <string>c/s</string>
+          </property>
+          <property name="minimum">
+           <double>-10.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>1000000000.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>100000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="ScienDSpinBox" name="voltscan_cb_high_centile_InputWidget">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="suffix">
+           <string>%</string>
+          </property>
+          <property name="minimum">
+           <double>0.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>100.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>100.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="PlotWidget" name="voltscan_cb_ViewWidget">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>80</width>
+            <height>16777215</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="ScienDSpinBox" name="voltscan_cb_low_centile_InputWidget">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="suffix">
+           <string>%</string>
+          </property>
+          <property name="minimum">
+           <double>0.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>100.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>1.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="ScienDSpinBox" name="voltscan_cb_min_InputWidget">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="suffix">
+           <string>c/s</string>
+          </property>
+          <property name="minimum">
+           <double>-10.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>1000000000.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>1000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="voltscan_cb_centiles_RadioButton">
+          <property name="text">
+           <string>Per&amp;centiles</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="voltscan_cb_manual_RadioButton">
+          <property name="text">
+           <string>Man&amp;ual</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="10" column="8">
+       <widget class="QDoubleSpinBox" name="constDoubleSpinBox"/>
+      </item>
+      <item row="7" column="3">
+       <widget class="QLineEdit" name="ple_RepumpDuration_LineEdit">
+        <property name="text">
+         <string>Repump Duration</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="4">
+       <widget class="QLabel" name="label_118">
+        <property name="text">
+         <string>Repump Decay (µs):</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>811</width>
+     <height>21</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PlotWidget</class>
+   <extends>QGraphicsView</extends>
+   <header>pyqtgraph</header>
+  </customwidget>
+  <customwidget>
+   <class>ScienDSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>qtwidgets.scientific_spinbox.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>ple_Run_Button</tabstop>
+  <tabstop>ple_Stop_Button</tabstop>
+  <tabstop>ple_Continue_Button</tabstop>
+  <tabstop>ple_Abort_Button</tabstop>
+  <tabstop>ple_Save_Button</tabstop>
+  <tabstop>ple_Load_Button</tabstop>
+  <tabstop>ple_Filename_LineEdit</tabstop>
+  <tabstop>ple_A1_CheckBox</tabstop>
+  <tabstop>ple_A2_CheckBox</tabstop>
+  <tabstop>ple_CWrepump_CheckBox</tabstop>
+  <tabstop>ple_MW1_CheckBox</tabstop>
+  <tabstop>ple_MW1_Power_LineEdit</tabstop>
+  <tabstop>ple_MW1_Freq_LineEdit</tabstop>
+  <tabstop>ple_MW2_CheckBox</tabstop>
+  <tabstop>ple_MW2_Power_LineEdit</tabstop>
+  <tabstop>ple_MW2_Freq_LineEdit</tabstop>
+  <tabstop>ple_MW3_CheckBox</tabstop>
+  <tabstop>ple_MW3_Power_LineEdit</tabstop>
+  <tabstop>ple_MW3_Freq_LineEdit</tabstop>
+  <tabstop>ple_PulsedRepump_CheckBox</tabstop>
+  <tabstop>ple_RepumpDuration_LineEdit</tabstop>
+  <tabstop>ple_RepumpDecay_LineEdit</tabstop>
+  <tabstop>linesSpinBox</tabstop>
+  <tabstop>resolutionSpinBox</tabstop>
+  <tabstop>startDoubleSpinBox</tabstop>
+  <tabstop>stopDoubleSpinBox</tabstop>
+  <tabstop>speedDoubleSpinBox</tabstop>
+  <tabstop>constDoubleSpinBox</tabstop>
+  <tabstop>ple_PerformFit_CheckBox</tabstop>
+  <tabstop>ple_data_PlotWidget</tabstop>
+  <tabstop>ple_matrix_PlotWidget</tabstop>
+  <tabstop>voltscan_cb_max_InputWidget</tabstop>
+  <tabstop>voltscan_cb_high_centile_InputWidget</tabstop>
+  <tabstop>voltscan_cb_ViewWidget</tabstop>
+  <tabstop>voltscan_cb_low_centile_InputWidget</tabstop>
+  <tabstop>voltscan_cb_min_InputWidget</tabstop>
+  <tabstop>voltscan_cb_centiles_RadioButton</tabstop>
+  <tabstop>voltscan_cb_manual_RadioButton</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>

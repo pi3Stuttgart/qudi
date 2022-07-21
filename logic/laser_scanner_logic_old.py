@@ -378,6 +378,7 @@ class LaserScannerLogic(GenericLogic):
             self.local_counts=[]
             self.slice_number=0
             self.stop_awg()
+            self.awg.mcas_dict["setupcontrol"].run()
             return
 
         if self._scan_counter_up == 0 and self.slice_number==0:
@@ -385,6 +386,7 @@ class LaserScannerLogic(GenericLogic):
             self._goto_during_scan(self.scan_range[0])
 
         if self.upwards_scan:
+            self.awg.mcas_dict["setupcontrol"].run()
             counts = self._scan_line(self._upwards_ramp_slices[self.slice_number])
             self.local_counts=self.local_counts+list(counts)
             self.slice_number+=1
@@ -409,7 +411,7 @@ class LaserScannerLogic(GenericLogic):
             self.plot_y2 += counts
             self._scan_counter_down += 1
             self.upwards_scan = True
-            self.awg.mcas_dict["setupcontrol"].run()
+
 
 
         self.sigUpdatePlots.emit()
@@ -418,14 +420,15 @@ class LaserScannerLogic(GenericLogic):
 
     def retrace_seq(self):
         seq = self.awg.mcas(name="retrace", ch_dict={"2g": [1, 2], "ps": [1]})
-        seq.start_new_segment("sequence")
+        seq.start_new_segment("sequence", loop_count=100)
         seq.asc(name="without MW",
                 A1=self.A1_on_during_retrace,
                 A2=self.A2_on_during_retrace,
                 repump=self.repump_on_during_retrace,
-                length_mus=5
+                length_mus=50
                 )
         self.awg.mcas_dict["retrace"] = seq
+        print("Sequenz erzeugt")
 
     def _generate_ramp(self, voltage1, voltage2, speed):
         """Generate a ramp vrom voltage1 to voltage2 that

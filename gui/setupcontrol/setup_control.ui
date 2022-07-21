@@ -135,9 +135,9 @@
       </widget>
      </item>
      <item row="7" column="3">
-      <widget class="QPushButton" name="PD_zero_Button">
+      <widget class="QPushButton" name="Read_Power_Button">
        <property name="text">
-        <string>PD zero</string>
+        <string>Read Power</string>
        </property>
       </widget>
      </item>
@@ -217,9 +217,12 @@
       </widget>
      </item>
      <item row="7" column="1">
-      <widget class="QDoubleSpinBox" name="set_power_DoubleSpinBox">
+      <widget class="QDoubleSpinBox" name="Set_Power_DoubleSpinBox">
        <property name="minimum">
         <double>-100.000000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>99999.000000000000000</double>
        </property>
       </widget>
      </item>
@@ -227,6 +230,13 @@
       <widget class="QLabel" name="label_5">
        <property name="text">
         <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="4">
+      <widget class="QLabel" name="Read_Power_Label">
+       <property name="text">
+        <string>TextLabel</string>
        </property>
       </widget>
      </item>
@@ -263,9 +273,9 @@
   <tabstop>MW3_freq_DoubleSpinBox</tabstop>
   <tabstop>MW3_power_DoubleSpinBox</tabstop>
   <tabstop>MW3_on_Button</tabstop>
-  <tabstop>set_power_DoubleSpinBox</tabstop>
+  <tabstop>Set_Power_DoubleSpinBox</tabstop>
   <tabstop>Set_Power_Button</tabstop>
-  <tabstop>PD_zero_Button</tabstop>
+  <tabstop>Read_Power_Button</tabstop>
   <tabstop>Autofocus_Button</tabstop>
   <tabstop>Flipmirror_Button</tabstop>
  </tabstops>

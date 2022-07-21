@@ -3,22 +3,24 @@ import numpy as np
 from traits.api import Float, Bool, Button, Int
 #from pyface.image_resource import ImageResource
 from core.module import Base
-
+from logic.generic_logic import GenericLogic
 #from tools.emod import ManagedJob
 #from tools.utility import GetSetItemsMixin
+from core.connector import Connector
 
 
-class LaserPower_holder(Base):
+class LaserPowerHolder(GenericLogic): #Base
+
+    ao_module = Connector(interface='LaserPowerInterface')
+
     def on_activate(self):
-        try:
-            self.laserpower = LaserPower
-        except:
-            print('no aom driver connected')
-            self.aom_driver = None
+        self._ao_module = self.ao_module()
+        self._laser_power = LaserPower(self._ao_module.aom_driver, self._ao_module.photodiode)
+        return
 
     def on_deactivate(self):
-        del self.laserpower
-        del self.aom_driver  
+        del self._ao_module
+        return
 
 class LaserPower:
 #class LaserPower(ManagedJob, GetSetItemsMixin):
@@ -28,7 +30,7 @@ class LaserPower:
 
     Voltage_min = -10
 
-    Voltage_max = 10
+    Voltage_max = -5
     power_target = 5
     # power_target = Float(
     #     default_value=1,
@@ -115,7 +117,6 @@ class LaserPower:
             )
 
     def _run(self):
-
         try:
             self.state = 'run'
 
@@ -146,44 +147,5 @@ class LaserPower:
 
     def _Read_Power_button_fired(self):
         self.power = np.round(self.getPower(), 5)
+        return self.power
 
-    # def default_traits_view(self):
-
-    #     if self.dark_theme:
-    #         with open("dracula.qss", "r") as f:
-    #             stylesheet = f.read()
-    #     else:
-    #         stylesheet = ""
-
-    #     return QtView(
-    #         VGroup(
-    #             HGroup(
-    #                 Item('submit_button', show_label=False),
-    #                 Item('remove_button', show_label=False),
-    #                 Item('priority'),
-    #                 Item('state', style='readonly'),
-    #             ),
-    #             HGroup(
-    #                 Item('power_target'),
-    #                 Item('tolerances'),
-    #                 Item('points_to_average'),
-    #             ),
-    #             HGroup(
-    #                 Item('Read_Power_button', show_label=False),
-    #                 Item('power', style='readonly'),
-    #                 Item("on_image", visible_when="success", show_label=False),
-    #                 Item(
-    #                     "off_image",
-    #                     visible_when="not success",
-    #                     show_label=False
-    #                 ),
-    #             ),
-    #         ),
-    #         title='Laser Power',
-    #         buttons=[],
-    #         width=800,
-    #         height=100,
-    #         style_sheet=stylesheet,
-    #         resizable=True,
-    #         icon=ImageResource('C:\src\pi3diamond_py3\pi3diamond\pi3.png')
-    #     )

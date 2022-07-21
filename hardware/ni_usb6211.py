@@ -7,18 +7,20 @@ from traits.api import Float
 import time
 from enum import Enum
 
-class NI_USB6211(Base):
+from interface.laser_power_interface import LaserPowerInterface
+
+class NI_USB6211(Base, LaserPowerInterface):
     def on_activate(self):
         try:
-            self.aom_driver = AOM_Driver(AOChannel='dev3/ao0', Voltagerange=[-10., 10.])
+            self.aom_driver = AOM_Driver(AOChannel='dev3/ao0', Voltagerange=[-10., -2.])
             print('aom driver connected')
         except:
             print('no aom driver connected')
             self.aom_driver = None
-        
+
         try:
             self.photodiode = Photodiode(
-                AIChannel="dev3/ai5", volt_to_power=0.0547, volt_offset=-0.0174
+                AIChannel="dev3/ai5", volt_to_power=0.0717, volt_offset=-0.0096
             )
             print('photodiode connected')
         except:
@@ -29,16 +31,16 @@ class NI_USB6211(Base):
     def on_deactivate(self):
         del self.aom_driver
         del self.photodiode
-        return 
+        return
 
 
 class AOM_Driver:
-    #Class to control an AO of a nidaQ to control an AOM driver
+    # Class to control an AO of a nidaQ to control an AOM driver
 
     def __init__(
-        self,
-        AOChannel,
-        Voltagerange,
+            self,
+            AOChannel,
+            Voltagerange,
     ):
         self.voltage = 0
         self.voltagerange = Voltagerange
@@ -65,9 +67,8 @@ class AOM_Driver:
 
 
 class Photodiode():
-
     voltage_to_power = Float(
-        default_value=6.7485e-3,  #for 0-1000nW     ;   6.63e-3 for 0-50nW
+        default_value=0.0717,  # for 0-1000nW     ;   6.63e-3 for 0-50nW
         low=0.,
         hight=100.,
         desc='Qum efficiency [V/nW]',
@@ -75,7 +76,7 @@ class Photodiode():
     )
 
     voltage_offset = Float(
-        default_value=.01651,  #for 0-1000nW     ;   .015 for 0-50nW , 
+        default_value=-0.0096,  # for 0-1000nW     ;   .015 for 0-50nW ,
         low=0.,
         hight=10,
         desc='Voltage Offset [mV]',
@@ -91,16 +92,16 @@ class Photodiode():
             min_val=-10,
             max_val=10
         )
-        self.voltage_to_power = volt_to_power  #mV/nW
-        self.voltage_offset = volt_offset  #V
+        self.voltage_to_power = volt_to_power  # mV/nW
+        self.voltage_offset = volt_offset  # V
 
     def getMeanVoltage(self, N):
         return np.array(self.task.read(N)).mean()
 
     def getMeanPower(self, N):
         return (
-            self.getMeanVoltage(N) - self.voltage_offset
-        ) / self.voltage_to_power
+                       self.getMeanVoltage(N) - self.voltage_offset
+               ) / self.voltage_to_power
 
     def redo_offset(self, N):
         voltage = self.getMeanVoltage(N)
@@ -111,6 +112,7 @@ class Photodiode():
 
     def __del__(self):
         self.task.close()
+
 
 class TerminalConfiguration(Enum):
     DEFAULT = -1  #: Default.

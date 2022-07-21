@@ -97,21 +97,28 @@ class SetupControlGUI(GUIBase):
         self._mw.MW2_power_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW2_power_DoubleSpinBox_Edited)
         self._mw.A2_Button.clicked.connect(self._setupcontrol_logic.A2_Button_Clicked)
         self._mw.Green_Button.clicked.connect(self._setupcontrol_logic.Green_Button_Clicked)
-        self._mw.PD_zero_Button.clicked.connect(self._setupcontrol_logic.PD_zero_Button_Clicked)
+        self._mw.Read_Power_Button.clicked.connect(self._setupcontrol_logic.Read_Power_Button_Clicked)
         self._mw.MW2_freq_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW2_freq_DoubleSpinBox_Edited)
         self._mw.MW1_freq_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW1_freq_DoubleSpinBox_Edited)
         self._mw.MW2_on_Button.clicked.connect(self._setupcontrol_logic.MW2_on_Button_Clicked)
         self._mw.Autofocus_Button.clicked.connect(self._setupcontrol_logic.Autofocus_Button_Clicked)
         self._mw.Set_Power_Button.clicked.connect(self._setupcontrol_logic.Set_Power_Button_Clicked)
-        self._mw.set_power_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.set_power_DoubleSpinBox_Edited)
-
+        self._mw.Set_Power_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.Set_Power_DoubleSpinBox_Edited)
+        self._setupcontrol_logic.SigReadPower.connect(self.update_laserpower, QtCore.Qt.QueuedConnection)
+        
         self._mw.MW1_power_DoubleSpinBox.setValue(self._setupcontrol_logic.MW1_power)
         self._mw.MW3_freq_DoubleSpinBox.setValue(self._setupcontrol_logic.MW3_freq)
         self._mw.MW3_power_DoubleSpinBox.setValue(self._setupcontrol_logic.MW3_power)
         self._mw.MW2_power_DoubleSpinBox.setValue(self._setupcontrol_logic.MW2_power)
         self._mw.MW2_freq_DoubleSpinBox.setValue(self._setupcontrol_logic.MW2_freq)
         self._mw.MW1_freq_DoubleSpinBox.setValue(self._setupcontrol_logic.MW1_freq)
-        self._mw.set_power_DoubleSpinBox.setValue(self._setupcontrol_logic.set_power)
+        self._mw.Set_Power_DoubleSpinBox.setValue(self._setupcontrol_logic.set_power)
+
+        # self._mw.Read_Power_Label.setText(str(self._setupcontrol_logic.read_power))
+        
+    def update_laserpower(self):
+        self._mw.Read_Power_Label.setText(str(self._setupcontrol_logic.read_power))
+
 
     def on_deactivate(self):
         """ Deactivate the module properly.
@@ -127,13 +134,13 @@ class SetupControlGUI(GUIBase):
         self._mw.MW2_power_DoubleSpinBox.valueChanged.disconnect()
         self._mw.A2_Button.clicked.disconnect()
         self._mw.Green_Button.clicked.disconnect()
-        self._mw.PD_zero_Button.clicked.disconnect()
+        self._mw.Read_Power_Button.clicked.disconnect()
         self._mw.MW2_freq_DoubleSpinBox.valueChanged.disconnect()
         self._mw.MW1_freq_DoubleSpinBox.valueChanged.disconnect()
         self._mw.MW2_on_Button.clicked.disconnect()
         self._mw.Autofocus_Button.clicked.disconnect()
         self._mw.Set_Power_Button.clicked.disconnect()
-        self._mw.set_power_DoubleSpinBox.valueChanged.disconnect()
+        self._mw.Set_Power_DoubleSpinBox.valueChanged.disconnect()
 
         self._mw.close()
 
@@ -159,6 +166,7 @@ class SetupControlGUI(GUIBase):
         self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(1), self._mw.adjustDockWidget)
         self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(2), self._mw.plotDockWidget)
     
+
     @QtCore.Slot()
     def updateButtonsEnabled(self):
         # """ Logic told us to update our button states, so set the buttons accordingly. """
@@ -194,7 +202,7 @@ class SetupControlGUI(GUIBase):
         self._mw.MW1_on_Button.setCheckable(True)
         self._mw.MW2_on_Button.setCheckable(True)
         self._mw.MW3_on_Button.setCheckable(True)
-        # self._mw.Set_Power_Button.setCheckable(True)
+        self._mw.Set_Power_Button.setCheckable(False)
         # self._mw.PD_zero_Button.setCheckable(True)
         # self._mw.Flipmirror_Button.setCheckable(True)
         # self._mw.Autofocus_Button.setCheckable(True)

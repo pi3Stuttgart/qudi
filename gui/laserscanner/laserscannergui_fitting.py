@@ -24,23 +24,26 @@ import os
 import pyqtgraph as pg
 
 from collections import OrderedDict
+from core.util import units
 from core.connector import Connector
 from gui.colordefs import ColorScaleInferno
 from gui.guibase import GUIBase
 from gui.guiutils import ColorBar
+from gui.colordefs import QudiPalettePale as palette
+from gui.fitsettings import FitSettingsDialog, FitSettingsComboBox
 from qtpy import QtCore
 from qtpy import QtGui
 from qtpy import QtWidgets
 from qtpy import uic
 
-from gui.laserscanner.connectors_and_set_default import initialize_connections_and_defaultvalue as ple_default_functions
+from gui.laserscanner.connectors_and_set_default_fitting import initialize_connections_and_defaultvalue as ple_default_functions
 
 
 class VoltScanMainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         # Get the path to the *.ui file
         this_dir = os.path.dirname(__file__)
-        ui_file = os.path.join(this_dir, 'ui_laserscanner_gui.ui')
+        ui_file = os.path.join(this_dir, 'ui_laserscanner_gui_fitting.ui')
 
         # Load it
         super(VoltScanMainWindow, self).__init__()
@@ -62,6 +65,10 @@ class VoltScanGui(GUIBase, ple_default_functions):
     sigChangeLines = QtCore.Signal(int)
     sigSaveMeasurement = QtCore.Signal(str, list, list)
 
+    sigFitChanged = QtCore.Signal(str)
+    sigDoFit = QtCore.Signal(str, object, object, int, int)
+        
+
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
 
@@ -70,7 +77,14 @@ class VoltScanGui(GUIBase, ple_default_functions):
 
         @return int: error code (0:OK, -1:error)
         """
-
+        # Disconnect signals
+        self._voltscan_logic.sigPleFitUpdated.disconnect()
+        self.sigDoFit.disconnect()
+        self._mw.do_fit_PushButton.clicked.disconnect()
+        self._fsd.sigFitsUpdated.disconnect()
+        self._mw.fit_range_SpinBox.editingFinished.disconnect()
+        self._mw.action_FitSettings.triggered.disconnect()
+        
         self._mw.close()
         return 0
 
@@ -78,7 +92,15 @@ class VoltScanGui(GUIBase, ple_default_functions):
 
         self._mw = VoltScanMainWindow()
         self._voltscan_logic = self.voltagescannerlogic1()
+        
         self.initialize_connections_and_defaultvalues()
+        
+        # Set up and connect channel combobox
+        self.display_channel = 0
+        ple_channels = self._voltscan_logic.get_ple_channels()
+        for n, ch in enumerate(ple_channels):
+            self._mw.ple_channel_ComboBox.addItem(str(ch), n)
+
 
         #self._voltscan_logic.SigClock.connect(self.Update_Runtime, QtCore.Qt.QueuedConnection)
   
@@ -108,18 +130,21 @@ class VoltScanGui(GUIBase, ple_default_functions):
         # )
 
         self.scan_image = pg.PlotDataItem(
-            self._voltscan_logic.plot_x,
-            self._voltscan_logic.plot_y)
+            self._voltscan_logic.ple_plot_x,
+            self._voltscan_logic.ple_plot_y)
 
         self.scan_image2 = pg.PlotDataItem(
-            self._voltscan_logic.plot_x,
-            self._voltscan_logic.plot_y2)
+            self._voltscan_logic.ple_plot_x,
+            self._voltscan_logic.ple_plot_y2)
 
         self.scan_fit_image = pg.PlotDataItem(
-            self._voltscan_logic.fit_x,
-            self._voltscan_logic.fit_y,
+            self._voltscan_logic.ple_fit_x,
+            self._voltscan_logic.ple_fit_y,
             pen=QtGui.QPen(QtGui.QColor(255, 255, 255, 255)))
 
+        self.ple_fit_image = pg.PlotDataItem(self._voltscan_logic.ple_fit_x,
+                                              self._voltscan_logic.ple_fit_y,
+                                              pen=pg.mkPen(palette.c2))
         # Add the display item to the xy and xz VieWidget, which was defined in
         # the UI file.
         self._mw.ple_data_PlotWidget.addItem(self.scan_image)#
@@ -157,36 +182,14 @@ class VoltScanGui(GUIBase, ple_default_functions):
         # Update the input/displayed numbers if the cursor has left the field:
 
 
-        # self._mw.Repump_checkBox.stateChanged.connect(self.change_repump_state)
-        # self._mw.A2_checkBox.stateChanged.connect(self.change_A2_state)
-        # self._mw.A1_checkBox.stateChanged.connect(self.change_A1_state)
-
-        # self._mw.MW1FrequencyDoubleSpinBox.valueChanged.connect(self.change_MW1_freq)
-        # self._mw.MW2FrequencyDoubleSpinBox.valueChanged.connect(self.change_MW2_freq)
-        # self._mw.MW3FrequencyDoubleSpinBox.valueChanged.connect(self.change_MW3_freq)
-        # self._mw.MW1PowerDoubleSpinBox.valueChanged.connect(self.change_MW1_power)
-        # self._mw.MW2PowerDoubleSpinBox.valueChanged.connect(self.change_MW2_power)
-        # self._mw.MW3PowerDoubleSpinBox.valueChanged.connect(self.change_MW3_power)
-
-        # self.updateButtonsEnabled()
-        # self._mw.MW1_on_Button.clicked.connect(self.changeMW1State)
-        # self._mw.MW2_on_Button.clicked.connect(self.changeMW2State)
-        # self._mw.MW3_on_Button.clicked.connect(self.changeMW3State)
-
-        # self._mw.MW1PowerDoubleSpinBox.setValue(-20)
-        # self._mw.MW2PowerDoubleSpinBox.setValue(-20)
-        # self._mw.MW3PowerDoubleSpinBox.setValue(-20)
-        # self._mw.MW1FrequencyDoubleSpinBox.setValue(70)
-        # self._mw.MW2FrequencyDoubleSpinBox.setValue(70)
-        # self._mw.MW3FrequencyDoubleSpinBox.setValue(70)
-
-        # #
-        # self._mw.voltscan_cb_max_InputWidget.valueChanged.connect(self.refresh_matrix)
-        # self._mw.voltscan_cb_min_InputWidget.valueChanged.connect(self.refresh_matrix)
-        # self._mw.voltscan_cb_high_centile_InputWidget.valueChanged.connect(self.refresh_matrix)
-        # self._mw.voltscan_cb_low_centile_InputWidget.valueChanged.connect(self.refresh_matrix)
-
-        # # Connect signals
+        # fit settings
+        self._fsd = FitSettingsDialog(self._voltscan_logic.fc)
+        self._fsd.sigFitsUpdated.connect(self._mw.fit_methods_ComboBox.setFitFunctions)
+        self._fsd.applySettings()
+        self._mw.action_FitSettings.triggered.connect(self._fsd.show)
+        # TODO FIGURE OUT what line above actually do
+        
+        # Connect signals
         self._voltscan_logic.sigUpdatePlots.connect(self.refresh_matrix)
         self._voltscan_logic.sigUpdatePlots.connect(self.refresh_plot)
         self._voltscan_logic.sigUpdatePlots.connect(self.refresh_lines)
@@ -202,7 +205,36 @@ class VoltScanGui(GUIBase, ple_default_functions):
         self.sigChangeResolution.connect(self._voltscan_logic.set_resolution)
         self.sigSaveMeasurement.connect(self._voltscan_logic.save_data)
 
+        # Internal trigger signals
+        self._mw.do_fit_PushButton.clicked.connect(self.do_fit)
+        self._mw.fit_range_SpinBox.editingFinished.connect(self.update_fit_range)
+        # Control/values-changed signals to logic
+        self.sigDoFit.connect(self._voltscan_logic.do_fit, QtCore.Qt.QueuedConnection)
+        # Update signals coming from logic:
+        self._voltscan_logic.sigPleFitUpdated.connect(self.update_fit, QtCore.Qt.QueuedConnection)
+        
         self._mw.show()
+
+    def add_ranges_gui_elements_clicked(self):
+        self._mw.fit_range_SpinBox.setMaximum(self._voltscan_logic.ranges)
+        # remove stuff that remained from the old range that might have been in place there
+        key = 'channel: {0}, range: {1}'.format(self.display_channel, self._voltscan_logic.ranges - 1)
+        if key in self._voltscan_logic.fits_performed:
+            self._voltscan_logic.fits_performed.pop(key)
+        return
+    def remove_ranges_gui_elements_clicked(self):
+        if self._voltscan_logic.ranges == 1:
+            return
+        # in case the removed range is the one selected for fitting right now adjust the value
+        self._voltscan_logic.ranges -= 1
+        max_val = self._voltscan_logic.ranges - 1
+        self._mw.fit_range_SpinBox.setMaximum(max_val)
+        if self._voltscan_logic.range_to_fit > max_val:
+            self._voltscan_logic.range_to_fit = max_val
+
+        self._mw.fit_range_SpinBox.setMaximum(max_val)
+        return
+
 
     def show(self):
         """Make window visible and put it above all other windows. """
@@ -344,3 +376,56 @@ class VoltScanGui(GUIBase, ple_default_functions):
         cb_range = [cb_min, cb_max]
         return cb_range
 
+    def do_fit(self):
+        fit_function = self._mw.fit_methods_ComboBox.getCurrentFit()[0]
+        print("Hier fehlt self.sigDoFit.emit")
+        self.sigDoFit.emit(fit_function, None, None, self._mw.ple_channel_ComboBox.currentIndex(),
+                           self._mw.fit_range_SpinBox.value())
+        return
+
+    def update_fit(self, x_data, y_data, result_str_dict, current_fit):
+        """ Update the shown fit. """
+        if current_fit != 'No Fit':
+            # display results as formatted text
+            self._mw.ple_fit_results_DisplayWidget.clear()
+            try:
+                formated_results = units.create_formatted_output(result_str_dict)
+            except:
+                formated_results = 'this fit does not return formatted results'
+            print("Hier fehlt ein display widget")
+            # self._mw.odm_fit_results_DisplayWidget.setPlainText(formated_results)
+
+        self._mw.fit_methods_ComboBox.blockSignals(True)
+        self._mw.fit_methods_ComboBox.setCurrentFit(current_fit)
+        self._mw.fit_methods_ComboBox.blockSignals(False)
+
+        # check which Fit method is used and remove or add again the
+        # odmr_fit_image, check also whether a odmr_fit_image already exists.
+        if current_fit != 'No Fit':
+            self.ple_fit_image.setData(x=x_data, y=y_data)
+            print("Hier fehlt ein Plot widget link")
+            # if self.ple_fit_image not in self._mw.odmr_PlotWidget.listDataItems():
+            #     self._mw.odmr_PlotWidget.addItem(self.odmr_fit_image)
+        else:
+            print("Hier fehlt ein Plot widget link")
+            pass
+            # if self.odmr_fit_image in self._mw.odmr_PlotWidget.listDataItems():
+            #     self._mw.odmr_PlotWidget.removeItem(self.odmr_fit_image)
+        print("Hier fehlt ein Plot widget link")
+        # self._mw.odmr_PlotWidget.getViewBox().updateAutoRange()
+        return
+
+    def update_fit_range(self):
+        self._voltscan_logic.range_to_fit = self._mw.fit_range_SpinBox.value()
+        return
+    def change_fit_range(self):
+        self._voltscan_logic.fit_range = self._mw.fit_range_SpinBox.value()
+        return
+
+    def update_channel(self, index):
+        self.display_channel = int(
+            self._mw.ple_channel_ComboBox.itemData(index, QtCore.Qt.UserRole))
+        # self.update_plots(
+        #     self._odmr_logic.odmr_plot_x,
+        #     self._odmr_logic.odmr_plot_y,
+        #     self._odmr_logic.odmr_plot_xy)
