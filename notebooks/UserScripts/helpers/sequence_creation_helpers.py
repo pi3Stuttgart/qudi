@@ -97,16 +97,23 @@ def nuclear_settings(nuclear, ret_mcas, analyze_sequence, meas_code, pdc=None, *
             nuclear.file_name += "_{}{}".format(key, "_".join([str(i) for i in val]))
         else:
             nuclear.file_name += "_{}{}".format(key, val)
-    nuclear.ana_trace.analyze_sequence=analyze_sequence
+
+    # FIXME
+    #nuclear.ana_trace.analyze_sequence=analyze_sequence
     nuclear.meas_code = meas_code
     nuclear.ret_mcas = ret_mcas
 
 def confocal_settings():
-    pi3d.confocal.reset_settings()
-    pi3d.confocal.aom_voltage = -6
+    pass
+    print('fix me 2')
+    #FIXME later deprecarted in qudi
+    #pi3d.confocal.reset_settings()
+    #pi3d.confocal.aom_voltage = -6
 
 def gated_counter_settings():
-    pi3d.gated_counter.reset_settings()
+    #FIXME depracated in qudi
+    print('fix me 3')
+    #pi3d.gated_counter.reset_settings()
 
 def settings(**kwargs):
     nuclear_settings(**kwargs)
@@ -122,13 +129,12 @@ def create_nuclear(script_path):
     if not os.path.isfile(script_path):
         raise Exception('Error: ', script_path)
     nuclear = logic.NuclearOPs.NuclearOPs()#TODO fill config here
-    nuclear.make_save_location_params(script_path=script_path, folder=r"D:/data/NuclearOps", sub_folder_kw="UserScripts")
+    nuclear.make_save_location_params(script_path=script_path, folder=r"/Users/vvv/Documents/GitHub/qudi/Data", sub_folder_kw="UserScripts")
     nuclear_name = "NuclearOPs{}_{}".format(nuclear.file_name, datetime.datetime.strftime(nuclear.date_of_creation, nuclear.__TITLE_DATE_FORMAT__))
     nuclear.pld = data_handling.PlotData(title=nuclear_name, gui=True)
-    nuclear.file_notes = file_notes_frequencies()
+    nuclear.file_notes = ''#TODO get transition tracker here... file_notes_frequencies()
     #setattr(pi3d, nuclear_name, nuclear)
     return nuclear
-
 
 if __name__ == '__main__':
     print(ret_sms(transition='13C90 ms-1'))

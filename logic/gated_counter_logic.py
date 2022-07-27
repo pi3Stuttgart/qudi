@@ -7,7 +7,7 @@ import time
 import sys
 import os
 import threading
-import multi_channel_awg_seq as MCAS
+#import multi_channel_awg_seq as MCAS
 import Analysis
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 #import pyqtgraph as pg
@@ -18,14 +18,12 @@ import numpy as np
 import logging
 import zmq
 
-import TimeTagger
-
 # from qutip_enhanced import *
-import qutip_enhanced.qtgui.gui_helpers
+import logic.qudip_enhanced.qtgui.gui_helpers
 from numbers import Number
-from pi3diamond import pi3d
+#from pi3diamond import pi3d
 
-class GatedCounter(qutip_enhanced.qtgui.gui_helpers.WithQt):
+class GatedCounter(logic.qudip_enhanced.qtgui.gui_helpers.WithQt):
 
     def __init__(self, title='Gated Counter', parent=None, gui=True, **kwargs):
         super(GatedCounter, self).__init__(title=title, parent=parent, gui=gui, QtGuiClass=GatedCounterQt)
@@ -35,7 +33,7 @@ class GatedCounter(qutip_enhanced.qtgui.gui_helpers.WithQt):
         self.analyze_trace_during_experiment = True
         if title is not None:
             self.update_window_title(title)
-
+        self.tim
         self.raw_clicks_processing = False
         self.raw_clicks_processing_function = None
 
@@ -77,7 +75,7 @@ class GatedCounter(qutip_enhanced.qtgui.gui_helpers.WithQt):
     def read_trace(self):
         import time
         t0 = time.time()
-        self.gated_counter_data = pi3d.timetagger.gated_counter_countbetweenmarkers.getData()
+        self.gated_counter_data = self.timetagger.gated_counter_countbetweenmarkers.getData()
         # print('1 tt:',time.time()-t0)
 
         if self.ZPL_counter:
@@ -378,7 +376,7 @@ class GatedCounter(qutip_enhanced.qtgui.gui_helpers.WithQt):
             self.update_plot_data()
             self.gui.update_plot(self.effective_subtrace_list, self.hist_list)
 
-class GatedCounterQt(qutip_enhanced.qtgui.gui_helpers.QtGuiClass):
+class GatedCounterQt(logic.qudip_enhanced.qtgui.gui_helpers.QtGuiClass):
     def __init__(self, parent=None, no_qt=None):
         super(GatedCounterQt, self).__init__(parent=parent, no_qt=no_qt, ui_filepath=os.path.join(pi3d.app_dir, 'qtgui/gated_counter.ui'))
 
@@ -449,7 +447,7 @@ class GatedCounterQt(qutip_enhanced.qtgui.gui_helpers.QtGuiClass):
             traceback.print_exception(exc_type, exc_value, exc_tb)
 
 
-class GatedCounterQtGraph(qutip_enhanced.qtgui.gui_helpers.QtGuiClass):
+class GatedCounterQtGraph(logic.qudip_enhanced.qtgui.gui_helpers.QtGuiClass):
     """
     The same as GatedCounterQt but with Pyqtgraph'''
     """

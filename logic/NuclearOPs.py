@@ -72,32 +72,32 @@ class NuclearOPs(DataGeneration):
         #     repeat=False,
         # )
 
-        # self.do_ple_refocusEx = False
-        # self.do_ple_refocusA1 = False
-        # self.do_ple_refocus = False
-        # self.do_confocal_red_refocus = False
-        # self.do_confocal_zpl_refocus = False
+        self.do_ple_refocusEx = False
+        self.do_ple_refocusA1 = False
+        self.do_ple_refocus = False
+        self.do_confocal_red_refocus = False
+        self.do_confocal_zpl_refocus = False
         #
-        # self.do_odmr_refocus = False
+        self.do_odmr_refocus = False
         #
-        # self.do_interferometerPhase_locking = False
-        # self.wavemeter_lock = False
+        self.do_interferometerPhase_locking = False
+        self.wavemeter_lock = False
         #
-        # self.yellow_repump_compensation = False
+        self.yellow_repump_compensation = False
         #
-        # self.last_red_confocal_refocus = - 10000
-        # self.confocal_red_refocus_interval = 0
-        # self.last_ple_refocus = - 10000
-        # self.ple_refocus_interval = 0
-        # self.last_interferometer_refocus = - 10000
-        # self.interferometer_refocus_interval = 0
+        self.last_red_confocal_refocus = - 10000
+        self.confocal_red_refocus_interval = 0
+        self.last_ple_refocus = - 10000
+        self.ple_refocus_interval = 0
+        self.last_interferometer_refocus = - 10000
+        self.interferometer_refocus_interval = 0
         #
-        # self.save_smartly = False
-        # self.delay_ps_list = []
-        # self.window_ps_list = []
+        self.save_smartly = False
+        self.delay_ps_list = []
+        self.window_ps_list = []
         #
-        # self.two_zpl_apd = False
-        # self.raw_clicks_processing = False
+        self.two_zpl_apd = False
+        self.raw_clicks_processing = False
         # self.raw_clicks_processing_channels = [0,1,2,3,4,5,6,7]
 
 
@@ -271,6 +271,7 @@ class NuclearOPs(DataGeneration):
             self.run_measurement(*args, **kwargs)
 
     def run_measurement(self, abort, **kwargs):
+        print('Measire')
         pi3d = None
         self.init_run(**kwargs)
         self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[self._confocal.x], confocal_y=[self._confocal.y], confocal_z=[self._confocal.z]))
@@ -515,7 +516,7 @@ class NuclearOPs(DataGeneration):
         finally:
             self.data._df = data_handling.df_take_duplicate_rows(self.data.df, self.iterator_df_done) #drops unfinished measurements,
             self.pld.new_data_arrived()
-            pi3d.multi_channel_awg_sequence.stop_awgs(pi3d.awgs)
+            #pi3d.multi_channel_awg_sequence.stop_awgs(pi3d.awgs)
             self.state = 'idle'
             self.update_current_str()
 

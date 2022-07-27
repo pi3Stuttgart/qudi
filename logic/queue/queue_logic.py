@@ -7,6 +7,8 @@ import logic.misc
 import imp
 from gui.queue.Queue import queue_gui
 
+from queue import Queue
+
 from PyQt5.QtWidgets import QAbstractItemView, QMainWindow, QFileDialog
 from PyQt5 import QtGui
 from PyQt5.QtCore import pyqtSignal
@@ -14,6 +16,7 @@ import PyQt5.uic
 import PyQt5.QtWidgets
 from logic.qudip_enhanced import *
 # FIXME
+
 # import multi_channel_awg_seq as MCAS; reload(MCAS)
 import logic.misc as misc
 import datetime
@@ -117,18 +120,16 @@ class queue_logic(GenericLogic):
 
     # connections
     # MCAS
-
     mcas_holder = Connector(interface='McasDictHolderInterface')
     # Transition tracker
-    #queue_gui = Connector(interface = 'queue_gui') ## Can't connect to the gui! only gui to logic.
     transition_tracker = Connector(interface = 'TransitionTracker')
 
     # FIXME add here later connectors and give them to NuclearOps somehow.
-    # confocal = Connector('ConfocalLogic')
-    # gated_counter = Connector()
+    #confocal = Connector('ConfocalLogic')
+    gated_counter = Connector('gated_counter_logic')
 
-    somesignal = pyqtSignal()
-    somesignal2 = pyqtSignal()
+    #somesignal = pyqtSignal()
+    #somesignal2 = pyqtSignal()
     update_selected_user_script_combo_box_signal = pyqtSignal(collections.OrderedDict)
     user_script_list = misc.ret_property_array_like_typ('user_script_list', str)
     guis = []  # stores names of all open guis (later on used to dump them periodically)
@@ -169,7 +170,7 @@ class queue_logic(GenericLogic):
 
         self._mcas_dict = float(9)#self.mcas_holder()  # mcas_dict()
         self._transition_tracker = float(10)#self.transition_tracker()
-
+        #self._gated_counter = self.gated_counter()
         self.init_run()
         # TODO we are adding this later.
         #self._confocal = self.confocal()
@@ -192,9 +193,9 @@ class queue_logic(GenericLogic):
     #     self._timetagger = TimeTaggerHandler.init_timetagger()
 
     def init_run(self):
-        self.user_script_folder = r"/Users/vvv/Documents/GitHub/qudi/notebooks/UserScripts"
+        self.user_script_folder = r"/Users/vvv/Documents/GitHub/qudi/notebooks/UserScripts/electron_t2"
         self._script_queue = ScriptQueueList(oktypes=(ScriptQueueStep), list_owner=self)
-        #self.q = self.queue_gui() # use connector
+        self.q = Queue() # use connector
         self.run_thread()
         # self.track_memory_usage_thread()
 
@@ -340,27 +341,29 @@ class queue_logic(GenericLogic):
         # start the CronDaemon
         #from tools_2 import cron
         #cron.CronDaemon().start()
-
+        self.dummy_test_variable = 123
 
         while True:
             if self.thread.stop_request.is_set():
-                #self.q.queue.clear()
+                self.q.queue.clear()
                 self.script_queue.list = []
                 self.thread.stop_request.clear()
             try: ### runs the measurement!
-                self.current_script = 'Try1.py'#self.q.get()
+                self.current_script = self.q.get()
                 self.thread.stop_request.clear() # this is necessary although it shouldn't be.
-                #self.log.info("Starting Userscript {}...{}".format(
-                #    self.current_script['module_name'][10:],
-                 #   self.thread.stop_request.is_set()))
-                #sys.modules[self.current_script['module_name']].run_fun(self.thread.stop_request, **self.current_script['pd'])
-                #self.script_history.append(self.current_script)
-                #self.script_queue.pop(0)
-                #self.log.info("Userscript {} has finished...".format(self.current_script['module_name'][10:]))
+                self.log.info("Starting Userscript {}...{}".format(
+                    self.current_script['module_name'][10:],
+                   self.thread.stop_request.is_set()))
+                sys.modules[self.current_script['module_name']].run_fun(
+                    self.thread.stop_request, queue = self, **self.current_script['pd']) ## Creates a nuclear and runs it.!!!
+
+                self.script_history.append(self.current_script)
+                self.script_queue.pop(0)
+                self.log.info("Userscript {} has finished...".format(self.current_script['module_name'][10:]))
                 del self.current_script
-                #self.q.task_done()
+                self.q.task_done()
             except Exception: #Not running the measurement.
-                #self.q.queue.clear()
+                self.q.queue.clear()
                 self.script_queue.list = []
                 exc_type, exc_value, exc_tb = sys.exc_info()
                 traceback.print_exception(exc_type, exc_value, exc_tb)
@@ -432,7 +435,7 @@ class queue_logic(GenericLogic):
             return
         try:
             module_name = self.init_task(name, folder)
-            #self.q.put({'module_name': module_name, 'pd': pd})
+            self.q.put({'module_name': module_name, 'pd': pd})
             self.script_queue.append(ScriptQueueStep(module_name[10:], self.user_script_params))
         except Exception:
             exc_type, exc_value, exc_tb = sys.exc_info()
@@ -461,9 +464,9 @@ class queue_logic(GenericLogic):
         #     self.get_user_script(name).evaluate(**pd)
 
     def remove_last_script(self):
-        if 1:#self.q.qsize() > 0:
+        if self.q.qsize() > 0:
             del self.script_queue[-1]
-            #self.q.get()
+            self.q.get()
 
     def init_task(self, name, folder=None):
         folder = self.user_script_folder if folder is None else folder
