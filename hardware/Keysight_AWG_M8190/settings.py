@@ -43,12 +43,14 @@ marker_alias = {'memory': ['2g', 2, 'sync',None],
                 'aom_Ex': ['2g', 2, 'smpl',None],
                 'gate': ['2g', 1, 'smpl',None],
 
-                'A1':['ps',1,'A1','5'],
+                'FlipMirror':['ps',1,'FlipMirror','0'],
                 'A2':['ps',1,'A2','1'],
                 'repump': ['ps',1,'repump','2'],
                 'green': ['ps',1,'green','3'],
-                'tt_trigger': ['ps',1,'tt_trigger','7'],
-                'tt_sync': ['ps',1,'tt_sync','6']
+                #ch4 is clock to AWG
+                'A1':['ps',1,'A1','5'],
+                'tt_sync': ['ps',1,'tt_sync','6'],
+                'tt_trigger': ['ps',1,'tt_trigger','7']
                 }
 
 

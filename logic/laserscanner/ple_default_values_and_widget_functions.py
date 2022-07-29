@@ -8,15 +8,15 @@ class ple_default_values_and_widget_functions:
         MW1_Freq:float=70
         MW2_Freq:float=140
         MW3_Freq:float=210
-        enable_MW1:bool=False
+        enable_MW1:bool=True
         enable_MW2:bool=False
         enable_MW3:bool=False
         enable_A1:bool=False
-        enable_A2:bool=False
+        enable_A2:bool=True
         enable_Repump:bool=False
-        enable_PulsedRepump:bool=False
+        enable_PulsedRepump:bool=True
         RepumpDuration:float = 10
-        RepumpDecay:float = 1
+        RepumpDecay:float = 1000
 
         Filename:str = ''
         PeriodicSaving:bool = False
@@ -38,145 +38,119 @@ class ple_default_values_and_widget_functions:
                 print('done something with ple_Load_Button')
 
         def ple_PulsedRepump_CheckBox_StateChanged(self,on):
-                print('done something with ple_PulsedRepump_CheckBox')
                 self.enable_PulsedRepump=on==2
 
         def ple_MW2_CheckBox_StateChanged(self,on):
-                print('done something with ple_MW2_CheckBox')
                 self.enable_MW2=on==2
 
         def ple_Continue_Button_Clicked(self,on):
                 print('done something with ple_Continue_Button')
 
         def ple_MW1_CheckBox_StateChanged(self,on):
-                print('done something with ple_MW1_CheckBox')
                 self.enable_MW1=on==2
 
         def ple_Save_Button_Clicked(self,on):
-                print('done something with ple_Save_Button')
                 self.save_data(tag=self.Filename)
 
         def ple_MW1_Power_LineEdit_textEdited(self,text):
-                print('done something with ple_MW1_Power_LineEdit. Text=',text)
                 try:
                         self.MW1_Power=float(text)
                 except:
                         pass
 
         def ple_Abort_Button_Clicked(self,on):
-                print('done something with ple_Abort_Button')
                 self.AbortRequested = True
         def ple_MW3_Power_LineEdit_textEdited(self,text):
-                print('done something with ple_MW3_Power_LineEdit. Text=',text)
                 try:
                         self.MW3_Power=float(text)
                 except:
                         pass
 
         def ple_RepumpDuration_LineEdit_textEdited(self,text):
-                print('done something with ple_RepumpDuration_LineEdit. Text=',text)
                 try:
                         self.RepumpDuration=float(text)
                 except:
                         pass
 
         def ple_A1_CheckBox_StateChanged(self,on):
-                print('done something with ple_A1_CheckBox')
                 self.enable_A1=on==2
 
         def ple_A2_CheckBox_StateChanged(self,on):
-                print('done something with ple_A2_CheckBox')
                 self.enable_A2=on==2
 
         def ple_RepumpDecay_LineEdit_textEdited(self,text):
-                print('done something with ple_RepumpDecay_LineEdit. Text=',text)
                 try:
                         self.RepumpDecay=float(text)
                 except:
                         pass
 
         def ple_MW1_Freq_LineEdit_textEdited(self,text):
-                print('done something with ple_MW1_Freq_LineEdit. Text=',text)
                 try:
                         self.MW1_Freq=float(text)
                 except:
                         pass
 
         def ple_MW2_Freq_LineEdit_textEdited(self,text):
-                print('done something with ple_MW2_Freq_LineEdit. Text=',text)
                 try:
                         self.MW2_Freq=float(text)
                 except:
                         pass
 
         def ple_Run_Button_Clicked(self,on):
-                print('done something with ple_Run_Button')
                 self.start_scanning()
 
         def ple_MW3_CheckBox_StateChanged(self,on):
-                print('done something with ple_MW3_CheckBox')
                 self.enable_MW3=on==2
 
         def ple_MW2_Power_LineEdit_textEdited(self,text):
-                print('done something with ple_MW2_Power_LineEdit. Text=',text)
                 try:
                         self.MW2_Power=float(text)
                 except:
                         pass
 
         def ple_Stop_Button_Clicked(self,on):
-                print('done something with ple_Stop_Button')
                 self.stopRequested = True
 
         def ple_Filename_LineEdit_textEdited(self,text):
-                print('done something with ple_Filename_LineEdit. Text=',text)
                 try:
                         self.Filename=text
                 except:
                         pass
 
         def ple_MW3_Freq_LineEdit_textEdited(self,text):
-                print('done something with ple_MW3_Freq_LineEdit. Text=',text)
                 try:
                         self.MW3_Freq=float(text)
                 except:
                         pass
 
         def ple_CWrepump_CheckBox_StateChanged(self,on):
-                print('done something with ple_CWrepump_CheckBox')
                 self.enable_Repump=on==2
 
         def ple_PerformFit_CheckBox_StateChanged(self,on):
-                print('done something with ple_PerformFit_CheckBox')
                 self.PerformFit=on==2
 
         def ple_PeriodicSaving_CheckBox_StateChanged(self,on):
-                print('done something with ple_PeriodicSaving_CheckBox')
                 self.PeriodicSaving=on==2
 
         def ple_Interval_LineEdit_textEdited(self,text):
-                print('done something with ple_Interval_LineEdit. Text=',text)
                 try:
                         self.Interval=float(text)
                 except:
                         pass
 
         def ple_MaxIterations_LineEdit_textEdited(self,text):
-                print('done something with ple_MaxIterations_LineEdit. Text=',text)
                 try:
                         self.MaxIterations=float(text)
                 except:
                         pass
 
         def ple_NumberOfPeaks_LineEdit_textEdited(self,text):
-                print('done something with ple_NumberOfPeaks_LineEdit. Text=',text)
                 try:
                         self.NumberOfPeaks=float(text)
                 except:
                         pass
 
         def ple_Stoptime_LineEdit_textEdited(self,text):
-                print('done something with ple_Stoptime_LineEdit. Text=',text)
                 try:
                         self.Stoptime=float(text)
                 except:

@@ -24,7 +24,7 @@ import numpy as np
 import re
 
 import PyDAQmx as daq
-
+from qtpy import QtCore
 from core.module import Base
 from core.configoption import ConfigOption
 from interface.slow_counter_interface import SlowCounterInterface
@@ -89,6 +89,9 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         counting_edge_rising: True
 
     """
+    # signals to interfuse
+    # this signl gets passed from layer to layer until it reaches the gui.
+    sigLimitsChanged = QtCore.Signal()
 
     # config options
     _photon_sources = ConfigOption('photon_sources', list(), missing='warn')
@@ -2177,7 +2180,27 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
             retval = -1
         return retval
 
-
+    def set_voltage_limits(self, RTLT):
+        """Changes voltage limits."""
+        n_ch = len(self.get_scanner_axes())
+        if RTLT == 'LT':
+            # changes limits
+            self.set_voltage_range(myrange=[[0, 10], [0, 10], [0, 10], [0, 10]][0:n_ch])
+            # resets the analog output. This reloads the new limits
+            self._start_analog_output()
+            # update scanner position range to LT
+            self.set_position_range(self._scanner_position_ranges_lt)
+        elif RTLT == 'RT':
+            self.set_voltage_range(myrange=[[0, 4], [0, 4], [0, 4], [0, 10]][0:n_ch])
+            self._start_analog_output()
+            # update scanner position range to RT
+            self.set_position_range(self._scanner_position_ranges_rt)
+        else:
+            print('Limit needs to be either LT or RT')
+            return
+        # signal to gui (via rest of the layers).
+        # this provokes an update of the axes.
+        self.sigLimitsChanged.emit()
     # ======================== Digital channel control ==========================
 
     def digital_channel_switch(self, channel_name, mode=True):

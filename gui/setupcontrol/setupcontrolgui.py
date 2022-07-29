@@ -51,7 +51,6 @@ class SetupControlGUI(GUIBase):
 
     ## declare connectors
     setupcontrollogic = Connector(interface='SetupControlLogic')
-    
     #pulsedlogic= Connector(interface='SetupControlLogic')
 
     # sigA1 = QtCore.Signal(bool)
@@ -78,6 +77,7 @@ class SetupControlGUI(GUIBase):
         """
 
         self._setupcontrol_logic = self.setupcontrollogic() 
+
         #####################
         # Configuring the dock widgets
         # Use the inherited class 'CounterMainWindow' to create the GUI window
@@ -86,24 +86,27 @@ class SetupControlGUI(GUIBase):
         self._mw.setDockNestingEnabled(True)
         
         self.updateButtonsEnabled()
-        self._mw.MW1_power_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW1_power_DoubleSpinBox_Edited)
-        self._mw.Repump_Button.clicked.connect(self._setupcontrol_logic.Repump_Button_Clicked)
-        self._mw.MW3_freq_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW3_freq_DoubleSpinBox_Edited)
-        self._mw.MW3_on_Button.clicked.connect(self._setupcontrol_logic.MW3_on_Button_Clicked)
         self._mw.A1_Button.clicked.connect(self._setupcontrol_logic.A1_Button_Clicked)
-        self._mw.MW1_on_Button.clicked.connect(self._setupcontrol_logic.MW1_on_Button_Clicked)
-        self._mw.MW3_power_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW3_power_DoubleSpinBox_Edited)
-        self._mw.Flipmirror_Button.clicked.connect(self._setupcontrol_logic.Flipmirror_Button_Clicked)
-        self._mw.MW2_power_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW2_power_DoubleSpinBox_Edited)
         self._mw.A2_Button.clicked.connect(self._setupcontrol_logic.A2_Button_Clicked)
+        self._mw.Repump_Button.clicked.connect(self._setupcontrol_logic.Repump_Button_Clicked)
         self._mw.Green_Button.clicked.connect(self._setupcontrol_logic.Green_Button_Clicked)
-        self._mw.Read_Power_Button.clicked.connect(self._setupcontrol_logic.Read_Power_Button_Clicked)
-        self._mw.MW2_freq_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW2_freq_DoubleSpinBox_Edited)
+        self._mw.MW1_on_Button.clicked.connect(self._setupcontrol_logic.MW1_on_Button_Clicked)
+        self._mw.MW1_power_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW1_power_DoubleSpinBox_Edited)
         self._mw.MW1_freq_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW1_freq_DoubleSpinBox_Edited)
         self._mw.MW2_on_Button.clicked.connect(self._setupcontrol_logic.MW2_on_Button_Clicked)
-        self._mw.Autofocus_Button.clicked.connect(self._setupcontrol_logic.Autofocus_Button_Clicked)
-        self._mw.Set_Power_Button.clicked.connect(self._setupcontrol_logic.Set_Power_Button_Clicked)
+        self._mw.MW2_freq_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW2_freq_DoubleSpinBox_Edited)
+        self._mw.MW2_power_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW2_power_DoubleSpinBox_Edited)
+        self._mw.MW3_on_Button.clicked.connect(self._setupcontrol_logic.MW3_on_Button_Clicked)
+        self._mw.MW3_freq_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW3_freq_DoubleSpinBox_Edited)
+        self._mw.MW3_power_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW3_power_DoubleSpinBox_Edited)
         self._mw.Set_Power_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.Set_Power_DoubleSpinBox_Edited)
+        self._mw.Set_Power_Button.clicked.connect(self._setupcontrol_logic.Set_Power_Button_Clicked)
+        self._mw.Read_Power_Button.clicked.connect(self._setupcontrol_logic.Read_Power_Button_Clicked)
+        self._mw.Autofocus_Button.clicked.connect(self._setupcontrol_logic.Autofocus_Button_Clicked)
+        self._mw.Flipmirror_Button.clicked.connect(self._setupcontrol_logic.Flipmirror_Button_Clicked)
+        self._mw.StartAutoMeas_Button.clicked.connect(self._setupcontrol_logic.StartAutoMeas_Button_Clicked)
+        self._mw.StopAutoMeas_Button.clicked.connect(self._setupcontrol_logic.StopAutoMeas_Button_Clicked)
+        self._mw.SavePOIs_Button.clicked.connect(self._setupcontrol_logic.SavePOIs_Button_Clicked)
         self._setupcontrol_logic.SigReadPower.connect(self.update_laserpower, QtCore.Qt.QueuedConnection)
         
         self._mw.MW1_power_DoubleSpinBox.setValue(self._setupcontrol_logic.MW1_power)
@@ -123,24 +126,27 @@ class SetupControlGUI(GUIBase):
     def on_deactivate(self):
         """ Deactivate the module properly.
         """
-        self._mw.MW1_power_DoubleSpinBox.valueChanged.disconnect()
-        self._mw.Repump_Button.clicked.disconnect()
-        self._mw.MW3_freq_DoubleSpinBox.valueChanged.disconnect()
-        self._mw.MW3_on_Button.clicked.disconnect()
         self._mw.A1_Button.clicked.disconnect()
-        self._mw.MW1_on_Button.clicked.disconnect()
-        self._mw.MW3_power_DoubleSpinBox.valueChanged.disconnect()
-        self._mw.Flipmirror_Button.clicked.disconnect()
-        self._mw.MW2_power_DoubleSpinBox.valueChanged.disconnect()
         self._mw.A2_Button.clicked.disconnect()
+        self._mw.Repump_Button.clicked.disconnect()
         self._mw.Green_Button.clicked.disconnect()
-        self._mw.Read_Power_Button.clicked.disconnect()
-        self._mw.MW2_freq_DoubleSpinBox.valueChanged.disconnect()
+        self._mw.MW1_on_Button.clicked.disconnect()
+        self._mw.MW1_power_DoubleSpinBox.valueChanged.disconnect()
         self._mw.MW1_freq_DoubleSpinBox.valueChanged.disconnect()
         self._mw.MW2_on_Button.clicked.disconnect()
-        self._mw.Autofocus_Button.clicked.disconnect()
-        self._mw.Set_Power_Button.clicked.disconnect()
+        self._mw.MW2_power_DoubleSpinBox.valueChanged.disconnect()
+        self._mw.MW2_freq_DoubleSpinBox.valueChanged.disconnect()
+        self._mw.MW3_on_Button.clicked.disconnect()
+        self._mw.MW3_power_DoubleSpinBox.valueChanged.disconnect()
+        self._mw.MW3_freq_DoubleSpinBox.valueChanged.disconnect()
         self._mw.Set_Power_DoubleSpinBox.valueChanged.disconnect()
+        self._mw.Set_Power_Button.clicked.disconnect()
+        self._mw.Read_Power_Button.clicked.disconnect()
+        self._mw.Autofocus_Button.clicked.disconnect()
+        self._mw.Flipmirror_Button.clicked.disconnect()
+        self._mw.StartAutoMeas_Button.clicked.disconnect()
+        self._mw.StopAutoMeas_Button.clicked.disconnect()
+        self._mw.SavePOIs_Button.clicked.disconnect()
 
         self._mw.close()
 
@@ -212,3 +218,10 @@ class SetupControlGUI(GUIBase):
         A1duration=self._mw.A1_time_doubleSpinBox.value()
         self._setupcontrol_logic.A1time=A1duration
         print("oh")
+
+
+# TODO: Remove POIs button
+# "scannerlogic.pois = np.array([])"
+
+# TODO: Start automized measurement
+# "automationlogic.start()"

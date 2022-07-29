@@ -20,10 +20,8 @@ Copyright (c) the Qudi Developers. See the COPYRIGHT.txt file at the
 top-level directory of this distribution and at <https://github.com/Ulm-IQO/qudi/>
 """
 
-from PyQt5.QtCore import pyqtPickleProtocol
 import numpy as np
 import os
-#from core.pi3_utils import printdebug
 import pyqtgraph as pg
 import time
 
@@ -34,7 +32,6 @@ from qtwidgets.scan_plotwidget import ScanImageItem
 from gui.guibase import GUIBase
 from gui.guiutils import ColorBar
 from gui.colordefs import ColorScaleInferno
-from gui.colordefs import ColorScaleRdBuRev
 from gui.colordefs import QudiPalettePale as palette
 from gui.fitsettings import FitParametersWidget
 from qtpy import QtCore
@@ -47,7 +44,6 @@ class ConfocalMainWindow(QtWidgets.QMainWindow):
     """ Create the Mainwindow based on the corresponding *.ui file. """
 
     sigPressKeyBoard = QtCore.Signal(QtCore.QEvent)
-    
     sigDoubleClick = QtCore.Signal()
 
     def __init__(self):
@@ -64,8 +60,6 @@ class ConfocalMainWindow(QtWidgets.QMainWindow):
     def keyPressEvent(self, event):
         """Pass the keyboard press event from the main window further. """
         self.sigPressKeyBoard.emit(event)
-
-
 
     def mouseDoubleClickEvent(self, event):
         self._doubleclicked = True
@@ -97,92 +91,21 @@ class OptimizerSettingDialog(QtWidgets.QDialog):
         super(OptimizerSettingDialog, self).__init__()
         uic.loadUi(ui_file, self)
 
-
-class ChangingToLTLimitsDialog(QtWidgets.QDialog):
-    def __init__(self):
-        # Get the path to the *.ui file
-        this_dir = os.path.dirname(__file__)
-        ui_file = os.path.join(this_dir, 'ui_change_to_LT.ui')
-
-        # Load it
-        super(ChangingToLTLimitsDialog, self).__init__()
-        uic.loadUi(ui_file, self)
-
-
-class ChangingToLTLimitsConfirmation(QtWidgets.QDialog):
-    def __init__(self):
-        # Get the path to the *.ui file
-        this_dir = os.path.dirname(__file__)
-        ui_file = os.path.join(this_dir, 'ui_confirm_change.ui')
-
-        # Load it
-        super(ChangingToLTLimitsConfirmation, self).__init__()
-        uic.loadUi(ui_file, self)
-
-
 class SaveDialog(QtWidgets.QDialog):
     """ Dialog to provide feedback and block GUI while saving """
-    save_path = ""
-    power = "0 mW"
-    laser = ""
-    sample = ""
-    region = ""
-    other_info = ""
-    axis = "XY"
-    sigSaveXYplot = QtCore.Signal(str, object)
-    sigSaveZplot = QtCore.Signal(str, object)
-    def __init__(self, parent, title="Set saving params", text="Saving..."):
+    def __init__(self, parent, title="Please wait", text="Saving..."):
         super().__init__(parent)
-        this_dir = os.path.dirname(__file__)
-        ui_file = os.path.join(this_dir, 'ui_save.ui')
-        uic.loadUi(ui_file, self)
-    
         self.setWindowTitle(title)
         self.setWindowModality(QtCore.Qt.WindowModal)
         self.setAttribute(QtCore.Qt.WA_ShowWithoutActivating)
-        self.save_toolButton.clicked.connect(self.choose_folder_for_save)
-        
-        self.accepted.connect(self.save)    
 
-        # self.rejected.connect()
-        # Load it
-        # super(SaveDialog, self).__init__()
-    def load_params(self, params):
-        self.power_lineEdit.setText(params['power'])
-        self.laser_lineEdit.setText(params['laser'])
-        self.sample_lineEdit.setText(params['sample'])
-        self.region_lineEdit.setText(params['region'])
-        self.other_textEdit.setText(params['other_info'])
-        self.save_path_lineEdit.setText(params['current_path'])
-        self.dir_path = params['current_path']
-
-    def choose_folder_for_save(self):
-        self.dir_path = QtWidgets.QFileDialog.getExistingDirectory()
-        # printdebug(self.debug, f'Chosen filepath is {dir_path}')
-        self.save_path_lineEdit.setText(self.dir_path)
-        return self.dir_path
-   
-   
-    def save(self):
-        self.power = self.power_lineEdit.text()
-        self.laser = self.laser_lineEdit.text()
-        self.sample = self.sample_lineEdit.text()
-        self.region = self.region_lineEdit.text()
-        self.other_info = self.other_textEdit.toPlainText()
-        info_params = {
-            "power": self.power,
-            "sample": self.sample,
-            "region": self.region,
-            "laser": self.laser,
-            "other_info": self.other_info
-        }
-        if self.axis == "XY":
-            self.sigSaveXYplot.emit(self.dir_path, info_params)
-        elif self.axis == "Z":
-            self.sigSaveZplot.emit(self.dir_path, info_params)
-        
-            
-    
+        # Dialog layout
+        self.text = QtWidgets.QLabel("<font size='16'>" + text + "</font>")
+        self.hbox = QtWidgets.QHBoxLayout()
+        self.hbox.addSpacerItem(QtWidgets.QSpacerItem(50, 0))
+        self.hbox.addWidget(self.text)
+        self.hbox.addSpacerItem(QtWidgets.QSpacerItem(50, 0))
+        self.setLayout(self.hbox)
 
 class ConfocalGui(GUIBase):
     """ Main Confocal Class for xy and depth scans.
@@ -192,15 +115,15 @@ class ConfocalGui(GUIBase):
     confocallogic1 = Connector(interface='ConfocalLogic')
     savelogic = Connector(interface='SaveLogic')
     optimizerlogic1 = Connector(interface='OptimizerLogic')
-    automizedmeasurementlogic = Connector(interface='Automatedmeasurement')
 
     # config options for gui
     fixed_aspect_ratio_xy = ConfigOption('fixed_aspect_ratio_xy', True)
     fixed_aspect_ratio_depth = ConfigOption('fixed_aspect_ratio_depth', True)
+    fixed_aspect_ratio_depth=False
     image_x_padding = ConfigOption('image_x_padding', 0.02)
     image_y_padding = ConfigOption('image_y_padding', 0.02)
     image_z_padding = ConfigOption('image_z_padding', 0.02)
-    
+
     default_meter_prefix = ConfigOption('default_meter_prefix', None)  # assume the unit prefix of position spinbox
 
     # status var
@@ -210,7 +133,6 @@ class ConfocalGui(GUIBase):
 
     # signals
     sigStartOptimizer = QtCore.Signal(list, str)
-    sigChangeLimits = QtCore.Signal(str)
 
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
@@ -226,23 +148,14 @@ class ConfocalGui(GUIBase):
         self._scanning_logic = self.confocallogic1()
         self._save_logic = self.savelogic()
         self._optimizer_logic = self.optimizerlogic1()
-        self._scanning_logic.pois = np.array([])
-        self._automized_measurement_logic = self.automizedmeasurementlogic()
-        # connecting signals from logic
-        self._scanning_logic.sigLimitsChanged.connect(self.limits_changed)
 
         self._hardware_state = True
-
-        self.savefolder_str = 'not specified'
 
         self.initMainUI()      # initialize the main GUI
         self.initSettingsUI()  # initialize the settings GUI
         self.initOptimizerSettingsUI()  # initialize the optimizer settings GUI
 
         self._save_dialog = SaveDialog(self._mw)
-        self._save_dialog.sigSaveXYplot.connect(self.save_xy_scan_data_plot)
-        self._save_dialog.sigSaveZplot.connect(self.save_depth_scan_data_plot)
-        self.debug = True
 
     def initMainUI(self):
         """ Definition, configuration and initialisation of the confocal GUI.
@@ -266,7 +179,7 @@ class ConfocalGui(GUIBase):
         self.opt_channel = 0
 
         # Get the image for the display from the logic
-        raw_data_xy = self._scanning_logic.xy_image[::-1, ::-1, 3 + self.xy_channel]
+        raw_data_xy = self._scanning_logic.xy_image[:, :, 3 + self.xy_channel]
         raw_data_depth = self._scanning_logic.depth_image[:, :, 3 + self.depth_channel]
 
         # Set initial position for the crosshair, default is the middle of the
@@ -365,7 +278,7 @@ class ConfocalGui(GUIBase):
             (self._optimizer_logic.refocus_XY_size, self._optimizer_logic.refocus_XY_size))
         # connect the drag event of the crosshair with a change in scanner position:
         self._mw.xy_ViewWidget.sigCrosshairDraggedPosChanged.connect(self.update_from_roi_xy)
-        
+
         # Set up and connect xy channel combobox
         scan_channels = self._scanning_logic.get_scanner_count_channels()
         for n, ch in enumerate(scan_channels):
@@ -510,7 +423,6 @@ class ConfocalGui(GUIBase):
             )
 
         # history actions
-        self._mw.actionSetPOIs.triggered.connect(self.POImode)
         self._mw.actionForward.triggered.connect(self._scanning_logic.history_forward)
         self._mw.actionBack.triggered.connect(self._scanning_logic.history_back)
         self._scanning_logic.signal_history_event.connect(lambda: self.set_history_actions(True))
@@ -522,13 +434,6 @@ class ConfocalGui(GUIBase):
         self._scanning_logic.signal_history_event.connect(self.change_x_image_range)
         self._scanning_logic.signal_history_event.connect(self.change_y_image_range)
         self._scanning_logic.signal_history_event.connect(self.change_z_image_range)
-
-        self._mw.actionSave_config.triggered.connect(self._scanning_logic.save_history_config)
-
-        # set voltage limits
-        self._mw.actionUse_LT_limits.changed.connect(self.change_piezo_voltage_limits)
-        self.sigChangeLimits.connect(self._scanning_logic.set_voltage_limits)
-        
 
         # Get initial tilt correction values
         self._mw.action_TiltCorrection.setChecked(
@@ -575,9 +480,6 @@ class ConfocalGui(GUIBase):
         self._mw.depth_cb_manual_RadioButton.clicked.connect(self.update_depth_cb_range)
         self._mw.depth_cb_centiles_RadioButton.clicked.connect(self.update_depth_cb_range)
 
-        # Connect buttons of savepath widget
-        # self._mw.choose_savefolder_pushButton.clicked.connect(self.choose_folder_for_save)
-
         # input edits in Main tab
         self._mw.depth_cb_min_DoubleSpinBox.valueChanged.connect(self.shortcut_to_depth_cb_manual)
         self._mw.depth_cb_max_DoubleSpinBox.valueChanged.connect(self.shortcut_to_depth_cb_manual)
@@ -617,9 +519,8 @@ class ConfocalGui(GUIBase):
         # with the methods:
         self._mw.action_Settings.triggered.connect(self.menu_settings)
         self._mw.action_optimizer_settings.triggered.connect(self.menu_optimizer_settings)
-        self._mw.actionSave_XY_Scan.triggered.connect(self.save_xy)
-        self._mw.actionSave_Depth_Scan.triggered.connect(self.save_z)
-        # self._mw.actionSave_Depth_Scan.triggered.connect(self.save_depth_scan_data)
+        self._mw.actionSave_XY_Scan.triggered.connect(self.save_xy_scan_data)
+        self._mw.actionSave_Depth_Scan.triggered.connect(self.save_depth_scan_data)
 
         # Configure and connect the zoom actions with the desired buttons and
         # functions if
@@ -633,9 +534,6 @@ class ConfocalGui(GUIBase):
 
         # Blink correction
         self._mw.actionBlink_correction_view.triggered.connect(self.blink_correction_clicked)
-
-        # Connect refocus for automized spectrometer measurement
-        self._automized_measurement_logic.sigAutomizedRefocus.connect(self.refocus_clicked)
 
         ###################################################################
         #               Icons for the scan actions                        #
@@ -670,7 +568,6 @@ class ConfocalGui(GUIBase):
         #################################################################
         # Get the colorscale and set the LUTs
         self.my_colors = ColorScaleInferno()
-        # self.my_colors = ColorScaleRdBuRev()
 
         self.xy_image.setLookupTable(self.my_colors.lut)
         self.depth_image.setLookupTable(self.my_colors.lut)
@@ -761,31 +658,6 @@ class ConfocalGui(GUIBase):
         self._mw.show()
         self._mw.activateWindow()
         self._mw.raise_()
-
-    def POImode(self):
-        if self._mw.actionSetPOIs.isChecked():
-            self._plot_item = self._mw.xy_ViewWidget.plotItem
-            self._plot_item.scene().sigMouseClicked.connect(self.addPOI)
-            self.vb = self._plot_item.vb
-            
-            self.g = Graph()
-            self._mw.xy_ViewWidget.addItem(self.g )
-            if len(self._scanning_logic.pois) > 0:
-                texts = (np.arange(len(self._scanning_logic.pois)) + 1).astype(str)
-                self.g.setData(pos=self._scanning_logic.pois[:,:2], size=self._optimizer_logic.refocus_XY_size, symbol='x', pxMode=False, text=texts)
-
-        else:
-            self._plot_item.scene().sigMouseClicked.disconnect()
-            self._mw.xy_ViewWidget.removeItem(self.g )
-    
-    def addPOI(self, event):
-        mousePoint = self.vb.mapSceneToView(event._scenePos)
-        scan_pos_z = self._scanning_logic.get_position()[2]
-        poi_pos =np.array([mousePoint.x(), mousePoint.y(), scan_pos_z])
-        self._scanning_logic.pois = np.array([poi_pos]) if self._scanning_logic.pois.shape[0] < 1 else np.vstack((self._scanning_logic.pois,poi_pos))
-        # self.label.setPos(self._position[0] + label_offset, self._position[1] + label_offset)
-        texts = (np.arange(len(self._scanning_logic.pois)) + 1).astype(str)
-        self.g.setData(pos=self._scanning_logic.pois[:,:2], size=self._optimizer_logic.refocus_XY_size, symbol='x', pxMode=False, text=texts)
 
     def keyPressEvent(self, event):
         """ Handles the passed keyboard events from the main window.
@@ -1443,55 +1315,6 @@ class ConfocalGui(GUIBase):
             self._mw.z_min_InputWidget.value(),
             self._mw.z_max_InputWidget.value()]
 
-    def change_piezo_voltage_limits(self):
-        """ Switches the voltage limits for the piezos from RT (0 to 4 V) to LT (0 to 10 V) and back. """
-        if self._mw.actionUse_LT_limits.isChecked():
-            # create the dialog window
-            self._clt = ChangingToLTLimitsDialog()
-            self._clt.show()
-            # connect the action of the dialog window with the code
-            self._clt.pushButton_confirm_LT.clicked.connect(self.change_piezo_voltage_limits_to_LT)
-            self._clt.pushButton_deny_LT.clicked.connect(self.change_piezo_voltage_limits_to_RT)
-        else:
-            self.change_piezo_voltage_limits_to_RT()
-    
-    def change_piezo_voltage_limits_to_LT(self):
-        """ Sets the voltage limits for the piezos to LT (0 to 10 V). """
-        print('LT, here we go')
-        self._clt.close() #close previous window
-        # emit signal to change limits to LT logic
-        self.sigChangeLimits.emit('LT')
-        # create the dialog window
-        self._ltconf = ChangingToLTLimitsConfirmation()
-        self._ltconf.show()
-        #closes window on click
-        self._ltconf.pushButton_okay.clicked.connect(self.close_confirmation_window)
-        
-
-    def change_piezo_voltage_limits_to_RT(self):
-        """ Sets the voltage limits for the piezos to RT (0 to 4 V). """
-        print('RT')
-        #emit signal to change limits to RT logic
-        self.sigChangeLimits.emit('RT')
-        self._mw.actionUse_LT_limits.setChecked(False)
-        self._clt.close()
-    
-    def limits_changed(self):
-        """Updates the plot with the new limits from hardware.
-        
-        Note: While the axes will be relabeled, the images won't. 
-        This might lead to features appearing to be bigger than they actually are.
-        """
-        # updates the limits on the xy scan
-        self.adjust_xy_window()
-        # updates the limits on the depth scan.
-        # We won't use it, since we do not know the scale of the depth scan.
-        # self.adjust_depth_window()
-
-    def close_confirmation_window(self):
-        self._ltconf.close()
-
-
     def update_tilt_correction(self):
         """ Update all tilt points from the scanner logic. """
         self._mw.tilt_01_x_pos_doubleSpinBox.setValue(self._scanning_logic.point1[0])
@@ -1756,48 +1579,29 @@ class ConfocalGui(GUIBase):
         depth_viewbox.updateAutoRange()
         depth_viewbox.updateViewRange()
         self.update_roi_depth()
-    
-    @QtCore.Slot(str, object)
-    def save_xy_scan_data_plot(self, path, info_params):
+
+    def save_xy_scan_data(self):
+        """ Run the save routine from the logic to save the xy confocal data."""
+        self._save_dialog.show()
+
         cb_range = self.get_xy_cb_range()
-        info_params = dict(info_params)
+
         # Percentile range is None, unless the percentile scaling is selected in GUI.
         pcile_range = None
         if not self._mw.xy_cb_manual_RadioButton.isChecked():
             low_centile = self._mw.xy_cb_low_percentile_DoubleSpinBox.value()
             high_centile = self._mw.xy_cb_high_percentile_DoubleSpinBox.value()
             pcile_range = [low_centile, high_centile]
-        filename = os.path.join(
-            path,
-            time.strftime('%Y%m%d-%H%M-%S_confocal_xy_scan_raw_pixel_image'))
-        self._scanning_logic.save_xy_data(colorscale_range=cb_range, percentile_range=pcile_range, block=False, filepath=path, info_params=info_params)
+
+        self._scanning_logic.save_xy_data(colorscale_range=cb_range, percentile_range=pcile_range, block=False)
 
         # TODO: find a way to produce raw image in savelogic.  For now it is saved here.
-        # printdebug(self.debug, 'confocalgui: get_path_for_module called by save_xy_scan_data')
-        # filepath = self._save_logic.get_path_for_module(module_name='Confocal')
-        #self.get_savefolder_from_gui()
-        
+        filepath = self._save_logic.get_path_for_module(module_name='Confocal')
+        filename = os.path.join(
+            filepath,
+            time.strftime('%Y%m%d-%H%M-%S_confocal_xy_scan_raw_pixel_image'))
         if self._sd.save_purePNG_checkBox.isChecked():
             self.xy_image.save(filename + '_raw.png')
-
-    def save_xy(self, path = None):
-        """ Run the save routine from the logic to save the xy confocal data."""
-        # printdebug(self.debug, 'confocalgui: save_xy_scan_data called')
-        params = self._save_logic.current_setup_parameters
-        self._save_dialog.axis = "XY"
-        self._save_dialog.load_params(params)
-        
-        self._save_dialog.show()
-    
-    def save_z(self, path = None):
-        """ Run the save routine from the logic to save the xy confocal data."""
-        #printdebug(self.debug, 'confocalgui: save_xy_scan_data called')
-        params = self._save_logic.current_setup_parameters
-        self._save_dialog.axis = "Z"
-        self._save_dialog.load_params(params)
-
-        self._save_dialog.show()
-
 
     def save_xy_scan_image(self):
         """ Save the image and according to that the data.
@@ -1808,11 +1612,9 @@ class ConfocalGui(GUIBase):
         """
         self.log.warning('Deprecated, use normal save method instead!')
 
-    @QtCore.Slot(str, object)
-    def save_depth_scan_data_plot(self, path, info_params):
+    def save_depth_scan_data(self):
         """ Run the save routine from the logic to save the xy confocal pic."""
-        # printdebug(self.debug, 'save_depth_scan_data called')
-        # self._save_dialog.show()
+        self._save_dialog.show()
 
         cb_range = self.get_depth_cb_range()
 
@@ -1823,20 +1625,12 @@ class ConfocalGui(GUIBase):
             high_centile = self._mw.depth_cb_high_percentile_DoubleSpinBox.value()
             pcile_range = [low_centile, high_centile]
 
-        self._scanning_logic.save_depth_data(
-            colorscale_range=cb_range, 
-            percentile_range=pcile_range, 
-            block=False,
-            filepath=path, 
-            info_params=info_params
-        )
+        self._scanning_logic.save_depth_data(colorscale_range=cb_range, percentile_range=pcile_range, block=False)
 
         # TODO: find a way to produce raw image in savelogic.  For now it is saved here.
-        # printdebug(self.debug, 'confocalgui: get_path_for_module called by save_depth_scan_data')
-        # filepath = self._save_logic.get_path_for_module(module_name='Confocal')
-        # filepath = self.get_savefolder_from_gui()
+        filepath = self._save_logic.get_path_for_module(module_name='Confocal')
         filename = os.path.join(
-            path,
+            filepath,
             time.strftime('%Y%m%d-%H%M-%S_confocal_depth_scan_raw_pixel_image'))
         if self._sd.save_purePNG_checkBox.isChecked():
             self.depth_image.save(filename + '_raw.png')
@@ -1849,25 +1643,6 @@ class ConfocalGui(GUIBase):
         specific task to save the used PlotObject.
         """
         self.log.warning('Deprecated, use normal save method instead!')
-
-    # def choose_folder_for_save(self):
-    #     dir_path = QtWidgets.QFileDialog.getExistingDirectory()
-    #     printdebug(self.debug, f'Chosen filepath is {dir_path}')
-    #     if dir_path != '':
-    #         self.savefolder_str = dir_path
-    #         self._scanning_logic.savefolder_str = dir_path
-    #         self._mw.savefolder_label.setText(dir_path)
-    #         self._mw.savefolder_label.adjustSize()
-    #     return
-
-    # def get_savefolder_from_gui(self):
-    #     """Returns the path to the folder that has been selected in the gui for saving as a string."""
-    #     dir_path = self.savefolder_str
-    #     if dir_path == ('' or '-' or 'not specified'):
-    #         # if no folder is selected (e.g. because Gui was freshly started), throw error
-    #         raise RuntimeError('No folder for saving has been specified.')
-    #     else:
-    #         return dir_path
 
     def switch_hardware(self):
         """ Switches the hardware state. """
@@ -2118,83 +1893,8 @@ class ConfocalGui(GUIBase):
 
     def logic_started_save(self):
         """ Displays modal dialog when save process starts """
-        # self._save_dialog.show()
-        pass
+        self._save_dialog.show()
 
     def logic_finished_save(self):
         """ Hides modal dialog when save process done """
         self._save_dialog.hide()
-
-
-
-
-class Graph(pg.GraphItem):
-    def __init__(self):
-        self.dragPoint = None
-        self.dragOffset = None
-        self.textItems = []
-        self.font = QtGui.QFont()
-        
-        pg.GraphItem.__init__(self)
-        self.scatter.sigClicked.connect(self.clicked)
-        
-    def setData(self, **kwds):
-        self.text = kwds.pop('text', [])
-        self.data = kwds
-        if 'pos' in self.data:
-            npts = self.data['pos'].shape[0]
-            self.data['data'] = np.empty(npts, dtype=[('index', int)])
-            self.data['data']['index'] = np.arange(npts)
-        self.setTexts(self.text)
-        self.updateGraph()
-        
-    def setTexts(self, text):
-        
-        for i in self.textItems:
-            i.scene().removeItem(i)
-        self.textItems = []
-        for t in text:
-            item = pg.TextItem(t)
-            self.textItems.append(item)
-            item.setParentItem(self)
-        
-    def updateGraph(self):
-        self.font.setPixelSize(10)
-        pg.GraphItem.setData(self, **self.data)
-        for i,item in enumerate(self.textItems):
-            item.setPos(*self.data['pos'][i])
-            item.setFont(self.font)
-            item.setColor('k')
-        
-    def mouseDragEvent(self, ev):
-        if ev.button() != QtCore.Qt.MouseButton.LeftButton:
-            ev.ignore()
-            return
-        
-        if ev.isStart():
-            # We are already one step into the drag.
-            # Find the point(s) at the mouse cursor when the button was first 
-            # pressed:
-            pos = ev.buttonDownPos()
-            pts = self.scatter.pointsAt(pos)
-            if len(pts) == 0:
-                ev.ignore()
-                return
-            self.dragPoint = pts[0]
-            ind = pts[0].data()[0]
-            self.dragOffset = self.data['pos'][ind] - pos
-        elif ev.isFinish():
-            self.dragPoint = None
-            return
-        else:
-            if self.dragPoint is None:
-                ev.ignore()
-                return
-        
-        ind = self.dragPoint.data()[0]
-        self.data['pos'][ind] = ev.pos() + self.dragOffset
-        self.updateGraph()
-        ev.accept()
-        
-    def clicked(self, pts):
-        print("clicked: %s" % pts)

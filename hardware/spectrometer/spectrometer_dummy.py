@@ -49,6 +49,8 @@ class SpectrometerInterfaceDummy(Base,SpectrometerInterface):
         """
         self._fitLogic = self.fitlogic()
         self.exposure = 0.1
+        self.integration_time = 10
+        self._integration_time = 10
 
     def on_deactivate(self):
         """ Deactivate module.
@@ -111,3 +113,6 @@ class SpectrometerInterfaceDummy(Base,SpectrometerInterface):
             @param float exposureTime: exposure time
         """
         self.exposure = exposureTime
+
+    def clearBuffer(self):
+        pass

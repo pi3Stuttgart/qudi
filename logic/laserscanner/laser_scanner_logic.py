@@ -253,6 +253,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.plot_y2 = np.zeros(scan_length)
         self.fit_x = np.linspace(self.scan_range[0], self.scan_range[1], scan_length)
         self.fit_y = np.zeros(scan_length)
+        return
 
     def get_current_voltage(self):
         """returns current voltage of hardware device(atm NIDAQ 4th output)"""
@@ -442,6 +443,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 length_mus=self.RepumpDecay
                 )
         self._awg.mcas_dict["PLE_retrace_noRepump"] = seq
+        return
 
     def trace_seq(self):
         self.power = []
@@ -480,6 +482,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         self._awg.mcas_dict["PLE_trace"] = seq
         self._awg.mcas_dict.print_info()
+        return
         
     def power_to_amp(self, power_dBm, impedance=50):
         power_dBm = np.atleast_1d(power_dBm)
