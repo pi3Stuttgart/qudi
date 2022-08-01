@@ -6,12 +6,11 @@ import os
 import importlib
 import notebooks.UserScripts.helpers.sequence_creation_helpers as sch; importlib.reload(sch)
 import notebooks.UserScripts.helpers.shared as shared
-#import hardware.multi_channel_awg_seq as MCAS
-#import notebooks.UserScripts.helpers.snippets_awg as sna
-
-#importlib.reload(sna)
+from hardware.Keysight_AWG_M8190.pym8190a import MultiChSeq
+import notebooks.UserScripts.helpers.snippets_awg as sna
+importlib.reload(sna)
 importlib.reload(shared)
-#importlib.reload(MCAS)
+#importlib.reload(MultiChSeq)
 import notebooks.UserScripts.helpers.shared as ush;importlib.reload(ush)
 from logic.qudip_enhanced import *
 #import hardware.Keysight_AWG_M8190.elements as e
@@ -29,48 +28,18 @@ __SAMPLE_FREQUENCY__ = 12e3#e.__SAMPLE_FREQUENCY__
 ael = 1.0
 
 def ret_ret_mcas(pdc):
-    def ret_mcas(current_iterator_df):
-        sequence_name = 'Electron_t2_red_Tst'
-
-        #mcas = MCAS.MultiChSeq(name=sequence_name, ch_dict={'2g': [1, 2], 'ps': [1]})
-        #mcas.start_new_segment('start_sequence')
-        #mcas.asc(length_mus=0.1)  # Starting... histogram 0
-
-
-
-
-        #def erabi(freq, length, amp, phase=0.0):
-        #    sna.electron_rabi(mcas,
-        #                      name='electron rabi',
-        #                      length_mus=length,
-         #                     amplitudes=[amp],
-        #                      frequencies=freq,
-        #                      phases=np.rad2deg(phase),
-        #                      new_segment=False,
-        #                      mixer_deg=-90,
-        #                      )
-
-        #def waveform(seq):
-         #   mcas.start_new_segment('waveform')
-         #   sna.polarize(mcas, new_segment=False)
-         #   mw = seq.times_fields_aphi('mw')
-        #    wait = seq.times_fields_aphi('wait')
-         #   for step in seq.sequence_steps:
-         #       idx = int(step[1]) - 1
-         #       if step[0] == 'mw':
-         #           erabi(freq=freq, length=mw[idx, 0],
-         #                 amp=pi3d.tt.rp('e_rabi', period=1 / mw[idx, 1], mixer_deg=-90).amp, phase=mw[idx, 2])
-         #       elif step[0] == 'wait':
-          #          mcas.asc(length_mus=wait[idx, 0])
-
-
-
-
+    def ret_mcas(self, current_iterator_df):
+        sequence_name = 'Electron_test'
+        print(self, current_iterator_df)
+        mcas = MultiChSeq(name=sequence_name, ch_dict={'2g': [1, 2], 'ps': [1]})
+        mcas.start_new_segment('start_sequence')
+        mcas.asc(length_mus=0.1)  # Starting... histogram 0
         for idx, _I_ in current_iterator_df.iterrows():
             print(_I_)
-            mcas = []
+            mcas.asc(length_mus = 1.0)
+            sna.polarize_green(mcas=mcas)
 
-        #pi3d.gated_counter.set_n_values(mcas)
+        self.queue._gated_counter.set_n_values(mcas) #how to get here the queue?
 
         return mcas
     return ret_mcas
@@ -79,7 +48,6 @@ def settings(pdc={}):
     ana_seq=[
         ['result', '>', 1, 1, 0, 1],
         # ['init', '>', 1, 1, 0, 1],
-
         # ['init', '>', 5, 1, 0, 1],
     ]
     sch.settings(
@@ -103,8 +71,8 @@ def settings(pdc={}):
     nuclear.ple_refocus_interval = 100
     nuclear.confocal_red_refocus_interval = 100  # 240
 
-    #pi3d.gated_counter.trace.consecutive_valid_result_numbers = [0]
-    #pi3d.gated_counter.trace.average_results = False
+    nuclear.queue._gated_counter.trace.consecutive_valid_result_numbers = [0]
+    nuclear.queue._gated_counter.trace.average_results = False
 
     nuclear.parameters = OrderedDict(
         (
@@ -127,11 +95,9 @@ def settings(pdc={}):
     #nuclear.number_of_simultaneous_measurements =  1# len(nuclear.parameters['phase_pi2_2'])
 
 def run_fun(abort, **kwargs):
-    #pi3d.readout_duration = 1e6*100
-    # pi3d.gated_counter.readout_duration = 5e6
-    #pi3d.gated_counter.readout_duration = 1e6*10
     print(1,' Nuclear started!!!')
     nuclear.queue = kwargs['queue']
+    nuclear.queue._gated_counter.readout_duration = 5e6
     nuclear.debug_mode = False
     settings()
     print('run_fun started')

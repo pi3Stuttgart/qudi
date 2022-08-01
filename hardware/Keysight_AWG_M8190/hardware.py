@@ -1,7 +1,7 @@
 from __future__ import print_function, absolute_import, division
 __metaclass__ = type
 
-import visa
+import visa #TODO - uncomment when used with the proper setup.
 import numpy as np
 import os
 import datetime

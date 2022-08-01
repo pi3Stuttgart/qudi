@@ -1,8 +1,8 @@
 from __future__ import print_function, absolute_import, division
 from imp import reload
-
-import multi_channel_awg_seq as MCAS; reload(MCAS)
-import UserScripts.helpers.sequence_creation_helpers as sch; reload(sch)
+import importlib
+import hardware.Keysight_AWG_M8190.pym8190a as MCAS; importlib.reload(MCAS)
+import notebooks.UserScripts.helpers.sequence_creation_helpers as sch; importlib.reload(sch)
 
 from traits.api import *
 import numpy as np
@@ -10,14 +10,14 @@ from decimal import Decimal
 import copy
 import traceback
 import sys
-import AWG_M8190A_Elements as E
+import hardware.Keysight_AWG_M8190.elements as E
 
-import misc
-from pi3diamond import pi3d
-from AWG_M8190A_Elements import WaveFile, WaveStep, SequenceStep, Sequence
-import pym8190a
+import logic.misc as misc
+#from pi3diamond import pi3d
+from hardware.Keysight_AWG_M8190.elements import WaveFile, WaveStep, SequenceStep, Sequence
+import hardware.Keysight_AWG_M8190.pym8190a as pym8190a
 import numbers
-import TransitionTracker
+#import TransitionTracker
 import collections
 
 __CURRENT_POL_RED__ = 76

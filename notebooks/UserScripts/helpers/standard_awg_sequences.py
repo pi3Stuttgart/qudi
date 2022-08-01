@@ -1,12 +1,14 @@
 from __future__ import print_function, absolute_import, division
 from imp import reload
-import multi_channel_awg_seq as MCAS; reload(MCAS)
-import UserScripts.helpers.sequence_creation_helpers as sch; reload(sch)
+from importlib import reload as reload
+import hardware.Keysight_AWG_M8190.pym8190a as MCAS; reload(MCAS)
+import notebooks.UserScripts.helpers.sequence_creation_helpers as sch; reload(sch)
 
-from pi3diamond import pi3d
-from AWG_M8190A_Elements import WaveFile, WaveStep, SequenceStep, Sequence
-import AWG_M8190A_Elements as E
-import UserScripts.helpers.snippets_awg as sna
+
+from hardware.Keysight_AWG_M8190.elements import WaveFile, WaveStep, SequenceStep, Sequence
+#import from hardware.Keysight_AWG_M8190.elements
+import hardware.Keysight_AWG_M8190.elements as E
+import notebooks.UserScripts.helpers.snippets_awg as sna
 import numpy as np
 reload(sna)
 
@@ -185,15 +187,15 @@ def ret_awg_seq(name, pd={}, **kwargs):
                          )
     return mcas
 
-def write_awg_seq(**kwargs):
-    pi3d.mcas_dict[kwargs['name']] = ret_awg_seq(**kwargs)
+def write_awg_seq(queue,**kwargs):
+    queue._awg.mcas_dict[kwargs['name']] = ret_awg_seq(**kwargs)
 
-def write_awg_standards():
-    write_awg_seq(name='green')
-    write_awg_seq(name='repump')
-    write_awg_seq(name='red_Ex')
-    write_awg_seq(name='red_A1')
-    write_awg_seq(name='Ex_RO')
+def write_awg_standards(queue):
+    write_awg_seq(queue, name='green')
+    write_awg_seq(queue,name='repump')
+    write_awg_seq(queue,name='red_Ex')
+    write_awg_seq(queue,name='red_A1')
+    write_awg_seq(queue,name='Ex_RO')
 
     #write_awg_seq(name='red')
     #write_awg_seq(name='orange')
@@ -232,8 +234,8 @@ def write_awg_standards():
     # write_awg_seq('infrared')
     # write_awg_seq(name='test_sine', amplitudes=[1.0], frequencies=[10.0], phases=[0.0], ch_dict={'2g':[1]}, length_smpl=12032)
 
-def run_fun(abort, **kwargs):
-    write_awg_standards()
+def run_fun(abort, queue, **kwargs):
+    write_awg_standards(queue)
 
 # if False:
 #     mcas = MCAS.MultiChSeq(name='asdf', ch_dict={'2g': [1, 2], '128m': [1]})

@@ -9,7 +9,7 @@ import pylab
 import scipy.optimize
 import scipy.stats
 
-from qutip_enhanced import *
+from logic.qudip_enhanced import *
 from collections import OrderedDict
 
 def reanalyze_dataframe(data, analyze_sequence, analyze_type, number_of_simultaneous_measurements):
@@ -333,7 +333,7 @@ class Trace(BaseTrace):
 
     def append_thr_a_eff(self, df):
         df['thr_a'] = -2
-        column_names = [cn for cn in df.columns if type(cn) == long]
+        column_names = [cn for cn in df.columns if type(cn) == int]#int
         for idx, step in enumerate(self.analyze_sequence):
             if step[2] == 'auto':
                 df.loc[df['step'] == idx, 'thr_a'] = self.calc_threshold(df.loc[df['step'] == idx, column_names[0]])

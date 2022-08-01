@@ -115,36 +115,22 @@ class ScriptQueueList(collections.MutableSequence):
         return str(self.list)
 
 class queue_logic(GenericLogic):
-    #TODO replace with qudi
-    #log_level = logging.INFO
 
-    # connections
+    # declare connections
     # MCAS
     mcas_holder = Connector(interface='McasDictHolderInterface')
     # Transition tracker
-    transition_tracker = Connector(interface = 'TransitionTracker')
-
-    # FIXME add here later connectors and give them to NuclearOps somehow.
+    transition_tracker = Connector(interface = 'TransitionTracker') # Should be a name of the class
     #confocal = Connector('ConfocalLogic')
-    gated_counter = Connector('gated_counter_logic')
-
-    #somesignal = pyqtSignal()
-    #somesignal2 = pyqtSignal()
+    # Gated counter.
+    gated_counter = Connector('GatedCounter') # Should be name of the class.
     update_selected_user_script_combo_box_signal = pyqtSignal(collections.OrderedDict)
     user_script_list = misc.ret_property_array_like_typ('user_script_list', str)
     guis = []  # stores names of all open guis (later on used to dump them periodically)
-
     _StopTimeout = 60.
-
-    # workspace_dir = 'log/'
 
     __TIME_FORMAT_STR__ = '%Y%m%d-h%Hm%Ms%S'
 
-    # scanner_xrange = (0.0, 30.0)
-    # scanner_yrange = (0.0, 30.0)
-    # scanner_zrange = (-25, 25.0)
-
-    # colormaps = {'default': Spectral, 'confocal': jet}
     # smiq_visa_device = 'GPIB0::28::INSTR'
     # app_dir = r'D:/Python/pi3diamond'
     # log_dir = '{}/log/'.format(app_dir)
@@ -154,34 +140,26 @@ class queue_logic(GenericLogic):
 
     def __init__(self, config , **kwargs):
         super(queue_logic, self).__init__(config=config, **kwargs)
-        # for property_name in ['confocal', 'nidaq', 'fast_counter', 'odmr', 'timetagger', 'pp',
-        #                       'gated_counter', 'nuclear', 'magnet', 'tt', 'pulsed', 'powermeter', 'oxxius_laser',
-        #                       'rf_amp', 'misc', 'Fit', 'Analysis', 'multi_channel_awg_sequence', 'magnet_stage_micos',
-        #                       'microwave', 'mcas_dict']:
-
-        # setattr(self.__class__, property_name, property(attrgetter(property_name)))
 
         self.script_history = []
 
-        # if os.path.exists(self.log_single_val_dir + 'single_values.hdf'):
-        #     dh.ptrepack('single_values.hdf', self.log_single_val_dir)
-
     def on_activate(self):
 
-        self._mcas_dict = float(9)#self.mcas_holder()  # mcas_dict()
-        self._transition_tracker = float(10)#self.transition_tracker()
-        #self._gated_counter = self.gated_counter()
-        self.init_run()
-        # TODO we are adding this later.
+        self._awg = self.mcas_holder()  #self._mcas_dict = self.mcas_holder()#float(9)#self.mcas_holder()  # mcas_dict()
+        self._transition_tracker = self.transition_tracker()#float(10)#self.transition_tracker()
+        self._gated_counter = self.gated_counter() # connection to the GC.
+        self.init_run() #
+        self.write_standard_awg_sequences()
+        # TODO we are adding confocal later.
         #self._confocal = self.confocal()
-        #self._gated_counter = self.gated_counter()
 
     def on_deactivate(self):
         pass
-        #FIXME what else to do here?
+        #FIXME destroy me gently
+
     @property
     def md(self):
-        return self._mcas_dict
+        return self._mcas_dict#
 
     @property
     def gui(self):
@@ -202,7 +180,6 @@ class queue_logic(GenericLogic):
     @property
     def script_queue(self):
         return self._script_queue
-
     @property
     def nowstr(self):
         return datetime.datetime.now().strftime('%Y%m%d-h%Hm%Ms%S')
@@ -479,7 +456,7 @@ class queue_logic(GenericLogic):
         self.thread.stop_request.set()
 
     def write_standard_awg_sequences(self):
-        self.add_to_queue('standard_awg_sequences', folder='D:/Python/pi3diamond/UserScripts/helpers')
+        self.add_to_queue('standard_awg_sequences', folder=r'/Users/vvv/Documents/GitHub/qudi/notebooks/UserScripts/helpers')
 
     def dl(self, key, *args, **kwargs):
         return self._mcas_dict[key].dl(*args, **kwargs)

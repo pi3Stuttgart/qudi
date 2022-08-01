@@ -99,7 +99,7 @@ def nuclear_settings(nuclear, ret_mcas, analyze_sequence, meas_code, pdc=None, *
             nuclear.file_name += "_{}{}".format(key, val)
 
     # FIXME
-    #nuclear.ana_trace.analyze_sequence=analyze_sequence
+    nuclear.ana_trace.analyze_sequence=analyze_sequence
     nuclear.meas_code = meas_code
     nuclear.ret_mcas = ret_mcas
 
