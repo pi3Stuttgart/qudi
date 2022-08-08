@@ -43,7 +43,7 @@ class DigitalSwitchPulser(Base, SwitchInterface):
     _states = StatusVar(name='states', default=None)
     states = StatusVar(name='states', default=None)
     pulser = Connector(interface='PulserClient')
-
+    pulsed_switch = ConfigOption("pulsed_switch", default=False)
     def __init__(self, *args, **kwargs):
         """ Create the digital switch output control module
         """
@@ -127,10 +127,11 @@ class DigitalSwitchPulser(Base, SwitchInterface):
                    state_dict), f'Invalid switch name(s) encountered: {tuple(state_dict)}'
         assert all(isinstance(state, str) for state in
                    state_dict.values()), f'Invalid switch state(s) encountered: {tuple(state_dict.values())}'
-
+        
         if state_dict:
             with self.lock:
                 new_states = self._states.copy()
+                old_states = self._states.copy()
                 new_states.update(state_dict)
                 for channel_index, (switch, state) in enumerate(self.states.items()):
                     if switch == 'laser':
@@ -138,15 +139,17 @@ class DigitalSwitchPulser(Base, SwitchInterface):
                             self.pulser.laser_on()
                         elif state == 'off':
                             self.pulser.laser_off()
-                    elif switch == 'spectrometer':
+                    elif self.pulsed_switch:
+                        if state == 'on':
+                            self.pulser.set_channel_on(channels = [self._channels[channel_index]])
+                            self.pulser.set_channel_off(channels = [self._channels[channel_index]])
+                        elif state == 'off':
+                            self.pulser.set_channel_off(channels = [self._channels[channel_index]])
+                    elif not self.pulsed_switch:
                         if state == 'on':
                             self.pulser.set_channel_on(channels = [self._channels[channel_index]])
                         elif state == 'off':
                             self.pulser.set_channel_off(channels = [self._channels[channel_index]])
-                    elif switch == 'powermeter':
-                        self.pulser.set_channel_on(channels = [self._channels[channel_index]])
-                        self.pulser.set_channel_off(channels = [self._channels[channel_index]])
-                        
                     # if self._inverted_states:
                     #     binary.append(avail_states[switch][0] == state)
                     # else:
