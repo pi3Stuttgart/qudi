@@ -22,7 +22,7 @@ class SetupControlLogic(GenericLogic):
 
     mcas_holder = Connector(interface='McasDictHolderInterface')
     powercontrol = Connector(interface='LaserPowerHolder')
-    #automizedmeasurementlogic = Connector(interface = 'Automatedmeasurement')
+    automizedmeasurementlogic = Connector(interface = 'Automatedmeasurement')
     savelogic = Connector(interface = 'SaveLogic')
 
     MW1_power:float=-21
@@ -52,7 +52,7 @@ class SetupControlLogic(GenericLogic):
 
         self._awg = self.mcas_holder()
         self._powercontrol = self.powercontrol()
-        #self._automized_measurement_logic = self.automizedmeasurementlogic()
+        self._automized_measurement_logic = self.automizedmeasurementlogic()
         self._save_logic = self.savelogic()
         self.flipmirror_sequence_created = False
 

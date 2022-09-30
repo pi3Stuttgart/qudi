@@ -136,7 +136,7 @@ class LaserPower:
             )
             if power_target_max < current_power:
                 print("power target too small")
-                self.power = np.round(current_power, 5)
+                self.power = np.round(current_power, 2)
             else:
                 self.success, self.power = self.find_new_interval(
                     volt_min, volt_max, power_target_min, power_target_max, 1
@@ -146,6 +146,6 @@ class LaserPower:
             self.state = 'idle'
 
     def _Read_Power_button_fired(self):
-        self.power = np.round(self.getPower(), 5)
+        self.power = np.round(self.getPower(), 2)
         return self.power
 

@@ -61,7 +61,7 @@ class TraceAnalysisLogic(GenericLogic):
         """ Initialisation performed during activation of the module.
         """
 
-        # self._counter_logic = self.get_connector('counterlogic1')
+        self._counter_logic = self.get_connector('counterlogic1')
         self._save_logic = self.get_connector('savelogic')
         self._fit_logic = self.get_connector('fitlogic')
         self.trace = np.array([])

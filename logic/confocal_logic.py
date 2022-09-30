@@ -1083,32 +1083,35 @@ class ConfocalLogic(GenericLogic):
 
             filelabel = 'confocal_xy_image_{0}'.format(ch.replace('/', ''))
             self._save_logic.save_data(image_data,
-                                       filepath=filepath,
-                                       timestamp=timestamp,
-                                       parameters=parameters,
-                                       filelabel=filelabel,
-                                       fmt='%.6e',
-                                       delimiter='\t',
-                                       plotfig=figs[ch])
+                                    filepath=filepath,
+                                    timestamp=timestamp,
+                                    parameters=parameters,
+                                    filelabel=filelabel,
+                                    fmt='%.6e',
+                                    delimiter='\t',
+                                    plotfig=figs[ch])
 
-        # prepare the full raw data in an OrderedDict:
-        data = OrderedDict()
-        data['x position (m)'] = self.xy_image[:, :, 0].flatten()
-        data['y position (m)'] = self.xy_image[:, :, 1].flatten()
-        data['z position (m)'] = self.xy_image[:, :, 2].flatten()
+        # # prepare the full raw data in an OrderedDict:
+        # data = OrderedDict()
+        # data['x position (m)'] = self.xy_image[:, :, 0].flatten()
+        # data['y position (m)'] = self.xy_image[:, :, 1].flatten()
+        # data['z position (m)'] = self.xy_image[:, :, 2].flatten()
 
-        for n, ch in enumerate(self.get_scanner_count_channels()):
-            data['count rate {0} (Hz)'.format(ch)] = self.xy_image[:, :, 3 + n].flatten()
+        # for n, ch in enumerate(self.get_scanner_count_channels()):
+        #     print(n)
+        #     print(ch)
+        #     data['count rate {0} (Hz)'.format(ch)] = self.xy_image[:, :, 3 + n].flatten()
 
-        # Save the raw data to file
-        filelabel = 'confocal_xy_data'
-        self._save_logic.save_data(data,
-                                   filepath=filepath,
-                                   timestamp=timestamp,
-                                   parameters=parameters,
-                                   filelabel=filelabel,
-                                   fmt='%.6e',
-                                   delimiter='\t')
+        # # Save the raw data to file
+        # print("raw data")
+        # filelabel = 'confocal_xy_data'
+        # self._save_logic.save_data(data,
+        #                            filepath=filepath,
+        #                            timestamp=timestamp,
+        #                            parameters=parameters,
+        #                            filelabel=filelabel,
+        #                            fmt='%.6e',
+        #                            delimiter='\t')
 
         self.log.debug('Confocal Image saved.')
         self.signal_xy_data_saved.emit()
@@ -1207,24 +1210,24 @@ class ConfocalLogic(GenericLogic):
                                        delimiter='\t',
                                        plotfig=figs[ch])
 
-        # prepare the full raw data in an OrderedDict:
-        data = OrderedDict()
-        data['x position (m)'] = self.depth_image[:, :, 0].flatten()
-        data['y position (m)'] = self.depth_image[:, :, 1].flatten()
-        data['z position (m)'] = self.depth_image[:, :, 2].flatten()
+        # # prepare the full raw data in an OrderedDict:
+        # data = OrderedDict()
+        # data['x position (m)'] = self.depth_image[:, :, 0].flatten()
+        # data['y position (m)'] = self.depth_image[:, :, 1].flatten()
+        # data['z position (m)'] = self.depth_image[:, :, 2].flatten()
 
-        for n, ch in enumerate(self.get_scanner_count_channels()):
-            data['count rate {0} (Hz)'.format(ch)] = self.depth_image[:, :, 3 + n].flatten()
+        # for n, ch in enumerate(self.get_scanner_count_channels()):
+        #     data['count rate {0} (Hz)'.format(ch)] = self.depth_image[:, :, 3 + n].flatten()
 
-        # Save the raw data to file
-        filelabel = 'confocal_depth_data'
-        self._save_logic.save_data(data,
-                                   filepath=filepath,
-                                   timestamp=timestamp,
-                                   parameters=parameters,
-                                   filelabel=filelabel,
-                                   fmt='%.6e',
-                                   delimiter='\t')
+        # # Save the raw data to file
+        # filelabel = 'confocal_depth_data'
+        # self._save_logic.save_data(data,
+        #                            filepath=filepath,
+        #                            timestamp=timestamp,
+        #                            parameters=parameters,
+        #                            filelabel=filelabel,
+        #                            fmt='%.6e',
+        #                            delimiter='\t')
 
         self.log.debug('Confocal Image saved.')
         self.signal_depth_data_saved.emit()

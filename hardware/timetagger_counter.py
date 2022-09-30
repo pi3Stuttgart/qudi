@@ -53,6 +53,8 @@ class TimeTaggerCounter(Base, SlowCounterInterface):
         """
         self._tagger = tt.createTimeTagger()
         self._count_frequency = 50  # Hz
+        self._tagger.setTriggerLevel(1, 0.05)
+        self._tagger.setTriggerLevel(2, 0.05)
 
         if self._sum_channels and self._channel_apd_1 is None:
             self.log.error('Cannot sum channels when only one apd channel given')
@@ -112,6 +114,7 @@ class TimeTaggerCounter(Base, SlowCounterInterface):
 
         # currently, parameters passed to this function are ignored -- the channels used and clock frequency are
         # set at startup
+
         if self._mode == 1:
             channel_combined = tt.Combiner(self._tagger, channels = [self._channel_apd_0, self._channel_apd_1])
             self._channel_apd = channel_combined.getChannel()
@@ -144,8 +147,9 @@ class TimeTaggerCounter(Base, SlowCounterInterface):
                 binwidth=int((1 / self._count_frequency) * 1e12),
                 n_values=1
             )
-
         self.log.info('set up counter with {0}'.format(self._count_frequency))
+        self._tagger.setTriggerLevel(1,0.05)
+        self._tagger.setTriggerLevel(2,0.05)
         return 0
 
     def get_counter_channels(self):

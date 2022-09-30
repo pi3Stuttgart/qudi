@@ -192,7 +192,7 @@ class ConfocalGui(GUIBase):
     confocallogic1 = Connector(interface='ConfocalLogic')
     savelogic = Connector(interface='SaveLogic')
     optimizerlogic1 = Connector(interface='OptimizerLogic')
-    #automizedmeasurementlogic = Connector(interface='Automatedmeasurement')
+    automizedmeasurementlogic = Connector(interface='Automatedmeasurement')
 
     # config options for gui
     fixed_aspect_ratio_xy = ConfigOption('fixed_aspect_ratio_xy', True)
@@ -227,7 +227,7 @@ class ConfocalGui(GUIBase):
         self._save_logic = self.savelogic()
         self._optimizer_logic = self.optimizerlogic1()
         self._scanning_logic.pois = np.array([])
-        #self._automized_measurement_logic = self.automizedmeasurementlogic()
+        self._automized_measurement_logic = self.automizedmeasurementlogic()
         # connecting signals from logic
         self._scanning_logic.sigLimitsChanged.connect(self.limits_changed)
 
@@ -635,7 +635,7 @@ class ConfocalGui(GUIBase):
         self._mw.actionBlink_correction_view.triggered.connect(self.blink_correction_clicked)
 
         # Connect refocus for automized spectrometer measurement
-        #self._automized_measurement_logic.sigAutomizedRefocus.connect(self.refocus_clicked)
+        self._automized_measurement_logic.sigAutomizedRefocus.connect(self.refocus_clicked)
 
         ###################################################################
         #               Icons for the scan actions                        #

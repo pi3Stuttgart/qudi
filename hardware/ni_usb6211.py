@@ -1,4 +1,11 @@
 import numpy as np
+import nidaqmx
+from nidaqmx import constants
+from nidaqmx import stream_readers
+from nidaqmx import stream_writers
+
+import matplotlib.pyplot as plt
+
 from nidaqmx import Task
 from nidaqmx.constants import TerminalConfiguration
 from core.module import Base
@@ -20,7 +27,7 @@ class NI_USB6211(Base, LaserPowerInterface):
 
         try:
             self.photodiode = Photodiode(
-                AIChannel="dev3/ai5", volt_to_power=0.0717, volt_offset=-0.0096
+                AIChannel="dev3/ai5", volt_to_power=0.0717, volt_offset=-0.0096, sample_freq=1000, time_acquire=1
             )
             print('photodiode connected')
         except:
@@ -40,7 +47,7 @@ class AOM_Driver:
     def __init__(
             self,
             AOChannel,
-            Voltagerange,
+            Voltagerange
     ):
         self.voltage = 0
         self.voltagerange = Voltagerange
@@ -65,7 +72,6 @@ class AOM_Driver:
     def __del__(self):
         self.task.close()
 
-
 class Photodiode():
     voltage_to_power = Float(
         default_value=0.0717,  # for 0-1000nW     ;   6.63e-3 for 0-50nW
@@ -83,17 +89,59 @@ class Photodiode():
         label='Voltage Offset [mV]'
     )
 
-    def __init__(self, AIChannel, volt_to_power, volt_offset):
+    def __init__(self, AIChannel, volt_to_power, volt_offset, sample_freq, time_acquire):
         self.AIChannel = AIChannel
-        self.task = Task()
-        self.ai_channel = self.task.ai_channels.add_ai_voltage_chan(
-            AIChannel,
-            terminal_config=TerminalConfiguration.RSE,
-            min_val=-10,
-            max_val=10
-        )
         self.voltage_to_power = volt_to_power  # mV/nW
         self.voltage_offset = volt_offset  # V
+        self.sample_freq = sample_freq
+        self.time_acquire = time_acquire
+        self.num_channels = 1
+   
+        print("started")
+        self.task = Task()
+        self.ai_channel = self.task.ai_channels.add_ai_voltage_chan(
+            self.AIChannel,
+            terminal_config=TerminalConfiguration.RSE,
+            min_val=-10,
+            max_val=10,
+            #current_excit_val=0.002
+        )
+
+    #     self.task.timing.cfg_samp_clk_timing(
+    #         rate=self.time_acquire,
+    #         sample_mode=constants.AcquisitionType.CONTINUOUS,
+    #         samps_per_chan=(self.sample_freq * self.time_acquire),
+    #     ) # you may not need samps_per_chan
+
+    #     # I set an input_buf_size
+    #     self.samples_per_buffer = int(self.sample_freq // 30)  # 30 hz update
+    #     # task.in_stream.input_buf_size = samples_per_buffer * 10  # plus some extra space
+
+    #     self.reader = stream_readers.AnalogMultiChannelReader(self.task.in_stream)
+    #     self.writer = stream_writers.AnalogMultiChannelWriter(self.task.out_stream)
+        
+    # def readingTaskCallback(self, task_idx = 1, event_type = 'ACQUIRED_INTO_BUFFER', num_samples = 100, callback_data=None):
+    #     print("readingAAAAAAAAAAAAAAAAAAAAAA")
+    #     """After data has been read into the NI buffer this callback is called to read in the data from the buffer.
+
+    #     This callback is for working with the task callback register_every_n_samples_acquired_into_buffer_event.
+
+    #     Args:
+    #         task_idx (int): Task handle index value
+    #         event_type (nidaqmx.constants.EveryNSamplesEventType): ACQUIRED_INTO_BUFFER
+    #         num_samples (int): Number of samples that was read into the buffer.
+    #         callback_data (object)[None]: No idea. Documentation says: The callback_data parameter contains the value
+    #             you passed in the callback_data parameter of this function.
+    #     """
+    #     buffer = np.zeros((self.num_channels, num_samples), dtype=np.float64)
+    #     self.reader.read_many_sample(buffer, num_samples, timeout=20) #timeout=constants.WAIT_INFINITELY)
+
+    #     # Convert the data from channel as a row order to channel as a column
+    #     data = buffer.T.astype(np.float32)
+    #     print(data)
+    #     # Do something with the data
+    #     print("task")
+    #     self.task.register_every_n_samples_acquired_into_buffer_event(self.samples_per_buffer, self.readingTaskCallback)
 
     def getMeanVoltage(self, N):
         return np.array(self.task.read(N)).mean()
@@ -113,10 +161,19 @@ class Photodiode():
     def __del__(self):
         self.task.close()
 
-
 class TerminalConfiguration(Enum):
     DEFAULT = -1  #: Default.
     RSE = 10083  #: Referenced Single-Ended.
     NRSE = 10078  #: Non-Referenced Single-Ended.
     DIFFERENTIAL = 10106  #: Differential.
     PSEUDODIFFERENTIAL = 12529  #: Pseudodifferential.
+
+# photokruscht = Photodiode(AIChannel="dev3/ai5",
+#     volt_to_power=0.0717,
+#     volt_offset=-0.0096,
+#     sample_freq=10000,
+#     time_acquire=1
+#     )
+# photokruscht.readingTaskCallback(task_idx=1, event_type='ACQUIRED_INTO_BUFFER', num_samples= 100, callback_data=None)
+# time.sleep(10)
+# print("done")

@@ -117,6 +117,7 @@ class CounterLogic(GenericLogic):
         self.rawdata = np.zeros([len(self.get_channels()), self._counting_samples])
         self._already_counted_samples = 0  # For gated counting
         self._data_to_save = []
+        self.countdata_avg=0
 
         # Flag to stop the loop
         self.stopRequested = False
@@ -429,6 +430,7 @@ class CounterLogic(GenericLogic):
             self.countdata = np.zeros([len(self.get_channels()), self._count_length])
             self.countdata_smoothed = np.zeros([len(self.get_channels()), self._count_length])
             self._sampling_data = np.empty([len(self.get_channels()), self._counting_samples])
+            self.countdata_avg=0
 
             # the sample index for gated counting
             self._already_counted_samples = 0
@@ -563,9 +565,9 @@ class CounterLogic(GenericLogic):
         # calculate the median and save it
         window = -int(self._smooth_window_length / 2) - 1
         for i, ch in enumerate(self.get_channels()):
-            self.countdata_smoothed[i, window:] = np.median(self.countdata[i,
-                                                            -self._smooth_window_length:])
-
+            self.countdata_smoothed[i, window:] = np.median(self.countdata[i,-self._smooth_window_length:])
+            self.countdata_avg = np.mean(self.countdata[i,:])
+            
         # save the data if necessary
         if self._saving:
              # if oversampling is necessary

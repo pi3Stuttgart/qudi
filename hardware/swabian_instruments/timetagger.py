@@ -27,8 +27,11 @@ class TT(Base, TimeTaggerInterface):
 
     def on_activate(self):
         self.setup_TT()
-        self.tagger.setTriggerLevel(1,0.7)
-        self.tagger.setTriggerLevel(2,0.7)
+        #self.tagger.setTriggerLevel(1,0.7)
+        #self.tagger.setTriggerLevel(2,0.7)
+        print("Hello, im using the wrong hardware file.")
+        self.tagger.setTriggerLevel(1,0.05)
+        self.tagger.setTriggerLevel(2,0.05)
 
     def on_deactivate(self):
         pass
@@ -68,25 +71,30 @@ class TT(Base, TimeTaggerInterface):
 
         get data by hist.getData()
         """
+
         for key, value in kwargs.items():
             if key in self._hist.keys():
                 self._hist.update({key:int(value)})
+                self._hist.update({key:value})
+        return Histogram(self.tagger,
+                            self._hist['click_channel'],
+                            self._hist['start_channel'],
+                            #self._hist['next_channel'],
+                            #self._hist['sync_channel'],
+                            self._hist['binwidth'],
+                            self._hist['number_of_bins'])
+                            #self._hist['n_histograms'])
+        
+        # used below Histogram until 18.08.2022. To get away from Slow_counter Vlads timetaggercounter is implemented.
+        # Timetagger runs on old software --> different histogram key values necessary.
         # return Histogram(self.tagger,
         #                     self._hist['click_channel'],
         #                     self._hist['start_channel'],
         #                     self._hist['next_channel'],
         #                     self._hist['sync_channel'],
         #                     self._hist['binwidth'],
-        #                     self._hist['n_bins'],
+        #                     self._hist['number_of_bins'],
         #                     self._hist['n_histograms'])
-        return Histogram(self.tagger,
-                            1,
-                            4,
-                            -4,
-                            7,
-                            10000000,
-                            123,
-                            20)
     
     def correlation(self, **kwargs):  
         """
@@ -104,7 +112,7 @@ class TT(Base, TimeTaggerInterface):
         return Correlation(self.tagger,
                             self._corr['channel_start'],
                             self._corr['channel_stop'],
-                            self._corr['bins_width'],
+                            self._corr['binwidth'],
                             self._corr['number_of_bins'])
 
 
@@ -133,8 +141,9 @@ class TT(Base, TimeTaggerInterface):
         refresh_rate - number of samples per second:
 
         """
-        self.tagger.setTriggerLevel(1,0.5)
-        self.tagger.setTriggerLevel(2,0.5)
+        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        self.tagger.setTriggerLevel(1,0.05)
+        self.tagger.setTriggerLevel(2,0.05)
         for key, value in kwargs.items():
             if key in self._counter.keys():
                 self._counter.update({key:value})
@@ -167,7 +176,8 @@ class TT(Base, TimeTaggerInterface):
                             )
 
     def write_into_file(self, filename, channels):
-        return FileWriter(self.tagger,
-        filename, channels)
+        pass
+        # return FileWriter(self.tagger,
+        # filename, channels)
 
     

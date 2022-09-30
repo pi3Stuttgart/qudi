@@ -38,10 +38,10 @@ class Automatedmeasurement(GenericLogic):
     sigNextStep = QtCore.Signal()
     sigStepDone = QtCore.Signal()
     sigAutomizedRefocus = QtCore.Signal() # connected to confocal gui
-
+    
     abort = False
-    #steps = ['move', 'optimize', 'spectrum', 'spectrum']
-    steps = ['move', 'optimize', 'ple']
+    steps = ['move', 'optimize', 'spectrum', 'spectrum']
+    #steps = ['move', 'optimize', 'ple']
     steps_bg = ['move', 'spectrum']
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
@@ -64,7 +64,7 @@ class Automatedmeasurement(GenericLogic):
         self._laser_scanner_logic = self.laserscannerlogic()
         # self._poimanagerlogic = self.poimanagerlogic()
      
-        self.save_folder = "C:/Data/2022/07" # save_folder0
+        self.save_folder = "C:/Data/2022/AutomizedSpectra" # save_folder0
         
         ## signals
         # connect internal signals
@@ -88,6 +88,7 @@ class Automatedmeasurement(GenericLogic):
         self.tag_for_saving = '' # mark the file name if the autofocus was not successfully found
         
         self._spectrum_logic.update_integration_time(20)
+        self.measurementStarted = False
 
     def on_deactivate(self):
         self.stop()
@@ -109,6 +110,7 @@ class Automatedmeasurement(GenericLogic):
         self._awg.mcas_dict.print_info()
         
     def flip_spectrometermirror(self):
+        # define how you want to flip your mirror. probably just via pulsestreamer or with a separate qudi-module
         self._awg.mcas_dict['FlippyFloppy'].run()
         #delay(20)
         time.sleep(0.02)
@@ -119,6 +121,11 @@ class Automatedmeasurement(GenericLogic):
 
     def start(self):
         """Starts the measurements"""
+        try:
+            self._spectrum_logic._spectrometer_device.on_activate()
+        except:
+            print("No unopended device found.")
+
         # save  current save options
         self.get_save_pdf = self._spectrum_logic._save_logic.save_pdf
         self.get_save_png = self._spectrum_logic._save_logic.save_png
@@ -128,6 +135,7 @@ class Automatedmeasurement(GenericLogic):
         self._spectrum_logic._save_logic.save_png = False
         
         self.abort = False
+        self.measurementStarted = True
         self.init_pois()
         self.sigNextPoi.emit()
         return
@@ -136,6 +144,7 @@ class Automatedmeasurement(GenericLogic):
     def stop(self):
         """Stops the program"""
         self.abort = True
+        self.measurementStarted = False
         return
     
     
@@ -161,13 +170,14 @@ class Automatedmeasurement(GenericLogic):
     @QtCore.Slot()
     def _next_poi(self):
         """Iterates through the pois.
-        
+
         Sets the next poi to be the active one and starts the measurements on this one."""
         # Stop program if finished or user wants to stop
         if self.abort or (len(self._poi_names)==0):
             print('Stopping(poi).')
             print(self.abort,len(self._poi_names))
-
+            self._awg.mcas_dict.stop_awgs()
+        
             # Restore save options to previous state
             self._spectrum_logic._save_logic.save_pdf = self.get_save_pdf
             self._spectrum_logic._save_logic.save_png = self.get_save_png
@@ -189,24 +199,35 @@ class Automatedmeasurement(GenericLogic):
         # start the steps
         self.sigNextStep.emit()
         return
+
+        # AttributeError: 'Automatedmeasurement' object has no attribute '_steps'
+        # Traceback (most recent call last):
+
+        #   File "C:\src\qudi\logic\automation_pi3.py", line 206, in _next_step (now line 213)
+        #     if len(self._steps)==0:
+
     @QtCore.Slot()
     def _next_step(self):
         """Iterates through the steps."""
-        if self.abort:
+        if not self.measurementStarted:
+            return
+        elif self.abort:
             print('Stopping (step).')
             # Restore save options to previous state
             self._spectrum_logic._save_logic.save_pdf = self.get_save_pdf
             self._spectrum_logic._save_logic.save_png = self.get_save_png
+            self._awg.mcas_dict.stop_awgs()
             return
-        if len(self._steps)==0:
+        elif len(self._steps)==0:
             # all steps for the current poi are done, go to next poi
             self.sigNextPoi.emit()
             return
-        # choose next step in list as current one and remove it
-        self._current_step = self._steps.pop(0)
-        print('Current step: %s'%self._current_step)
-        self.func_dict[self._current_step]()
-        return
+        else:
+            # choose next step in list as current one and remove it
+            self._current_step = self._steps.pop(0)
+            print('Current step: %s'%self._current_step)
+            self.func_dict[self._current_step]()
+            return
     
     def move_to_poi(self,poi_name=None,rs=1000):
         """Moves to the current poi"""
@@ -271,7 +292,12 @@ class Automatedmeasurement(GenericLogic):
         self.flip_spectrometermirror()
         time.sleep(1)
         self.check_countrate(tag = 'mirror_down')
+        print("STARTED TAKING SPECTRUM")
+        now = time.time()
         self._spectrum_logic.get_single_spectrum()
+        later = time.time()-now
+        print("ENDED TAKING SPECTRUM")
+        print(later)
         self.flip_spectrometermirror()
         return
 
@@ -348,4 +374,41 @@ class Automatedmeasurement(GenericLogic):
         self._laser_scanner_logic.save_data(tag=self._laser_scanner_logic.Filename)
         self.sigStepDone.emit()
         
-       
+
+
+    def StartAutoMeas_Button(self,on):
+        print('done something with StartAutoMeas_Button')
+        self._spectrum_logic._save_logic.save_array_as_text(data = self._scanner_logic.pois, filename = 'POIs.txt', filepath = self.save_folder)
+
+        self.start()
+
+    def StopAutoMeas_Button(self,on):
+        print('done something with StopAutoMeas_Button')
+        self.stop()
+
+    def SavePOIs_Button(self,on):
+        print('done something with SavePOIs_Button')
+        print("Nothing happend yet") 
+        
+    def DeletePOIs_Button(self,on):
+        print('done something with DeletePOIs_Button')
+        print("Nothing happend yet") 
+
+    def SetSequence_Button(self,on):
+        print('done something with SetSequence_Button')
+        
+    def SetBackgroundSeq_Button(self,on):
+        print('done something with SetBackgroundSeq_Button')
+        
+    def Sequence_lineEdit(self,value):
+        print('done something with Sequence_lineEdit')
+        print(value)
+        
+    def Background_lineEdit(self,value):
+        print('done something with Background_lineEdit')
+        print(value)
+
+    def SaveFolder_lineEdit(self,value):
+        print('done something with SaveFolder_lineEdit')
+        print(value)
+        
