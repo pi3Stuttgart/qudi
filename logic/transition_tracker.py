@@ -11,10 +11,10 @@ from importlib import reload
 from numbers import Number
 import scipy.interpolate
 import scipy.optimize
-from qutip_enhanced.nv_hamilton import NVHam
-from qutip_enhanced import sort_eigenvalues_standard_basis
-from qutip_enhanced.analyze import flipped_spin_numbers, single_quantum_transitions_non_hf_spins, get_transition_frequency
-import qutip_enhanced.lmfit_models
+from logic.qudip_enhanced.nv_hamilton import NVHam
+from logic.qudip_enhanced import sort_eigenvalues_standard_basis
+from logic.qudip_enhanced.analyze import flipped_spin_numbers, single_quantum_transitions_non_hf_spins, get_transition_frequency
+import logic.qudip_enhanced.lmfit_models
 from itertools import product
 import numpy as np
 import pandas as pd
@@ -51,7 +51,9 @@ from core.util.mutex import Mutex
 ####################################################################################################################
 # single values
 ####################################################################################################################
-app_dir = r'C:/src/qudi'
+#app_dir = r'C:/src/qudi'
+app_dir= r'/Users/vvv/Documents/GitHub/qudi'
+
 log_dir = '{}/log/'.format(app_dir)
 log_archive_dir = '{}/log/archive/'.format(app_dir)
 log_single_val_dir = '{}/log/single_values/'.format(app_dir)
@@ -75,8 +77,8 @@ def get_path_for_save_value_to_file(filename):
 
 def date_str_in(date_str, start_date_str=None, end_date_str=None):
     date = datetime.datetime.strptime(date_str, __TIME_FORMAT_STR__)
-    start_date = datetime.datetime.min if start_date_str is None else datetime.datetime.strptime(start_date_str, self.__TIME_FORMAT_STR__)
-    end_date = datetime.datetime.now() if end_date_str is None else datetime.datetime.strptime(end_date_str, self.__TIME_FORMAT_STR__)
+    start_date = datetime.datetime.min if start_date_str is None else datetime.datetime.strptime(start_date_str, __TIME_FORMAT_STR__) #
+    end_date = datetime.datetime.now() if end_date_str is None else datetime.datetime.strptime(end_date_str, __TIME_FORMAT_STR__) #
     return start_date <= date <= end_date
 
 def save_value_to_file(val, filename):
@@ -109,7 +111,7 @@ def get_last_value_from_file(filename, flg_out_date=False):
     folder = os.path.dirname(get_path_for_save_value_to_file(filename))
     file_list = sorted(os.listdir((folder)))
     last_file_name = [s for s in file_list if filename in s][-1]
-    fil = open(folder + '\\' + last_file_name, 'r')
+    fil = open(os.path.join(folder, last_file_name), 'r')
     line_str_list = fil.readlines()[-1].split('\t')
     fil.close()
 
@@ -127,7 +129,7 @@ def get_last_values_from_file(filename, flg_out_date=False, full_path=None):
         folder = os.path.dirname(get_path_for_save_value_to_file(filename))
         file_list = sorted(os.listdir((folder)))
         last_file_name = [s for s in file_list if filename in s][-1]
-        full_path = folder + '\\' + last_file_name
+        full_path = os.path.join(folder,last_file_name)
     else:
         full_path = get_path_for_save_value_to_file(filename) if full_path is None else full_path
     fil = open(full_path, 'r')
@@ -248,7 +250,7 @@ class RabiParametersStatic:
     def generate_linear_file(self, maxfreq_l):
         if type(maxfreq_l) is float:
             maxfreq_l = [maxfreq_l]
-        import hardware.awg.AWG_M8190A_Elements as E
+        import hardware.Keysight_AWG_M8190.elements as E
         n = 11
         arr = np.array(
             list(
@@ -593,7 +595,8 @@ class TransitionTracker(GenericLogic):
         self.set_h_diag()
         self.set_ntd()
         self.load_transitions()
-        self.load_rabi_parameters()
+        if not self._awg.mcas_dict.debug_mode:
+            self.load_rabi_parameters()
         self.update_stuff()
 
         pass
@@ -636,12 +639,11 @@ class TransitionTracker(GenericLogic):
         self.ntd = ntd
 
     def reload_nuclear_parameters(self):
-        self.g_factors['13c'] = get_last_values_from_file(filename='gamma_13c.dat', full_path=r"{}\gamma_13c.dat".format(self.log_folder))[0]
-        self.g_factors['14n'] = get_last_values_from_file(filename='gamma_14n.dat', full_path=r"{}\gamma_14n.dat".format(self.log_folder))[0]
-        self.qp = {'14n': get_last_values_from_file(filename='qp_14n.dat', full_path=r"{}\qp_14n.dat".format(self.log_folder))[0]}
-        self.hf_para_n = {'14n': get_last_values_from_file(filename='hf_14n.dat', full_path=r"{}\hf_14n.dat".format(self.log_folder))[0]}
-        self.hf_perp_n = {'14n': get_last_values_from_file(filename='hf_perp_14n.dat', full_path=r"{}\hf_perp_14n.dat".format(self.log_folder))[0]}
-        self.hf_para_n.update(dict([(key, get_last_values_from_file(filename='hf_1{}.dat'.format(key), full_path=r"{}\hf_{}.dat".format(self.log_folder, key))[0]) for key in self.c13_list]))
+        self.g_factors['14n'] = get_last_values_from_file(filename='gamma_14n.dat', full_path=os.path.join(self.log_folder,'gamma_14n.dat'))[0]#r"{}\gamma_14n.dat".format(self.log_folder))[0]
+        self.qp = {'14n': get_last_values_from_file(filename='qp_14n.dat', full_path=os.path.join(self.log_folder,'qp_14n.dat'))[0]}#r"{}\qp_14n.dat".format(self.log_folder))[0]}
+        self.hf_para_n = {'14n': get_last_values_from_file(filename='hf_14n.dat', full_path=os.path.join(self.log_folder,'hf_14n.dat'))[0]}#r"{}\hf_14n.dat".format(self.log_folder))[0]}
+        self.hf_perp_n = {'14n': get_last_values_from_file(filename='hf_perp_14n.dat', full_path=os.path.join(self.log_folder,'hf_perp_14n.dat'))[0]}#r"{}\hf_perp_14n.dat".format(self.log_folder))[0]}
+        self.hf_para_n.update(dict([(key, get_last_values_from_file(filename='hf_1{}.dat'.format(key), full_path=os.path.join(self.log_folder,'hf_{}.dat'.format(key))[0])) for key in self.c13_list]))
 
     def set_h_diag(self):
         self.nvham = NVHam(magnet_field={'z': self.current_magnetic_field},

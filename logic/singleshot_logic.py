@@ -203,7 +203,6 @@ class SingleShotLogic(GenericLogic):
 
         return np.array(sum_single_pulses)
 
-
     def get_normalized_signal(self, smoothing=10.0):
         """
         given the raw data this function will calculate

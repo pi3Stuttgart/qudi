@@ -5,10 +5,9 @@ __metaclass__ = type
 
 import numpy as np
 from scipy.constants import mu_0, hbar
-
-np.set_printoptions(suppress=True, linewidth=500, threshold=np.nan)
-
-from qutip_enhanced.qutip_enhanced import *
+import sys
+np.set_printoptions(suppress=True, linewidth=500, threshold=sys.maxsize)#np.nan)
+from logic.qudip_enhanced.qutip_enhanced import *
 
 gamma = {'e': -2.0028 * 1.6021766208e-19 / (4 * np.pi * 9.10938356e-31) * 1e-6,
          '13c': 10.705,

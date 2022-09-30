@@ -28,8 +28,8 @@ from logic.generic_logic import GenericLogic
 from core.connector import Connector
 #TODO replace import with a connector to that
 from logic.qudip_enhanced.data_generation import DataGeneration
-#from qudip_enhanced.util import ret_property_list_element
-#from qudip_enhanced import save_qutip_enhanced
+from logic.qudip_enhanced.util import ret_property_list_element
+from logic.qudip_enhanced import save_qutip_enhanced
 import logic.qudip_enhanced.data_handling as data_handling
 
 #import qutip_enhanced.pddata
@@ -37,26 +37,20 @@ from collections import OrderedDict
 
 class NuclearOPs(DataGeneration):
 
-    # instead of connectors it will be given from queue module.
-    # confocal = Connector('ConfocalLogic')
-    # transition_tracker = Connector('TransitionTracker')
-    # mcas_dict = Connector('McasDictHolderInterface')
-    #gated_counter = Connector()
-
     # TODO use the qudi state machine instead maybe?
-    # state = ret_property_list_element('state', ['idle', 'run', 'sequence_testing', 'sequence_debug_interrupted', 'sequence_ok'])
+    state = ret_property_list_element('state', ['idle', 'run', 'sequence_testing', 'sequence_debug_interrupted', 'sequence_ok'])
     #
     # # Tracking stuff:
-    # refocus_interval = misc.ret_property_typecheck('refocus_interval', int)
-    # odmr_interval = misc.ret_property_typecheck('odmr_interval', Number)
-    # additional_recalibration_interval = misc.ret_property_typecheck('additional_recalibration_interval', int)
+    refocus_interval = misc.ret_property_typecheck('refocus_interval', int)
+    odmr_interval = misc.ret_property_typecheck('odmr_interval', Number)
+    additional_recalibration_interval = misc.ret_property_typecheck('additional_recalibration_interval', int)
 
     __TITLE_DATE_FORMAT__ = '%Y%m%dh%Hm%Ms%S'
 
 
-    def __init__(self, config, **kwargs):
+    def __init__(self):#TODO - revert back here from the pi3d.
 
-        super().__init__(config=config, **kwargs)
+        super().__init__()
         ## TODO give all the handles for the interfaces from queue here...
         # TODO for future ODMR refocus parameters.
         # self.odmr_pd = dict(
@@ -72,36 +66,35 @@ class NuclearOPs(DataGeneration):
         #     repeat=False,
         # )
 
-        # self.do_ple_refocusEx = False
-        # self.do_ple_refocusA1 = False
-        # self.do_ple_refocus = False
-        # self.do_confocal_red_refocus = False
-        # self.do_confocal_zpl_refocus = False
+        self.do_ple_refocusEx = False
+        self.do_ple_refocusA1 = False
+        self.do_ple_refocus = False
+        self.do_confocal_red_refocus = False
+        self.do_confocal_zpl_refocus = False
         #
-        # self.do_odmr_refocus = False
+        self.do_odmr_refocus = False
         #
-        # self.do_interferometerPhase_locking = False
-        # self.wavemeter_lock = False
+        self.do_interferometerPhase_locking = False
+        self.wavemeter_lock = False
         #
-        # self.yellow_repump_compensation = False
+        self.yellow_repump_compensation = False
         #
-        # self.last_red_confocal_refocus = - 10000
-        # self.confocal_red_refocus_interval = 0
-        # self.last_ple_refocus = - 10000
-        # self.ple_refocus_interval = 0
-        # self.last_interferometer_refocus = - 10000
-        # self.interferometer_refocus_interval = 0
+        self.last_red_confocal_refocus = - 10000
+        self.confocal_red_refocus_interval = 0
+        self.last_ple_refocus = - 10000
+        self.ple_refocus_interval = 0
+        self.last_interferometer_refocus = - 10000
+        self.interferometer_refocus_interval = 0
         #
-        # self.save_smartly = False
-        # self.delay_ps_list = []
-        # self.window_ps_list = []
+        self.save_smartly = False
+        self.delay_ps_list = []
+        self.window_ps_list = []
         #
-        # self.two_zpl_apd = False
-        # self.raw_clicks_processing = False
-        # self.raw_clicks_processing_channels = [0,1,2,3,4,5,6,7]
+        self.two_zpl_apd = False
+        self.raw_clicks_processing = False
+        self.raw_clicks_processing_channels = [0,1,2,3,4,5,6,7]
 
-    def on_activate(self):
-        pass
+
         #self._confocal = self.confocal()
         #self._tt = self.transition_tracker()
         #self._mcas_dict = self.mcas_dict()
@@ -109,13 +102,11 @@ class NuclearOPs(DataGeneration):
 
         #activate connectors..
 
-    def on_deactivate(self):
-        pass
-
     @property
     def ana_trace(self):
-        return np.array([0]) #FIXME
-        #return pi3d.gated_counter.trace
+        #return np.array([0]) #FIXME
+
+        return self.queue._gated_counter.trace#pi3d.gated_counter.trace
 
     @property
     def analyze_type(self):
@@ -269,19 +260,25 @@ class NuclearOPs(DataGeneration):
         return self.ana_trace.number_of_results
 
     def run(self, *args, **kwargs):
+        self._md = self.queue._awg.mcas_dict
         if getattr(self, 'debug_mode', False):
             self.run_debug_sequence(*args, **kwargs)
         else:
             self.run_measurement(*args, **kwargs)
 
     def run_measurement(self, abort, **kwargs):
-        pi3d = None
+        print('NuclearOps run_measurement')
+
         self.init_run(**kwargs)
-        self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[self._confocal.x], confocal_y=[self._confocal.y], confocal_z=[self._confocal.z]))
+
+        #When the confocal connected #TODO
+        self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[0],confocal_y = [0], confocal_z = [0]))#[self._confocal.x], confocal_y=[self._confocal.y], confocal_z=[self._confocal.z]))
         try:
-            if hasattr(pi3d,'microwave'):
-                pi3d.microwave.On()
-            # pi3d.gated_counter.set_counter(start_trigger_delay_ps_list = self.delay_ps_list ,window_ps_list = self.window_ps_list)
+            #if hasattr(pi3d,'microwave'):
+            #   pi3d.microwave.On()
+
+            # TODO uncomment when on the setup
+            #self.queue._gated_counter.set_counter(start_trigger_delay_ps_list = self.delay_ps_list ,window_ps_list = self.window_ps_list)
 
 
             for idx, _ in enumerate(self.iterator()):
@@ -289,6 +286,7 @@ class NuclearOPs(DataGeneration):
                 while True:
                     if abort.is_set(): break
 
+                    # Uncomment when on the setup #TODO
                     # if self.wavemeter_lock and pi3d.wavemeter.wm_id != 0:
                     #     freq = pi3d.wavemeter.get_current_frequency()
                     #     pi3d.wavemeter.set_lock_frequency(freq)
@@ -296,23 +294,28 @@ class NuclearOPs(DataGeneration):
                     #     time.sleep(0.1)
 
                     if self.do_confocal_red_refocus:
-                        self.do_refocus_red()
+                        pass
+                        #self.do_refocus_red()
 
                     if self.do_confocal_zpl_refocus:
-                        self.do_refocus_zpl()
+                        pass
+                        #self.do_refocus_zpl()
 
                     if self.do_ple_refocus or self.do_ple_refocusA1 or self.do_ple_refocusEx:
                         # if 'delta_ple_Ex' in self.current_iterator_df.keys():
                         #     pi3d.ple_Ex.delta_ple = self.current_iterator_df['delta_ple_Ex'].unique()[0]
                         #     logging.getLogger().info(
                         #         'I set delta_ple_Ex: {}'.format(self.current_iterator_df['delta_ple_Ex'].unique()[0]))
-                        self.do_refocus_ple(abort)
+                        pass #TODO here uncommment
+                        #self.do_refocus_ple(abort)
+
 
                     # if self.do_odmr_refocus:
                     #     self.do_refocusodmr(abort, check_odmr_frequency_drift_ok=False, initial_odmr=False)
 
                     #Here put EOM!
-                    self.check_eom()
+                    #TODO uncomment
+                    #self.check_eom() #if it still locked.
 
 
 
@@ -362,7 +365,8 @@ class NuclearOPs(DataGeneration):
 
                         if 'interferometer_phase' in self.current_iterator_df.keys():
                             interferometer_phase = self.current_iterator_df['interferometer_phase'].unique()[0]
-                        self.do_interf_phase_lock(interferometer_phase)
+                        pass
+                        #self.do_interf_phase_lock(interferometer_phase)
 
                     if self.yellow_repump_compensation:
 
@@ -383,33 +387,42 @@ class NuclearOPs(DataGeneration):
 
                     if self.raw_clicks_processing:
                         self.data.set_observations(pd.concat([self.df_refocus_pos.iloc[-1:, :]]*self.number_of_simultaneous_measurements).reset_index(drop=True))
-                        self.data.set_observations([OrderedDict(ple_A1=self._tt.ple_A1)]*self.number_of_simultaneous_measurements)
-                        self.data.set_observations([OrderedDict(ple_Ex=self._tt.ple_Ex)]*self.number_of_simultaneous_measurements)
+                        self.data.set_observations([OrderedDict(ple_A1=self.queue._tt.ple_A1)]*self.number_of_simultaneous_measurements)
+                        self.data.set_observations([OrderedDict(ple_Ex=self.queue._tt.ple_Ex)]*self.number_of_simultaneous_measurements)
 
                     elif not self.save_smartly:
-                        self.data.set_observations([OrderedDict(mw_mixing_frequency=self._tt.mw_mixing_frequency)]*self.number_of_simultaneous_measurements)
-                        self.data.set_observations([OrderedDict(ple_Ex=self._tt.ple_Ex)]*self.number_of_simultaneous_measurements)
-                        self.data.set_observations([OrderedDict(ple_A1=self._tt.ple_A1)]*self.number_of_simultaneous_measurements)
-                        self.data.set_observations([OrderedDict(local_oscillator_freq=self._tt.current_local_oscillator_freq)]*self.number_of_simultaneous_measurements)
+                        self.data.set_observations([OrderedDict(mw_mixing_frequency=self.queue._transition_tracker.mw_mixing_frequency)]*self.number_of_simultaneous_measurements)
+                        self.data.set_observations([OrderedDict(ple_Ex=self.queue._transition_tracker.ple_Ex)]*self.number_of_simultaneous_measurements)
+                        self.data.set_observations([OrderedDict(ple_A1=self.queue._transition_tracker.ple_A1)]*self.number_of_simultaneous_measurements)
+                        self.data.set_observations([OrderedDict(local_oscillator_freq=self.queue._transition_tracker.current_local_oscillator_freq)]*self.number_of_simultaneous_measurements)
                         self.data.set_observations(pd.concat([self.df_refocus_pos.iloc[-1:, :]]*self.number_of_simultaneous_measurements).reset_index(drop=True))
 
                     self.data.set_observations([OrderedDict(start_time=datetime.datetime.now())]*self.number_of_simultaneous_measurements)
+
+                    # TODO
+                    #Measure powers and record them!!!!
+                    ##
                     #self.data.set_observations([OrderedDict(EOM_Ex_integrator_voltage=pi3d.power_calibration.pd_list[
                       #  'pd_Ex_integrator_voltage'].get_data())] * self.number_of_simultaneous_measurements)
-                    self._md['red_Ex'].run()
-                    #self.data.set_observations([OrderedDict(aom_Ex_power_measured=pi3d.power_calibration.pd_list['pd_A1_power'].get_data())]*self.number_of_simultaneous_measurements)
-                    time.sleep(0.1)
-                    self._md.stop_awgs()
 
-                    self._md['Ex_RO'].run()
-                    #self.data.set_observations([OrderedDict(Ex_RO_power_measured=pi3d.power_calibration.pd_list['pd_A1_power'].get_data())]*self.number_of_simultaneous_measurements)
-                    time.sleep(0.1)
-                    self._md.stop_awgs()
 
-                    self._md['red_A1'].run()
-                    #self.data.set_observations([OrderedDict(aom_A1_power_measured=pi3d.power_calibration.pd_list['pd_A1_power'].get_data())]*self.number_of_simultaneous_measurements)
-                    time.sleep(0.1)
-                    self._md.stop_awgs()
+                    if not self._md.debug_mode:
+                        self._md['red_Ex'].run()
+                        #self.data.set_observations([OrderedDict(aom_Ex_power_measured=pi3d.power_calibration.pd_list['pd_A1_power'].get_data())]*self.number_of_simultaneous_measurements)
+                        time.sleep(0.1)
+                        self._md.stop_awgs()
+
+
+                        self._md['Ex_RO'].run()
+                        #self.data.set_observations([OrderedDict(Ex_RO_power_measured=pi3d.power_calibration.pd_list['pd_A1_power'].get_data())]*self.number_of_simultaneous_measurements)
+                        time.sleep(0.1)
+                        self._md.stop_awgs()
+
+                        self._md['red_A1'].run()
+                        #self.data.set_observations([OrderedDict(aom_A1_power_measured=pi3d.power_calibration.pd_list['pd_A1_power'].get_data())]*self.number_of_simultaneous_measurements)
+                        time.sleep(0.1)
+                        self._md.stop_awgs()
+
                     #TODO add laser power meters to the df
                     #if self.yellow_repump_compensation:
                         #self.data.set_observations([OrderedDict(yellow_freq_measured=pi3d.wavemeter.dll.GetFrequencyNum(3, 0))] * self.number_of_simultaneous_measurements)
@@ -464,7 +477,7 @@ class NuclearOPs(DataGeneration):
 
                                 if self.two_zpl_apd:
                                     name = 'zpl_2_counter_data_{i}_{j}'.format(i=i, j=j)
-                                    dd = getattr(pi3d.gated_counter,name)
+                                    dd = getattr(self.queue._gated_counter,name)
                                     if self.save_smartly:
                                         self.data.set_observations([
                                                                    OrderedDict({name: dd})
@@ -519,7 +532,7 @@ class NuclearOPs(DataGeneration):
         finally:
             self.data._df = data_handling.df_take_duplicate_rows(self.data.df, self.iterator_df_done) #drops unfinished measurements,
             self.pld.new_data_arrived()
-            pi3d.multi_channel_awg_sequence.stop_awgs(pi3d.awgs)
+            #pi3d.multi_channel_awg_sequence.stop_awgs(pi3d.awgs)
             self.state = 'idle'
             self.update_current_str()
 
@@ -553,7 +566,7 @@ class NuclearOPs(DataGeneration):
         self.init_run(**kwargs)
         self.state = 'sequence_testing'
         try:
-            self._mcas_dict.debug_mode = True
+            self._md.debug_mode = True
             for idx, _ in enumerate(self.iterator()):
                 if abort.is_set(): break
                 self.data.set_observations([OrderedDict(start_time=datetime.datetime.now())] * self.number_of_simultaneous_measurements)
@@ -567,8 +580,9 @@ class NuclearOPs(DataGeneration):
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb)
         finally:
-            self._mcas_dict.debug_mode = False
-            self.multi_channel_awg_sequence.stop_awgs(self._awgs) ##FIXME
+            #TODO do this
+            #self._md.debug_mode = False
+            self._md.stop_awgs() ##FIXME
             self.update_current_str()
             if os.path.exists(self.save_dir) and not os.listdir(self.save_dir):
                 os.rmdir(self.save_dir)
@@ -806,8 +820,10 @@ class NuclearOPs(DataGeneration):
     def get_trace(self, abort, delay_ps_list = None,window_ps_list = None):
         # print('get_trace NuclearOps delay', delay_ps_list)
         # print('get_trace NuclearOps window_ps', window_ps_list)
-        self.mcas.initialize()
-        self._gated_counter.count(abort, #FIXme get connector.
+        if not self._md.debug_mode:
+            self.mcas.initialize()
+
+        self.queue._gated_counter.count(abort, #FIXme get connector.
                                  ch_dict=self.mcas.ch_dict,
                                  start_trigger_delay_ps_list = delay_ps_list,
                                  window_ps_list = window_ps_list,
@@ -817,12 +833,12 @@ class NuclearOPs(DataGeneration):
 
     def setup_rf(self, current_iterator_df):
         self.mcas = ''
-        self.mcas = self.ret_mcas(current_iterator_df)
+        self.mcas = self.ret_mcas(self,current_iterator_df)
         while self.mcas=='':
             time.sleep(0.1)
 
         time.sleep(0.1)
-        self._mcas_dict[self.mcas.name] = self.mcas
+        self.queue._awg.mcas_dict[self.mcas.name] = self.mcas
 
     def analyze(self, data=None, ana_trace=None, start_idx=None):
         if ana_trace is None:

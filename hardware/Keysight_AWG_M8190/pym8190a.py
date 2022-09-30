@@ -24,7 +24,7 @@ from interface.mcas_interface import McasDictHolderInterface
 
 class mcas_dict_holder(Base, McasDictHolderInterface):
     def on_activate(self):
-        self.mcas_dict = MultiChSeqDict()
+        self.mcas_dict = MultiChSeqDict(debug_mode=True)
         self.mcas = MultiChSeq
         self.settings=settings
         return 
@@ -38,6 +38,7 @@ class MultiChSeqDict(collections.OrderedDict):
     def __init__(self, debug_mode=False, restore_awg_settings=settings.restore_awg_settings):
         super(MultiChSeqDict, self).__init__()
         self.debug_mode = debug_mode  # completely stops interaction with the awg
+
         self.connect_to_awgs(restore_awg_settings=restore_awg_settings)
         self.set_wait()
 
@@ -110,7 +111,7 @@ class MultiChSeqDict(collections.OrderedDict):
             raise Exception('Error: Sequence has already been written and can not be added.')
 
         value.mcas_dict = self
-        if value.status == 0:
+        if value.status == 0 and not self.debug_mode:
             value.finalize()
         if not self.debug_mode:
             value.write_to_awg_memory(notify=True) # longest part

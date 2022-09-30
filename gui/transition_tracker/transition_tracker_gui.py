@@ -40,7 +40,6 @@ class window(QtWidgets.QMainWindow):
 class TransitionTrackerGui(GUIBase):
     transition_tracker_logic = Connector(interface="TransitionTracker") #class name
 
-
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
         #self.show()
@@ -211,5 +210,6 @@ class TransitionTrackerGui(GUIBase):
         self.current_local_oscillator_freq_label_7.setText(_translate("window", "zero_field_splitting"))
         self.ple_Ex_label.setText(_translate("window", "PLE Ex"))
         self.ple_A1_label.setText(_translate("window", "PLE A1"))
+
 
 from qutip_enhanced.qtgui.custom_widgets import QTableWidgetEnhancedDrop

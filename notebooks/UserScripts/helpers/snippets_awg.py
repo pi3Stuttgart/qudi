@@ -1,8 +1,8 @@
 from __future__ import print_function, absolute_import, division
 from imp import reload
-
-import multi_channel_awg_seq as MCAS; reload(MCAS)
-import UserScripts.helpers.sequence_creation_helpers as sch; reload(sch)
+import importlib
+import hardware.Keysight_AWG_M8190.pym8190a as MCAS; importlib.reload(MCAS)
+import notebooks.UserScripts.helpers.sequence_creation_helpers as sch; importlib.reload(sch)
 
 from traits.api import *
 import numpy as np
@@ -10,14 +10,14 @@ from decimal import Decimal
 import copy
 import traceback
 import sys
-import AWG_M8190A_Elements as E
+import hardware.Keysight_AWG_M8190.elements as E
 
-import misc
-from pi3diamond import pi3d
-from AWG_M8190A_Elements import WaveFile, WaveStep, SequenceStep, Sequence
-import pym8190a
+import logic.misc as misc
+#from pi3diamond import pi3d
+from hardware.Keysight_AWG_M8190.elements import WaveFile, WaveStep, SequenceStep, Sequence
+import hardware.Keysight_AWG_M8190.pym8190a as pym8190a
 import numbers
-import TransitionTracker
+#import TransitionTracker
 import collections
 
 __CURRENT_POL_RED__ = 76
@@ -59,7 +59,7 @@ __PERIODS__ = {'14n+1': 1.6, '14n-1': 1.6, '14n': 1.6, '14n0': 1.6, '13c414': 6.
                '2opt_withMW_pi':0.0,'entanglement':0.0,'entanglement_for_tests':0.0,'HOM':0.0}
 __WAVE_FILE_SCALING_FACTOR_DICT__ = {'14n+1': 2.5, '14n-1': 2.5, '14n': 2.5, '14n0': 2.5, '13c414': 1.0,'charge_state_A1_aom_Ex':1.0, 'charge_state': 1.0,'ple_Ex': 1.0,'ple_A1': 0.0}
 __STANDARD_WAVEFILE__ = 'D:\data\Robust_Pulses\single_pulse_ON03_OFF05_Rabi10_02.dat'
-__STANDARD_WAVEFILES__ = {'14n+1': "D:\data\NuclearOPs\Robust\test_pi_three_nitrogen\20171204-h18m52s32CnROTe-gateFN3.08e-01_selective_to_all\MW.dat"}
+__STANDARD_WAVEFILES__ = {'14n+1': r"D:\data\NuclearOPs\Robust\test_pi_three_nitrogen\20171204-h18m52s32CnROTe-gateFN3.08e-01_selective_to_all\MW.dat"}
 
 __WAIT_SWITCH__ = 0.0
 __IQ_MIXER__ = False
