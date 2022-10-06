@@ -547,7 +547,7 @@ class Transition:
 
 class TransitionTracker(GenericLogic):
     c13_list = []#['13c414', '13c90', '13c13', '13c6', '13c-5', '13c-6']
-
+    si29_list = []
     transitions = misc.ret_property_array_like_typ('transitions', Transition)
     log_folder = r"C:\src\qudi\log\transition_tracker_log"
 
@@ -559,18 +559,13 @@ class TransitionTracker(GenericLogic):
     update_tt_electron_gui = pyqtSignal()
 
     def __init__(self,config, **kwargs):
-
         super().__init__(config=config, **kwargs)
-
-
-
 
     def on_activate(self):
         # super(TransitionTracker, self).__init__()
         # self.setupUi(self)
         self._awg = self.mcas_holder()  # mcas_dict()
         self.connect_signals()  # todo
-
         # title = '' if title is None else title
         # self.setWindowTitle(title)
         self.reload_nuclear_parameters()
@@ -580,7 +575,6 @@ class TransitionTracker(GenericLogic):
         self.ple_Ex_fit_params = get_last_value_from_file('ple_Ex_fit_params')
         self.interferometer_fit_params = get_last_value_from_file('interferometer_fit_params')
         self.interferometer_history = get_last_value_from_file('interferometer_history')
-
         self.ple_A1 = get_last_value_from_file('ple_A1')
         self.ple_A1_fit_params = get_last_value_from_file('ple_A1_fit_params')
 
@@ -591,7 +585,7 @@ class TransitionTracker(GenericLogic):
         self.zero_field_splitting = get_last_value_from_file('zfs')
         self.transition_name_list = [['+1', '0', '-1'], ['+1', '0', '-1']] + [['+0.5', '-0.5']] * len(self.c13_list)
         self.states_list = [range(len(i)) for i in self.transition_name_list]
-        self.spin_name_list = ['e', '14n'] + self.c13_list
+        self.spin_name_list = ['e'] + self.c13_list + self.si29_list
         self.set_h_diag()
         self.set_ntd()
         self.load_transitions()
@@ -653,6 +647,10 @@ class TransitionTracker(GenericLogic):
                            hf_perp_n=self.hf_perp_n)
         for c13 in self.c13_list:
             self.nvham.add_spin(np.matrix(np.diag([0.0, 0.0, self.hf_para_n[c13]])), self.nvham.h_13c(), [0, 1])
+
+        for si29 in self.si29_list:
+            self.nvham.add_spin(np.matrix(np.diag([0.0, 0.0, self.hf_para_n[si29]])), self.nvham.h_13c(), [0, 1])
+
         eval_evec = self.nvham.h_nv.eigenstates()
         # *np.linalg.eig(self.nvham.h_nv.data.todense())[::-1]
         self.h_diag = sort_eigenvalues_standard_basis(self.nvham.dims, eval_evec[1], eval_evec[0])
