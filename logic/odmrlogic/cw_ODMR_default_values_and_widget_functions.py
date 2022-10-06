@@ -30,14 +30,12 @@ class cw_ODMR_default_values_and_widget_functions:
         cw_Interval:float=0 #s
 
         cw_PerformFit:bool=F
-        cw_MaxIterations:float=20
-        cw_NumberOfPeaks:float=1
-
+        cw_SelectLorentzianFit:bool=F
+        cw_SelectGaussianFit:bool=T
+        
         cw_SecondsPerPoint:float=0.02
 
         cw_Runtime:float=0
-        cw_Frequencies_Fit:float=70
-        cw_Linewidths_Fit:float=1
 
         cw_segment_length:float = 100 #length of on-time of a single frequency during cw scan when multiplied by loop_counts in "ODMRLogic.setup_seq()".
 
@@ -152,7 +150,7 @@ class cw_ODMR_default_values_and_widget_functions:
         def cw_NumberOfPeaks_LineEdit_textEdited(self,text):
                 print('done something with cw_NumberOfPeaks_LineEdit. Text=',text)
                 try:
-                        self.cw_NumberOfPeaks=float(text)
+                        self.NumberOfPeaks=float(text)
                 except:
                         pass
 
@@ -163,7 +161,7 @@ class cw_ODMR_default_values_and_widget_functions:
                 self.setup_seq()
                 self.starting_time+=time.time()-self.stoping_time
                 self.time_differences = self.holder.setup_time_tagger(n_histograms=self.number_of_points_per_line,
-                binwidth=self.cw_SecondsPerPoint*1e12,
+                binwidth=int(self.cw_SecondsPerPoint*1e12),
                 n_bins=1
                 )
                 self.time_differences.start()
@@ -203,7 +201,6 @@ class cw_ODMR_default_values_and_widget_functions:
         def cw_Stop_Button_Clicked(self,on):
                 print('done something with cw_Stop_Button')
                 self.holder.stop_awg()
-                #self.holder.awg.mcas.status = 0
                 self.stoping_time=time.time()
                 self.measurement_running=False
                 self.time_differences.stop()
@@ -244,6 +241,16 @@ class cw_ODMR_default_values_and_widget_functions:
                         self.cw_Stepsize=float(text)
                 except:
                         pass
+
+        def cw_SelectGaussianFit_RadioButton_clicked(self):
+                print('done something with radio button gauss')
+                self.cw_SelectGaussianFit=True
+                self.cw_SelectLorentzianFit=False
+                
+        def cw_SelectLorentzianFit_RadioButton_clicked(self):
+                print('done something with radio button lorentzian')
+                self.cw_SelectGaussianFit=False
+                self.cw_SelectLorentzianFit=True
 
 
 

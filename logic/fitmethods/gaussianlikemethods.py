@@ -211,7 +211,7 @@ def make_gaussiandouble_model(self):
 
 
 def make_gaussiantriple_model(self):
-    """ Create a model with double gaussian with offset.
+    """ Create a model with triple gaussian with offset.
 
     @return tuple: (object model, object params), for more description see in
                    the method make_gaussianwithoutoffset_model.
@@ -317,7 +317,6 @@ def make_gaussian_fit(self, x_axis, data, estimator, units=None, add_params=None
                           initial fitting values, best fitting values, data
                           with best fit with given axis,...
     """
-
     mod_final, params = self.make_gaussian_model()
 
     error, params = estimator(x_axis, data, params)
@@ -488,7 +487,6 @@ def make_gaussianlinearoffset_fit(self, x_axis, data, estimator, units=None, add
                           initial fitting values, best fitting values, data
                           with best fit with given axis,...
     """
-
     mod_final, params = self.make_gaussianlinearoffset_model()
 
     error, params = estimator(x_axis, data, params)
@@ -750,6 +748,138 @@ def estimate_gaussiandouble_dip(self, x_axis, data, params,
     params['offset'].value = params_lor['offset'].value
 
     return error, params
+
+
+#################################
+# three Gaussian with flat offset #
+#################################
+
+def make_gaussiantriple_fit(self, x_axis, data, estimator,
+                            units=None,
+                            add_params=None,
+                            threshold_fraction=0.4,
+                            minimal_threshold=0.2,
+                            sigma_threshold_fraction=0.3, **kwargs):
+    """ Perform a 1D three gaussian peak fit on the provided data.
+
+    @param numpy.array x_axis: 1D axis values
+    @param numpy.array data: 1D data, should have the same dimension as x_axis.
+    @param method estimator: Pointer to the estimator method
+    @param list units: List containing the ['horizontal', 'vertical'] units as strings
+    @param Parameters or dict add_params: optional, additional parameters of
+                type lmfit.parameter.Parameters, OrderedDict or dict for the fit
+                which will be used instead of the values from the estimator.
+    @param float threshold_fraction : Threshold to find second gaussian
+    @param float minimal_threshold: Threshold is lowerd to minimal this
+                                    value as a fraction
+    @param float sigma_threshold_fraction: Threshold for detecting
+                                           the end of the peak
+
+    @return object model: lmfit.model.ModelFit object, all parameters
+                          provided about the fitting, like: success,
+                          initial fitting values, best fitting values, data
+                          with best fit with given axis,...
+    """
+    if units is None:
+        units = ['arb. unit', 'arb. unit']
+
+    model, params = self.make_multiplegaussianoffset_model(no_of_functions=3)
+
+    error, params = estimator(x_axis, data, params,
+                              threshold_fraction,
+                              minimal_threshold,
+                              sigma_threshold_fraction
+                              )
+
+    params = self._substitute_params(initial_params=params,
+                                     update_params=add_params)
+    try:
+        result = model.fit(data, x=x_axis, params=params, **kwargs)
+    except:
+        result = model.fit(data, x=x_axis, params=params, **kwargs)
+        self.log.warning('The double gaussian dip fit did not work: {0}'.format(
+            result.message))
+
+    # Write the parameters to allow human-readable output to be generated
+    result_str_dict = OrderedDict()
+
+    result_str_dict['Position 0'] = {'value': result.params['g0_center'].value,
+                                     'error': result.params['g0_center'].stderr,
+                                     'unit': units[0]}
+
+    result_str_dict['Position 1'] = {'value': result.params['g1_center'].value,
+                                     'error': result.params['g1_center'].stderr,
+                                     'unit': units[0]}
+
+    result_str_dict['Contrast 0'] = {'value': abs(result.params['g0_contrast'].value),
+                                     'error': result.params['g0_contrast'].stderr,
+                                     'unit': '%'}
+
+    result_str_dict['Contrast 1'] = {'value': abs(result.params['g1_contrast'].value),
+                                     'error': result.params['g1_contrast'].stderr,
+                                     'unit': '%'}
+
+    result_str_dict['Linewidth 0'] = {'value': result.params['g0_sigma'].value,
+                                      'error': result.params['g0_sigma'].stderr,
+                                      'unit': units[0]}
+
+    result_str_dict['Linewidth 1'] = {'value': result.params['g1_sigma'].value,
+                                      'error': result.params['g1_sigma'].stderr,
+                                      'unit': units[0]}
+
+    result_str_dict['chi_sqr'] = {'value': result.chisqr, 'unit': ''}
+
+    result.result_str_dict = result_str_dict
+    return result
+
+def estimate_gaussiantriple_peak(self, x_axis, data, params,
+                                threshold_fraction=0.4, minimal_threshold=0.1,
+                                sigma_threshold_fraction=0.2):
+    """ Provide an estimator for a double gaussian peak fit with the parameters
+    coming from the physical properties of an experiment done in gated counter:
+                    - positive peak
+                    - no values below 0
+                    - rather broad overlapping functions
+
+    @param numpy.array x_axis: 1D axis values
+    @param numpy.array data: 1D data, should have the same dimension as x_axis.
+    @param lmfit.Parameters params: object includes parameter dictionary which
+                                    can be set
+    @param float threshold_fraction : Threshold to find second gaussian
+    @param float minimal_threshold: Threshold is lowerd to minimal this
+                                    value as a fraction
+    @param float sigma_threshold_fraction: Threshold for detecting
+                                           the end of the peak
+
+    @return int error: error code (0:OK, -1:error)
+    @return Parameters object params: estimated values
+    """
+
+    error = self._check_1D_input(x_axis=x_axis, data=data, params=params)
+
+
+    mod_lor, params_lor = self.make_multiplelorentzian_model(no_of_functions=3)
+
+    error, params_lor = self.estimate_lorentziandouble_dip(x_axis=x_axis,
+                                                     data=-data,
+                                                     params=params_lor,
+                                                     threshold_fraction=threshold_fraction,
+                                                     minimal_threshold=minimal_threshold,
+                                                     sigma_threshold_fraction=sigma_threshold_fraction)
+
+    params['g0_amplitude'].value = -params_lor['l0_amplitude'].value
+    params['g0_center'].value = params_lor['l0_center'].value
+    params['g0_sigma'].value = params_lor['l0_sigma'].value/(np.sqrt(2*np.log(2)))
+    params['g1_amplitude'].value = -params_lor['l1_amplitude'].value
+    params['g1_center'].value = params_lor['l1_center'].value
+    params['g1_sigma'].value = params_lor['l1_sigma'].value/(np.sqrt(2*np.log(2)))
+    params['g2_amplitude'].value = -params_lor['l2_amplitude'].value
+    params['g2_center'].value = params_lor['l2_center'].value
+    params['g2_sigma'].value = params_lor['l2_sigma'].value/(np.sqrt(2*np.log(2)))
+    params['offset'].value = -params_lor['offset'].value
+
+    return error, params
+
 
 ###################################
 # 2D Gaussian with flat offset    #

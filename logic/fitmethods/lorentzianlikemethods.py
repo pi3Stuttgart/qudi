@@ -31,7 +31,6 @@ from collections import OrderedDict
 from scipy.ndimage import filters
 from scipy.interpolate import InterpolatedUnivariateSpline
 
-
 ################################################################################
 #                                                                              #
 #                       Defining Lorentzian Models                             #

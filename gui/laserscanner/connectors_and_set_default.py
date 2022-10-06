@@ -18,11 +18,13 @@ class initialize_connections_and_defaultvalue:
         self._mw.ple_Run_Button.clicked.connect(self._voltscan_logic.ple_Run_Button_Clicked)
         self._mw.ple_MW3_CheckBox.stateChanged.connect(self._voltscan_logic.ple_MW3_CheckBox_StateChanged)
         self._mw.ple_MW2_Power_LineEdit.textEdited.connect(self._voltscan_logic.ple_MW2_Power_LineEdit_textEdited)
+        self._mw.ple_NumberOfPeaks_LineEdit.textEdited.connect(self._voltscan_logic.ple_NumberOfPeaks_LineEdit_textEdited)
         self._mw.ple_Stop_Button.clicked.connect(self._voltscan_logic.ple_Stop_Button_Clicked)
         self._mw.ple_Filename_LineEdit.textEdited.connect(self._voltscan_logic.ple_Filename_LineEdit_textEdited)
         self._mw.ple_MW3_Freq_LineEdit.textEdited.connect(self._voltscan_logic.ple_MW3_Freq_LineEdit_textEdited)
         self._mw.ple_CWrepump_CheckBox.stateChanged.connect(self._voltscan_logic.ple_CWrepump_CheckBox_StateChanged)
         self._mw.ple_PeriodicSaving_CheckBox.stateChanged.connect(self._voltscan_logic.ple_PeriodicSaving_CheckBox_StateChanged)
+        self._mw.ple_PerformFit_CheckBox.stateChanged.connect(self._voltscan_logic.ple_PerformFit_CheckBox_StateChanged)
         self._mw.ple_Interval_LineEdit.textEdited.connect(self._voltscan_logic.ple_Interval_LineEdit_textEdited)
         self._mw.ple_Stoptime_LineEdit.textEdited.connect(self._voltscan_logic.ple_Stoptime_LineEdit_textEdited)
         self._mw.startDoubleSpinBox.valueChanged.connect(self.change_start_volt)
@@ -57,6 +59,12 @@ class initialize_connections_and_defaultvalue:
         self._mw.constDoubleSpinBox.setValue(self._voltscan_logic._static_v)
         self._mw.resolutionSpinBox.setValue(self._voltscan_logic.resolution)
         self._mw.linesSpinBox.setValue(self._voltscan_logic.number_of_repeats)
+        self._mw.ple_NumberOfPeaks_LineEdit.setText(str(self._voltscan_logic.NumberOfPeaks))
+
+        self._mw.ple_Contrast_Fit_Label.setText(str(self._voltscan_logic.Contrast_Fit))
+        self._mw.ple_Frequencies_Fit_Label.setText(str(self._voltscan_logic.Frequencies_Fit))
+        self._mw.ple_Linewidths_Fit_Label.setText(str(self._voltscan_logic.Linewidths_Fit))
+        
 
     def disconnect_all(self):
         self._mw.ple_Load_Button.clicked.disconnect()
@@ -82,6 +90,9 @@ class initialize_connections_and_defaultvalue:
         self._mw.ple_MW3_Freq_LineEdit.textEdited.disconnect()
         self._mw.ple_CWrepump_CheckBox.stateChanged.disconnect()
         self._mw.ple_PeriodicSaving_CheckBox.stateChanged.disconnect()
+        self._mw.ple_PerformFit_CheckBox.stateChanged.disconnect()
         self._mw.ple_Interval_LineEdit.textEdited.disconnect()
         self._mw.ple_Stoptime_LineEdit.textEdited.disconnect()
+        self._mw.ple_NumberOfPeaks_LineEdit.textEdited.disconnect()
+
         

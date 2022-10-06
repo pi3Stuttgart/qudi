@@ -61,13 +61,6 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="7">
-       <widget class="QLabel" name="label_120">
-        <property name="text">
-         <string>Number of Peaks:</string>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="5">
        <widget class="QLabel" name="label_112">
         <property name="text">
@@ -206,13 +199,6 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="7">
-       <widget class="QLabel" name="label_125">
-        <property name="text">
-         <string>Max. Iterations:</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="1">
        <widget class="QPushButton" name="ple_Stop_Button">
         <property name="text">
@@ -245,13 +231,6 @@
        <widget class="QLabel" name="label_132">
         <property name="text">
          <string>Power (dBm):</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="8">
-       <widget class="QLineEdit" name="ple_NumberOfPeaks_LineEdit">
-        <property name="text">
-         <string>1</string>
         </property>
        </widget>
       </item>
@@ -471,13 +450,6 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="8">
-       <widget class="QLineEdit" name="ple_MaxIterations_LineEdit">
-        <property name="text">
-         <string>20</string>
-        </property>
-       </widget>
-      </item>
       <item row="2" column="0" colspan="13">
        <widget class="Line" name="line_16">
         <property name="orientation">
@@ -671,6 +643,34 @@
        <widget class="QLabel" name="label_118">
         <property name="text">
          <string>Repump Decay (µs):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="7">
+       <widget class="QLabel" name="label_120">
+        <property name="text">
+         <string>Number of Peaks:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="8">
+       <widget class="QLineEdit" name="ple_NumberOfPeaks_LineEdit">
+        <property name="text">
+         <string>1</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="7">
+       <widget class="QLabel" name="label_11">
+        <property name="text">
+         <string>Contrast:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="8">
+       <widget class="QLabel" name="ple_Contrast_Fit_Label">
+        <property name="text">
+         <string>Contrast_Fit</string>
         </property>
        </widget>
       </item>

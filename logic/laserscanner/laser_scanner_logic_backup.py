@@ -35,28 +35,32 @@ from core.statusvariable import StatusVar
 from core.util.mutex import Mutex
 from logic.generic_logic import GenericLogic
 from qtpy import QtCore
+import logging; logger = logging.getLogger(__name__)
 
 
-class LaserScannerLogic(GenericLogic):
+from logic.laserscanner.ple_default_values_and_widget_functions import ple_default_values_and_widget_functions as ple_default
+
+
+
+class LaserScannerLogic(GenericLogic, ple_default):
 
     """This logic module controls scans of DC voltage on the fourth analog
     output channel of the NI Card.  It collects countrate as a function of voltage.
     """
-
     sig_data_updated = QtCore.Signal()
 
     # declare connectors
     confocalscanner1 = Connector(interface='ConfocalScannerInterface')
     savelogic = Connector(interface='SaveLogic')
-    #setupcontrollogic= Connector(interface='SetupControlLogic')
-
     mcas_holder = Connector(interface='McasDictHolderInterface')
-
+    fitlogic = Connector(interface='FitLogic')
+    
     scan_range = StatusVar('scan_range', [-4, 4])
     number_of_repeats = StatusVar(default=10)
     resolution = StatusVar('resolution', 100)
     _scan_speed = StatusVar('scan_speed', 0.1)
     _static_v = StatusVar('goto_voltage', 0)
+    fc = StatusVar('fits', None)
 
     sigChangeVoltage = QtCore.Signal(float)
     sigVoltageChanged = QtCore.Signal(float)
@@ -67,8 +71,7 @@ class LaserScannerLogic(GenericLogic):
 
     # to cut the scan line into smaller parts:
     slices=11
-
-
+    
     def __init__(self, **kwargs):
         """ Create VoltageScanningLogic object with connectors.
 
@@ -80,22 +83,14 @@ class LaserScannerLogic(GenericLogic):
         self.threadlock = Mutex()
         self.stopRequested = False
         self.AbortRequested=False
-        self.repump_on_during_retrace=True
-        self.A2_on_during_retrace=0
-        self.A1_on_during_retrace=0
+        # self.repump_on_during_retrace=True
+        # self.A2_on_during_retrace=0
+        # self.A1_on_during_retrace=0
         self.local_counts=[]
         self.slice_number=0
 
-        self.enable_MW1=False
-        self.enable_MW2=False
-        self.enable_MW3=False
-        self.MW1_freq=70
-        self.MW2_freq=70
-        self.MW3_freq=70
-        self.MW1_power=-20
-        self.MW2_power=-20
-        self.MW3_power=-20
-
+ 
+        
 
         self.fit_x = []
         self.fit_y = []
@@ -108,8 +103,8 @@ class LaserScannerLogic(GenericLogic):
         """
         self._scanning_device = self.confocalscanner1()
         self._save_logic = self.savelogic()
-        self.awg = self.mcas_holder()
-        self.stop_awg = self.awg.mcas_dict.stop_awgs
+        self._awg = self.mcas_holder()
+        self._fit_logic = self.fitlogic()
         # Reads in the maximal scanning range. The unit of that scan range is
         # micrometer!
         self.a_range = self._scanning_device.get_position_range()[3]
@@ -154,9 +149,6 @@ class LaserScannerLogic(GenericLogic):
 
         # Initialie data matrix
         self._initialise_data_matrix(100)
-
-        # Create AWG Sequence which turns on repump during retrace
-        self.retrace_seq()
 
     def on_deactivate(self):
         """ Deinitialisation performed during deactivation of the module.
@@ -261,6 +253,7 @@ class LaserScannerLogic(GenericLogic):
         self.plot_y2 = np.zeros(scan_length)
         self.fit_x = np.linspace(self.scan_range[0], self.scan_range[1], scan_length)
         self.fit_y = np.zeros(scan_length)
+        return
 
     def get_current_voltage(self):
         """returns current voltage of hardware device(atm NIDAQ 4th output)"""
@@ -289,11 +282,22 @@ class LaserScannerLogic(GenericLogic):
         return 0
 
     def start_scanning(self, v_min=None, v_max=None):
+        self.currenttime = time.time()
+        print("recieved start signal")
         """Setting up the scanner device and starts the scanning procedure
 
         @return int: error code (0:OK, -1:error)
         """
-
+        # Create AWG Sequence which turns on repump during retrace
+        print("Start PLE scan...")
+        self._awg.mcas_dict.stop_awgs()
+        self.retrace_seq()
+        print("passed time 1", time.time()-self.currenttime)
+        self.trace_seq()
+        print("passed time 2", time.time()-self.currenttime)
+        if self.enable_PulsedRepump:
+            self._awg.mcas_dict["PLE_retrace"].run()
+        
         self.current_position = self._scanning_device.get_scanner_position()
 
         if v_min is not None:
@@ -312,13 +316,15 @@ class LaserScannerLogic(GenericLogic):
         # TODO: Generate Ramps
         self._upwards_ramp = self._generate_ramp(v_min, v_max, self._scan_speed)
         self._downwards_ramp = self._generate_ramp(v_max, v_min, 0.75)
-
+        print("passed time 3", time.time()-self.currenttime)
+        
         #this part is used to be able to abort the scanning process more rapidly
         self._upwards_ramp_slices=self.slice_array(self._upwards_ramp)
         self.slice_number=0
 
         self._initialise_data_matrix(len(self._upwards_ramp[3]))
-
+        print("passed time 4", time.time()-self.currenttime)
+        
         # Lock and set up scanner
         returnvalue = self._initialise_scanner()
         if returnvalue < 0:
@@ -327,6 +333,7 @@ class LaserScannerLogic(GenericLogic):
 
         self.sigScanNextLine.emit()
         self.sigScanStarted.emit()
+        print("passed time 5", time.time()-self.currenttime)        
         return 0
 
     def slice_array(self,x):
@@ -335,13 +342,13 @@ class LaserScannerLogic(GenericLogic):
         parts=[x[:,(i*propor<=arr) & (arr<(i+1)*propor)] for i in range(self.slices)]
         return parts
 
-
+# DOES ERROR, WHICH SHUTS DOWN MEASUREMENT COME FROM HERE???
     def stop_scanning(self):
         """Stops the scan
 
         @return int: error code (0:OK, -1:error)
         """
-        print("stopping")
+        print("Stopping...")
         with self.threadlock:
             if self.module_state() == 'locked':
                 #self._close_scanner() # hope this will not destroy something
@@ -351,7 +358,7 @@ class LaserScannerLogic(GenericLogic):
         return 0
 
     def abort_scanning(self):
-        print("Aborting")
+        print("Aborting...")
         with self.threadlock:
             if self.module_state() == 'locked':
                 self.AbortRequested = True
@@ -377,8 +384,7 @@ class LaserScannerLogic(GenericLogic):
             self.sigScanFinished.emit()
             self.local_counts=[]
             self.slice_number=0
-            self.stop_awg()
-            self.awg.mcas_dict["setupcontrol"].run()
+            self._awg.mcas_dict.stop_awgs()
             return
 
         if self._scan_counter_up == 0 and self.slice_number==0:
@@ -386,12 +392,12 @@ class LaserScannerLogic(GenericLogic):
             self._goto_during_scan(self.scan_range[0])
 
         if self.upwards_scan:
-            self.awg.mcas_dict["setupcontrol"].run()
+            self._awg.mcas_dict["PLE_trace"].run()
             counts = self._scan_line(self._upwards_ramp_slices[self.slice_number])
             self.local_counts=self.local_counts+list(counts)
             self.slice_number+=1
             if self.slice_number==self.slices:
-                self.scan_matrix[self._scan_counter_up] =self.local_counts # Here occurs an error "cannot copy sequence with size 21 to array axis with dimension 20"
+                self.scan_matrix[self._scan_counter_up] =self.local_counts # Here occurs an error "cannot copy sequence with size 21 to array axis with dimension 20". This only occured, when variables where changed while the programm is running.
                 self.plot_y = self.plot_y + np.array(self.local_counts)
                 self.local_counts=[]
                 self._scan_counter_up += 1
@@ -401,10 +407,10 @@ class LaserScannerLogic(GenericLogic):
         
         else: #retrace
 
-            if self.repump_on_during_retrace:
-                self.awg.mcas_dict["retrace"].run()
+            if self.enable_PulsedRepump:
+                self._awg.mcas_dict["PLE_retrace"].run()
             else:
-                self.awg.mcas_dict["wait"].run()
+                self._awg.mcas_dict["PLE_retrace_noRepump"].run()
             counts = self._scan_line(self._downwards_ramp)
             counts = np.ones(self.scan_matrix2[self._scan_counter_down].shape[0])
             self.scan_matrix2[self._scan_counter_down] = counts
@@ -416,19 +422,82 @@ class LaserScannerLogic(GenericLogic):
 
         self.sigUpdatePlots.emit()
         self.sigScanNextLine.emit()
-
+# Create sequence which runs only once for repump pulse
+# Create sequence for upwards scan
 
     def retrace_seq(self):
-        seq = self.awg.mcas(name="retrace", ch_dict={"2g": [1, 2], "ps": [1]})
-        seq.start_new_segment("sequence", loop_count=100)
+        seq = self._awg.mcas(name="PLE_retrace", ch_dict={"2g": [1, 2], "ps": [1]})
+        seq.start_new_segment("sequence")
         seq.asc(name="without MW",
-                A1=self.A1_on_during_retrace,
-                A2=self.A2_on_during_retrace,
-                repump=self.repump_on_during_retrace,
-                length_mus=50
+                repump=True,
+                length_mus=self.RepumpDuration
                 )
-        self.awg.mcas_dict["retrace"] = seq
-        print("Sequenz erzeugt")
+        seq.asc(name="Decay",
+                repump=False,
+                length_mus=self.RepumpDecay
+                )
+        self._awg.mcas_dict["PLE_retrace"] = seq
+
+
+        seq = self._awg.mcas(name="PLE_retrace_noRepump", ch_dict={"2g": [1, 2], "ps": [1]})
+        seq.start_new_segment("sequence")
+        seq.asc(name="without MW",
+                repump=False,
+                length_mus=self.RepumpDuration
+                )
+        seq.asc(name="Decay",
+                repump=False,
+                length_mus=self.RepumpDecay
+                )
+        self._awg.mcas_dict["PLE_retrace_noRepump"] = seq
+        return
+
+    def trace_seq(self):
+        self.power = []
+        if self.enable_MW1:
+            self.power += [self.MW1_Power]
+        if self.enable_MW2:
+            self.power += [self.MW2_Power]
+        if self.enable_MW3:
+            self.power += [self.MW3_Power]
+        
+        self.power = np.asarray(self.power)
+        self.power=self.power_to_amp(self.power)
+        if np.sum(self.power)>1:
+            logger.error("Combined Microwavepower of all active channels too high! Need value below 1. Value of {} was given.", np.sum(self.power))
+            raise Exception
+            
+        # generate a single MW sequence with the needed mw frequencies and play is continuously until the measurement is stopped,
+        # either by the stop button, the runtime, or number of sequence repetitions.
+        seq = self._awg.mcas(name="PLE_trace", ch_dict={"2g": [1, 2], "ps": [1]})
+        frequencies = np.array([self.MW1_Freq, self.MW2_Freq, self.MW3_Freq])[[self.enable_MW1, self.enable_MW2, self.enable_MW3]]
+        seq.start_new_segment("Microwaves"+str(frequencies), loop_count=100)
+        if len(self.power) == 0:
+            seq.asc(name="without MW",
+                    A1=self.enable_A1,
+                    A2=self.enable_A2,
+                    repump=self.enable_Repump,
+                    length_mus=50
+                    )
+        else:
+            seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": frequencies, "amplitudes": self.power},
+                    A1=self.enable_A1,
+                    A2=self.enable_A2,
+                    repump=self.enable_Repump,
+                    length_mus=50
+                    )
+
+        self._awg.mcas_dict["PLE_trace"] = seq
+        self._awg.mcas_dict.print_info()
+        return
+        
+    def power_to_amp(self, power_dBm, impedance=50):
+        power_dBm = np.atleast_1d(power_dBm)
+        P_watts = 10**(power_dBm / 10) * 1e-3
+        V_rms = np.sqrt(P_watts * impedance)
+        V_pp = V_rms * 2 * np.sqrt(2)
+        return V_pp / 0.35 #awg_amplitude
+        #return V_pp / float(self.awg_device.amp1) #awg_amplitude
 
     def _generate_ramp(self, voltage1, voltage2, speed):
         """Generate a ramp vrom voltage1 to voltage2 that
@@ -553,29 +622,29 @@ class LaserScannerLogic(GenericLogic):
 
         filepath = self._save_logic.get_path_for_module(module_name='LaserScanning')
         filepath2 = self._save_logic.get_path_for_module(module_name='LaserScanning')
-        filepath3 = self._save_logic.get_path_for_module(module_name='LaserScanning')
+        # filepath3 = self._save_logic.get_path_for_module(module_name='LaserScanning')
         timestamp = datetime.datetime.now()
 
         if len(tag) > 0:
             filelabel = tag + '_volt_data'
             filelabel2 = tag + '_volt_data_raw_trace'
-            filelabel3 = tag + '_volt_data_raw_retrace'
+        #   filelabel3 = tag + '_volt_data_raw_retrace'
         else:
             filelabel = 'volt_data'
             filelabel2 = 'volt_data_raw_trace'
-            filelabel3 = 'volt_data_raw_retrace'
+        #   filelabel3 = 'volt_data_raw_retrace'
 
         # prepare the data in a dict or in an OrderedDict:
         data = OrderedDict()
         data['frequency (Hz)'] = self.plot_x
         data['trace count data (counts/s)'] = self.plot_y
-        data['retrace count data (counts/s)'] = self.plot_y2
+        #data['retrace count data (counts/s)'] = self.plot_y2
 
         data2 = OrderedDict()
         data2['count data (counts/s)'] = self.scan_matrix[:self._scan_counter_up, :]
 
-        data3 = OrderedDict()
-        data3['count data (counts/s)'] = self.scan_matrix2[:self._scan_counter_down, :]
+        # data3 = OrderedDict()
+        # data3['count data (counts/s)'] = self.scan_matrix2[:self._scan_counter_down, :]
 
         parameters = OrderedDict()
         parameters['Number of frequency sweeps (#)'] = self._scan_counter_up
@@ -623,16 +692,16 @@ class LaserScannerLogic(GenericLogic):
             plotfig=fig
         )
 
-        self._save_logic.save_data(
-            data3,
-            filepath=filepath3,
-            parameters=parameters,
-            filelabel=filelabel3,
-            fmt='%.6e',
-            delimiter='\t',
-            timestamp=timestamp,
-            plotfig=fig2
-        )
+        # self._save_logic.save_data(
+        #     data3,
+        #     filepath=filepath3,
+        #     parameters=parameters,
+        #     filelabel=filelabel3,
+        #     fmt='%.6e',
+        #     delimiter='\t',
+        #     timestamp=timestamp,
+        #     plotfig=fig2
+        # )
 
         self.log.info('Laser Scan saved to:\n{0}'.format(filepath))
         return 0
@@ -757,3 +826,89 @@ class LaserScannerLogic(GenericLogic):
                              )
 
         return fig
+
+    
+
+    def do_fit(self, fit_function=None, x_data=None, y_data=None, channel_index=0, fit_range=0):
+        """
+        Execute the currently configured fit on the measurement data. Optionally on passed data
+        """
+        if (x_data is None) or (y_data is None):
+            if fit_range >= 0:
+                x_data = self.frequency_lists[fit_range]
+                x_data_full_length = np.zeros(len(self.final_freq_list))
+                # how to insert the data at the right position?
+                start_pos = np.where(np.isclose(self.final_freq_list, self.mw_starts[fit_range]))[0][0]
+                x_data_full_length[start_pos:(start_pos + len(x_data))] = x_data
+                y_args = np.array([ind_list[0] for ind_list in np.argwhere(x_data_full_length)])
+                y_data = self.odmr_plot_y[channel_index][y_args]
+            else:
+                x_data = self.final_freq_list
+                y_data = self.odmr_plot_y[channel_index]
+        if fit_function is not None and isinstance(fit_function, str):
+            if fit_function in self.get_fit_functions():
+                self.fc.set_current_fit(fit_function)
+            else:
+                self.fc.set_current_fit('No Fit')
+                if fit_function != 'No Fit':
+                    self.log.warning('Fit function "{0}" not available in ODMRLogic fit container.'
+                                     ''.format(fit_function))
+
+        self.odmr_fit_x, self.odmr_fit_y, result = self.fc.do_fit(x_data, y_data)
+        key = 'channel: {0}, range: {1}'.format(channel_index, fit_range)
+        if fit_function != 'No Fit':
+            self.fits_performed[key] = (self.odmr_fit_x, self.odmr_fit_y, result, self.fc.current_fit)
+        else:
+            if key in self.fits_performed:
+                self.fits_performed.pop(key)
+
+        if result is None:
+            result_str_dict = {}
+        else:
+            result_str_dict = result.result_str_dict
+        self.sigOdmrFitUpdated.emit(
+            self.odmr_fit_x, self.odmr_fit_y, result_str_dict, self.fc.current_fit)
+        return
+
+
+    @fc.constructor
+    def sv_set_fits(self, val):
+        # Setup fit container
+        fc = self.fitlogic().make_fit_container('PLE sum', '1d')
+        fc.set_units(['Hz', 'c/s'])
+        if isinstance(val, dict) and len(val) > 0:
+            fc.load_from_dict(val)
+        else:
+            d1 = OrderedDict()
+            # d1['Lorentzian dip'] = {
+            #     'fit_function': 'lorentzian',
+            #     'estimator': 'dip'
+            # }
+            d1['Two Lorentzian dips'] = {
+                'fit_function': 'lorentziandouble',
+                'estimator': 'dip'
+            }
+            # d1['N14'] = {
+            #     'fit_function': 'lorentziantriple',
+            #     'estimator': 'N14'
+            # }
+            # d1['N15'] = {
+            #     'fit_function': 'lorentziandouble',
+            #     'estimator': 'N15'
+            # }
+            # d1['Two Gaussian dips'] = {
+            #     'fit_function': 'gaussiandouble',
+            #     'estimator': 'dip'
+            # }
+            default_fits = OrderedDict()
+            default_fits['1d'] = d1
+            fc.load_from_dict(default_fits)
+        return fc
+
+    @fc.representer
+    def sv_get_fits(self, val):
+        """ save configured fits """
+        if len(val.fit_list) > 0:
+            return val.save_to_dict()
+        else:
+            return None

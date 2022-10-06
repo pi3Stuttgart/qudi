@@ -21,6 +21,7 @@ import time
 import datetime
 from collections import OrderedDict
 import matplotlib.pyplot as plt
+from core.statusvariable import StatusVar
 #import pandas as pd
 
 class ODMRLogic_holder(GenericLogic):
@@ -28,7 +29,7 @@ class ODMRLogic_holder(GenericLogic):
     counter_device = Connector(interface='TimeTaggerInterface')# Savelogic just for testing purposes
     savelogic = Connector(interface='SaveLogic')
     mcas_holder = Connector(interface='McasDictHolderInterface')
-
+    fitlogic = Connector(interface='FitLogic')
     CHANNEL_APD0 = 0
     CHANNEL_APD1 = 1
     CHANNEL_DETECT = 2
@@ -62,7 +63,8 @@ class ODMRLogic_holder(GenericLogic):
         self._time_tagger.setup_TT()
         self._save_logic = self.savelogic()
         self._awg = self.mcas_holder()#mcas_dict()
-
+        self._fit_logic = self.fitlogic()
+        
         self.stop_awg = self._awg.mcas_dict.stop_awgs
         self.pulsedODMRLogic = pulsedODMRLogic(self)
         self.ODMRLogic = ODMRLogic(self)
@@ -70,6 +72,11 @@ class ODMRLogic_holder(GenericLogic):
         #self.SigCheckReady_Beacon.connect(self.print_counter)
         self.CheckReady_Beacon = RepeatedTimer(1, self.CheckReady)
         #self.CheckReady_Beacon.start()
+
+        self.Contrast_Fit:str = ''
+        self.Frequencies_Fit:str = ''
+        self.Linewidths_Fit:str = ''
+        self.NumberOfPeaks:int=1
 
         return 
 
@@ -256,7 +263,6 @@ class ODMRLogic_holder(GenericLogic):
 
         self.log.info('ODMR data saved to:\n{0}'.format(filepath))
         return
-
 
     def draw_cw_figure(self, data, frequencies, matrix, cbar_range=None, percentile_range=None):
         """ Draw the summary figure to save with the data.
@@ -501,12 +507,90 @@ class ODMRLogic_holder(GenericLogic):
         return fig
 
 
+##############################################################
+# Stuff for Fitting
+
+
+    # def do_oneDgaussian_fit(self,x_data, y_data):
+    #     x_data=x_data.astype(np.float)
+    #     y_data=y_data.astype(np.float)
+        
+    #     model,params=self._fit_logic.make_gaussian_model()
+
+    #     result = self._fit_logic.make_gaussian_fit(
+    #                         x_axis=x_data,
+    #                         data=y_data,
+    #                         units='Hz',
+    #                         estimator=self._fit_logic.estimate_gaussian_peak
+    #                         )
+    #     print(x_data.min(),x_data.max(),len(x_data)*10)
+    #     interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*10)
+    #     self.fit_data = model.eval(x=interplolated_x_data, params=result.params)
+
+    #     return interplolated_x_data,self.fit_data,result
+        
+    def do_gaussian_fit(self,x_data, y_data):
+        
+        x_data=x_data.astype(np.float)
+        y_data=y_data.astype(np.float)
+        if self.NumberOfPeaks==1:
+            model,params=self._fit_logic.make_gaussian_model()
+
+            result = self._fit_logic.make_gaussian_fit(
+                                x_axis=x_data,
+                                data=y_data,
+                                units='Hz',
+                                estimator=self._fit_logic.estimate_gaussian_peak
+                                )
+
+        elif self.NumberOfPeaks==2:
+            model,params=self._fit_logic.make_gaussiandouble_model()
+
+            result = self._fit_logic.make_gaussiandouble_fit(
+                                x_axis=x_data,
+                                data=y_data,
+                                units='Hz',
+                                estimator=self._fit_logic.estimate_gaussiandouble_peak
+                                )
+        elif self.NumberOfPeaks==3:
+            model,params=self._fit_logic.make_gaussiantriple_model()
+
+            result = self._fit_logic.make_gaussiantriple_fit(
+                                x_axis=x_data,
+                                data=y_data,
+                                units='Hz',
+                                estimator=self._fit_logic.estimate_gaussiantriple_peak
+                                )
+
+
+            logger.warning("function 3 gaussian peaks not implemeted")
+
+
+        print(x_data.min(),x_data.max(),len(x_data)*10)
+        self.interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*5)
+        self.fit_data = model.eval(x=self.interplolated_x_data, params=result.params)
+        
+        self.Contrast_Fit:str=''
+        self.Frequencies_Fit:str=''
+        self.Linewidths_Fit:str=''
+
+        for i in range(self.NumberOfPeaks):
+            try:
+                self.Contrast_Fit=self.Contrast_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"amplitude"].value,2))+"; " # because 1 peak and 2 peak gaussian fit dont give the same result keywords, we add the 'gi_' part (missing in the 1 peak case) by multiplying the string by 1 if paeks!=1 and remove it if peaks=1.
+                self.Frequencies_Fit=self.Frequencies_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"center"].value,2))+"; "
+                self.Linewidths_Fit=self.Linewidths_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"fwhm"].value,2))+"; " #TODO convert linewidth from V to MHz
+            except Exception as e:
+                print("an error occured:\n", e)
+
+        return self.interplolated_x_data,self.fit_data,result
+  
+
 class ODMRLogic(cw_default):
 
     def __init__(self,holder):
         self.measurement_running=False
         self.holder=holder
-        self.counter=self.holder._time_tagger.counter()
+        #self.counter=self.holder._time_tagger.counter()
         self.time_differences = self.holder._time_tagger.time_differences()
         self.number_of_points_per_line=self.holder._time_tagger._time_diff["n_histograms"]
         self.scanmatrix=np.zeros((self.cw_NumberOfLines,self.number_of_points_per_line))
@@ -516,6 +600,9 @@ class ODMRLogic(cw_default):
         self.syncing=False
 
         self.continuing=False
+
+        self.x_fit = np.arange(20)
+        self.y_fit = np.arange(20)
 
     def data_readout(self):
         #print("checkready:",self.measurement_running)
@@ -545,6 +632,9 @@ class ODMRLogic(cw_default):
             self.scanmatrix[1:]=self.scanmatrix[0:-1]
             self.scanmatrix[0]=data
             self.data=self.data+data
+            if self.cw_PerformFit:
+                self.x_fit,self.y_fit,self.fit_result=self.holder.do_gaussian_fit(self.mw1_freq*1e6,self.data)
+                #self.x_fit,self.y_fit,self.fit_result=self.holder.do_oneDgaussian_fit(self.mw1_freq*1e6,self.data)
             
             self.holder.sigOdmrPlotsUpdated.emit(self.mw1_freq*1e6,self.data,self.scanmatrix, np.array([]), np.array([]))
                 
@@ -681,7 +771,7 @@ class pulsedODMRLogic(pulsed_default):
     def __init__(self,holder):
         self.measurement_running=False
         self.holder=holder
-        self.counter=self.holder._time_tagger.counter()
+        #self.counter=self.holder._time_tagger.counter()
         self.time_differences = self.holder._time_tagger.time_differences()
         self.number_of_points_per_line=self.holder._time_tagger._time_diff["n_histograms"]
         self.scanmatrix=np.zeros((self.pulsed_NumberOfLines,self.number_of_points_per_line))
@@ -731,6 +821,11 @@ class pulsedODMRLogic(pulsed_default):
             self.data=self.data+data
             self.data_detect=self.data_detect+data_detect
             
+            if self.pulsed_PerformFit: #TODO Only when checkbox #Linked to the if in gui -> update_plots
+                self.x_fit,self.y_fit,self.fit_result=self.holder.do_gaussian_fit(self.mw1_freq*1e6,self.data)
+                #self.x_fit,self.y_fit,self.fit_result=self.holder.do_oneDgaussian_fit(self.mw1_freq*1e6,self.data)
+
+
             self.holder.sigOdmrPlotsUpdated.emit(self.mw1_freq*1e6,self.data,self.scanmatrix,self.indexes/1e12,self.data_detect)
         #print("ploting matrix")
                 

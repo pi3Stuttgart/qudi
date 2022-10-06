@@ -51,7 +51,7 @@ class ODMRWindow(QtWidgets.QMainWindow):
 class ODMRGUI(GUIBase):
 
     ## declare connectors
-    _odmr_logic = Connector(interface='ODMRLogic_holder')
+    odmrlogic = Connector(interface='ODMRLogic_holder')
     exec("from gui.odmr.connectors_and_setdefault import *") # loads the variables and function of the specified module as part of the class
 
     # sigA1 = QtCore.Signal(bool)
@@ -80,15 +80,15 @@ class ODMRGUI(GUIBase):
         # Configuring the dock widgets
         # Use the inherited class 'CounterMainWindow' to create the GUI window
         self._mw = ODMRWindow()
-        self.odmr_logic= self._odmr_logic()
+        self._odmr_logic= self.odmrlogic()
         self.initialize_connections_and_defaultvalues()
 
         #connect the signals:
-        self.odmr_logic.sigOdmrPlotsUpdated.connect(self.update_plots, QtCore.Qt.QueuedConnection)
-        self.odmr_logic.SigClock.connect(self.Update_Runtime, QtCore.Qt.QueuedConnection)
+        self._odmr_logic.sigOdmrPlotsUpdated.connect(self.update_plots, QtCore.Qt.QueuedConnection)
+        self._odmr_logic.SigClock.connect(self.Update_Runtime, QtCore.Qt.QueuedConnection)
         
         #get the number of points the Timetagger counter will return:
-        self.number_of_points_per_line=self.odmr_logic._time_tagger._counter["n_values"]
+        self.number_of_points_per_line=self._odmr_logic._time_tagger._counter["n_values"]
 
         # Get the colorscales at set LUT
         my_colors = ColorScaleInferno()
@@ -115,16 +115,24 @@ class ODMRGUI(GUIBase):
                                           symbolBrush=pg.mkColor(255, 255, 255),
                                           symbolSize=7)
 
-        self.odmr_fit_image = pg.PlotDataItem(
-                                              np.arange(20),
-                                              np.arange(20),
-                                              pen=pg.mkPen(palette.c2))
+        self.cw_odmr_image_fit = pg.PlotDataItem(
+                                            np.arange(20),
+                                            np.arange(20),
+                                            pen=pg.mkPen(pg.mkColor(255, 0, 0), style=QtCore.Qt.SolidLine)
+                                            #symbol='-',
+                                            # symbolPen=pg.mkColor(255, 0,0),
+                                            # symbolBrush=pg.mkColor(0, 0, 0),
+                                            # symbolSize=0
+                                            )
 
         # Add the display item to the xy and xz ViewWidget, which was defined in the UI file.
         self._mw.cw_odmr_PlotWidget.addItem(self.cw_odmr_image)
+        self._mw.cw_odmr_PlotWidget.addItem(self.cw_odmr_image_fit)
         self._mw.cw_odmr_PlotWidget.setLabel(axis='left', text='Counts', units='Counts')
         self._mw.cw_odmr_PlotWidget.setLabel(axis='bottom', text='Frequency', units='Hz')
         self._mw.cw_odmr_PlotWidget.showGrid(x=True, y=True, alpha=0.8)
+
+
 
         self._mw.cw_odmr_matrix_PlotWidget.addItem(self.cw_odmr_matrix_image)
         self._mw.cw_odmr_matrix_PlotWidget.setLabel(axis='left', text='Matrix Lines', units='#')
@@ -148,8 +156,8 @@ class ODMRGUI(GUIBase):
         self._mw.cw_odmr_cb_high_percentile_DoubleSpinBox.valueChanged.connect(self.update_cw_colorbar)
         self._mw.cw_odmr_cb_min_DoubleSpinBox.valueChanged.connect(self.update_cw_colorbar)
         self._mw.cw_odmr_cb_max_DoubleSpinBox.valueChanged.connect(self.update_cw_colorbar)
-        self.cw_cb_min = self.odmr_logic.ODMRLogic.cw_odmr_cb_low_percentile
-        self.cw_cb_max = self.odmr_logic.ODMRLogic.cw_odmr_cb_high_percentile
+        self.cw_cb_min = self._odmr_logic.ODMRLogic.cw_odmr_cb_low_percentile
+        self.cw_cb_max = self._odmr_logic.ODMRLogic.cw_odmr_cb_high_percentile
 
 
         #################### setup graphics for pulsed ODMR  ####################
@@ -172,7 +180,7 @@ class ODMRGUI(GUIBase):
                                         symbolBrush=pg.mkColor(255, 255, 255),
                                         symbolSize=7)
 
-        self.odmr_data_fit_image = pg.PlotDataItem(
+        self.odmr_data_image_fit = pg.PlotDataItem(
                                             #self._odmr_logic.odmr_fit_x,
                                             np.arange(20),
                                             #self._odmr_logic.odmr_fit_y,
@@ -199,6 +207,7 @@ class ODMRGUI(GUIBase):
 
         # Add the display item to the xy and xz ViewWidget, which was defined in the UI file.
         self._mw.pulsed_odmr_data_PlotWidget.addItem(self.pulsed_odmr_data_image)
+        self._mw.pulsed_odmr_data_PlotWidget.addItem(self.odmr_data_image_fit)
         self._mw.pulsed_odmr_data_PlotWidget.setLabel(axis='left', text='Counts', units='Counts')
         self._mw.pulsed_odmr_data_PlotWidget.setLabel(axis='bottom', text='Frequency', units='Hz')
         self._mw.pulsed_odmr_data_PlotWidget.showGrid(x=True, y=True, alpha=0.8)
@@ -229,8 +238,8 @@ class ODMRGUI(GUIBase):
         self._mw.pulsed_odmr_cb_high_percentile_DoubleSpinBox.valueChanged.connect(self.update_pulsed_colorbar)
         self._mw.pulsed_odmr_cb_min_DoubleSpinBox.valueChanged.connect(self.update_pulsed_colorbar)
         self._mw.pulsed_odmr_cb_max_DoubleSpinBox.valueChanged.connect(self.update_pulsed_colorbar)
-        self.pulsed_cb_min = self.odmr_logic.pulsedODMRLogic.pulsed_odmr_cb_low_percentile
-        self.pulsed_cb_max = self.odmr_logic.pulsedODMRLogic.pulsed_odmr_cb_high_percentile
+        self.pulsed_cb_min = self._odmr_logic.pulsedODMRLogic.pulsed_odmr_cb_low_percentile
+        self.pulsed_cb_max = self._odmr_logic.pulsedODMRLogic.pulsed_odmr_cb_high_percentile
 
 
 
@@ -239,8 +248,8 @@ class ODMRGUI(GUIBase):
         """
         self.disconnect_all()
         
-        self.odmr_logic.sigOdmrPlotsUpdated.disconnect()
-        self.odmr_logic.SigClock.disconnect()
+        self._odmr_logic.sigOdmrPlotsUpdated.disconnect()
+        self._odmr_logic.SigClock.disconnect()
         self._mw.close()
 
     def show(self):
@@ -271,8 +280,8 @@ class ODMRGUI(GUIBase):
             low_centile = self._mw.cw_odmr_cb_low_percentile_DoubleSpinBox.value()
             high_centile = self._mw.cw_odmr_cb_high_percentile_DoubleSpinBox.value()
 
-            self.cw_cb_min = np.percentile(self.odmr_logic.ODMRLogic.scanmatrix, low_centile)
-            self.cw_cb_max = np.percentile(self.odmr_logic.ODMRLogic.scanmatrix, high_centile)
+            self.cw_cb_min = np.percentile(self._odmr_logic.ODMRLogic.scanmatrix, low_centile)
+            self.cw_cb_max = np.percentile(self._odmr_logic.ODMRLogic.scanmatrix, high_centile)
         else:
             self.cw_cb_min = self._mw.cw_odmr_cb_min_DoubleSpinBox.value()
             self.cw_cb_max = self._mw.cw_odmr_cb_max_DoubleSpinBox.value()
@@ -280,7 +289,7 @@ class ODMRGUI(GUIBase):
         self.cw_odmr_scan_cb.refresh_colorbar(self.cw_cb_min, self.cw_cb_max)
         self._mw.cw_odmr_cb_PlotWidget.update()
         self.cw_odmr_matrix_image.setImage(
-                image=self.odmr_logic.ODMRLogic.scanmatrix,
+                image=self._odmr_logic.ODMRLogic.scanmatrix,
                 axisOrder='row-major',
                 levels=(self.cw_cb_min, self.cw_cb_max)
             )
@@ -290,8 +299,8 @@ class ODMRGUI(GUIBase):
             low_centile = self._mw.pulsed_odmr_cb_low_percentile_DoubleSpinBox.value()
             high_centile = self._mw.pulsed_odmr_cb_high_percentile_DoubleSpinBox.value()
 
-            self.pulsed_cb_min = np.percentile(self.odmr_logic.pulsedODMRLogic.scanmatrix, low_centile)
-            self.pulsed_cb_max = np.percentile(self.odmr_logic.pulsedODMRLogic.scanmatrix, high_centile)
+            self.pulsed_cb_min = np.percentile(self._odmr_logic.pulsedODMRLogic.scanmatrix, low_centile)
+            self.pulsed_cb_max = np.percentile(self._odmr_logic.pulsedODMRLogic.scanmatrix, high_centile)
         else:
             self.pulsed_cb_min = self._mw.pulsed_odmr_cb_min_DoubleSpinBox.value()
             self.pulsed_cb_max = self._mw.pulsed_odmr_cb_max_DoubleSpinBox.value()
@@ -300,16 +309,22 @@ class ODMRGUI(GUIBase):
         self._mw.pulsed_odmr_cb_PlotWidget.update()
         
         self.pulsed_odmr_matrix_image.setImage(
-                image=self.odmr_logic.pulsedODMRLogic.scanmatrix,
+                image=self._odmr_logic.pulsedODMRLogic.scanmatrix,
                 axisOrder='row-major',
                 levels=(self.pulsed_cb_min, self.pulsed_cb_max)
             )
 
     def update_plots(self,odmr_data_x=None, odmr_data_y=None, odmr_matrix=None, odmr_detect_x=None, odmr_detect_y=None):
         
-        if self.odmr_logic.ODMRLogic.measurement_running:
+        if self._odmr_logic.ODMRLogic.measurement_running:
             #print(odmr_data_x, odmr_data_y, odmr_matrix)
             self.cw_odmr_image.setData(odmr_data_x, odmr_data_y)
+            self._mw.cw_odmr_PlotWidget.removeItem(self.cw_odmr_image_fit)
+        
+            if self._odmr_logic.ODMRLogic.cw_PerformFit:
+                self._mw.cw_odmr_PlotWidget.addItem(self.cw_odmr_image_fit)
+        
+                self.cw_odmr_image_fit.setData(self._odmr_logic.ODMRLogic.x_fit, self._odmr_logic.ODMRLogic.y_fit)
 
             self.cw_odmr_matrix_image.setRect(
                 QtCore.QRectF(
@@ -323,11 +338,13 @@ class ODMRGUI(GUIBase):
 
             self.update_cw_colorbar()
 
-        elif self.odmr_logic.pulsedODMRLogic.measurement_running:
+        elif self._odmr_logic.pulsedODMRLogic.measurement_running:
             #print(odmr_data_x, odmr_data_y, odmr_matrix)
             self.pulsed_odmr_data_image.setData(odmr_data_x, odmr_data_y)
 
             self.pulsed_odmr_detect_image.setData(odmr_detect_x, odmr_detect_y)
+            if True: #TODO Only when checkbox
+                self.odmr_data_image_fit.setData(self._odmr_logic.pulsedODMRLogic.x_fit, self._odmr_logic.pulsedODMRLogic.y_fit)
 
             self.pulsed_odmr_matrix_image.setRect(
                 QtCore.QRectF(
@@ -342,16 +359,16 @@ class ODMRGUI(GUIBase):
 
 
     def Update_Runtime(self):
-        if self.odmr_logic.ODMRLogic.measurement_running:
-            runtime=time.time()-self.odmr_logic.ODMRLogic.starting_time
+        if self._odmr_logic.ODMRLogic.measurement_running:
+            runtime=time.time()-self._odmr_logic.ODMRLogic.starting_time
             hours=int(runtime//3600)
             minutes=int((runtime//60)%60)
             secs=int(runtime%60)
             #time_str=str(runtime).split(".")
             self._mw.cw_Runtime_Label.setText(f"{hours} h {minutes} m {secs} s")
 
-        elif self.odmr_logic.pulsedODMRLogic.measurement_running:
-            runtime=time.time()-self.odmr_logic.pulsedODMRLogic.starting_time
+        elif self._odmr_logic.pulsedODMRLogic.measurement_running:
+            runtime=time.time()-self._odmr_logic.pulsedODMRLogic.starting_time
             hours=int(runtime//3600)
             minutes=int((runtime//60)%60)
             secs=int(runtime%60)

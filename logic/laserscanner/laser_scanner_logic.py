@@ -282,6 +282,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
         return 0
 
     def start_scanning(self, v_min=None, v_max=None):
+        self.currenttime = time.time()
+        print("recieved start signal")
         """Setting up the scanner device and starts the scanning procedure
 
         @return int: error code (0:OK, -1:error)
@@ -290,7 +292,9 @@ class LaserScannerLogic(GenericLogic, ple_default):
         print("Start PLE scan...")
         self._awg.mcas_dict.stop_awgs()
         self.retrace_seq()
+        print("passed time 1", time.time()-self.currenttime)
         self.trace_seq()
+        print("passed time 2", time.time()-self.currenttime)
         if self.enable_PulsedRepump:
             self._awg.mcas_dict["PLE_retrace"].run()
         
@@ -312,13 +316,15 @@ class LaserScannerLogic(GenericLogic, ple_default):
         # TODO: Generate Ramps
         self._upwards_ramp = self._generate_ramp(v_min, v_max, self._scan_speed)
         self._downwards_ramp = self._generate_ramp(v_max, v_min, 0.75)
-
+        print("passed time 3", time.time()-self.currenttime)
+        
         #this part is used to be able to abort the scanning process more rapidly
         self._upwards_ramp_slices=self.slice_array(self._upwards_ramp)
         self.slice_number=0
 
         self._initialise_data_matrix(len(self._upwards_ramp[3]))
-
+        print("passed time 4", time.time()-self.currenttime)
+        
         # Lock and set up scanner
         returnvalue = self._initialise_scanner()
         if returnvalue < 0:
@@ -327,6 +333,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         self.sigScanNextLine.emit()
         self.sigScanStarted.emit()
+        print("passed time 5", time.time()-self.currenttime)        
         return 0
 
     def slice_array(self,x):
@@ -399,7 +406,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         
         else: #retrace
-
+            self.sigUpdatePlots.emit()
             if self.enable_PulsedRepump:
                 self._awg.mcas_dict["PLE_retrace"].run()
             else:
@@ -413,7 +420,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
 
 
-        self.sigUpdatePlots.emit()
+        
         self.sigScanNextLine.emit()
 # Create sequence which runs only once for repump pulse
 # Create sequence for upwards scan
@@ -645,22 +652,16 @@ class LaserScannerLogic(GenericLogic, ple_default):
         parameters['Stop Voltage (V)'] = self.scan_range[1]
         parameters['Scan speed [V/s]'] = self._scan_speed
         parameters['Clock Frequency (Hz)'] = self._clock_frequency
+        parameters['ContrastFit'] = self.Contrast_Fit
+        parameters['FrequenciesFit'] = self.Frequencies_Fit
+        parameters['LinewidthsFit'] = self.Linewidths_Fit
 
         fig = self.draw_figure(
             self.scan_matrix,
             self.plot_x,
             self.plot_y,
-            self.fit_x,
-            self.fit_y,
-            cbar_range=colorscale_range,
-            percentile_range=percentile_range)
-
-        fig2 = self.draw_figure(
-            self.scan_matrix2,
-            self.plot_x,
-            self.plot_y2,
-            self.fit_x,
-            self.fit_y,
+            self.interplolated_x_data,
+            self.fit_data,
             cbar_range=colorscale_range,
             percentile_range=percentile_range)
 
@@ -684,18 +685,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
             timestamp=timestamp,
             plotfig=fig
         )
-
-        # self._save_logic.save_data(
-        #     data3,
-        #     filepath=filepath3,
-        #     parameters=parameters,
-        #     filelabel=filelabel3,
-        #     fmt='%.6e',
-        #     delimiter='\t',
-        #     timestamp=timestamp,
-        #     plotfig=fig2
-        # )
-
         self.log.info('Laser Scan saved to:\n{0}'.format(filepath))
         return 0
 
@@ -819,89 +808,58 @@ class LaserScannerLogic(GenericLogic, ple_default):
                              )
 
         return fig
-
     
+    def do_gaussian_fit(self):
+        
+        x_data=self.plot_x.astype(np.float)
+        y_data=self.plot_y.astype(np.float)
+        if self.NumberOfPeaks==1:
+            model,params=self._fit_logic.make_gaussian_model()
 
-    def do_fit(self, fit_function=None, x_data=None, y_data=None, channel_index=0, fit_range=0):
-        """
-        Execute the currently configured fit on the measurement data. Optionally on passed data
-        """
-        if (x_data is None) or (y_data is None):
-            if fit_range >= 0:
-                x_data = self.frequency_lists[fit_range]
-                x_data_full_length = np.zeros(len(self.final_freq_list))
-                # how to insert the data at the right position?
-                start_pos = np.where(np.isclose(self.final_freq_list, self.mw_starts[fit_range]))[0][0]
-                x_data_full_length[start_pos:(start_pos + len(x_data))] = x_data
-                y_args = np.array([ind_list[0] for ind_list in np.argwhere(x_data_full_length)])
-                y_data = self.odmr_plot_y[channel_index][y_args]
-            else:
-                x_data = self.final_freq_list
-                y_data = self.odmr_plot_y[channel_index]
-        if fit_function is not None and isinstance(fit_function, str):
-            if fit_function in self.get_fit_functions():
-                self.fc.set_current_fit(fit_function)
-            else:
-                self.fc.set_current_fit('No Fit')
-                if fit_function != 'No Fit':
-                    self.log.warning('Fit function "{0}" not available in ODMRLogic fit container.'
-                                     ''.format(fit_function))
+            result = self._fit_logic.make_gaussian_fit(
+                                x_axis=x_data,
+                                data=y_data,
+                                units='Hz',
+                                estimator=self._fit_logic.estimate_gaussian_peak
+                                )
 
-        self.odmr_fit_x, self.odmr_fit_y, result = self.fc.do_fit(x_data, y_data)
-        key = 'channel: {0}, range: {1}'.format(channel_index, fit_range)
-        if fit_function != 'No Fit':
-            self.fits_performed[key] = (self.odmr_fit_x, self.odmr_fit_y, result, self.fc.current_fit)
-        else:
-            if key in self.fits_performed:
-                self.fits_performed.pop(key)
+        elif self.NumberOfPeaks==2:
+            model,params=self._fit_logic.make_gaussiandouble_model()
 
-        if result is None:
-            result_str_dict = {}
-        else:
-            result_str_dict = result.result_str_dict
-        self.sigOdmrFitUpdated.emit(
-            self.odmr_fit_x, self.odmr_fit_y, result_str_dict, self.fc.current_fit)
-        return
+            result = self._fit_logic.make_gaussiandouble_fit(
+                                x_axis=x_data,
+                                data=y_data,
+                                units='Hz',
+                                estimator=self._fit_logic.estimate_gaussiandouble_peak
+                                )
+        elif self.NumberOfPeaks==3:
+            model,params=self._fit_logic.make_gaussiantriple_model()
+
+            result = self._fit_logic.make_gaussiantriple_fit(
+                                x_axis=x_data,
+                                data=y_data,
+                                units='Hz',
+                                estimator=self._fit_logic.estimate_gaussiantriple_peak
+                                )
 
 
-    @fc.constructor
-    def sv_set_fits(self, val):
-        # Setup fit container
-        fc = self.fitlogic().make_fit_container('PLE sum', '1d')
-        fc.set_units(['Hz', 'c/s'])
-        if isinstance(val, dict) and len(val) > 0:
-            fc.load_from_dict(val)
-        else:
-            d1 = OrderedDict()
-            # d1['Lorentzian dip'] = {
-            #     'fit_function': 'lorentzian',
-            #     'estimator': 'dip'
-            # }
-            d1['Two Lorentzian dips'] = {
-                'fit_function': 'lorentziandouble',
-                'estimator': 'dip'
-            }
-            # d1['N14'] = {
-            #     'fit_function': 'lorentziantriple',
-            #     'estimator': 'N14'
-            # }
-            # d1['N15'] = {
-            #     'fit_function': 'lorentziandouble',
-            #     'estimator': 'N15'
-            # }
-            # d1['Two Gaussian dips'] = {
-            #     'fit_function': 'gaussiandouble',
-            #     'estimator': 'dip'
-            # }
-            default_fits = OrderedDict()
-            default_fits['1d'] = d1
-            fc.load_from_dict(default_fits)
-        return fc
+            logger.warning("function 3 gaussian peaks not implemeted")
 
-    @fc.representer
-    def sv_get_fits(self, val):
-        """ save configured fits """
-        if len(val.fit_list) > 0:
-            return val.save_to_dict()
-        else:
-            return None
+
+        print(x_data.min(),x_data.max(),len(x_data)*10)
+        self.interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*5)
+        self.fit_data = model.eval(x=self.interplolated_x_data, params=result.params)
+        
+        self.Contrast_Fit:str=''
+        self.Frequencies_Fit:str=''
+        self.Linewidths_Fit:str=''
+
+        for i in range(self.NumberOfPeaks):
+            try:
+                self.Contrast_Fit=self.Contrast_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"amplitude"].value,2))+"; " # because 1 peak and 2 peak gaussian fit dont give the same result keywords, we add the 'gi_' part (missing in the 1 peak case) by multiplying the string by 1 if paeks!=1 and remove it if peaks=1.
+                self.Frequencies_Fit=self.Frequencies_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"center"].value,2))+"; "
+                self.Linewidths_Fit=self.Linewidths_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"fwhm"].value,2))+"; " #TODO convert linewidth from V to MHz
+            except Exception as e:
+                print("an error occured:\n", e)
+
+        return self.interplolated_x_data,self.fit_data,result

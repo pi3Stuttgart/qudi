@@ -1,18 +1,21 @@
 # coding=utf-8
-from pi3diamond import pi3d
+# coding=utf-8
+#from pi3diamond import pi3d
 import datetime
 import numpy as np
 import os
-import UserScripts.helpers.sequence_creation_helpers as sch; reload(sch)
-import UserScripts.helpers.shared as shared; reload(shared)
-import multi_channel_awg_seq as MCAS; reload(MCAS)
-import UserScripts.helpers.snippets_awg as sna; reload(sna)
-import UserScripts.helpers.shared as ush;reload(ush)
-from qutip_enhanced import *
-import AWG_M8190A_Elements as E
-import pym8190a.elements as e
+import importlib
+import notebooks.UserScripts.helpers.sequence_creation_helpers as sch; importlib.reload(sch)
+import notebooks.UserScripts.helpers.shared as shared
+from hardware.Keysight_AWG_M8190.pym8190a import MultiChSeq
+import notebooks.UserScripts.helpers.snippets_awg as sna
+importlib.reload(sna)
+importlib.reload(shared)
+#importlib.reload(MultiChSeq)
+import notebooks.UserScripts.helpers.shared as ush;importlib.reload(ush)
+from logic.qudip_enhanced import *
+#import hardware.Keysight_AWG_M8190.elements as e
 from collections import OrderedDict
-import AWG_M8190A_Elements as E
 
 seq_name = os.path.basename(__file__).split('.')[0]
 nuclear = sch.create_nuclear(__file__)
@@ -222,7 +225,7 @@ def run_fun(abort, **kwargs):
     # pi3d.gated_counter.readout_duration = 5e6
     pi3d.gated_counter.readout_duration = 1e6*10
 
-    nuclear.debug_mode = False
+    nuclear.debug_mode = True
     settings()
     print('run_fun started')
 

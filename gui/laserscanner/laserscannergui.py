@@ -19,6 +19,7 @@ Copyright (c) the Qudi Developers. See the COPYRIGHT.txt file at the
 top-level directory of this distribution and at <https://github.com/Ulm-IQO/qudi/>
 """
 
+from ast import Pass
 import numpy as np
 import os
 import pyqtgraph as pg
@@ -111,18 +112,19 @@ class VoltScanGui(GUIBase, ple_default_functions):
             self._voltscan_logic.plot_x,
             self._voltscan_logic.plot_y)
 
-        self.scan_image2 = pg.PlotDataItem(
-            self._voltscan_logic.plot_x,
-            self._voltscan_logic.plot_y2)
+        # self.scan_image2 = pg.PlotDataItem(
+        #     self._voltscan_logic.plot_x,
+        #     self._voltscan_logic.plot_y2)
 
         self.scan_fit_image = pg.PlotDataItem(
-            self._voltscan_logic.fit_x,
-            self._voltscan_logic.fit_y,
-            pen=QtGui.QPen(QtGui.QColor(255, 255, 255, 255)))
+            self._voltscan_logic.plot_x,
+            self._voltscan_logic.plot_y,
+            pen=pg.mkPen(pg.mkColor(255, 0, 0), style=QtCore.Qt.SolidLine))
 
         # Add the display item to the xy and xz VieWidget, which was defined in
         # the UI file.
         self._mw.ple_data_PlotWidget.addItem(self.scan_image)#
+        self._mw.ple_data_PlotWidget.addItem(self.scan_fit_image)#
         #self._mw.voltscan_ViewWidget.addItem(self.scan_fit_image)
         self._mw.ple_data_PlotWidget.showGrid(x=True, y=True, alpha=0.8) 
         self._mw.ple_matrix_PlotWidget.addItem(self.scan_matrix_image)
@@ -229,14 +231,23 @@ class VoltScanGui(GUIBase, ple_default_functions):
     def scan_started(self):
        pass
     def scan_stopped(self):
+        saved_performfit=self._voltscan_logic.PerformFit
+        self._voltscan_logic.PerformFit=True
         self.refresh_plot()
         self.refresh_matrix()
         self.refresh_lines()
+        self._voltscan_logic.PerformFit=saved_performfit
 
     def refresh_plot(self):
         """ Refresh the xy-plot image """
         self.scan_image.setData(self._voltscan_logic.plot_x, self._voltscan_logic.plot_y)
-        #self.scan_image2.setData(self._voltscan_logic.plot_x, self._voltscan_logic.plot_y2)
+        if self._voltscan_logic.PerformFit:
+            interplolated_x_data,fit_data,result = self._voltscan_logic.do_gaussian_fit()
+            self._mw.ple_Contrast_Fit_Label.setText(self._voltscan_logic.Contrast_Fit)
+            self._mw.ple_Frequencies_Fit_Label.setText(self._voltscan_logic.Frequencies_Fit)
+            self._mw.ple_Linewidths_Fit_Label.setText(self._voltscan_logic.Linewidths_Fit)
+        
+            self.scan_fit_image.setData(interplolated_x_data, fit_data)
 
     def refresh_matrix(self):
         """ Refresh the xy-matrix image """

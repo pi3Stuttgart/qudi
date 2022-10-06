@@ -365,6 +365,10 @@ class ConfocalGui(GUIBase):
             (self._optimizer_logic.refocus_XY_size, self._optimizer_logic.refocus_XY_size))
         # connect the drag event of the crosshair with a change in scanner position:
         self._mw.xy_ViewWidget.sigCrosshairDraggedPosChanged.connect(self.update_from_roi_xy)
+
+        
+        self.scan_pos_line=pg.InfiniteLine(pos=(self._scanning_logic.get_position()[1]),angle=0)
+        self._mw.xy_ViewWidget.addItem(self.scan_pos_line)
         
         # Set up and connect xy channel combobox
         scan_channels = self._scanning_logic.get_scanner_count_channels()
@@ -1569,6 +1573,10 @@ class ConfocalGui(GUIBase):
         # Now update image with new color scale, and update colorbar
         self.xy_image.setImage(image=xy_image_data, levels=(cb_range[0], cb_range[1]))
         self.refresh_xy_colorbar()
+
+        mini,maxi=self._scanning_logic.image_y_range
+        mu_scanned_line=mini+((self._scanning_logic._scan_counter)/(xy_image_data.shape[0]-1))*(maxi-mini) # if you find the variable giving the scanned line in its µ position, PUT IT HERE !!!! avoid this terrible conversion!
+        self.scan_pos_line.setValue(mu_scanned_line)
 
         # Unlock state widget if scan is finished
         if self._scanning_logic.module_state() != 'locked':

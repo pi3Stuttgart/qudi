@@ -6,2116 +6,2140 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1483</width>
-    <height>1025</height>
+    <width>1143</width>
+    <height>897</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>qudi: ODMR</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QTabWidget" name="tabWidget">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>1431</width>
-      <height>991</height>
-     </rect>
-    </property>
-    <property name="currentIndex">
-     <number>0</number>
-    </property>
-    <widget class="QWidget" name="tab">
-     <attribute name="title">
-      <string>cw ODMR</string>
-     </attribute>
-     <widget class="QWidget" name="gridLayoutWidget">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>1381</width>
-        <height>951</height>
-       </rect>
+   <layout class="QVBoxLayout" name="verticalLayout_3">
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>0</number>
       </property>
-      <layout class="QGridLayout" name="gridLayout">
-       <item row="1" column="2" colspan="5">
-        <widget class="QLineEdit" name="cw_Filename_LineEdit">
-         <property name="text">
-          <string>Filename</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="5">
-        <widget class="QLineEdit" name="cw_StartFreq_LineEdit">
-         <property name="text">
-          <string>Start Frequency</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QPushButton" name="cw_Load_Button">
-         <property name="text">
-          <string>Load</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0" colspan="13">
-        <widget class="Line" name="line_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="label_10">
-         <property name="text">
-          <string>Pulsed Repump:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="11">
-        <widget class="QLabel" name="label_6">
-         <property name="text">
-          <string>Seconds per Point:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>MW1:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="3">
-        <widget class="QCheckBox" name="cw_A1_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="9">
-        <widget class="QLabel" name="label_23">
-         <property name="text">
-          <string>Linewidths:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="1">
-        <widget class="QCheckBox" name="cw_CWRepump_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0" colspan="13">
-        <widget class="Line" name="line">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="4">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Start Frequency (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="9">
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Periodic Saving:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="12">
-        <widget class="QLineEdit" name="cw_Stoptime_LineEdit">
-         <property name="text">
-          <string>Stoptime</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="10">
-        <widget class="QLabel" name="cw_Linewidths_Fit_Label">
-         <property name="text">
-          <string>Linewidth_Fit</string>
-         </property>
-        </widget>
-       </item>
-       <item row="15" column="0" colspan="12">
-        <widget class="PlotWidget" name="cw_odmr_matrix_PlotWidget">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>1</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="11">
-        <widget class="QLabel" name="label_18">
-         <property name="text">
-          <string>Number of Lines:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="11">
-        <widget class="QLineEdit" name="cw_Interval_LineEdit">
-         <property name="text">
-          <string>Saving Interval</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="10">
-        <widget class="QLabel" name="label_26">
-         <property name="text">
-          <string>Runtime:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="6" rowspan="4">
-        <widget class="Line" name="line_4">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="label_12">
-         <property name="text">
-          <string>MW2:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="9">
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Stepsize (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="0" colspan="13">
-        <widget class="Line" name="line_3">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="4">
-        <widget class="QLabel" name="label_27">
-         <property name="text">
-          <string>Frequency (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="4">
-        <widget class="QLabel" name="label_17">
-         <property name="text">
-          <string>Repump Decay (µs):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="3">
-        <widget class="QLineEdit" name="cw_RepumpDuration_LineEdit">
-         <property name="text">
-          <string>Repump Duration</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QPushButton" name="cw_Save_Button">
-         <property name="text">
-          <string>Save</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="3">
-        <widget class="QLineEdit" name="cw_MW3_Power_LineEdit">
-         <property name="text">
-          <string>MW3 Power</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QCheckBox" name="cw_MW3_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="2">
-        <widget class="QLabel" name="label_13">
-         <property name="text">
-          <string>A1:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="9">
-        <widget class="QLabel" name="label_20">
-         <property name="text">
-          <string>Number of Peaks:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="12">
-        <widget class="QLineEdit" name="cw_NumberOfLines_LineEdit">
-         <property name="text">
-          <string>Number of Lines</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="5">
-        <widget class="QLineEdit" name="cw_MW3_Freq_LineEdit">
-         <property name="text">
-          <string>MW3 Frequency</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="3">
-        <widget class="QLineEdit" name="cw_MW2_Power_LineEdit">
-         <property name="text">
-          <string>MW2 Power</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="2">
-        <widget class="QLabel" name="label_9">
-         <property name="text">
-          <string>Power (dBm):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="2">
-        <widget class="QLabel" name="label_16">
-         <property name="text">
-          <string>Repump Duration (µs):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QCheckBox" name="cw_MW1_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="4">
-        <widget class="QLabel" name="label_14">
-         <property name="text">
-          <string>A2:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="2">
-        <widget class="QLabel" name="label_8">
-         <property name="text">
-          <string>Power (dBm):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="9">
-        <widget class="QLabel" name="label_25">
-         <property name="text">
-          <string>Max. Iterations:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="10">
-        <widget class="QLineEdit" name="cw_MaxIterations_LineEdit">
-         <property name="text">
-          <string>20</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="5">
-        <widget class="QLineEdit" name="cw_RepumpDecay_LineEdit">
-         <property name="text">
-          <string>Repump Decay</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="10">
-        <widget class="QLineEdit" name="cw_NumberOfPeaks_LineEdit">
-         <property name="text">
-          <string>1</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QPushButton" name="cw_Continue_Button">
-         <property name="text">
-          <string>Continue</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="5">
-        <widget class="QCheckBox" name="cw_A2_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="4">
-        <widget class="QLabel" name="label_28">
-         <property name="text">
-          <string>Frequency (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QCheckBox" name="cw_MW2_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="5">
-        <widget class="QLineEdit" name="cw_MW2_Freq_LineEdit">
-         <property name="text">
-          <string>MW2 Frequency</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1">
-        <widget class="QCheckBox" name="cw_PulsedRepump_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="7">
-        <widget class="QLabel" name="label_21">
-         <property name="text">
-          <string>Frequencies:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="3">
-        <widget class="QLineEdit" name="cw_MW1_Power_LineEdit">
-         <property name="text">
-          <string>MW1 Power</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="7">
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>Stop Frequency (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="10">
-        <widget class="QCheckBox" name="cw_PeriodicSaving_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="0">
-        <widget class="QLabel" name="label_15">
-         <property name="text">
-          <string>CW Repump:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QPushButton" name="cw_Stop_Button">
-         <property name="text">
-          <string>Stop</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="label_11">
-         <property name="text">
-          <string>MW3:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="8">
-        <widget class="QLabel" name="cw_Frequencies_Fit_Label">
-         <property name="text">
-          <string>Frequencies_Fit</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="7">
-        <widget class="QLabel" name="label_19">
-         <property name="text">
-          <string>Perform Fit:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="8">
-        <widget class="QLineEdit" name="cw_StopFreq_LineEdit">
-         <property name="text">
-          <string>Stop Frequency</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="12">
-        <widget class="QLineEdit" name="cw_SecondsPerPoint_LineEdit">
-         <property name="text">
-          <string>0.02</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QPushButton" name="cw_Run_Button">
-         <property name="text">
-          <string>Run</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="8">
-        <widget class="QCheckBox" name="cw_PerformFit_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="2">
-        <widget class="QLabel" name="label_7">
-         <property name="text">
-          <string>Power (dBm):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="10">
-        <widget class="QLineEdit" name="cw_Stepsize_LineEdit">
-         <property name="text">
-          <string>Stepsize</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="11">
-        <widget class="QLabel" name="cw_Runtime_Label">
-         <property name="frameShape">
-          <enum>QFrame::Box</enum>
-         </property>
-         <property name="text">
-          <string>Runtime</string>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="0" colspan="12">
-        <widget class="PlotWidget" name="cw_odmr_PlotWidget">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>1</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="0">
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="13" column="12" rowspan="3">
-        <layout class="QVBoxLayout" name="verticalLayout">
-         <item>
-          <widget class="QComboBox" name="cw_odmr_channel_ComboBox"/>
-         </item>
-         <item>
-          <widget class="ScienDSpinBox" name="cw_odmr_cb_max_DoubleSpinBox">
-           <property name="maximumSize">
-            <size>
-             <width>100</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="suffix">
-            <string>c/s</string>
-           </property>
-           <property name="minimum">
-            <double>-10.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>1000000000.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>100000.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="ScienDSpinBox" name="cw_odmr_cb_high_percentile_DoubleSpinBox">
-           <property name="maximumSize">
-            <size>
-             <width>100</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="suffix">
-            <string>%</string>
-           </property>
-           <property name="minimum">
-            <double>0.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>100.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>100.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="PlotWidget" name="cw_odmr_cb_PlotWidget">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>80</width>
-             <height>16777215</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="ScienDSpinBox" name="cw_odmr_cb_low_percentile_DoubleSpinBox">
-           <property name="maximumSize">
-            <size>
-             <width>100</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="suffix">
-            <string>%</string>
-           </property>
-           <property name="minimum">
-            <double>0.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>100.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>1.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="ScienDSpinBox" name="cw_odmr_cb_min_DoubleSpinBox">
-           <property name="maximumSize">
-            <size>
-             <width>100</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="suffix">
-            <string>c/s</string>
-           </property>
-           <property name="minimum">
-            <double>-10.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>1000000000.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>1000.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="cw_odmr_cb_centiles_RadioButton">
+      <widget class="QWidget" name="tab">
+       <attribute name="title">
+        <string>cw ODMR</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <item>
+         <layout class="QGridLayout" name="gridLayout">
+          <item row="8" column="1">
+           <widget class="QCheckBox" name="cw_PulsedRepump_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QPushButton" name="cw_Run_Button">
+            <property name="text">
+             <string>Run</string>
+            </property>
+           </widget>
+          </item>
+          <item row="13" column="12" rowspan="3">
+           <layout class="QVBoxLayout" name="verticalLayout">
+            <item>
+             <widget class="QComboBox" name="cw_odmr_channel_ComboBox"/>
+            </item>
+            <item>
+             <widget class="ScienDSpinBox" name="cw_odmr_cb_max_DoubleSpinBox">
+              <property name="maximumSize">
+               <size>
+                <width>100</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="suffix">
+               <string>c/s</string>
+              </property>
+              <property name="minimum">
+               <double>-10.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>1000000000.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>100000.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="ScienDSpinBox" name="cw_odmr_cb_high_percentile_DoubleSpinBox">
+              <property name="maximumSize">
+               <size>
+                <width>100</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="suffix">
+               <string>%</string>
+              </property>
+              <property name="minimum">
+               <double>0.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>100.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>100.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="PlotWidget" name="cw_odmr_cb_PlotWidget">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>80</width>
+                <height>16777215</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="ScienDSpinBox" name="cw_odmr_cb_low_percentile_DoubleSpinBox">
+              <property name="maximumSize">
+               <size>
+                <width>100</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="suffix">
+               <string>%</string>
+              </property>
+              <property name="minimum">
+               <double>0.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>100.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>1.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="ScienDSpinBox" name="cw_odmr_cb_min_DoubleSpinBox">
+              <property name="maximumSize">
+               <size>
+                <width>100</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="suffix">
+               <string>c/s</string>
+              </property>
+              <property name="minimum">
+               <double>-10.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>1000000000.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>1000.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="cw_odmr_cb_centiles_RadioButton">
+              <property name="text">
+               <string>Per&amp;centiles</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="cw_odmr_cb_manual_RadioButton">
+              <property name="text">
+               <string>Man&amp;ual</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="1" column="9">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Periodic Saving:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="4">
+           <widget class="QLabel" name="label_3">
+            <property name="text">
+             <string>Start Frequency (MHz):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QLabel" name="label_9">
+            <property name="text">
+             <string>Power (dBm):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QCheckBox" name="cw_MW1_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="5">
+           <widget class="QLineEdit" name="cw_StartFreq_LineEdit">
+            <property name="text">
+             <string>Start Frequency</string>
+            </property>
+           </widget>
+          </item>
+          <item row="15" column="0" colspan="12">
+           <widget class="PlotWidget" name="cw_odmr_matrix_PlotWidget">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>1</horstretch>
+              <verstretch>1</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="3">
+           <widget class="QLineEdit" name="cw_MW2_Power_LineEdit">
+            <property name="text">
+             <string>MW2 Power</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="1">
+           <widget class="QCheckBox" name="cw_CWRepump_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="0" colspan="13">
+           <widget class="Line" name="line_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="0">
+           <widget class="QLabel" name="label_15">
+            <property name="text">
+             <string>CW Repump:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="12">
+           <widget class="QLineEdit" name="cw_Stoptime_LineEdit">
+            <property name="text">
+             <string>Stoptime</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="0">
+           <widget class="QLabel" name="label_10">
+            <property name="text">
+             <string>Pulsed Repump:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="4">
+           <widget class="QLabel" name="label_14">
+            <property name="text">
+             <string>A2:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="cw_Save_Button">
+            <property name="text">
+             <string>Save</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QCheckBox" name="cw_MW2_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="4">
+           <widget class="QLabel" name="label_27">
+            <property name="text">
+             <string>Frequency (MHz):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="2">
+           <widget class="QLabel" name="label_7">
+            <property name="text">
+             <string>Power (dBm):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="8">
+           <widget class="QLineEdit" name="cw_StopFreq_LineEdit">
+            <property name="text">
+             <string>Stop Frequency</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="13">
+           <widget class="Line" name="line">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="11">
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Seconds per Point:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="7">
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>Stop Frequency (MHz):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="5">
+           <widget class="QLineEdit" name="cw_RepumpDecay_LineEdit">
+            <property name="text">
+             <string>Repump Decay</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="10">
+           <widget class="QLineEdit" name="cw_Stepsize_LineEdit">
+            <property name="text">
+             <string>Stepsize</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="2">
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>Power (dBm):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="11">
+           <widget class="QLabel" name="cw_Runtime_Label">
+            <property name="frameShape">
+             <enum>QFrame::Box</enum>
+            </property>
+            <property name="text">
+             <string>Runtime</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="5">
+           <widget class="QCheckBox" name="cw_A2_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="2">
+           <widget class="QLabel" name="label_16">
+            <property name="text">
+             <string>Repump Duration (µs):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="4">
+           <widget class="QLabel" name="label_17">
+            <property name="text">
+             <string>Repump Decay (µs):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="12">
+           <widget class="QLineEdit" name="cw_SecondsPerPoint_LineEdit">
+            <property name="text">
+             <string>0.02</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="3">
+           <widget class="QLineEdit" name="cw_MW3_Power_LineEdit">
+            <property name="text">
+             <string>MW3 Power</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="9">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Stepsize (MHz):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="3">
+           <widget class="QLineEdit" name="cw_MW1_Power_LineEdit">
+            <property name="text">
+             <string>MW1 Power</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="label_11">
+            <property name="text">
+             <string>MW3:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="4">
+           <widget class="QLabel" name="label_28">
+            <property name="text">
+             <string>Frequency (MHz):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="0" colspan="13">
+           <widget class="Line" name="line_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="11">
+           <widget class="QLabel" name="label_18">
+            <property name="text">
+             <string>Number of Lines:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="2">
+           <widget class="QLabel" name="label_13">
+            <property name="text">
+             <string>A1:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="9">
+           <widget class="QCheckBox" name="cw_PerformFit_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="13" column="0" colspan="12">
+           <widget class="PlotWidget" name="cw_odmr_PlotWidget">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>1</horstretch>
+              <verstretch>1</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="3">
+           <widget class="QCheckBox" name="cw_A1_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QCheckBox" name="cw_MW3_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="12">
+           <widget class="QLineEdit" name="cw_NumberOfLines_LineEdit">
+            <property name="text">
+             <string>Number of Lines</string>
+            </property>
+           </widget>
+          </item>
+          <item row="14" column="0">
+           <spacer name="verticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="5" column="5">
+           <widget class="QLineEdit" name="cw_MW3_Freq_LineEdit">
+            <property name="text">
+             <string>MW3 Frequency</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="6" rowspan="4">
+           <widget class="Line" name="line_4">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_12">
+            <property name="text">
+             <string>MW2:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QPushButton" name="cw_Load_Button">
+            <property name="text">
+             <string>Load</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="10">
+           <widget class="QLabel" name="label_26">
+            <property name="text">
+             <string>Runtime:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="3">
+           <widget class="QLineEdit" name="cw_RepumpDuration_LineEdit">
+            <property name="text">
+             <string>Repump Duration</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QPushButton" name="cw_Continue_Button">
+            <property name="text">
+             <string>Continue</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>MW1:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QPushButton" name="cw_Stop_Button">
+            <property name="text">
+             <string>Stop</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="11">
+           <widget class="QLineEdit" name="cw_Interval_LineEdit">
+            <property name="text">
+             <string>Saving Interval</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2" colspan="5">
+           <widget class="QLineEdit" name="cw_Filename_LineEdit">
+            <property name="text">
+             <string>Filename</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="10">
+           <widget class="QCheckBox" name="cw_PeriodicSaving_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="5">
+           <widget class="QLineEdit" name="cw_MW2_Freq_LineEdit">
+            <property name="text">
+             <string>MW2 Frequency</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="8">
+           <widget class="QLabel" name="label_19">
+            <property name="text">
+             <string>Perform Fit:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="7">
+           <widget class="QRadioButton" name="cw_SelectGaussianFit_RadioButton">
+            <property name="text">
+             <string>Gaussian Fit</string>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">cwSelectFitRadioButtonGroup</string>
+            </attribute>
+           </widget>
+          </item>
+          <item row="9" column="7">
+           <widget class="QRadioButton" name="cw_SelectLorentzianFit_RadioButton">
+            <property name="text">
+             <string>Lorentzian Fit</string>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">cwSelectFitRadioButtonGroup</string>
+            </attribute>
+           </widget>
+          </item>
+          <item row="9" column="8">
+           <widget class="QLabel" name="label_20">
+            <property name="text">
+             <string>Number of Peaks:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="9">
+           <widget class="QLineEdit" name="cw_NumberOfPeaks_LineEdit">
+            <property name="text">
+             <string>1</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="10">
+           <widget class="QLabel" name="label_50">
+            <property name="text">
+             <string>Contrast:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="11">
+           <widget class="QLabel" name="cw_Contrast_Fit_Label">
+            <property name="text">
+             <string>Contrast_Fit</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="10">
+           <widget class="QLabel" name="label_21">
+            <property name="text">
+             <string>Frequencies:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="11">
+           <widget class="QLabel" name="cw_Frequencies_Fit_Label">
+            <property name="text">
+             <string>Frequencies_Fit</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="10">
+           <widget class="QLabel" name="label_23">
+            <property name="text">
+             <string>Linewidths:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="11">
+           <widget class="QLabel" name="cw_Linewidths_Fit_Label">
+            <property name="text">
+             <string>Linewidth_Fit</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab">
+       <attribute name="title">
+        <string>Pulsed ODMR</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <layout class="QGridLayout" name="gridLayout_7">
+          <item row="12" column="0">
+           <widget class="QLabel" name="label_141">
+            <property name="text">
+             <string>AOM Delay (ns):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="10">
+           <widget class="QCheckBox" name="pulsed_PeriodicSaving_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="2">
+           <widget class="QLabel" name="label_139">
+            <property name="text">
+             <string>Readout Time (µs):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="1">
+           <widget class="QLineEdit" name="pulsed_AOMDelay_LineEdit">
+            <property name="text">
+             <string>AOM Delay</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QCheckBox" name="pulsed_MW3_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QLabel" name="label_121">
+            <property name="text">
+             <string>Power (dBm):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="11">
+           <widget class="QLineEdit" name="pulsed_Interval_LineEdit">
+            <property name="text">
+             <string>Saving Interval</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="5">
+           <widget class="QLineEdit" name="pulsed_StartFreq_LineEdit">
+            <property name="text">
+             <string>Start Frequency</string>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="2">
+           <widget class="QLabel" name="label_137">
+            <property name="text">
+             <string>A1 Readout:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="5">
+           <widget class="QCheckBox" name="pulsed_A2_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="9">
+           <widget class="QLabel" name="label_116">
+            <property name="text">
+             <string>Stepsize (MHz):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="4">
+           <widget class="QLabel" name="label_138">
+            <property name="text">
+             <string>A2 Readout:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="4">
+           <widget class="QLabel" name="label_123">
+            <property name="text">
+             <string>A2 Init:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="5">
+           <widget class="QLineEdit" name="pulsed_MW2_Freq_LineEdit">
+            <property name="text">
+             <string>MW2 Frequency</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="11">
+           <widget class="QLabel" name="label_108">
+            <property name="text">
+             <string>Seconds per Point:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="16" column="0" colspan="12">
+           <widget class="PlotWidget" name="pulsed_odmr_detect_PlotWidget">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>1</horstretch>
+              <verstretch>1</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="5">
+           <widget class="QCheckBox" name="pulsed_A2Readout_checkBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="3">
+           <widget class="QCheckBox" name="pulsed_A1_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="4">
+           <widget class="QLabel" name="label_117">
+            <property name="text">
+             <string>Frequency (MHz):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="2">
+           <widget class="QLabel" name="label_135">
+            <property name="text">
+             <string>Pi Pulse duration (ns):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="0" colspan="13">
+           <widget class="Line" name="line_15">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QCheckBox" name="pulsed_MW1_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="5">
+           <widget class="QLineEdit" name="pulsed_PiDecay_lineEdit">
+            <property name="text">
+             <string>Pi Pulse Decay</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="3">
+           <widget class="QLineEdit" name="pulsed_InitTime_LineEdit">
+            <property name="text">
+             <string>Init Time</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="2">
+           <widget class="QLabel" name="label_119">
+            <property name="text">
+             <string>A1 Init:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="3">
+           <widget class="QLineEdit" name="pulsed_MW1_Power_LineEdit">
+            <property name="text">
+             <string>MW1 Power</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0">
+           <widget class="QLabel" name="label_130">
+            <property name="text">
+             <string>MW3 during Init::</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="6" rowspan="4">
+           <widget class="Line" name="line_17">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="8">
+           <widget class="QLineEdit" name="pulsed_StopFreq_LineEdit">
+            <property name="text">
+             <string>Stop Frequency</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="4">
+           <widget class="QLabel" name="label_111">
+            <property name="text">
+             <string>Start Frequency (MHz):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2" colspan="5">
+           <widget class="QLineEdit" name="pulsed_Filename_LineEdit">
+            <property name="text">
+             <string>Filename</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="1">
+           <widget class="QCheckBox" name="pulsed_PulsedRepump_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="14" column="0" colspan="12">
+           <widget class="PlotWidget" name="pulsed_odmr_data_PlotWidget">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>1</horstretch>
+              <verstretch>1</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="9">
+           <widget class="QLabel" name="label_112">
+            <property name="text">
+             <string>Periodic Saving:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="2">
+           <widget class="QLabel" name="label_124">
+            <property name="text">
+             <string>Power (dBm):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QPushButton" name="pulsed_Stop_Button">
+            <property name="text">
+             <string>Stop</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="13">
+           <widget class="Line" name="line_16">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="15" column="0" colspan="12">
+           <widget class="PlotWidget" name="pulsed_odmr_matrix_PlotWidget">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>1</horstretch>
+              <verstretch>1</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="11">
+           <widget class="QLabel" name="label_113">
+            <property name="text">
+             <string>Number of Lines:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="5">
+           <widget class="QLineEdit" name="pulsed_DecayInit_LineEdit">
+            <property name="text">
+             <string>Init Decay</string>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="3">
+           <widget class="QLineEdit" name="pulsed_ReadoutTime_LineEdit">
+            <property name="text">
+             <string>Readout Time</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QCheckBox" name="pulsed_MW2_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="3">
+           <widget class="QLineEdit" name="pulsed_MW3_Power_LineEdit">
+            <property name="text">
+             <string>MW3 Power</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="3">
+           <widget class="QLineEdit" name="pulsed_MW2_Power_LineEdit">
+            <property name="text">
+             <string>MW2 Power</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="10">
+           <widget class="QLabel" name="label_114">
+            <property name="text">
+             <string>Runtime:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="12">
+           <widget class="QLineEdit" name="pulsed_NumberOfLines_LineEdit">
+            <property name="text">
+             <string>Number of Lines</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="12">
+           <widget class="QLineEdit" name="pulsed_SecondsPerPoint_LineEdit">
+            <property name="text">
+             <string>0.02</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="1">
+           <widget class="QCheckBox" name="pulsed_CWRepump_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="5">
+           <widget class="QLineEdit" name="pulsed_ReadoutDecay_LineEdit">
+            <property name="text">
+             <string>Readout Decay</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QPushButton" name="pulsed_Load_Button">
+            <property name="text">
+             <string>Load</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="3">
+           <widget class="QLineEdit" name="pulsed_piPulseDuration_lineEdit">
+            <property name="text">
+             <string>Pi Pulse Duration</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="4">
+           <widget class="QLabel" name="label_118">
+            <property name="text">
+             <string>Repump Decay (µs):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QPushButton" name="pulsed_Continue_Button">
+            <property name="text">
+             <string>Continue</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="7">
+           <widget class="QLabel" name="label_128">
+            <property name="text">
+             <string>Stop Frequency (MHz):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="10">
+           <widget class="QLineEdit" name="pulsed_Stepsize_LineEdit">
+            <property name="text">
+             <string>Stepsize</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="5">
+           <widget class="QLineEdit" name="pulsed_MW3_Freq_LineEdit">
+            <property name="text">
+             <string>MW3 Frequency</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="4">
+           <widget class="QLabel" name="label_126">
+            <property name="text">
+             <string>Frequency (MHz):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="13" column="0" colspan="13">
+           <widget class="Line" name="line_18">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="11">
+           <widget class="QLabel" name="pulsed_Runtime_Label">
+            <property name="frameShape">
+             <enum>QFrame::Box</enum>
+            </property>
+            <property name="text">
+             <string>Runtime</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="4">
+           <widget class="QLabel" name="label_134">
+            <property name="text">
+             <string>Init Decay (µs):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="label_115">
+            <property name="text">
+             <string>MW2 during Init:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_109">
+            <property name="text">
+             <string>MW1:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="14" column="12" rowspan="3">
+           <layout class="QVBoxLayout" name="verticalLayout">
+            <item>
+             <widget class="QComboBox" name="pulsed_odmr_channel_ComboBox"/>
+            </item>
+            <item>
+             <widget class="ScienDSpinBox" name="pulsed_odmr_cb_max_DoubleSpinBox">
+              <property name="maximumSize">
+               <size>
+                <width>100</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="suffix">
+               <string>c/s</string>
+              </property>
+              <property name="minimum">
+               <double>-10.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>1000000000.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>100000.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="ScienDSpinBox" name="pulsed_odmr_cb_high_percentile_DoubleSpinBox">
+              <property name="maximumSize">
+               <size>
+                <width>100</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="suffix">
+               <string>%</string>
+              </property>
+              <property name="minimum">
+               <double>0.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>100.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>100.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="PlotWidget" name="pulsed_odmr_cb_PlotWidget">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>80</width>
+                <height>16777215</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="ScienDSpinBox" name="pulsed_odmr_cb_low_percentile_DoubleSpinBox">
+              <property name="maximumSize">
+               <size>
+                <width>100</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="suffix">
+               <string>%</string>
+              </property>
+              <property name="minimum">
+               <double>0.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>100.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>1.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="ScienDSpinBox" name="pulsed_odmr_cb_min_DoubleSpinBox">
+              <property name="maximumSize">
+               <size>
+                <width>100</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="suffix">
+               <string>c/s</string>
+              </property>
+              <property name="minimum">
+               <double>-10.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>1000000000.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>1000.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="pulsed_odmr_cb_centiles_RadioButton">
+              <property name="text">
+               <string>Per&amp;centiles</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="pulsed_odmr_cb_manual_RadioButton">
+              <property name="text">
+               <string>Man&amp;ual</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="0" column="12">
+           <widget class="QLineEdit" name="pulsed_Stoptime_LineEdit">
+            <property name="text">
+             <string>Stoptime</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="0">
+           <widget class="QLabel" name="label_129">
+            <property name="text">
+             <string>CW Repump:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="2">
+           <widget class="QLabel" name="label_132">
+            <property name="text">
+             <string>Power (dBm):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="pulsed_Save_Button">
+            <property name="text">
+             <string>Save</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QPushButton" name="pulsed_Run_Button">
+            <property name="text">
+             <string>Run</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="5">
+           <widget class="QLineEdit" name="pulsed_RepumpDecay_LineEdit">
+            <property name="text">
+             <string>Repump Decay</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="3">
+           <widget class="QLineEdit" name="pulsed_RepumpDuration_LineEdit">
+            <property name="text">
+             <string>Repump Duration</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="2">
+           <widget class="QLabel" name="label_122">
+            <property name="text">
+             <string>Repump Duration (µs):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="4">
+           <widget class="QLabel" name="label_140">
+            <property name="text">
+             <string>Readout Decay (µs):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="0">
+           <widget class="QLabel" name="label_107">
+            <property name="text">
+             <string>Pulsed Repump:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="4">
+           <widget class="QLabel" name="label_136">
+            <property name="text">
+             <string>Pi decay (ns):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="2">
+           <widget class="QLabel" name="label_133">
+            <property name="text">
+             <string>Init Time (µs):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="3">
+           <widget class="QCheckBox" name="pulsed_A1Readout_checkBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="7">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Binning (ns):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="12" column="8">
+           <widget class="QLineEdit" name="pulsed_Binning_LineEdit">
+            <property name="text">
+             <string>100</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="9">
+           <widget class="QCheckBox" name="pulsed_PerformFit_CheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="8">
+           <widget class="QLabel" name="label_131">
+            <property name="text">
+             <string>Perform Fit:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="8">
+           <widget class="QLabel" name="label_120">
+            <property name="text">
+             <string>Number of Peaks:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="9">
+           <widget class="QLineEdit" name="pulsed_NumberOfPeaks_LineEdit">
+            <property name="text">
+             <string>1</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="11">
+           <widget class="QLabel" name="pulsed_Linewidths_Fit_Label">
+            <property name="text">
+             <string>Linewidth_Fit</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="10">
+           <widget class="QLabel" name="label_110">
+            <property name="text">
+             <string>Linewidths:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="11">
+           <widget class="QLabel" name="pulsed_Frequencies_Fit_Label">
+            <property name="text">
+             <string>Frequencies_Fit</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="10">
+           <widget class="QLabel" name="label_127">
+            <property name="text">
+             <string>Frequencies:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="10">
+           <widget class="QLabel" name="label_25">
+            <property name="text">
+             <string>Contrast:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="11">
+           <widget class="QLabel" name="pulsed_Frequencies_Fit_Label_2">
+            <property name="text">
+             <string>Contrast_Fit</string>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="7">
+           <widget class="QRadioButton" name="pulsed_SelectGaussianFit_RadioButton">
+            <property name="text">
+             <string>Gaussian Fit</string>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">buttonGroup</string>
+            </attribute>
+           </widget>
+          </item>
+          <item row="9" column="7">
+           <widget class="QRadioButton" name="pulsed_SelectLorentzianFit_RadioButton">
+            <property name="text">
+             <string>Lorentzian Fit</string>
+            </property>
+            <attribute name="buttonGroup">
+             <string notr="true">buttonGroup</string>
+            </attribute>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_2">
+       <attribute name="title">
+        <string>Test</string>
+       </attribute>
+       <widget class="QWidget" name="gridLayoutWidget_2">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>641</width>
+          <height>351</height>
+         </rect>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_2">
+         <item row="6" column="2">
+          <widget class="QLabel" name="label_36">
            <property name="text">
-            <string>Per&amp;centiles</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
+            <string>Stepsize (MHz):</string>
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QRadioButton" name="cw_odmr_cb_manual_RadioButton">
+         <item row="8" column="4">
+          <widget class="QLabel" name="label_46">
            <property name="text">
-            <string>Man&amp;ual</string>
+            <string>Frequency (MHz):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="0">
+          <widget class="QLabel" name="label_35">
+           <property name="text">
+            <string>MW2:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="11" column="5">
+          <widget class="QCheckBox" name="cw_A2_CheckBox_2">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_24">
+           <property name="text">
+            <string>Seconds per Point:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="12" column="5">
+          <widget class="QLineEdit" name="cw_NumberOfPeaks_LineEdit_2">
+           <property name="text">
+            <string>1</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QPushButton" name="cw_Stop_Button_2">
+           <property name="text">
+            <string>Stop</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="2">
+          <widget class="QLabel" name="label_41">
+           <property name="text">
+            <string>Power (dBm):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="12" column="3">
+          <widget class="QLineEdit" name="cw_MaxIterations_LineEdit_2">
+           <property name="text">
+            <string>20</string>
+           </property>
+          </widget>
+         </item>
+         <item row="12" column="2">
+          <widget class="QLabel" name="label_45">
+           <property name="text">
+            <string>Max. Iterations:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="10" column="1">
+          <widget class="QCheckBox" name="cw_PulsedRepump_CheckBox_2">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="4">
+          <widget class="QLabel" name="label_48">
+           <property name="text">
+            <string>Stop Frequency (MHz):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="3">
+          <widget class="QLineEdit" name="cw_Interval_LineEdit_2">
+           <property name="text">
+            <string>Saving Interval</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLabel" name="cw_Runtime_Label_2">
+           <property name="frameShape">
+            <enum>QFrame::Box</enum>
+           </property>
+           <property name="text">
+            <string>Runtime</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="4">
+          <widget class="QLabel" name="label_31">
+           <property name="text">
+            <string>Start Frequency (MHz):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="11" column="2">
+          <widget class="QLabel" name="label_39">
+           <property name="text">
+            <string>A1:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="10" column="2">
+          <widget class="QLabel" name="label_42">
+           <property name="text">
+            <string>Repump Duration (µs):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QLabel" name="label_29">
+           <property name="text">
+            <string>MW1:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="14" column="3">
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="11" column="4">
+          <widget class="QLabel" name="label_43">
+           <property name="text">
+            <string>A2:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1">
+          <widget class="QCheckBox" name="cw_MW1_CheckBox_2">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="3">
+          <widget class="QLineEdit" name="cw_MW1_Power_LineEdit_2">
+           <property name="text">
+            <string>MW1 Power</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="4">
+          <widget class="QCheckBox" name="cw_PeriodicSaving_CheckBox_2">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="4">
+          <widget class="QLabel" name="label_37">
+           <property name="text">
+            <string>Frequency (MHz):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="3">
+          <widget class="QLineEdit" name="cw_Stepsize_LineEdit_2">
+           <property name="text">
+            <string>Stepsize</string>
+           </property>
+          </widget>
+         </item>
+         <item row="10" column="0">
+          <widget class="QLabel" name="label_22">
+           <property name="text">
+            <string>Pulsed Repump:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="13" column="2">
+          <widget class="QLabel" name="label_47">
+           <property name="text">
+            <string>Frequencies:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="3">
+          <widget class="QLineEdit" name="cw_MW3_Power_LineEdit_2">
+           <property name="text">
+            <string>MW3 Power</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="2">
+          <widget class="QLabel" name="label2">
+           <property name="text">
+            <string>Power (dBm):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="5">
+          <widget class="QLineEdit" name="cw_MW3_Freq_LineEdit_2">
+           <property name="text">
+            <string>MW3 Frequency</string>
+           </property>
+          </widget>
+         </item>
+         <item row="11" column="3">
+          <widget class="QCheckBox" name="cw_A1_CheckBox_2">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QPushButton" name="cw_Run_Button_2">
+           <property name="text">
+            <string>Run</string>
+           </property>
+          </widget>
+         </item>
+         <item row="17" column="0" colspan="8">
+          <widget class="Line" name="line_8">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="11" column="1">
+          <widget class="QCheckBox" name="cw_CWRepump_CheckBox_2">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="10" column="5">
+          <widget class="QLineEdit" name="cw_RepumpDecay_LineEdit_2">
+           <property name="text">
+            <string>Repump Decay</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="3">
+          <widget class="QLineEdit" name="cw_MW2_Power_LineEdit_2">
+           <property name="text">
+            <string>MW2 Power</string>
+           </property>
+          </widget>
+         </item>
+         <item row="12" column="1">
+          <widget class="QCheckBox" name="cw_PerformFit_CheckBox_2">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="10" column="4">
+          <widget class="QLabel" name="label_38">
+           <property name="text">
+            <string>Repump Decay (µs):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="13" column="3">
+          <widget class="QLabel" name="cw_Frequencies_Fit_Label_2">
+           <property name="text">
+            <string>Frequencies_Fit</string>
+           </property>
+          </widget>
+         </item>
+         <item row="10" column="3">
+          <widget class="QLineEdit" name="cw_RepumpDuration_LineEdit_2">
+           <property name="text">
+            <string>Repump Duration</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <widget class="QLineEdit" name="cw_Stoptime_LineEdit_2">
+           <property name="text">
+            <string>Stoptime</string>
+           </property>
+          </widget>
+         </item>
+         <item row="13" column="1">
+          <widget class="QLabel" name="cw_Linewidths_Fit_Label_2">
+           <property name="text">
+            <string>Linewidth_Fit</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="5">
+          <widget class="QLineEdit" name="cw_NumberOfLines_LlineEdit_2">
+           <property name="text">
+            <string>Number of Lines</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="cw_Continue_Button_2">
+           <property name="text">
+            <string>Continue</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="5">
+          <widget class="QLineEdit" name="cw_StartFreq_LineEdit_2">
+           <property name="text">
+            <string>Start Frequency</string>
+           </property>
+          </widget>
+         </item>
+         <item row="12" column="0">
+          <widget class="QLabel" name="label1">
+           <property name="text">
+            <string>Perform Fit:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_34">
+           <property name="text">
+            <string>Runtime:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="1">
+          <widget class="QCheckBox" name="cw_MW3_CheckBox_2">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="13" column="0">
+          <widget class="QLabel" name="label_30">
+           <property name="text">
+            <string>Linewidths:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QPushButton" name="cw_Save_Button_2">
+           <property name="text">
+            <string>Save</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="3">
+          <widget class="QLabel" name="label_32">
+           <property name="text">
+            <string>Periodic Saving:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="5">
+          <widget class="QLineEdit" name="cw_StopFreq_LineEdit_2">
+           <property name="text">
+            <string>Stop Frequency</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="1">
+          <widget class="QCheckBox" name="cw_MW2_CheckBox_2">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="4">
+          <widget class="QLabel" name="label_33">
+           <property name="text">
+            <string>Number of Lines:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLineEdit" name="cw_SecondsPerPoint_LineEdit_2">
+           <property name="text">
+            <string>0.02</string>
+           </property>
+          </widget>
+         </item>
+         <item row="12" column="4">
+          <widget class="QLabel" name="label_40">
+           <property name="text">
+            <string>Number of Peaks:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="2">
+          <widget class="QLabel" name="label_44">
+           <property name="text">
+            <string>Power (dBm):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2" colspan="4">
+          <widget class="QLineEdit" name="cw_Filename_LineEdit_2">
+           <property name="text">
+            <string>Filename</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QPushButton" name="cw_Load_Button_2">
+           <property name="text">
+            <string>Load</string>
+           </property>
+          </widget>
+         </item>
+         <item row="11" column="0">
+          <widget class="QLabel" name="label_49">
+           <property name="text">
+            <string>CW Repump:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="0">
+          <widget class="QLabel" name="label0">
+           <property name="text">
+            <string>MW3:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="2">
+          <widget class="QLabel" name="label3">
+           <property name="text">
+            <string>Saving Interval (s):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="5">
+          <widget class="QLineEdit" name="cw_MW2_Freq_LineEdit_2">
+           <property name="text">
+            <string>MW2 Frequency</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0" colspan="6">
+          <widget class="Line" name="line">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="9" column="0" colspan="6">
+          <widget class="Line" name="line_6">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
            </property>
           </widget>
          </item>
         </layout>
-       </item>
-      </layout>
-     </widget>
-    </widget>
-    <widget class="QWidget" name="tab">
-     <attribute name="title">
-      <string>Pulsed ODMR</string>
-     </attribute>
-     <widget class="QWidget" name="gridLayoutWidget_7">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>1381</width>
-        <height>961</height>
-       </rect>
-      </property>
-      <layout class="QGridLayout" name="gridLayout_7">
-       <item row="12" column="0">
-        <widget class="QLabel" name="label_141">
-         <property name="text">
-          <string>AOM Delay (ns):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="10">
-        <widget class="QCheckBox" name="pulsed_PeriodicSaving_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="8">
-        <widget class="QLabel" name="pulsed_Frequencies_Fit_Label">
-         <property name="text">
-          <string>Frequencies_Fit</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="2">
-        <widget class="QLabel" name="label_139">
-         <property name="text">
-          <string>Readout Time (µs):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="1">
-        <widget class="QLineEdit" name="pulsed_AOMDelay_LineEdit">
-         <property name="text">
-          <string>AOM Delay</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="QCheckBox" name="pulsed_MW3_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="2">
-        <widget class="QLabel" name="label_121">
-         <property name="text">
-          <string>Power (dBm):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="11">
-        <widget class="QLineEdit" name="pulsed_Interval_LineEdit">
-         <property name="text">
-          <string>Saving Interval</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="5">
-        <widget class="QLineEdit" name="pulsed_StartFreq_LineEdit">
-         <property name="text">
-          <string>Start Frequency</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="2">
-        <widget class="QLabel" name="label_137">
-         <property name="text">
-          <string>A1 Readout:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="5">
-        <widget class="QCheckBox" name="pulsed_A2_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="9">
-        <widget class="QLabel" name="label_116">
-         <property name="text">
-          <string>Stepsize (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="4">
-        <widget class="QLabel" name="label_138">
-         <property name="text">
-          <string>A2 Readout:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="4">
-        <widget class="QLabel" name="label_123">
-         <property name="text">
-          <string>A2 Init:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="5">
-        <widget class="QLineEdit" name="pulsed_MW2_Freq_LineEdit">
-         <property name="text">
-          <string>MW2 Frequency</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="11">
-        <widget class="QLabel" name="label_108">
-         <property name="text">
-          <string>Seconds per Point:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="16" column="0" colspan="12">
-        <widget class="PlotWidget" name="pulsed_odmr_detect_PlotWidget">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>1</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="9">
-        <widget class="QLabel" name="label_125">
-         <property name="text">
-          <string>Max. Iterations:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="5">
-        <widget class="QCheckBox" name="pulsed_A2Readout_checkBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="3">
-        <widget class="QCheckBox" name="pulsed_A1_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="4">
-        <widget class="QLabel" name="label_117">
-         <property name="text">
-          <string>Frequency (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="2">
-        <widget class="QLabel" name="label_135">
-         <property name="text">
-          <string>Pi Pulse duration (ns):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0" colspan="13">
-        <widget class="Line" name="line_15">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QCheckBox" name="pulsed_MW1_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="8">
-        <widget class="QCheckBox" name="pulsed_PerformFit_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="5">
-        <widget class="QLineEdit" name="pulsed_PiDecay_lineEdit">
-         <property name="text">
-          <string>Pi Pulse Decay</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="3">
-        <widget class="QLineEdit" name="pulsed_InitTime_LineEdit">
-         <property name="text">
-          <string>Init Time</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="2">
-        <widget class="QLabel" name="label_119">
-         <property name="text">
-          <string>A1 Init:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="3">
-        <widget class="QLineEdit" name="pulsed_MW1_Power_LineEdit">
-         <property name="text">
-          <string>MW1 Power</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="label_130">
-         <property name="text">
-          <string>MW3 during Init::</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="6" rowspan="4">
-        <widget class="Line" name="line_17">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="8">
-        <widget class="QLineEdit" name="pulsed_StopFreq_LineEdit">
-         <property name="text">
-          <string>Stop Frequency</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="4">
-        <widget class="QLabel" name="label_111">
-         <property name="text">
-          <string>Start Frequency (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2" colspan="5">
-        <widget class="QLineEdit" name="pulsed_Filename_LineEdit">
-         <property name="text">
-          <string>Filename</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1">
-        <widget class="QCheckBox" name="pulsed_PulsedRepump_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="0" colspan="12">
-        <widget class="PlotWidget" name="pulsed_odmr_data_PlotWidget">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>1</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="9">
-        <widget class="QLabel" name="label_112">
-         <property name="text">
-          <string>Periodic Saving:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="2">
-        <widget class="QLabel" name="label_124">
-         <property name="text">
-          <string>Power (dBm):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QPushButton" name="pulsed_Stop_Button">
-         <property name="text">
-          <string>Stop</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0" colspan="13">
-        <widget class="Line" name="line_16">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="15" column="0" colspan="12">
-        <widget class="PlotWidget" name="pulsed_odmr_matrix_PlotWidget">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>1</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="11">
-        <widget class="QLabel" name="label_113">
-         <property name="text">
-          <string>Number of Lines:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="5">
-        <widget class="QLineEdit" name="pulsed_DecayInit_LineEdit">
-         <property name="text">
-          <string>Init Decay</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="3">
-        <widget class="QLineEdit" name="pulsed_ReadoutTime_LineEdit">
-         <property name="text">
-          <string>Readout Time</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QCheckBox" name="pulsed_MW2_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="3">
-        <widget class="QLineEdit" name="pulsed_MW3_Power_LineEdit">
-         <property name="text">
-          <string>MW3 Power</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="10">
-        <widget class="QLineEdit" name="pulsed_MaxIterations_LineEdit">
-         <property name="text">
-          <string>20</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="3">
-        <widget class="QLineEdit" name="pulsed_MW2_Power_LineEdit">
-         <property name="text">
-          <string>MW2 Power</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="10">
-        <widget class="QLabel" name="label_114">
-         <property name="text">
-          <string>Runtime:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="12">
-        <widget class="QLineEdit" name="pulsed_NumberOfLines_LineEdit">
-         <property name="text">
-          <string>Number of Lines</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="12">
-        <widget class="QLineEdit" name="pulsed_SecondsPerPoint_LineEdit">
-         <property name="text">
-          <string>0.02</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="1">
-        <widget class="QCheckBox" name="pulsed_CWRepump_CheckBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="5">
-        <widget class="QLineEdit" name="pulsed_ReadoutDecay_LineEdit">
-         <property name="text">
-          <string>Readout Decay</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QPushButton" name="pulsed_Load_Button">
-         <property name="text">
-          <string>Load</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="7">
-        <widget class="QLabel" name="label_131">
-         <property name="text">
-          <string>Perform Fit:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="3">
-        <widget class="QLineEdit" name="pulsed_piPulseDuration_lineEdit">
-         <property name="text">
-          <string>Pi Pulse Duration</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="4">
-        <widget class="QLabel" name="label_118">
-         <property name="text">
-          <string>Repump Decay (µs):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QPushButton" name="pulsed_Continue_Button">
-         <property name="text">
-          <string>Continue</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="7">
-        <widget class="QLabel" name="label_128">
-         <property name="text">
-          <string>Stop Frequency (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="9">
-        <widget class="QLabel" name="label_120">
-         <property name="text">
-          <string>Number of Peaks:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="10">
-        <widget class="QLineEdit" name="pulsed_Stepsize_LineEdit">
-         <property name="text">
-          <string>Stepsize</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="9">
-        <widget class="QLabel" name="label_110">
-         <property name="text">
-          <string>Linewidths:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="5">
-        <widget class="QLineEdit" name="pulsed_MW3_Freq_LineEdit">
-         <property name="text">
-          <string>MW3 Frequency</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="4">
-        <widget class="QLabel" name="label_126">
-         <property name="text">
-          <string>Frequency (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="0" colspan="13">
-        <widget class="Line" name="line_18">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="7">
-        <widget class="QLabel" name="label_127">
-         <property name="text">
-          <string>Frequencies:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="10">
-        <widget class="QLineEdit" name="pulsed_NumberOfPeaks_LineEdit">
-         <property name="text">
-          <string>1</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="11">
-        <widget class="QLabel" name="pulsed_Runtime_Label">
-         <property name="frameShape">
-          <enum>QFrame::Box</enum>
-         </property>
-         <property name="text">
-          <string>Runtime</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="4">
-        <widget class="QLabel" name="label_134">
-         <property name="text">
-          <string>Init Decay (µs):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="label_115">
-         <property name="text">
-          <string>MW2 during Init:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_109">
-         <property name="text">
-          <string>MW1:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="12" rowspan="3">
-        <layout class="QVBoxLayout" name="verticalLayout">
-         <item>
-          <widget class="QComboBox" name="pulsed_odmr_channel_ComboBox"/>
-         </item>
-         <item>
-          <widget class="ScienDSpinBox" name="pulsed_odmr_cb_max_DoubleSpinBox">
-           <property name="maximumSize">
-            <size>
-             <width>100</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="suffix">
-            <string>c/s</string>
-           </property>
-           <property name="minimum">
-            <double>-10.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>1000000000.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>100000.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="ScienDSpinBox" name="pulsed_odmr_cb_high_percentile_DoubleSpinBox">
-           <property name="maximumSize">
-            <size>
-             <width>100</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="suffix">
-            <string>%</string>
-           </property>
-           <property name="minimum">
-            <double>0.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>100.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>100.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="PlotWidget" name="pulsed_odmr_cb_PlotWidget">
+       </widget>
+       <widget class="QWidget" name="gridLayoutWidget_3">
+        <property name="geometry">
+         <rect>
+          <x>640</x>
+          <y>0</y>
+          <width>781</width>
+          <height>741</height>
+         </rect>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_3">
+         <item row="1" column="1">
+          <widget class="PlotWidget" name="cw_odmr_PlotWidget_3">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
+             <horstretch>1</horstretch>
+             <verstretch>1</verstretch>
             </sizepolicy>
            </property>
-           <property name="maximumSize">
-            <size>
-             <width>80</width>
-             <height>16777215</height>
-            </size>
-           </property>
           </widget>
          </item>
-         <item>
-          <widget class="ScienDSpinBox" name="pulsed_odmr_cb_low_percentile_DoubleSpinBox">
-           <property name="maximumSize">
-            <size>
-             <width>100</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="suffix">
-            <string>%</string>
-           </property>
-           <property name="minimum">
-            <double>0.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>100.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>1.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="ScienDSpinBox" name="pulsed_odmr_cb_min_DoubleSpinBox">
-           <property name="maximumSize">
-            <size>
-             <width>100</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="suffix">
-            <string>c/s</string>
-           </property>
-           <property name="minimum">
-            <double>-10.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>1000000000.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>1000.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="pulsed_odmr_cb_centiles_RadioButton">
-           <property name="text">
-            <string>Per&amp;centiles</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="pulsed_odmr_cb_manual_RadioButton">
-           <property name="text">
-            <string>Man&amp;ual</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="0" column="12">
-        <widget class="QLineEdit" name="pulsed_Stoptime_LineEdit">
-         <property name="text">
-          <string>Stoptime</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="0">
-        <widget class="QLabel" name="label_129">
-         <property name="text">
-          <string>CW Repump:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="2">
-        <widget class="QLabel" name="label_132">
-         <property name="text">
-          <string>Power (dBm):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QPushButton" name="pulsed_Save_Button">
-         <property name="text">
-          <string>Save</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QPushButton" name="pulsed_Run_Button">
-         <property name="text">
-          <string>Run</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="5">
-        <widget class="QLineEdit" name="pulsed_RepumpDecay_LineEdit">
-         <property name="text">
-          <string>Repump Decay</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="3">
-        <widget class="QLineEdit" name="pulsed_RepumpDuration_LineEdit">
-         <property name="text">
-          <string>Repump Duration</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="2">
-        <widget class="QLabel" name="label_122">
-         <property name="text">
-          <string>Repump Duration (µs):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="10">
-        <widget class="QLabel" name="pulsed_Linewidths_Fit_Label">
-         <property name="text">
-          <string>Linewidth_Fit</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="4">
-        <widget class="QLabel" name="label_140">
-         <property name="text">
-          <string>Readout Decay (µs):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="label_107">
-         <property name="text">
-          <string>Pulsed Repump:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="4">
-        <widget class="QLabel" name="label_136">
-         <property name="text">
-          <string>Pi decay (ns):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="2">
-        <widget class="QLabel" name="label_133">
-         <property name="text">
-          <string>Init Time (µs):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="3">
-        <widget class="QCheckBox" name="pulsed_A1Readout_checkBox">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="7">
-        <widget class="QLabel" name="label_5">
-         <property name="text">
-          <string>Binning (ns):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="8">
-        <widget class="QLineEdit" name="pulsed_Binning_LineEdit">
-         <property name="text">
-          <string>100</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </widget>
-    <widget class="QWidget" name="tab_2">
-     <attribute name="title">
-      <string>Test</string>
-     </attribute>
-     <widget class="QWidget" name="gridLayoutWidget_2">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>641</width>
-        <height>351</height>
-       </rect>
-      </property>
-      <layout class="QGridLayout" name="gridLayout_2">
-       <item row="6" column="2">
-        <widget class="QLabel" name="label_36">
-         <property name="text">
-          <string>Stepsize (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="4">
-        <widget class="QLabel" name="label_46">
-         <property name="text">
-          <string>Frequency (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0">
-        <widget class="QLabel" name="label_35">
-         <property name="text">
-          <string>MW2:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="5">
-        <widget class="QCheckBox" name="cw_A2_CheckBox_2">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_24">
-         <property name="text">
-          <string>Seconds per Point:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="5">
-        <widget class="QLineEdit" name="cw_NumberOfPeaks_LineEdit_2">
-         <property name="text">
-          <string>1</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QPushButton" name="cw_Stop_Button_2">
-         <property name="text">
-          <string>Stop</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="2">
-        <widget class="QLabel" name="label_41">
-         <property name="text">
-          <string>Power (dBm):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="3">
-        <widget class="QLineEdit" name="cw_MaxIterations_LineEdit_2">
-         <property name="text">
-          <string>20</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="2">
-        <widget class="QLabel" name="label_45">
-         <property name="text">
-          <string>Max. Iterations:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="1">
-        <widget class="QCheckBox" name="cw_PulsedRepump_CheckBox_2">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="4">
-        <widget class="QLabel" name="label_48">
-         <property name="text">
-          <string>Stop Frequency (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="3">
-        <widget class="QLineEdit" name="cw_Interval_LineEdit_2">
-         <property name="text">
-          <string>Saving Interval</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLabel" name="cw_Runtime_Label_2">
-         <property name="frameShape">
-          <enum>QFrame::Box</enum>
-         </property>
-         <property name="text">
-          <string>Runtime</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="4">
-        <widget class="QLabel" name="label_31">
-         <property name="text">
-          <string>Start Frequency (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="2">
-        <widget class="QLabel" name="label_39">
-         <property name="text">
-          <string>A1:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="2">
-        <widget class="QLabel" name="label_42">
-         <property name="text">
-          <string>Repump Duration (µs):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="label_29">
-         <property name="text">
-          <string>MW1:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="3">
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="11" column="4">
-        <widget class="QLabel" name="label_43">
-         <property name="text">
-          <string>A2:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QCheckBox" name="cw_MW1_CheckBox_2">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="3">
-        <widget class="QLineEdit" name="cw_MW1_Power_LineEdit_2">
-         <property name="text">
-          <string>MW1 Power</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="4">
-        <widget class="QCheckBox" name="cw_PeriodicSaving_CheckBox_2">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="4">
-        <widget class="QLabel" name="label_37">
-         <property name="text">
-          <string>Frequency (MHz):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="3">
-        <widget class="QLineEdit" name="cw_Stepsize_LineEdit_2">
-         <property name="text">
-          <string>Stepsize</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="0">
-        <widget class="QLabel" name="label_22">
-         <property name="text">
-          <string>Pulsed Repump:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="2">
-        <widget class="QLabel" name="label_47">
-         <property name="text">
-          <string>Frequencies:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="3">
-        <widget class="QLineEdit" name="cw_MW3_Power_LineEdit_2">
-         <property name="text">
-          <string>MW3 Power</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="2">
-        <widget class="QLabel" name="label2">
-         <property name="text">
-          <string>Power (dBm):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="5">
-        <widget class="QLineEdit" name="cw_MW3_Freq_LineEdit_2">
-         <property name="text">
-          <string>MW3 Frequency</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="3">
-        <widget class="QCheckBox" name="cw_A1_CheckBox_2">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QPushButton" name="cw_Run_Button_2">
-         <property name="text">
-          <string>Run</string>
-         </property>
-        </widget>
-       </item>
-       <item row="17" column="0" colspan="8">
-        <widget class="Line" name="line_8">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="1">
-        <widget class="QCheckBox" name="cw_CWRepump_CheckBox_2">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="5">
-        <widget class="QLineEdit" name="cw_RepumpDecay_LineEdit_2">
-         <property name="text">
-          <string>Repump Decay</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="3">
-        <widget class="QLineEdit" name="cw_MW2_Power_LineEdit_2">
-         <property name="text">
-          <string>MW2 Power</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="1">
-        <widget class="QCheckBox" name="cw_PerformFit_CheckBox_2">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="4">
-        <widget class="QLabel" name="label_38">
-         <property name="text">
-          <string>Repump Decay (µs):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="3">
-        <widget class="QLabel" name="cw_Frequencies_Fit_Label_2">
-         <property name="text">
-          <string>Frequencies_Fit</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="3">
-        <widget class="QLineEdit" name="cw_RepumpDuration_LineEdit_2">
-         <property name="text">
-          <string>Repump Duration</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="2">
-        <widget class="QLineEdit" name="cw_Stoptime_LineEdit_2">
-         <property name="text">
-          <string>Stoptime</string>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="1">
-        <widget class="QLabel" name="cw_Linewidths_Fit_Label_2">
-         <property name="text">
-          <string>Linewidth_Fit</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="5">
-        <widget class="QLineEdit" name="cw_NumberOfLines_LlineEdit_2">
-         <property name="text">
-          <string>Number of Lines</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QPushButton" name="cw_Continue_Button_2">
-         <property name="text">
-          <string>Continue</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="5">
-        <widget class="QLineEdit" name="cw_StartFreq_LineEdit_2">
-         <property name="text">
-          <string>Start Frequency</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="0">
-        <widget class="QLabel" name="label1">
-         <property name="text">
-          <string>Perform Fit:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_34">
-         <property name="text">
-          <string>Runtime:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1">
-        <widget class="QCheckBox" name="cw_MW3_CheckBox_2">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="0">
-        <widget class="QLabel" name="label_30">
-         <property name="text">
-          <string>Linewidths:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QPushButton" name="cw_Save_Button_2">
-         <property name="text">
-          <string>Save</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="3">
-        <widget class="QLabel" name="label_32">
-         <property name="text">
-          <string>Periodic Saving:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="5">
-        <widget class="QLineEdit" name="cw_StopFreq_LineEdit_2">
-         <property name="text">
-          <string>Stop Frequency</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1">
-        <widget class="QCheckBox" name="cw_MW2_CheckBox_2">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="4">
-        <widget class="QLabel" name="label_33">
-         <property name="text">
-          <string>Number of Lines:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="cw_SecondsPerPoint_LineEdit_2">
-         <property name="text">
-          <string>0.02</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="4">
-        <widget class="QLabel" name="label_40">
-         <property name="text">
-          <string>Number of Peaks:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="2">
-        <widget class="QLabel" name="label_44">
-         <property name="text">
-          <string>Power (dBm):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2" colspan="4">
-        <widget class="QLineEdit" name="cw_Filename_LineEdit_2">
-         <property name="text">
-          <string>Filename</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QPushButton" name="cw_Load_Button_2">
-         <property name="text">
-          <string>Load</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="0">
-        <widget class="QLabel" name="label_49">
-         <property name="text">
-          <string>CW Repump:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="label0">
-         <property name="text">
-          <string>MW3:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="2">
-        <widget class="QLabel" name="label3">
-         <property name="text">
-          <string>Saving Interval (s):</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="5">
-        <widget class="QLineEdit" name="cw_MW2_Freq_LineEdit_2">
-         <property name="text">
-          <string>MW2 Frequency</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0" colspan="6">
-        <widget class="Line" name="line">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="0" colspan="6">
-        <widget class="Line" name="line_6">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="gridLayoutWidget_3">
-      <property name="geometry">
-       <rect>
-        <x>640</x>
-        <y>0</y>
-        <width>781</width>
-        <height>741</height>
-       </rect>
-      </property>
-      <layout class="QGridLayout" name="gridLayout_3">
-       <item row="1" column="1">
-        <widget class="PlotWidget" name="cw_odmr_PlotWidget_3">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>1</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="PlotWidget" name="cw_odmr_PlotWidget_4">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>1</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="PlotWidget" name="cw_odmr_PlotWidget_2">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>1</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2">
-        <layout class="QVBoxLayout" name="verticalLayout_2">
-         <item>
-          <widget class="QComboBox" name="cw_odmr_channel_ComboBox_2"/>
-         </item>
-         <item>
-          <widget class="ScienDSpinBox" name="cw_odmr_cb_max_DoubleSpinBox_2">
-           <property name="maximumSize">
-            <size>
-             <width>100</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="suffix">
-            <string>c/s</string>
-           </property>
-           <property name="minimum">
-            <double>-10.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>1000000000.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>100000.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="ScienDSpinBox" name="cw_odmr_cb_high_percentile_DoubleSpinBox_2">
-           <property name="maximumSize">
-            <size>
-             <width>100</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="suffix">
-            <string>%</string>
-           </property>
-           <property name="minimum">
-            <double>0.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>100.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>100.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="PlotWidget" name="cw_odmr_cb_PlotWidget_2">
+         <item row="2" column="1">
+          <widget class="PlotWidget" name="cw_odmr_PlotWidget_4">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
+             <horstretch>1</horstretch>
+             <verstretch>1</verstretch>
             </sizepolicy>
            </property>
-           <property name="maximumSize">
-            <size>
-             <width>80</width>
-             <height>16777215</height>
-            </size>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="PlotWidget" name="cw_odmr_PlotWidget_2">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>1</horstretch>
+             <verstretch>1</verstretch>
+            </sizepolicy>
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="ScienDSpinBox" name="cw_odmr_cb_low_percentile_DoubleSpinBox_2">
-           <property name="maximumSize">
-            <size>
-             <width>100</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="suffix">
-            <string>%</string>
-           </property>
-           <property name="minimum">
-            <double>0.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>100.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>1.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="ScienDSpinBox" name="cw_odmr_cb_min_DoubleSpinBox_2">
-           <property name="maximumSize">
-            <size>
-             <width>100</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="suffix">
-            <string>c/s</string>
-           </property>
-           <property name="minimum">
-            <double>-10.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>1000000000.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>1000.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="cw_odmr_cb_centiles_RadioButton_2">
-           <property name="text">
-            <string>Per&amp;centiles</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="cw_odmr_cb_manual_RadioButton_2">
-           <property name="text">
-            <string>Man&amp;ual</string>
-           </property>
-          </widget>
+         <item row="1" column="2">
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <widget class="QComboBox" name="cw_odmr_channel_ComboBox_2"/>
+           </item>
+           <item>
+            <widget class="ScienDSpinBox" name="cw_odmr_cb_max_DoubleSpinBox_2">
+             <property name="maximumSize">
+              <size>
+               <width>100</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="suffix">
+              <string>c/s</string>
+             </property>
+             <property name="minimum">
+              <double>-10.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>1000000000.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>100000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="ScienDSpinBox" name="cw_odmr_cb_high_percentile_DoubleSpinBox_2">
+             <property name="maximumSize">
+              <size>
+               <width>100</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="suffix">
+              <string>%</string>
+             </property>
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>100.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>100.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="PlotWidget" name="cw_odmr_cb_PlotWidget_2">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>80</width>
+               <height>16777215</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="ScienDSpinBox" name="cw_odmr_cb_low_percentile_DoubleSpinBox_2">
+             <property name="maximumSize">
+              <size>
+               <width>100</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="suffix">
+              <string>%</string>
+             </property>
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>100.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>1.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="ScienDSpinBox" name="cw_odmr_cb_min_DoubleSpinBox_2">
+             <property name="maximumSize">
+              <size>
+               <width>100</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="suffix">
+              <string>c/s</string>
+             </property>
+             <property name="minimum">
+              <double>-10.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>1000000000.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>1000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="cw_odmr_cb_centiles_RadioButton_2">
+             <property name="text">
+              <string>Per&amp;centiles</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="cw_odmr_cb_manual_RadioButton_2">
+             <property name="text">
+              <string>Man&amp;ual</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
-       </item>
-      </layout>
+       </widget>
+      </widget>
      </widget>
-    </widget>
-   </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1483</width>
+     <width>1143</width>
      <height>21</height>
     </rect>
    </property>
@@ -2160,12 +2184,9 @@
   <tabstop>cw_PulsedRepump_CheckBox</tabstop>
   <tabstop>cw_RepumpDuration_LineEdit</tabstop>
   <tabstop>cw_RepumpDecay_LineEdit</tabstop>
-  <tabstop>cw_PerformFit_CheckBox</tabstop>
-  <tabstop>cw_MaxIterations_LineEdit</tabstop>
   <tabstop>cw_CWRepump_CheckBox</tabstop>
   <tabstop>cw_A1_CheckBox</tabstop>
   <tabstop>cw_A2_CheckBox</tabstop>
-  <tabstop>cw_NumberOfPeaks_LineEdit</tabstop>
   <tabstop>cw_odmr_PlotWidget</tabstop>
   <tabstop>cw_odmr_channel_ComboBox</tabstop>
   <tabstop>cw_odmr_cb_max_DoubleSpinBox</tabstop>
@@ -2231,4 +2252,8 @@
  </tabstops>
  <resources/>
  <connections/>
+ <buttongroups>
+  <buttongroup name="cwSelectFitRadioButtonGroup"/>
+  <buttongroup name="buttonGroup"/>
+ </buttongroups>
 </ui>

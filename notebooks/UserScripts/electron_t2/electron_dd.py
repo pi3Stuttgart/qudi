@@ -85,7 +85,7 @@ def settings(pdc={}):
             ('additional_estate_check', [False]),
             #('ddt', ['fid', 'hahn', 'xy4', 'xy16', 'kdd','kdd4', 'kdd16']),
             ('ddt', ['xy4']),
-            ('n_rep_dd', range(1)),
+            ('n_rep_dd', range(1,10)),
             ('delay_ps',[0]), #11110
             ('tau', [1.0]),#E.round_length_mus_full_sample(np.linspace(0.0, 10.0, 100))),
             ('phase_pi2_2', [np.pi*0.5]),
@@ -98,7 +98,7 @@ def run_fun(abort, **kwargs):
     print(1,' Nuclear started!!!')
     nuclear.queue = kwargs['queue']
     nuclear.queue._gated_counter.readout_duration = 5e6
-    nuclear.debug_mode = False
+    nuclear.debug_mode = True
     settings()
     print('run_fun started')
     nuclear.run(abort)

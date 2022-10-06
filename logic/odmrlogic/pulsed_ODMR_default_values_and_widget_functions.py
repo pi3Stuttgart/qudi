@@ -42,15 +42,13 @@ class pulsed_ODMR_default_values_and_widget_functions:
         pulsed_ReadoutDecay:float= 1 #µs
 
         pulsed_PerformFit:bool=F
-        pulsed_MaxIterations:float=20
-        pulsed_NumberOfPeaks:float=1
-
+        pulsed_SelectLorentzianFit:bool=F
+        pulsed_SelectGaussianFit:bool=T
+        
         pulsed_SecondsPerPoint:float=0.02
 
         pulsed_Runtime=0
         pulsed_Binning = 100
-        pulsed_Frequencies_Fit=70
-        pulsed_Linewidths_Fit=1
 
         pulsed_odmr_cb_max:float=100
         pulsed_odmr_cb_high_percentile:float=100
@@ -220,7 +218,7 @@ class pulsed_ODMR_default_values_and_widget_functions:
         def pulsed_NumberOfPeaks_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_NumberOfPeaks_LineEdit. Text=',text)
                 try:
-                        self.pulsed_NumberOfPeaks=float(text)
+                        self.NumberOfPeaks=float(text)
                 except:
                         pass
 
@@ -337,3 +335,15 @@ class pulsed_ODMR_default_values_and_widget_functions:
                         self.pulsed_Binning=float(text)
                 except:
                         pass
+        def pulsed_SelectGaussianFit_RadioButton_clicked(self):
+                print('done something with radio button gauss')
+                self.pulsed_SelectGaussianFit=True
+                self.pulsed_SelectLorentzianFit=False
+                
+        def pulsed_SelectLorentzianFit_RadioButton_clicked(self):
+                print('done something with radio button lorentzian')
+                self.pulsed_SelectGaussianFit=False
+                self.pulsed_SelectLorentzianFit=True
+
+
+

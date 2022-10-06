@@ -51,8 +51,8 @@ from core.util.mutex import Mutex
 ####################################################################################################################
 # single values
 ####################################################################################################################
-#app_dir = r'C:/src/qudi'
-app_dir= r'/Users/vvv/Documents/GitHub/qudi'
+app_dir = r'C:/src/qudi'
+#app_dir= r'/Users/vvv/Documents/GitHub/qudi'
 
 log_dir = '{}/log/'.format(app_dir)
 log_archive_dir = '{}/log/archive/'.format(app_dir)

@@ -24,7 +24,7 @@ from interface.mcas_interface import McasDictHolderInterface
 
 class mcas_dict_holder(Base, McasDictHolderInterface):
     def on_activate(self):
-        self.mcas_dict = MultiChSeqDict(debug_mode=True)
+        self.mcas_dict = MultiChSeqDict(debug_mode=False)
         self.mcas = MultiChSeq
         self.settings=settings
         return 

@@ -20,11 +20,15 @@ class ple_default_values_and_widget_functions:
 
         Filename:str = ''
         PeriodicSaving:bool = False
+        PerformFit:bool = False
+        NumberOfPeaks:int = 2
         Stoptime:float = 3600
         Interval:float = 180
         PerformFit:bool = False
-        MaxIterations:float = 20
-        NumberOfPeaks:float = 2
+
+        Contrast_Fit:str=''
+        Frequencies_Fit:str=''
+        Linewidths_Fit:str=''
 
         #NumberOfLines: int = 10
         #ValuesPerScan: int = 200
@@ -69,6 +73,12 @@ class ple_default_values_and_widget_functions:
         def ple_RepumpDuration_LineEdit_textEdited(self,text):
                 try:
                         self.RepumpDuration=float(text)
+                except:
+                        pass
+        
+        def ple_NumberOfPeaks_LineEdit_textEdited(self,text):
+                try:
+                        self.NumberOfPeaks=int(text)
                 except:
                         pass
 
@@ -128,6 +138,8 @@ class ple_default_values_and_widget_functions:
 
         def ple_PerformFit_CheckBox_StateChanged(self,on):
                 self.PerformFit=on==2
+                if self.PerformFit:
+                        self.sigUpdatePlots.emit()
 
         def ple_PeriodicSaving_CheckBox_StateChanged(self,on):
                 self.PeriodicSaving=on==2
@@ -141,12 +153,6 @@ class ple_default_values_and_widget_functions:
         def ple_MaxIterations_LineEdit_textEdited(self,text):
                 try:
                         self.MaxIterations=float(text)
-                except:
-                        pass
-
-        def ple_NumberOfPeaks_LineEdit_textEdited(self,text):
-                try:
-                        self.NumberOfPeaks=float(text)
                 except:
                         pass
 

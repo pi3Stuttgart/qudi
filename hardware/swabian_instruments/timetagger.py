@@ -140,7 +140,6 @@ class TT(Base, TimeTaggerInterface):
         refresh_rate - number of samples per second:
 
         """
-        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
         self.tagger.setTriggerLevel(1,0.05)
         self.tagger.setTriggerLevel(2,0.05)
         for key, value in kwargs.items():

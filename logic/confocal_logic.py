@@ -1306,7 +1306,7 @@ class ConfocalLogic(GenericLogic):
                             interpolation='none',
                             extent=image_dimension
                             )
-
+                            
         ax.set_aspect(1)
         ax.set_xlabel(scan_axis[0] + ' position (' + x_prefix + 'm)')
         ax.set_ylabel(scan_axis[1] + ' position (' + y_prefix + 'm)')
