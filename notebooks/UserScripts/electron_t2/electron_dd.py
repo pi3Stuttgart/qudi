@@ -34,10 +34,117 @@ def ret_ret_mcas(pdc):
         mcas = MultiChSeq(name=sequence_name, ch_dict={'2g': [1, 2], 'ps': [1]})
         mcas.start_new_segment('start_sequence')
         mcas.asc(length_mus=0.1)  # Starting... histogram 0
+        freq = np.array([self.queue.tt.mw_mixing_frequency])
+        pi_2_dur = self.queue.tt.rp('e_rabi_ou350deg-90-L', amp=1.0).pi2
+        pi_dur = self.queue.tt.rp('e_rabi_ou350deg-90-L', amp=1.0).pi
         for idx, _I_ in current_iterator_df.iterrows():
-            print(_I_)
-            mcas.asc(length_mus = 1.0)
-            sna.polarize_green(mcas=mcas)
+            mcas.asc(length_mus=1.0, name='initial_delay')
+            mcas.asc(length_mus=3.0, green=True, name='Green')
+            mcas.asc(length_mus=1.0)
+            mcas.asc(aom_A1=True, length_mus=30.,
+                     name='A1_init')  # Init NV with A1 laser (about 1-3 µs). This step can be skipped for the very first tests #as the green laser will also intialise somehow.
+            mcas.asc(length_mus=2.0)
+
+            if _I_['nucl_init']:
+                sna.electron_rabi(
+                    mcas,
+                    name='init_MW_pi_minus1',
+                    new_segment=True,
+                    length_mus=1.878 / 2,
+                    amplitudes=[0.23],
+                    frequencies=np.array([3345.558]),
+                    mixer_deg=[-90]
+                )
+                mcas.asc(length_mus=0.1, name='wait_after_MWinit1')
+
+                sna.electron_rabi(
+                    mcas,
+                    name='init_MW_pi_plus1',
+                    new_segment=True,
+                    length_mus=1.86 / 2,
+                    amplitudes=[0.23],
+                    frequencies=np.array([3349.958]),
+                    mixer_deg=[-90]
+                )
+                mcas.asc(length_mus=0.1, name='wait_after_MWinit2')
+            if _I_['additional_estate_check']:
+                sna.ssr(mcas, frequencies=[100], wait_dur=0.0, robust=False,
+                        nuc='ple_Ex', mixer_deg=-90, eom_ampl=0.3, step_idx=1, laser_dur=1.0)
+                mcas.asc(length_mus=1.0)
+
+            sna.electron_rabi(
+                mcas,
+                new_segment=True,
+                length_mus=0.1,
+                amplitudes=[1.0],
+                frequencies=[100],
+                mixer_deg=[-90]
+            )
+            mcas.asc(length_mus=_I_['tau'])
+
+            sna.electron_rabi(
+                mcas,
+                new_segment=True,
+                length_mus=pi_dur,
+                amplitudes=[1.0],
+                frequencies=freq,
+                mixer_deg=[-90]
+            )
+            mcas.asc(length_mus=_I_['tau'])
+
+            sna.electron_rabi(
+                mcas,
+                new_segment=True,
+                length_mus=pi_2_dur * _I_['pi_2'],
+                amplitudes=[1.0],
+                frequencies=freq,
+                mixer_deg=[-90]
+            )
+            mcas.asc(length_mus=1.0)
+
+            # sna.ssr(mcas, **pd)
+            if _I_['resonant']:
+
+                sna.ssr(mcas, frequencies=freq, wait_dur=0.0, robust=False,
+                        nuc='ple_Ex', mixer_deg=-90, eom_ampl=0.1, step_idx=0, laser_dur=10.0)
+
+                # sna.ssr(mcas, frequencies=freq, wait_dur=0.0, robust=False,
+                #         nuc='Ex_RO', mixer_deg=-90, step_idx=0, laser_dur=5.0)
+
+                mcas.asc(length_mus=1.0)
+
+            else:
+
+                pd = dict(
+                    length_mus_mw=0.0,
+                    frequencies=[0.0],
+                    mixer_deg=-90,
+                    repetitions=1,
+                    # transition=s,
+                    final_wait=False,
+                    gate_or_trigger='trigger',
+                    number_of_memories=1,
+                    step_idx=0,
+                    # amplitudes = _I_['amplitudes'],
+                    laser_dur=0.3,
+                    buffer_time=1.0,
+                    cw_mw=False,
+
+                )
+
+                sna.ssr(mcas, **pd)
+
+            if _I_['state_check']:
+                # Charge state check as EX + A1 readout
+                sna.ssr(mcas, frequencies=freq, wait_dur=0.0, robust=False, nuc='charge_state', mixer_deg=-90,
+                        step_idx=1, laser_dur=100.0)
+
+            mcas.asc(length_mus=1.0)
+            # sna.ssr(mcas, frequencies=freq, wait_dur=0.0, robust=False, nuc='charge_state', mixer_deg=-90,
+            #             step_idx=0, laser_dur= 30.0)
+
+            # mcas.asc(length_mus=20.0
+
 
         self.queue._gated_counter.set_n_values(mcas) #how to get here the queue?
 

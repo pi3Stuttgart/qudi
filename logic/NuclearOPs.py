@@ -8,7 +8,7 @@ else:
     from importlib import reload
 
 #TODO connect the objects, e.g. gated counter.
-#from pi3diamond import pi3d
+#from self.queueiamond import self.queue
 
 import importlib
 import zipfile
@@ -48,7 +48,7 @@ class NuclearOPs(DataGeneration):
     __TITLE_DATE_FORMAT__ = '%Y%m%dh%Hm%Ms%S'
 
 
-    def __init__(self):#TODO - revert back here from the pi3d.
+    def __init__(self):#TODO - revert back here from the self.queue.
 
         super().__init__()
         ## TODO give all the handles for the interfaces from queue here...
@@ -106,7 +106,7 @@ class NuclearOPs(DataGeneration):
     def ana_trace(self):
         #return np.array([0]) #FIXME
 
-        return self.queue._gated_counter.trace#pi3d.gated_counter.trace
+        return self.queue._gated_counter.trace#self.queue.gated_counter.trace
 
     @property
     def analyze_type(self):
@@ -271,15 +271,21 @@ class NuclearOPs(DataGeneration):
 
         self.init_run(**kwargs)
 
-        #When the confocal connected #TODO
-        self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[0],confocal_y = [0], confocal_z = [0]))#[self._confocal.x], confocal_y=[self._confocal.y], confocal_z=[self._confocal.z]))
+        #When the confocal connected #TODO 1
+        confocal = self.queue.confocal
+        x = confocal.x
+        y = confocal.y
+        z = confocal.z
+
+        self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[x],confocal_y = [y], confocal_z = [z]))
+        #[self._confocal.x], confocal_y=[self._confocal.y], confocal_z=[self._confocal.z]))
+
         try:
-            #if hasattr(pi3d,'microwave'):
-            #   pi3d.microwave.On()
+            #if hasattr(self.queue,'microwave'):
+            #   self.queue.microwave.On()
 
             # TODO uncomment when on the setup
-            #self.queue._gated_counter.set_counter(start_trigger_delay_ps_list = self.delay_ps_list ,window_ps_list = self.window_ps_list)
-
+            self.queue._gated_counter.set_counter(start_trigger_delay_ps_list = self.delay_ps_list ,window_ps_list = self.window_ps_list)
 
             for idx, _ in enumerate(self.iterator()):
                 if abort.is_set(): break
@@ -287,31 +293,31 @@ class NuclearOPs(DataGeneration):
                     if abort.is_set(): break
 
                     # Uncomment when on the setup #TODO
-                    # if self.wavemeter_lock and pi3d.wavemeter.wm_id != 0:
-                    #     freq = pi3d.wavemeter.get_current_frequency()
-                    #     pi3d.wavemeter.set_lock_frequency(freq)
-                    #     pi3d.wavemeter.lock_frequency()
+                    #if self.wavemeter_lock and self.queue.wavemeter.wm_id != 0:
+                     #    freq = self.queue.wavemeter.get_current_frequency()
+                     #    self.queue.wavemeter.set_lock_frequency(freq)
+                      #   self.queue.wavemeter.lock_frequency()
                     #     time.sleep(0.1)
 
                     if self.do_confocal_red_refocus:
-                        pass
-                        #self.do_refocus_red()
+                        #pass
+                        self.do_refocus_red()
 
                     if self.do_confocal_zpl_refocus:
                         pass
-                        #self.do_refocus_zpl()
+                        self.do_refocus_zpl()
 
                     if self.do_ple_refocus or self.do_ple_refocusA1 or self.do_ple_refocusEx:
                         # if 'delta_ple_Ex' in self.current_iterator_df.keys():
-                        #     pi3d.ple_Ex.delta_ple = self.current_iterator_df['delta_ple_Ex'].unique()[0]
+                        #     self.queue.ple_Ex.delta_ple = self.current_iterator_df['delta_ple_Ex'].unique()[0]
                         #     logging.getLogger().info(
                         #         'I set delta_ple_Ex: {}'.format(self.current_iterator_df['delta_ple_Ex'].unique()[0]))
                         pass #TODO here uncommment
-                        #self.do_refocus_ple(abort)
+                        self.do_refocus_ple(abort)
 
 
-                    # if self.do_odmr_refocus:
-                    #     self.do_refocusodmr(abort, check_odmr_frequency_drift_ok=False, initial_odmr=False)
+                    if self.do_odmr_refocus:
+                         self.do_refocusodmr(abort, check_odmr_frequency_drift_ok=False, initial_odmr=False)
 
                     #Here put EOM!
                     #TODO uncomment
@@ -319,64 +325,63 @@ class NuclearOPs(DataGeneration):
 
 
 
-                    # if 'aom_Ex_power_sweep' in self.current_iterator_df.keys():
-                    #     current_Ex_voltage = pi3d.power_calibration.aom_list['aom_Ex_power'].voltage
+                    #if 'aom_Ex_power_sweep' in self.current_iterator_df.keys():
+                    #     current_Ex_voltage = self.queue.power_calibration.aom_list['aom_Ex_power'].voltage
                     #
                     #     if self.current_iterator_df['aom_Ex_power_sweep'].unique()!= current_Ex_voltage:
                     #         logging.getLogger().info('I set voltage Ex: {}'.format(self.current_iterator_df['aom_Ex_power_sweep'].unique()))
-                    #         pi3d.power_calibration.aom_list['aom_Ex_power'].set_voltage(
+                    #         self.queue.power_calibration.aom_list['aom_Ex_power'].set_voltage(
                     #             self.current_iterator_df['aom_Ex_power_sweep'].unique())
                     #         time.sleep(0.1)
 
                     # if 'Ex_RO_power_sweep' in self.current_iterator_df.keys():
-                    #     current_Ex_RO_voltage = pi3d.power_calibration.aom_list['Ex_RO_aom_power'].voltage
+                    #     current_Ex_RO_voltage = self.queue.power_calibration.aom_list['Ex_RO_aom_power'].voltage
                     #
                     #     if self.current_iterator_df['Ex_RO_power_sweep'].unique()!= current_Ex_RO_voltage:
                     #         logging.getLogger().info(
                     #             'I set voltage RO Ex: {}'.format(self.current_iterator_df['Ex_RO_power_sweep'].unique()))
-                    #         pi3d.power_calibration.aom_list['Ex_RO_aom_power'].set_voltage(
+                    #         self.queue.power_calibration.aom_list['Ex_RO_aom_power'].set_voltage(
                     #                 self.current_iterator_df['Ex_RO_power_sweep'].unique())
                     #         time.sleep(0.1)
 
                     # if 'aom_A1_power_sweep' in self.current_iterator_df.keys():
-                    #     current_A1_voltage = pi3d.power_calibration.aom_list['aom_A1_power'].voltage
+                    #     current_A1_voltage = self.queue.power_calibration.aom_list['aom_A1_power'].voltage
                     #
                     #     if self.current_iterator_df['aom_A1_power_sweep'].unique()!= current_A1_voltage:
                     #         logging.getLogger().info(
                     #             'I set voltage A1: {}'.format(self.current_iterator_df['aom_A1_power_sweep'].unique()))
-                    #         pi3d.power_calibration.aom_list['aom_A1_power'].set_voltage(
+                    #         self.queue.power_calibration.aom_list['aom_A1_power'].set_voltage(
                     #             self.current_iterator_df['aom_A1_power_sweep'].unique())
                     #         time.sleep(0.1)
 
 
                     # if 'repump_power_sweep' in self.current_iterator_df.keys():
-                    #     current_repump_voltage = pi3d.power_calibration.aom_list['aom_repump_power'].voltage
+                    #     current_repump_voltage = self.queue.power_calibration.aom_list['aom_repump_power'].voltage
                     #
                     #     # if self.current_iterator_df['repump_power_sweep'].unique()!= current_repump_voltage:
                     #     #     logging.getLogger().info(
                     #     #         'I set voltage repump: {}'.format(self.current_iterator_df['repump_power_sweep'].unique()))
-                    #     #     #pi3d.power_calibration.aom_list['aom_repump_power'].set_voltage(
+                    #     #     #self.queue.power_calibration.aom_list['aom_repump_power'].set_voltage(
                     #     #             self.current_iterator_df['repump_power_sweep'].unique())
                     #     #     time.sleep(0.1)
 
 
-                    if self.do_interferometerPhase_locking:
-                        interferometer_phase = None
+                    #if self.do_interferometerPhase_locking:
+                     #   interferometer_phase = None
 
-                        if 'interferometer_phase' in self.current_iterator_df.keys():
-                            interferometer_phase = self.current_iterator_df['interferometer_phase'].unique()[0]
-                        pass
+                      #  if 'interferometer_phase' in self.current_iterator_df.keys():
+                       #     interferometer_phase = self.current_iterator_df['interferometer_phase'].unique()[0]
+                        #pass
                         #self.do_interf_phase_lock(interferometer_phase)
 
-                    if self.yellow_repump_compensation:
-
+                    #if self.yellow_repump_compensation:
                         # add here the ability to sweep desired frequency
-                        if 'yellow_desired_freq' in self.current_iterator_df.keys():
-                            yellow_desired_freq = self.current_iterator_df['yellow_desired_freq'].unique()[0]
-                            # print('yellow_desired_freq ', yellow_desired_freq)
-                            #pi3d.ple_repump.desired_freq = yellow_desired_freq
+                        #if 'yellow_desired_freq' in self.current_iterator_df.keys():
+                         #   yellow_desired_freq = self.current_iterator_df['yellow_desired_freq'].unique()[0]
+                          #  # print('yellow_desired_freq ', yellow_desired_freq)
+                            #self.queue.ple_repump.desired_freq = yellow_desired_freq
 
-                        #pi3d.ple_repump.compensate_drift()
+                        #self.queue.ple_repump.compensate_drift()
 
 
                     self.setup_rf(self.current_iterator_df) #MCAS is ready
@@ -402,30 +407,30 @@ class NuclearOPs(DataGeneration):
                     # TODO
                     #Measure powers and record them!!!!
                     ##
-                    #self.data.set_observations([OrderedDict(EOM_Ex_integrator_voltage=pi3d.power_calibration.pd_list[
-                      #  'pd_Ex_integrator_voltage'].get_data())] * self.number_of_simultaneous_measurements)
+                    self.data.set_observations([OrderedDict(EOM_Ex_integrator_voltage=self.queue.power_calibration.pd_list[
+                        'pd_Ex_integrator_voltage'].get_data())] * self.number_of_simultaneous_measurements)
 
 
                     if not self._md.debug_mode:
                         self._md['red_Ex'].run()
-                        #self.data.set_observations([OrderedDict(aom_Ex_power_measured=pi3d.power_calibration.pd_list['pd_A1_power'].get_data())]*self.number_of_simultaneous_measurements)
+                        #self.data.set_observations([OrderedDict(aom_Ex_power_measured=self.queue.power_calibration.pd_list['pd_A1_power'].get_data())]*self.number_of_simultaneous_measurements)
                         time.sleep(0.1)
                         self._md.stop_awgs()
 
 
                         self._md['Ex_RO'].run()
-                        #self.data.set_observations([OrderedDict(Ex_RO_power_measured=pi3d.power_calibration.pd_list['pd_A1_power'].get_data())]*self.number_of_simultaneous_measurements)
+                        #self.data.set_observations([OrderedDict(Ex_RO_power_measured=self.queue.power_calibration.pd_list['pd_A1_power'].get_data())]*self.number_of_simultaneous_measurements)
                         time.sleep(0.1)
                         self._md.stop_awgs()
 
                         self._md['red_A1'].run()
-                        #self.data.set_observations([OrderedDict(aom_A1_power_measured=pi3d.power_calibration.pd_list['pd_A1_power'].get_data())]*self.number_of_simultaneous_measurements)
+                        #self.data.set_observations([OrderedDict(aom_A1_power_measured=self.queue.power_calibration.pd_list['pd_A1_power'].get_data())]*self.number_of_simultaneous_measurements)
                         time.sleep(0.1)
                         self._md.stop_awgs()
 
                     #TODO add laser power meters to the df
                     #if self.yellow_repump_compensation:
-                        #self.data.set_observations([OrderedDict(yellow_freq_measured=pi3d.wavemeter.dll.GetFrequencyNum(3, 0))] * self.number_of_simultaneous_measurements)
+                        #self.data.set_observations([OrderedDict(yellow_freq_measured=self.queue.wavemeter.dll.GetFrequencyNum(3, 0))] * self.number_of_simultaneous_measurements)
 
                     self.get_trace(abort,delay_ps_list = self.delay_ps_list ,window_ps_list = self.window_ps_list) #Start AWGs...
                     if abort.is_set(): break
@@ -532,7 +537,7 @@ class NuclearOPs(DataGeneration):
         finally:
             self.data._df = data_handling.df_take_duplicate_rows(self.data.df, self.iterator_df_done) #drops unfinished measurements,
             self.pld.new_data_arrived()
-            #pi3d.multi_channel_awg_sequence.stop_awgs(pi3d.awgs)
+            #self.queue.multi_channel_awg_sequence.stop_awgs(self.queue.awgs)
             self.state = 'idle'
             self.update_current_str()
 
@@ -545,8 +550,8 @@ class NuclearOPs(DataGeneration):
                 os.rmdir(self.save_dir)
 
 
-            # if self.wavemeter_lock and pi3d.wavemeter.wm_id != 0:
-            #     pi3d.wavemeter.unlock_frequency()
+            # if self.wavemeter_lock and self.queue.wavemeter.wm_id != 0:
+            #     self.queue.wavemeter.unlock_frequency()
             #     time.sleep(0.1)
 
     @property
@@ -602,121 +607,121 @@ class NuclearOPs(DataGeneration):
     @property
     def sweeps(self):
         return self.parameters['sweeps']
-    #
-    #
-    # def do_refocus_ple(self,abort):
-    #     delta_t = time.time() - self.last_ple_refocus
-    #
-    #     if (delta_t>= self.ple_refocus_interval):
-    #
-    #
-    #         if self.do_ple_refocusA1:
-    #             self.do_refocus_pleA1(abort)
-    #
-    #         if self.do_ple_refocusEx:
-    #             self.do_refocus_pleEx(abort)
-    #
-    #         self.last_ple_refocus = time.time()
 
-    #
-    # def do_refocus_pleEx(self, abort):
-    #     if self.wavemeter_lock and pi3d.wavemeter.wm_id!=0:
-    #         pi3d.wavemeter.unlock_frequency()
-    #         time.sleep(0.1)
-    #
-    #
-    #     pi3d.ple_Ex.syncFlag = False
-    #     pi3d.ple_Ex.state = 'refocus PLE'
-    #
-    #     while(pi3d.ple_Ex.syncFlag == False):
-    #         time.sleep(0.1)
-    #     time.sleep(0.5)
-    #
-    #     if self.wavemeter_lock and pi3d.wavemeter.wm_id != 0:
-    #         freq = pi3d.wavemeter.get_current_frequency()
-    #         pi3d.wavemeter.set_lock_frequency(freq)
-    #         pi3d.wavemeter.lock_frequency()
-    #         time.sleep(0.1)
-    #
-    #
-    # def do_refocus_pleA1(self, abort):
-    #     pi3d.ple_A1.syncFlag = False
-    #     pi3d.ple_A1.state = 'refocus PLE'
-    #
-    #     while(pi3d.ple_A1.syncFlag == False):
-    #         time.sleep(0.1)
-    #     time.sleep(1.1)
-    #
-    #
-    #
-    # def do_refocus_red(self):
-    #
-    #     delta_t = time.time() - self.last_red_confocal_refocus
-    #
-    #     if (delta_t >= self.confocal_red_refocus_interval):
-    #
-    #         pi3d.confocal.syncFlag=False
-    #         pi3d.confocal.state = 'refocus_red'
-    #
-    #         while pi3d.confocal.syncFlag == False:
-    #             time.sleep(0.1)
-    #
-    #         time.sleep(0.5)
-    #         self.last_red_confocal_refocus = time.time()
-    #
-    #
-    #         self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[pi3d.confocal.x], confocal_y=[pi3d.confocal.y], confocal_z=[pi3d.confocal.z]))
-    #
-    #
-    #
-    #
-    # def do_refocus_zpl(self):
-    #
-    #     delta_t = time.time() - self.last_red_confocal_refocus
-    #
-    #     if (delta_t >= self.confocal_red_refocus_interval):
-    #
-    #         pi3d.confocal.syncFlag=False
-    #         pi3d.confocal.state = 'refocus_zpl'
-    #
-    #         while pi3d.confocal.syncFlag == False:
-    #             time.sleep(0.1)
-    #
-    #         time.sleep(0.5)
-    #         self.last_red_confocal_refocus = time.time()
-    #
-    #
-    #         self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[pi3d.confocal.x], confocal_y=[pi3d.confocal.y], confocal_z=[pi3d.confocal.z]))
-    #
-    #
-    #
-    #
-    #
-    # def check_eom(self):
-    #
-    #     logging.getLogger().info('checking the eom')
-    #     for i in range(3):
-    #         current_voltage = pi3d.power_calibration.pd_list['pd_Ex_integrator_voltage'].get_data()
-    #         if current_voltage > 1.5 or current_voltage <-1.5:
-    #             logging.getLogger().info('V_c = {}: relocking...'.format(current_voltage))
-    #             for rel in range(3):
-    #                 pi3d.interferometer.relock_eom()
-    #         else:
-    #             return
-    #     raise Exception('After 3 trials EOM is not locked!')
-    #
-    #
-    #
-    #
-    #
-    #
-    #
+
+    def do_refocus_ple(self,abort):
+        delta_t = time.time() - self.last_ple_refocus
+
+        if (delta_t>= self.ple_refocus_interval):
+
+
+            if self.do_ple_refocusA1:
+                self.do_refocus_pleA1(abort)
+
+            if self.do_ple_refocusEx:
+                self.do_refocus_pleEx(abort)
+
+            self.last_ple_refocus = time.time()
+
+
+    def do_refocus_pleEx(self, abort):
+        if self.wavemeter_lock and self.queue.wavemeter.wm_id!=0:
+            self.queue.wavemeter.unlock_frequency()
+            time.sleep(0.1)
+
+
+        self.queue.ple_Ex.syncFlag = False
+        self.queue.ple_Ex.state = 'refocus PLE'
+
+        while(self.queue.ple_Ex.syncFlag == False):
+            time.sleep(0.1)
+        time.sleep(0.5)
+
+        if self.wavemeter_lock and self.queue.wavemeter.wm_id != 0:
+            freq = self.queue.wavemeter.get_current_frequency()
+            self.queue.wavemeter.set_lock_frequency(freq)
+            self.queue.wavemeter.lock_frequency()
+            time.sleep(0.1)
+
+
+    def do_refocus_pleA1(self, abort):
+        self.queue.ple_A1.syncFlag = False
+        self.queue.ple_A1.state = 'refocus PLE'
+
+        while(self.queue.ple_A1.syncFlag == False):
+            time.sleep(0.1)
+        time.sleep(1.1)
+
+
+
+    def do_refocus_red(self):
+
+        delta_t = time.time() - self.last_red_confocal_refocus
+
+        if (delta_t >= self.confocal_red_refocus_interval):
+
+            self.queue.confocal.syncFlag=False
+            self.queue.confocal.state = 'refocus_red'
+
+            while self.queue.confocal.syncFlag == False:
+                time.sleep(0.1)
+
+            time.sleep(0.5)
+            self.last_red_confocal_refocus = time.time()
+
+
+            self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[self.queue.confocal.x], confocal_y=[self.queue.confocal.y], confocal_z=[self.queue.confocal.z]))
+
+
+
+
+    def do_refocus_zpl(self):
+
+        delta_t = time.time() - self.last_red_confocal_refocus
+
+        if (delta_t >= self.confocal_red_refocus_interval):
+
+            self.queue.confocal.syncFlag=False
+            self.queue.confocal.state = 'refocus_zpl'
+
+            while self.queue.confocal.syncFlag == False:
+                time.sleep(0.1)
+
+            time.sleep(0.5)
+            self.last_red_confocal_refocus = time.time()
+
+
+            self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[self.queue.confocal.x], confocal_y=[self.queue.confocal.y], confocal_z=[self.queue.confocal.z]))
+
+
+
+
+
+    def check_eom(self):
+
+        logging.getLogger().info('checking the eom')
+        for i in range(3):
+            current_voltage = self.queue.power_calibration.pd_list['pd_Ex_integrator_voltage'].get_data()
+            if current_voltage > 1.5 or current_voltage <-1.5:
+                logging.getLogger().info('V_c = {}: relocking...'.format(current_voltage))
+                for rel in range(3):
+                    self.queue.interferometer.relock_eom()
+            else:
+                return
+        raise Exception('After 3 trials EOM is not locked!')
+
+
+
+
+
+
+
     # # ----------------
     # # Should not refocus every time, should refocus only if time>last_interferometer_refocus
     # # ----------------
     #
     # def do_interf_phase_lock(self, interferometer_phase = None):
-    #     interferometer = pi3d.interferometer
+    #     interferometer = self.queue.interferometer
     #     delta_t = time.time() - self.last_interferometer_refocus
     #     if (delta_t >= self.interferometer_refocus_interval):
     #         interferometer.do_calibration_scan()
@@ -739,7 +744,7 @@ class NuclearOPs(DataGeneration):
     #
     #
     #     # def do_interf_phase_lock(self, interferometer_phase=None):
-    #     #     interferometer = pi3d.interferometer
+    #     #     interferometer = self.queue.interferometer
     #     #     if interferometer_phase is not None:
     #     #         interferometer.desired_phase = interferometer_phase
     #     #     interferometer.do_calibration_scan()
@@ -751,28 +756,30 @@ class NuclearOPs(DataGeneration):
 
     def run_refocus(self):
         pass
-        # print('NUCLEAROPS RUN REFOCUS')
-        # pi3d.confocal.run_refocus()
-        # self.df_refocus_pos = self.df_refocus_pos.append(pd.DataFrame(OrderedDict(confocal_x=[pi3d.confocal.x], confocal_y=[pi3d.confocal.y], confocal_z=[pi3d.confocal.z]))).reset_index(drop=True)
-        # if self.refocus_moving_average_num > 1:
-        #     ma = self.confocal_pos_moving_average(min(len(self.df_refocus_pos), self.refocus_moving_average_num))
-        #     for axis in ['x', 'y', 'z']:
-        #         setattr(pi3d.confocal, axis, getattr(ma, 'confocal_{}'.format(axis)).iloc[-1])
-        #     logging.getLogger().info("Refocus ma_deviation [nm]: {}, {}, {}".format(*[(getattr(pi3d.confocal, axis) - self.df_refocus_pos.iloc[-1, :]['confocal_{}'.format(axis)])*1000 for axis in ['x', 'y', 'z']]))
+        print('NUCLEAROPS RUN REFOCUS')
+        self.queue.confocal.run_refocus()
+        self.df_refocus_pos = self.df_refocus_pos.append(pd.DataFrame(OrderedDict(confocal_x=[self.queue.confocal.x], 
+                                                                                  confocal_y=[self.queue.confocal.y], 
+                                                                                  confocal_z=[self.queue.confocal.z]))).reset_index(drop=True)
+        if self.refocus_moving_average_num > 1:
+            ma = self.confocal_pos_moving_average(min(len(self.df_refocus_pos), self.refocus_moving_average_num))
+            for axis in ['x', 'y', 'z']:
+                setattr(self.queue.confocal, axis, getattr(ma, 'confocal_{}'.format(axis)).iloc[-1])
+            logging.getLogger().info("Refocus ma_deviation [nm]: {}, {}, {}".format(*[(getattr(self.queue.confocal, axis) - self.df_refocus_pos.iloc[-1, :]['confocal_{}'.format(axis)])*1000 for axis in ['x', 'y', 'z']]))
 
     def add_odmr_script_to_queue(self, abort, pd):
         pass
-        #sys.modules[pi3d.init_task(name='refocus_confocal_odmr', folder='D:/Python/pi3diamond/UserScripts/')].run_fun(abort=abort, **pd)
+        #sys.modules[self.queue.init_task(name='refocus_confocal_odmr', folder='D:/Python/self.queueiamond/UserScripts/')].run_fun(abort=abort, **pd)
 
     # def do_refocusodmr(self, abort=None, check_odmr_frequency_drift_ok=True, initial_odmr=False):
     #     if abort.is_set():
     #         logging.getLogger().info('do_refocusodmr stopped here0')
-    #     pi3d.odmr.file_name = self.file_name
+    #     self.queue.odmr.file_name = self.file_name
     #     delta_t = time.time() - self.last_odmr
     #     if self.odmr_interval != 0 and (delta_t >= self.odmr_interval) or len(self.data.df) == 0 or initial_odmr:
     #         if check_odmr_frequency_drift_ok and hasattr(self, 'maximum_odmr_drift'):
     #             self.add_odmr_script_to_queue(abort, self.odmr_pd)
-    #             current_drift = np.abs(pi3d.tt.current_local_oscillator_freq - self.data.df.iloc[-1, :].local_oscillator_freq)
+    #             current_drift = np.abs(self.queue.tt.current_local_oscillator_freq - self.data.df.iloc[-1, :].local_oscillator_freq)
     #             if current_drift > self.maximum_odmr_drift:
     #                 logging.getLogger().info("Too much drift ({} > {}), trying again!".format(current_drift, self.maximum_odmr_drift))
     #                 odmr_frequency_drift_ok = False
@@ -801,7 +808,7 @@ class NuclearOPs(DataGeneration):
     #     if not hasattr(self, 'maximum_odmr_drift'):
     #         return True
     #     if len(self.data.df) > 0:
-    #         current_drift = np.abs(pi3d.tt.current_local_oscillator_freq - self.data.df.iloc[-1,:].local_oscillator_freq)
+    #         current_drift = np.abs(self.queue.tt.current_local_oscillator_freq - self.data.df.iloc[-1,:].local_oscillator_freq)
     #         if current_drift > self.maximum_odmr_drift:
     #             logging.getLogger().info("Too much drift ({} > {}), trying again!".format(current_drift, self.maximum_odmr_drift))
     #             return False
@@ -885,13 +892,13 @@ class NuclearOPs(DataGeneration):
 
     def save(self):
         pass
-        # if len(self.iterator_df_done) > 0 and not(hasattr(self, 'do_save') and not self.do_save):
-        #     t0 = time.time()
-        #     super(NuclearOPs, self).save(notify=True) #### IMPORTANT
-        #     self.save_sequence_file()
-        #     pi3d.save_pi3diamond(destination_dir=self.save_dir)
-        #     save_qutip_enhanced(destination_dir=self.save_dir)
-        #     logging.getLogger().info("saved nuclear to '{} ({:.3f})".format(self.save_dir, time.time() - t0))
+        if len(self.iterator_df_done) > 0 and not(hasattr(self, 'do_save') and not self.do_save):
+            t0 = time.time()
+            super(NuclearOPs, self).save(notify=True) #### IMPORTANT
+            self.save_sequence_file()
+            self.queue.save_self.queueiamond(destination_dir=self.save_dir)
+            save_qutip_enhanced(destination_dir=self.save_dir)
+            logging.getLogger().info("saved nuclear to '{} ({:.3f})".format(self.save_dir, time.time() - t0))
 
     def save_sequence_file(self):
         pass
