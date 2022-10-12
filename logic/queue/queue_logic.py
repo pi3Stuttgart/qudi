@@ -126,7 +126,7 @@ class queue_logic(GenericLogic):
     gated_counter = Connector('GatedCounter') # Should be name of the class.
     update_selected_user_script_combo_box_signal = pyqtSignal(collections.OrderedDict)
     user_script_list = misc.ret_property_array_like_typ('user_script_list', str)
-    guis = []  # stores names of all open guis (later on used to dump them periodically)
+    guis = []  #stores names of all open guis (later on used to dump them periodically)
     _StopTimeout = 60.
 
     __TIME_FORMAT_STR__ = '%Y%m%d-h%Hm%Ms%S'
@@ -146,7 +146,7 @@ class queue_logic(GenericLogic):
     def on_activate(self):
 
         self._awg = self.mcas_holder()  #self._mcas_dict = self.mcas_holder()#float(9)#self.mcas_holder()  # mcas_dict()
-        self._transition_tracker = self.transition_tracker()#float(10)#self.transition_tracker()
+        self._transition_tracker = self.transition_tracker() #float(10)#self.transition_tracker()
         self._gated_counter = self.gated_counter() # connection to the GC.
         self.init_run() #
         self.write_standard_awg_sequences()
@@ -171,7 +171,7 @@ class queue_logic(GenericLogic):
     #     self._timetagger = TimeTaggerHandler.init_timetagger()
 
     def init_run(self):
-        self.user_script_folder = r"/Users/vvv/Documents/GitHub/qudi/notebooks/UserScripts/electron_t2"
+        self.user_script_folder = r"C:/src/qudi/notebooks/UserScripts/electron_t2"
         self._script_queue = ScriptQueueList(oktypes=(ScriptQueueStep), list_owner=self)
         self.q = Queue() # use connector
         self.run_thread()
