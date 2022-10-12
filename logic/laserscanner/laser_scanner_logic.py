@@ -622,29 +622,22 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         filepath = self._save_logic.get_path_for_module(module_name='LaserScanning')
         filepath2 = self._save_logic.get_path_for_module(module_name='LaserScanning')
-        # filepath3 = self._save_logic.get_path_for_module(module_name='LaserScanning')
         timestamp = datetime.datetime.now()
 
         if len(tag) > 0:
-            filelabel = tag + '_volt_data'
-            filelabel2 = tag + '_volt_data_raw_trace'
-        #   filelabel3 = tag + '_volt_data_raw_retrace'
+            filelabel = tag + '_PLE_data'
+            filelabel2 = tag + '_PLE_data_raw_trace'
         else:
-            filelabel = 'volt_data'
-            filelabel2 = 'volt_data_raw_trace'
-        #   filelabel3 = 'volt_data_raw_retrace'
-
+            filelabel = 'PLE_data'
+            filelabel2 = 'PLE_data_raw_trace'
+        
         # prepare the data in a dict or in an OrderedDict:
         data = OrderedDict()
         data['frequency (Hz)'] = self.plot_x
         data['trace count data (counts/s)'] = self.plot_y
-        #data['retrace count data (counts/s)'] = self.plot_y2
 
         data2 = OrderedDict()
         data2['count data (counts/s)'] = self.scan_matrix[:self._scan_counter_up, :]
-
-        # data3 = OrderedDict()
-        # data3['count data (counts/s)'] = self.scan_matrix2[:self._scan_counter_down, :]
 
         parameters = OrderedDict()
         parameters['Number of frequency sweeps (#)'] = self._scan_counter_up

@@ -121,7 +121,7 @@ class queue_logic(GenericLogic):
     mcas_holder = Connector(interface='McasDictHolderInterface')
     # Transition tracker
     transition_tracker = Connector(interface = 'TransitionTracker') # Should be a name of the class
-    #confocal = Connector('ConfocalLogic')
+    confocal = Connector('ConfocalLogic')
     # Gated counter.
     gated_counter = Connector('GatedCounter') # Should be name of the class.
     update_selected_user_script_combo_box_signal = pyqtSignal(collections.OrderedDict)
@@ -151,8 +151,8 @@ class queue_logic(GenericLogic):
         self.init_run() #
         self.write_standard_awg_sequences()
         # TODO we are adding confocal later.
-        #self._confocal = self.confocal()
-
+        self._confocal = self.confocal()
+        self.tt = self._transition_tracker
     def on_deactivate(self):
         pass
         #FIXME destroy me gently

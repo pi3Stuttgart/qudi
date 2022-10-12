@@ -50,7 +50,7 @@ class ODMRLogic_holder(GenericLogic):
     # time_tagger.setTriggerLevel(7, 1)
 
     #create the signals:
-    sigOdmrPlotsUpdated = QtCore.Signal(np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray)
+    sigOdmrPlotsUpdated = QtCore.Signal()
     SigClock= QtCore.Signal()
     SigCheckReady_Beacon = QtCore.Signal()
 
@@ -78,6 +78,8 @@ class ODMRLogic_holder(GenericLogic):
         self.Linewidths_Fit:str = ''
         self.NumberOfPeaks:int=1
 
+        self.x_fit = np.arange(20)
+        self.y_fit = np.arange(20)
         return 
 
     def on_deactivate(self):
@@ -108,19 +110,21 @@ class ODMRLogic_holder(GenericLogic):
 
     def save_cw_odmr_data(self, tag=None, colorscale_range=None, percentile_range=None):
         """ Saves the current ODMR data to a file."""
-        timestamp = datetime.datetime.now()
-        filepath = self._save_logic.get_path_for_module(module_name='ODMR')
 
         if tag is None:
             tag = ''
 
+        filepath = self._save_logic.get_path_for_module(module_name='ODMR')
+        timestamp = datetime.datetime.now()
+
         if len(tag) > 0:
-            filelabel_raw = '{0}_cw_ODMR_data_raw'.format(tag)
-            filelabel_matrix = '{0}_cw_ODMR_data_matrix'.format(tag)
+            filelabel_raw = '{0}_cw_ODMR_raw'.format(tag)
+            filelabel_matrix = '{0}_cw_ODMR_matrix'.format(tag)
         else:
-            filelabel_raw = '_cw_ODMR_data_raw'
-            filelabel_matrix = '_cw_ODMR_data_matrix'
+            filelabel_raw = '_cw_ODMR_raw'
+            filelabel_matrix = '_cw_ODMR_matrix'
         
+        # prepare the data in a dict or in an OrderedDict:
         data_raw = OrderedDict()
         data_matrix = OrderedDict()
         data_raw['count data (counts)'] = self.ODMRLogic.data
@@ -147,30 +151,41 @@ class ODMRLogic_holder(GenericLogic):
         parameters['CW Repump (bool)'] = self.ODMRLogic.cw_CWRepump
         parameters['Green (bool)'] = self.ODMRLogic.enable_green
         parameters['Seconds per Point (s)'] = self.ODMRLogic.cw_SecondsPerPoint
+        parameters['Contrast'] = self.Contrast_Fit
+        parameters['Frequencies (MHz)'] = self.Frequencies_Fit
+        parameters['Linewidths (kHz)'] = self.Linewidths_Fit
 
-        fig = self.draw_cw_figure(data_raw['count data (counts)'],data_raw['Frequency (MHz)'],data_matrix['Frequency (MHz) + Scanline'],
-                                cbar_range=colorscale_range,
-                                percentile_range=percentile_range)
+        fig = self.draw_cw_figure(
+            data_raw['count data (counts)'],
+            data_raw['Frequency (MHz)'],
+            data_matrix['Frequency (MHz) + Scanline'],
+            self.ODMRLogic.x_fit,
+            self.ODMRLogic.y_fit,
+            cbar_range=colorscale_range,
+            percentile_range=percentile_range)
 
-        self._save_logic.save_data(data_matrix,
-                                    filepath=filepath,
-                                    parameters=parameters,
-                                    filelabel=filelabel_matrix,
-                                    fmt='%.6e',
-                                    delimiter='\t',
-                                    timestamp=timestamp)
+        self._save_logic.save_data(
+            data_matrix,
+            filepath=filepath,
+            parameters=parameters,
+            filelabel=filelabel_matrix,
+            fmt='%.6e',
+            delimiter='\t',
+            timestamp=timestamp
+        )
         
-        self._save_logic.save_data(data_raw,
-                                    filepath=filepath,
-                                    parameters=parameters,
-                                    filelabel=filelabel_raw,
-                                    fmt='%.6e',
-                                    delimiter='\t',
-                                    timestamp=timestamp,
-                                    plotfig=fig)
-
+        self._save_logic.save_data(
+            data_raw,
+            filepath=filepath,
+            parameters=parameters,
+            filelabel=filelabel_raw,
+            fmt='%.6e',
+            delimiter='\t',
+            timestamp=timestamp,
+            plotfig=fig
+        )
         self.log.info('ODMR data saved to:\n{0}'.format(filepath))
-        return
+        return 0
 
     def save_pulsed_odmr_data(self, tag=None, colorscale_range=None, percentile_range=None):
         """ Saves the current ODMR data to a file."""
@@ -181,13 +196,13 @@ class ODMRLogic_holder(GenericLogic):
             tag = ''
 
         if len(tag) > 0:
-            filelabel_raw = '{0}_pulsed_ODMR_data_raw'.format(tag)
-            filelabel_detection = '{0}_pulsed_ODMR_data_detection'.format(tag)
-            filelabel_matrix = '{0}_pulsed_ODMR_data_matrix'.format(tag)
+            filelabel_raw = '{0}_pulsed_ODMR_raw'.format(tag)
+            filelabel_detection = '{0}_pulsed_ODMR_detection'.format(tag)
+            filelabel_matrix = '{0}_pulsed_ODMR_matrix'.format(tag)
         else:
-            filelabel_raw = '_pulsed_ODMR_data_raw'
-            filelabel_detection = '_pulsed_ODMR_data_detection'
-            filelabel_matrix = '_pulsed_ODMR_data_matrix'
+            filelabel_raw = '_pulsed_ODMR_raw'
+            filelabel_detection = '_pulsed_ODMR_detection'
+            filelabel_matrix = '_pulsed_ODMR_matrix'
             
         data_raw = OrderedDict()
         data_detection = OrderedDict()
@@ -227,44 +242,57 @@ class ODMRLogic_holder(GenericLogic):
         parameters['Readout via A2 (bool)'] = self.pulsedODMRLogic.pulsed_A2Readout
         parameters['AOM Delay (ns)'] = self.pulsedODMRLogic.pulsed_AOMDelay
         parameters['Binning (s)'] = self.pulsedODMRLogic.pulsed_Binning
-
-        fig = self.draw_pulsed_figure(data_raw['count data (counts)'],
-                                data_raw['Frequency (MHz)'],
-                                data_matrix['Frequency (MHz) + Scanline'],
-                                data_detection['Detection Time (ns)'],
-                                data_detection['Detection Counts (counts)'],
-                                cbar_range=colorscale_range,
-                                percentile_range=percentile_range)
-
-        self._save_logic.save_data(data_matrix,
-                                    filepath=filepath,
-                                    parameters=parameters,
-                                    filelabel=filelabel_matrix,
-                                    fmt='%.6e',
-                                    delimiter='\t',
-                                    timestamp=timestamp)
+        parameters['Contrast'] = self.Contrast_Fit
+        parameters['Frequencies (MHz)'] = self.Frequencies_Fit
+        parameters['Linewidths (kHz)'] = self.Linewidths_Fit
         
-        self._save_logic.save_data(data_detection,
-                                    filepath=filepath,
-                                    parameters=parameters,
-                                    filelabel=filelabel_detection,
-                                    fmt='%.6e',
-                                    delimiter='\t',
-                                    timestamp=timestamp)
+        fig = self.draw_pulsed_figure(
+            data_raw['Frequency (MHz)'],
+            data_raw['count data (counts)'],
+            data_matrix['Frequency (MHz) + Scanline'],
+            data_detection['Detection Time (ns)'],
+            data_detection['Detection Counts (counts)'],
+            self.pulsedODMRLogic.x_fit,
+            self.pulsedODMRLogic.y_fit,
+            cbar_range=colorscale_range,
+            percentile_range=percentile_range
+        )
+
+        self._save_logic.save_data(
+            data_matrix,
+            filepath=filepath,
+            parameters=parameters,
+            filelabel=filelabel_matrix,
+            fmt='%.6e',
+            delimiter='\t',
+            timestamp=timestamp
+        )
         
-        self._save_logic.save_data(data_raw,
-                                    filepath=filepath,
-                                    parameters=parameters,
-                                    filelabel=filelabel_raw,
-                                    fmt='%.6e',
-                                    delimiter='\t',
-                                    timestamp=timestamp,
-                                    plotfig=fig)
+        self._save_logic.save_data(
+            data_detection,
+            filepath=filepath,
+            parameters=parameters,
+            filelabel=filelabel_detection,
+            fmt='%.6e',
+            delimiter='\t',
+            timestamp=timestamp
+        )
+        
+        self._save_logic.save_data(
+            data_raw,
+            filepath=filepath,
+            parameters=parameters,
+            filelabel=filelabel_raw,
+            fmt='%.6e',
+            delimiter='\t',
+            timestamp=timestamp,
+            plotfig=fig
+        )
 
         self.log.info('ODMR data saved to:\n{0}'.format(filepath))
         return
 
-    def draw_cw_figure(self, data, frequencies, matrix, cbar_range=None, percentile_range=None):
+    def draw_cw_figure(self, count_data, freq_data, matrix_data, fit_freq_vals, fit_count_vals,cbar_range=None, percentile_range=None):
         """ Draw the summary figure to save with the data.
 
         @param: list cbar_range: (optional) [color_scale_min, color_scale_max].
@@ -275,11 +303,7 @@ class ODMRLogic_holder(GenericLogic):
 
         @return: fig fig: a matplotlib figure object to be saved to file.
         """
-        #key = 'range: {1}'.format(frequencies)
-        count_data = data
-        freq_data = frequencies
-        matrix_data = matrix
-        
+        fit_freq_vals = fit_freq_vals/1e6
         # If no colorbar range was given, take full range of data
         if cbar_range is None:
             cbar_range = np.array([np.min(matrix_data), np.max(matrix_data)])
@@ -292,7 +316,7 @@ class ODMRLogic_holder(GenericLogic):
         # Rescale counts data with SI prefix
         while np.max(count_data) > 1000:
             count_data = count_data / 1000
-            #fit_count_vals = fit_count_vals / 1000
+            fit_count_vals = fit_count_vals / 1000
             prefix_index = prefix_index + 1
 
         counts_prefix = prefix[prefix_index]
@@ -321,12 +345,16 @@ class ODMRLogic_holder(GenericLogic):
         plt.style.use(self._save_logic.mpl_qd_style)
 
         # Create figure
-        fig, (ax_mean, ax_matrix) = plt.subplots(nrows=2, ncols=1)
+        self.fig, (self.ax_mean, ax_matrix) = plt.subplots(nrows=2, ncols=1)
+        self.ax_mean.plot(freq_data, count_data, linestyle=':', linewidth=0.5)
 
-        ax_mean.plot(freq_data, count_data, linestyle=':', linewidth=0.5)
+        # # Do not include fit curve if there is no fit calculated.
+        if max(fit_count_vals) > 0:
+            self.ax_mean.plot(fit_freq_vals, fit_count_vals, marker='None')
+    
+        self.ax_mean.set_ylabel('Fluorescence (' + counts_prefix + 'counts)')
+        self.ax_mean.set_xlim(np.min(freq_data), np.max(freq_data))
 
-        ax_mean.set_ylabel('Fluorescence (' + counts_prefix + 'counts)')
-        ax_mean.set_xlim(np.min(freq_data), np.max(freq_data))
         matrixplot = ax_matrix.imshow(
             matrix_data,
             cmap=plt.get_cmap('inferno'),  # reference the right place in qd
@@ -345,14 +373,14 @@ class ODMRLogic_holder(GenericLogic):
         ax_matrix.set_ylabel('Scan #')
 
         # Adjust subplots to make room for colorbar
-        fig.subplots_adjust(right=0.8)
+        self.fig.subplots_adjust(right=0.8)
 
         # Add colorbar axis to figure
-        cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
+        cbar_ax = self.fig.add_axes([0.85, 0.15, 0.02, 0.7])
 
         # Draw colorbar
-        cbar = fig.colorbar(matrixplot, cax=cbar_ax)
-        cbar.set_label('Fluorescence (' + cbar_prefix + 'c/s)')
+        cbar = self.fig.colorbar(matrixplot, cax=cbar_ax)
+        cbar.set_label('Fluorescence (' + cbar_prefix + 'counts)')
 
         # remove ticks from colorbar for cleaner image
         cbar.ax.tick_params(which=u'both', length=0)
@@ -381,9 +409,9 @@ class ODMRLogic_holder(GenericLogic):
                              rotation=90
                              )
 
-        return fig
+        return self.fig
 
-    def draw_pulsed_figure(self, data, frequencies, matrix, detection_time, detection_counts, cbar_range=None, percentile_range=None):
+    def draw_pulsed_figure(self, freq_data, count_data, matrix_data, detection_time, detection_counts, fit_freq_vals, fit_count_vals, cbar_range=None, percentile_range=None):
         """ Draw the summary figure to save with the data.
 
         @param: list cbar_range: (optional) [color_scale_min, color_scale_max].
@@ -395,10 +423,7 @@ class ODMRLogic_holder(GenericLogic):
         @return: fig fig: a matplotlib figure object to be saved to file.
         """
         #key = 'range: {1}'.format(frequencies)
-        count_data = data
-        freq_data = frequencies
-        matrix_data = matrix
-        
+        fit_freq_vals = fit_freq_vals/1e6
         # If no colorbar range was given, take full range of data
         if cbar_range is None:
             cbar_range = np.array([np.min(matrix_data), np.max(matrix_data)])
@@ -444,6 +469,9 @@ class ODMRLogic_holder(GenericLogic):
 
         ax_mean.plot(freq_data, count_data, linestyle=':', linewidth=0.5)
 
+        # Do not include fit curve if there is no fit calculated.
+        if max(fit_count_vals) > 0:
+            ax_mean.plot(fit_freq_vals, fit_count_vals, marker='None')
         ax_mean.set_ylabel('Fluorescence (' + counts_prefix + 'counts)')
         ax_mean.set_xlim(np.min(freq_data), np.max(freq_data))
         matrixplot = ax_matrix.imshow(
@@ -509,26 +537,7 @@ class ODMRLogic_holder(GenericLogic):
 
 ##############################################################
 # Stuff for Fitting
-
-
-    # def do_oneDgaussian_fit(self,x_data, y_data):
-    #     x_data=x_data.astype(np.float)
-    #     y_data=y_data.astype(np.float)
-        
-    #     model,params=self._fit_logic.make_gaussian_model()
-
-    #     result = self._fit_logic.make_gaussian_fit(
-    #                         x_axis=x_data,
-    #                         data=y_data,
-    #                         units='Hz',
-    #                         estimator=self._fit_logic.estimate_gaussian_peak
-    #                         )
-    #     print(x_data.min(),x_data.max(),len(x_data)*10)
-    #     interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*10)
-    #     self.fit_data = model.eval(x=interplolated_x_data, params=result.params)
-
-    #     return interplolated_x_data,self.fit_data,result
-        
+#         
     def do_gaussian_fit(self,x_data, y_data):
         
         x_data=x_data.astype(np.float)
@@ -569,7 +578,7 @@ class ODMRLogic_holder(GenericLogic):
         print(x_data.min(),x_data.max(),len(x_data)*10)
         self.interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*5)
         self.fit_data = model.eval(x=self.interplolated_x_data, params=result.params)
-        
+
         self.Contrast_Fit:str=''
         self.Frequencies_Fit:str=''
         self.Linewidths_Fit:str=''
@@ -632,11 +641,8 @@ class ODMRLogic(cw_default):
             self.scanmatrix[1:]=self.scanmatrix[0:-1]
             self.scanmatrix[0]=data
             self.data=self.data+data
-            if self.cw_PerformFit:
-                self.x_fit,self.y_fit,self.fit_result=self.holder.do_gaussian_fit(self.mw1_freq*1e6,self.data)
-                #self.x_fit,self.y_fit,self.fit_result=self.holder.do_oneDgaussian_fit(self.mw1_freq*1e6,self.data)
             
-            self.holder.sigOdmrPlotsUpdated.emit(self.mw1_freq*1e6,self.data,self.scanmatrix, np.array([]), np.array([]))
+            self.holder.sigOdmrPlotsUpdated.emit()
                 
             
 
@@ -787,6 +793,9 @@ class pulsedODMRLogic(pulsed_default):
         self.ancient_index=0
         self.continuing=False # variable to discard first getdata after pressing continue.
 
+        self.x_fit = np.arange(20)
+        self.y_fit = np.arange(20)
+
 
     def data_readout(self):
         #print("checkready:",self.measurement_running)
@@ -820,16 +829,10 @@ class pulsedODMRLogic(pulsed_default):
             self.scanmatrix[0]=data
             self.data=self.data+data
             self.data_detect=self.data_detect+data_detect
-            
-            if self.pulsed_PerformFit: #TODO Only when checkbox #Linked to the if in gui -> update_plots
-                self.x_fit,self.y_fit,self.fit_result=self.holder.do_gaussian_fit(self.mw1_freq*1e6,self.data)
-                #self.x_fit,self.y_fit,self.fit_result=self.holder.do_oneDgaussian_fit(self.mw1_freq*1e6,self.data)
-
-
-            self.holder.sigOdmrPlotsUpdated.emit(self.mw1_freq*1e6,self.data,self.scanmatrix,self.indexes/1e12,self.data_detect)
-        #print("ploting matrix")
+        
                 
-
+            self.holder.sigOdmrPlotsUpdated.emit()
+       
     def power_to_amp(self, power_dBm, impedance=50):
         power_dBm = np.atleast_1d(power_dBm)
         P_watts = 10**(power_dBm / 10) * 1e-3

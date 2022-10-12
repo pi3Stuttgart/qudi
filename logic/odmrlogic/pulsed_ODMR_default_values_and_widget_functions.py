@@ -56,6 +56,7 @@ class pulsed_ODMR_default_values_and_widget_functions:
         pulsed_odmr_cb_min:float=0
 
         pulsed_NumberOfLines:int=20
+        pulsed_update_after_stop:bool=F
 
         def pulsed_NumberOfLines_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_NumberOfLines_LineEdit. Text=',text)
@@ -113,6 +114,8 @@ class pulsed_ODMR_default_values_and_widget_functions:
         def pulsed_PerformFit_CheckBox_StateChanged(self,on):
                 #print('done something with pulsed_PerformFit_CheckBox')
                 self.pulsed_PerformFit=on==2
+                self.pulsed_update_after_stop=True
+                self.holder.sigOdmrPlotsUpdated.emit()
 
         def pulsed_MW1_Power_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_MW1_Power_LineEdit. Text=',text)
@@ -185,12 +188,10 @@ class pulsed_ODMR_default_values_and_widget_functions:
                 self.pulsed_CWRepump=on==2
 
         def pulsed_Load_Button_Clicked(self,on):
-                print('done something with pulsed_Load_Button')
+                print('Loading not implemented yet.')
 
         def pulsed_Continue_Button_Clicked(self,on):
-                #print('done something with pulsed_Continue_Button')
                 self.continuing=True
-                #self.holder.awg.mcas_dict['pulsedODMR'].run()
                 self.setup_seq()
                 self.starting_time+=time.time()-self.stoping_time
                 self.time_differences=self.holder.setup_time_tagger(n_histograms=self.number_of_points_per_line,
@@ -247,10 +248,11 @@ class pulsed_ODMR_default_values_and_widget_functions:
 
         def pulsed_Save_Button_Clicked(self,on):
                 self.holder.save_pulsed_odmr_data()
-                print('done something with pulsed_Save_Button')
 
         def pulsed_Run_Button_Clicked(self,on):
-                #print('done something with pulsed_Run_Button')
+                self.holder.Contrast_Fit = ''
+                self.holder.Frequencies_Fit = ''
+                self.holder.Linewidth_Fit = ''
                 self.setup_seq()
                 self.scanmatrix=np.zeros((self.pulsed_NumberOfLines,self.number_of_points_per_line))
                 self.ancient_data=np.array(self.time_differences.getData(),dtype=object)
@@ -336,12 +338,10 @@ class pulsed_ODMR_default_values_and_widget_functions:
                 except:
                         pass
         def pulsed_SelectGaussianFit_RadioButton_clicked(self):
-                print('done something with radio button gauss')
                 self.pulsed_SelectGaussianFit=True
                 self.pulsed_SelectLorentzianFit=False
                 
         def pulsed_SelectLorentzianFit_RadioButton_clicked(self):
-                print('done something with radio button lorentzian')
                 self.pulsed_SelectGaussianFit=False
                 self.pulsed_SelectLorentzianFit=True
 

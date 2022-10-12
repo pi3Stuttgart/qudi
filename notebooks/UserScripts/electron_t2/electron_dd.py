@@ -205,7 +205,7 @@ def run_fun(abort, **kwargs):
     print(1,' Nuclear started!!!')
     nuclear.queue = kwargs['queue']
     nuclear.queue._gated_counter.readout_duration = 5e6
-    nuclear.debug_mode = True
+    nuclear.debug_mode = False
     settings()
     print('run_fun started')
     nuclear.run(abort)

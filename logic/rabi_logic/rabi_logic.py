@@ -30,6 +30,7 @@ class RabiLogic(GenericLogic,rabi_default):
     counter_device = Connector(interface='TimeTaggerInterface')# Savelogic just for testing purposes
     savelogic = Connector(interface='SaveLogic')
     mcas_holder = Connector(interface='McasDictHolderInterface')
+    fitlogic = Connector(interface='FitLogic')
 
     CHANNEL_APD0 = 0
     CHANNEL_APD1 = 1
@@ -51,7 +52,7 @@ class RabiLogic(GenericLogic,rabi_default):
     # time_tagger.setTriggerLevel(7, 1)
 
     #create the signals:
-    sigRabiPlotsUpdated = QtCore.Signal(np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray)
+    sigRabiPlotsUpdated = QtCore.Signal()
     SigClock= QtCore.Signal()
     SigCheckReady_Beacon = QtCore.Signal()
 
@@ -61,6 +62,7 @@ class RabiLogic(GenericLogic,rabi_default):
         self._time_tagger.setup_TT()
         self._save_logic = self.savelogic()
         self._awg = self.mcas_holder()#mcas_dict()
+        self._fit_logic = self.fitlogic()
         
         self.stop_awg = self._awg.mcas_dict.stop_awgs
         self.Timer = RepeatedTimer(1, self.clock) # this clock is not very precise, maybe the solution proposed on https://stackoverflow.com/questions/474528/what-is-the-best-way-to-repeatedly-execute-a-function-every-x-seconds can be helpful.
@@ -103,7 +105,7 @@ class RabiLogic(GenericLogic,rabi_default):
             self.data=np.sum(self.scanmatrix[:,mask],axis=1) #sum up the readout-histogram after a single Tau
             self.data_detect=np.sum(self.scanmatrix,axis=0) #sum up the histograms to see the emission decay
             self.measured_times=indexes/1e12 #binwidth in seconds
-            self.sigRabiPlotsUpdated.emit(self.tau_duration*1e-9, self.data, self.scanmatrix, self.measured_times, self.data_detect)
+            self.sigRabiPlotsUpdated.emit()
 
 
     def clock(self):
@@ -117,7 +119,7 @@ class RabiLogic(GenericLogic,rabi_default):
         return self._time_tagger.time_differences()
 
     def save_rabi_data(self, tag=None, colorscale_range=None, percentile_range=None):
-        """ Saves the current ODMR data to a file."""
+        """ Saves the current Rabi data to a file."""
         timestamp = datetime.datetime.now()
         filepath = self._save_logic.get_path_for_module(module_name='Rabi')
         tag = self.rabi_Filename
@@ -125,13 +127,13 @@ class RabiLogic(GenericLogic,rabi_default):
             tag = ''
 
         if len(tag) > 0:
-            filelabel_raw = '{0}_raw'.format(tag)
-            filelabel_detection = '{0}_detection'.format(tag)
-            filelabel_matrix = '{0}_matrix'.format(tag)
+            filelabel_raw = '{0}_Rabi_raw'.format(tag)
+            filelabel_detection = '{0}_Rabi_detection'.format(tag)
+            filelabel_matrix = '{0}_Rabi_matrix'.format(tag)
         else:
-            filelabel_raw = '_raw'
-            filelabel_detection = '_detection'
-            filelabel_matrix = '_matrix'
+            filelabel_raw = '_Rabi_raw'
+            filelabel_detection = '_Rabi_detection'
+            filelabel_matrix = '_Rabi_matrix'
 
         data_raw = OrderedDict()
         data_detection = OrderedDict()
@@ -171,14 +173,22 @@ class RabiLogic(GenericLogic,rabi_default):
         parameters['AOM Delay (ns)'] = self.rabi_AOMDelay
         parameters['Integration Window (ns)'] = self.rabi_IntegrationTime
         parameters['Binning (ns)'] = self.rabi_Binning
+        parameters['Amplitude Fit'] = self.Amplitude_Fit
+        parameters['Frequency Fit'] = self.Frequency_Fit
+        parameters['Phase Fit'] = self.Phase_Fit
 
-        fig = self.draw_figure(data_raw['count data (counts)'],
-                                data_raw['Tau (ns)'],
-                                data_matrix['Detection Time + Tau'],
-                                data_detection['Detection Time (ns)'],
-                                data_detection['Detection Counts (counts)'],
-                                cbar_range=colorscale_range,
-                                percentile_range=percentile_range)
+
+        fig = self.draw_figure(
+            data_raw['Tau (ns)'],
+            data_raw['count data (counts)'],
+            data_matrix['Detection Time + Tau'],
+            data_detection['Detection Time (ns)'],
+            data_detection['Detection Counts (counts)'],
+            self.interplolated_x_data,
+            self.fit_data,
+            cbar_range=colorscale_range,
+            percentile_range=percentile_range
+        )
 
         self._save_logic.save_data(data_matrix,
                                     filepath=filepath,
@@ -205,11 +215,10 @@ class RabiLogic(GenericLogic,rabi_default):
                                     timestamp=timestamp,
                                     plotfig=fig)
 
-        self.log.info('ODMR data saved to:\n{0}'.format(filepath))
+        self.log.info('Rabi data saved to:\n{0}'.format(filepath))
         return
 
-
-    def draw_figure(self, data, tau, matrix, detection_time, detection_counts, cbar_range=None, percentile_range=None):
+    def draw_figure(self, time_data, count_data, matrix_data, detection_time, detection_counts, fit_freq_vals, fit_count_vals, cbar_range=None, percentile_range=None):
         """ Draw the summary figure to save with the data.
 
         @param: list cbar_range: (optional) [color_scale_min, color_scale_max].
@@ -221,10 +230,7 @@ class RabiLogic(GenericLogic,rabi_default):
         @return: fig fig: a matplotlib figure object to be saved to file.
         """
         #key = 'range: {1}'.format(frequencies)
-        count_data = data
-        tau_data = tau
-        matrix_data = matrix
-        
+        matrix_data=matrix_data.astype(float)
         # If no colorbar range was given, take full range of data
         if cbar_range is None:
             cbar_range = np.array([np.min(matrix_data), np.max(matrix_data)])
@@ -245,9 +251,9 @@ class RabiLogic(GenericLogic,rabi_default):
         # Rescale frequency data with SI prefix
         prefix_index = 0
 
-        while np.max(tau_data) > 1000:
-            tau_data = tau_data / 1000
-            #fit_freq_vals = fit_freq_vals / 1000
+        while np.max(time_data) > 1000:
+            time_data = time_data / 1000
+            fit_freq_vals = fit_freq_vals / 1000
             prefix_index = prefix_index + 1
 
         mw_prefix = prefix[prefix_index]
@@ -266,77 +272,74 @@ class RabiLogic(GenericLogic,rabi_default):
         plt.style.use(self._save_logic.mpl_qd_style)
 
         # Create figure
-        #fig, (ax_mean, ax_matrix, ax_detection) = plt.subplots(nrows=3, ncols=1)
-        fig, (ax_mean, ax_detection) = plt.subplots(nrows=2, ncols=1)
+        fig, (ax_mean, ax_matrix, ax_detection) = plt.subplots(nrows=3, ncols=1)
 
-        ax_mean.plot(tau_data, count_data, linestyle=':', linewidth=0.5)
+        ax_mean.plot(time_data, count_data, linestyle=':', linewidth=0.5)
+
+        # Do not include fit curve if there is no fit calculated.
+        if max(fit_count_vals) > 0:
+            ax_mean.plot(fit_freq_vals, fit_count_vals, marker='None')
         ax_mean.set_ylabel('Fluorescence (' + counts_prefix + 'counts)')
-        ax_mean.set_xlabel('Tau (ns)')
-        ax_mean.set_xlim(np.min(tau_data), np.max(tau_data))
-        
-        # matrixplot = ax_matrix.imshow(
-        #     matrix_data,
-        #     cmap=plt.get_cmap('inferno'),  # reference the right place in qd
-        #     origin='lower',
-        #     vmin=cbar_range[0],
-        #     vmax=cbar_range[1],
-        #     extent=[np.min(detection_time),
-        #             np.max(detection_time),
-        #             0,
-        #             np.shape(matrix_data)[0]
-        #             ],
-        #     aspect='auto',
-        #     interpolation='nearest')
+        ax_mean.set_xlim(np.min(time_data), np.max(time_data))
+        matrixplot = ax_matrix.imshow(
+            matrix_data,
+            cmap=plt.get_cmap('inferno'),  # reference the right place in qd
+            origin='lower',
+            vmin=cbar_range[0],
+            vmax=cbar_range[1],
+            extent=[np.min(time_data),
+                    np.max(time_data),
+                    0,
+                    np.shape(matrix_data)[0]
+                    ],
+            aspect='auto',
+            interpolation='nearest')
 
-        # ax_matrix.set_xlabel('Frequency (' + mw_prefix + 'Hz)')
-        # ax_matrix.set_ylabel('Scan #')
+        ax_matrix.set_xlabel('Frequency (' + mw_prefix + 'Hz)')
+        ax_matrix.set_ylabel('Scan #')
 
         ax_detection.plot(detection_time, detection_counts, linestyle=':', linewidth=0.5)
         ax_detection.set_ylabel('Fluorescence (' + counts_prefix + 'counts)')
-        ax_detection.set_xlabel('Time (ns)')
         ax_detection.set_xlim(np.min(detection_time), np.max(detection_time))
 
-        # # Adjust subplots to make room for colorbar
-        # fig.subplots_adjust(right=0.8)
+        # Adjust subplots to make room for colorbar
+        fig.subplots_adjust(right=0.8)
 
-        # # Add colorbar axis to figure
-        # cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
+        # Add colorbar axis to figure
+        cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
 
-        # # Draw colorbar
-        # cbar = fig.colorbar(matrixplot, cax=cbar_ax)
-        # cbar.set_label('Fluorescence (' + cbar_prefix + 'c/s)')
+        # Draw colorbar
+        cbar = fig.colorbar(matrixplot, cax=cbar_ax)
+        cbar.set_label('Fluorescence (' + cbar_prefix + 'c/s)')
 
-        # # remove ticks from colorbar for cleaner image
-        # cbar.ax.tick_params(which=u'both', length=0)
+        # remove ticks from colorbar for cleaner image
+        cbar.ax.tick_params(which=u'both', length=0)
 
-        # # If we have percentile information, draw that to the figure
-        # if percentile_range is not None:
-        #     cbar.ax.annotate(str(percentile_range[0]),
-        #                      xy=(-0.3, 0.0),
-        #                      xycoords='axes fraction',
-        #                      horizontalalignment='right',
-        #                      verticalalignment='center',
-        #                      rotation=90
-        #                      )
-        #     cbar.ax.annotate(str(percentile_range[1]),
-        #                      xy=(-0.3, 1.0),
-        #                      xycoords='axes fraction',
-        #                      horizontalalignment='right',
-        #                      verticalalignment='center',
-        #                      rotation=90
-        #                      )
-        #     cbar.ax.annotate('(percentile)',
-        #                      xy=(-0.3, 0.5),
-        #                      xycoords='axes fraction',
-        #                      horizontalalignment='right',
-        #                      verticalalignment='center',
-        #                      rotation=90
-        #                      )
+        # If we have percentile information, draw that to the figure
+        if percentile_range is not None:
+            cbar.ax.annotate(str(percentile_range[0]),
+                             xy=(-0.3, 0.0),
+                             xycoords='axes fraction',
+                             horizontalalignment='right',
+                             verticalalignment='center',
+                             rotation=90
+                             )
+            cbar.ax.annotate(str(percentile_range[1]),
+                             xy=(-0.3, 1.0),
+                             xycoords='axes fraction',
+                             horizontalalignment='right',
+                             verticalalignment='center',
+                             rotation=90
+                             )
+            cbar.ax.annotate('(percentile)',
+                             xy=(-0.3, 0.5),
+                             xycoords='axes fraction',
+                             horizontalalignment='right',
+                             verticalalignment='center',
+                             rotation=90
+                             )
 
         return fig
-
-
-
 
     def power_to_amp(self, power_dBm, impedance=50):
         power_dBm = np.atleast_1d(power_dBm)
@@ -345,7 +348,6 @@ class RabiLogic(GenericLogic,rabi_default):
         V_pp = V_rms * 2 * np.sqrt(2)
         return V_pp / 0.35 #awg_amplitude
         #return V_pp / float(self.awg_device.amp1) #awg_amplitude
-
 
     def setup_seq(
         self,
@@ -469,7 +471,48 @@ class RabiLogic(GenericLogic,rabi_default):
         for key,val in ancient_self_variables.items(): # restore the ancient variables
             exec(f"self.{key}={val}")
 
+    def do_fit(self, x_data, y_data, tag):
+        
+        x_data=x_data.astype(np.float)
+        y_data=y_data.astype(np.float)
+        
+        if tag == 'Cosinus':
+            print("Doing Cosinus")
+            model,params=self._fit_logic.make_sine_model()
 
+            result = self._fit_logic.make_sine_fit(
+                                x_axis=x_data,
+                                data=y_data,
+                                units='Hz',
+                                estimator=self._fit_logic.estimate_sine
+                                )
+        if tag == 'Cosinus+Phase':
+            print("Doing Cosinus+Phase")
+            model,params=self._fit_logic.make_sine_model()
+
+            result = self._fit_logic.make_sine_fit(
+                                x_axis=x_data,
+                                data=y_data,
+                                units='Hz',
+                                estimator=self._fit_logic.estimate_sine
+                                )
+
+        self.interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*10)
+        self.fit_data = model.eval(x=self.interplolated_x_data, params=result.params)
+        self.Amplitude_Fit:str=''
+        self.Frequency_Fit:str=''
+        self.Phase_Fit:str=''
+
+        try:
+            self.Amplitude_Fit=str(round(result.params["amplitude"].value,2))
+            self.Frequency_Fit=str(round(result.params["frequency"].value*1e9,2))
+            self.Phase_Fit=str(round(result.params["phase"].value,2))
+        except Exception as e:
+            print("an error occured during fitting in Rabi:\n", e)
+
+        self.rabi_FitParams="Amplitude: "+self.Amplitude_Fit+"\n"+"Frequency: "+self.Frequency_Fit+"\n"+"Phase: "+self.Phase_Fit
+        
+        return self.interplolated_x_data,self.fit_data,result
 
 from threading import Timer
 class RepeatedTimer(object):

@@ -76,10 +76,10 @@ def initialize_connections_and_defaultvalues(self):
         self._mw.pulsed_SelectGaussianFit_RadioButton.setChecked(self._odmr_logic.pulsedODMRLogic.pulsed_SelectGaussianFit)
         self._mw.pulsed_SelectLorentzianFit_RadioButton.setChecked(self._odmr_logic.pulsedODMRLogic.pulsed_SelectLorentzianFit)
         
-        self._mw.cw_Contrast_Fit_Label.setText(str(self._odmr_logic.Contrast_Fit))
-        self._mw.cw_Linewidths_Fit_Label.setText(str(self._odmr_logic.Linewidths_Fit))
-        self._mw.cw_Frequencies_Fit_Label.setText(str(self._odmr_logic.Frequencies_Fit))
-        self._mw.cw_Runtime_Label.setText(str(self._odmr_logic.pulsedODMRLogic.pulsed_Runtime))
+        self._mw.pulsed_Contrast_Fit_Label.setText(str(self._odmr_logic.Contrast_Fit))
+        self._mw.pulsed_Linewidths_Fit_Label.setText(str(self._odmr_logic.Linewidths_Fit))
+        self._mw.pulsed_Frequencies_Fit_Label.setText(str(self._odmr_logic.Frequencies_Fit))
+        self._mw.pulsed_Runtime_Label.setText(str(self._odmr_logic.pulsedODMRLogic.pulsed_Runtime))
 
         # connect all the changeable widgets
         self._mw.cw_Filename_LineEdit.textEdited.connect(self._odmr_logic.ODMRLogic.cw_Filename_LineEdit_textEdited)

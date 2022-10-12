@@ -15,6 +15,9 @@ from . import settings as pym8190a_settings
 from . import elements as el
 from . import settings
 
+import logging
+logger = logging.getLogger(__name__)
+
 class SequencerTable(collections.OrderedDict):
 
     def __init__(self, awg, channel_number):
@@ -62,7 +65,6 @@ class SequencerTable(collections.OrderedDict):
 
     def control_values(self, position, controls=None):
         controls = self.data[:, 0] if controls is None else controls
-        return np.where(controls & (1 << position))[0].astype(np.uint32)
         return np.where(controls & (1 << position))[0].astype(np.uint32)
 
     def sequence_start_ids(self, **kwargs):

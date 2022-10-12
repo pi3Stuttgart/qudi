@@ -119,10 +119,6 @@ class ODMRGUI(GUIBase):
                                             np.arange(20),
                                             np.arange(20),
                                             pen=pg.mkPen(pg.mkColor(255, 0, 0), style=QtCore.Qt.SolidLine)
-                                            #symbol='-',
-                                            # symbolPen=pg.mkColor(255, 0,0),
-                                            # symbolBrush=pg.mkColor(0, 0, 0),
-                                            # symbolSize=0
                                             )
 
         # Add the display item to the xy and xz ViewWidget, which was defined in the UI file.
@@ -180,7 +176,7 @@ class ODMRGUI(GUIBase):
                                         symbolBrush=pg.mkColor(255, 255, 255),
                                         symbolSize=7)
 
-        self.odmr_data_image_fit = pg.PlotDataItem(
+        self.pulsed_odmr_data_image_fit = pg.PlotDataItem(
                                             #self._odmr_logic.odmr_fit_x,
                                             np.arange(20),
                                             #self._odmr_logic.odmr_fit_y,
@@ -207,7 +203,7 @@ class ODMRGUI(GUIBase):
 
         # Add the display item to the xy and xz ViewWidget, which was defined in the UI file.
         self._mw.pulsed_odmr_data_PlotWidget.addItem(self.pulsed_odmr_data_image)
-        self._mw.pulsed_odmr_data_PlotWidget.addItem(self.odmr_data_image_fit)
+        self._mw.pulsed_odmr_data_PlotWidget.addItem(self.pulsed_odmr_data_image_fit)
         self._mw.pulsed_odmr_data_PlotWidget.setLabel(axis='left', text='Counts', units='Counts')
         self._mw.pulsed_odmr_data_PlotWidget.setLabel(axis='bottom', text='Frequency', units='Hz')
         self._mw.pulsed_odmr_data_PlotWidget.showGrid(x=True, y=True, alpha=0.8)
@@ -314,17 +310,27 @@ class ODMRGUI(GUIBase):
                 levels=(self.pulsed_cb_min, self.pulsed_cb_max)
             )
 
+
     def update_plots(self,odmr_data_x=None, odmr_data_y=None, odmr_matrix=None, odmr_detect_x=None, odmr_detect_y=None):
-        
-        if self._odmr_logic.ODMRLogic.measurement_running:
+        if self._odmr_logic.ODMRLogic.measurement_running or self._odmr_logic.ODMRLogic.cw_update_after_stop:
+            odmr_data_x=self._odmr_logic.ODMRLogic.mw1_freq*1e6
+            odmr_data_y=self._odmr_logic.ODMRLogic.data
+            odmr_matrix=self._odmr_logic.ODMRLogic.scanmatrix
             #print(odmr_data_x, odmr_data_y, odmr_matrix)
             self.cw_odmr_image.setData(odmr_data_x, odmr_data_y)
             self._mw.cw_odmr_PlotWidget.removeItem(self.cw_odmr_image_fit)
-        
+            self._odmr_logic.ODMRLogic.cw_update_after_stop=False
             if self._odmr_logic.ODMRLogic.cw_PerformFit:
                 self._mw.cw_odmr_PlotWidget.addItem(self.cw_odmr_image_fit)
-        
+
+                self._odmr_logic.ODMRLogic.x_fit,self._odmr_logic.ODMRLogic.y_fit,self._odmr_logic.ODMRLogic.fit_result=self._odmr_logic.do_gaussian_fit(self._odmr_logic.ODMRLogic.mw1_freq*1e6,self._odmr_logic.ODMRLogic.data)
+
                 self.cw_odmr_image_fit.setData(self._odmr_logic.ODMRLogic.x_fit, self._odmr_logic.ODMRLogic.y_fit)
+                self._mw.cw_Contrast_Fit_Label.setText(str(self._odmr_logic.Contrast_Fit))
+                self._mw.cw_Linewidths_Fit_Label.setText(str(self._odmr_logic.Linewidths_Fit))
+                self._mw.cw_Frequencies_Fit_Label.setText(str(self._odmr_logic.Frequencies_Fit))
+
+
 
             self.cw_odmr_matrix_image.setRect(
                 QtCore.QRectF(
@@ -338,13 +344,33 @@ class ODMRGUI(GUIBase):
 
             self.update_cw_colorbar()
 
-        elif self._odmr_logic.pulsedODMRLogic.measurement_running:
+#self.mw1_freq*1e6,self.data,self.scanmatrix,self.indexes/1e12,self.data_detect #Pulsed
+
+# if self.pulsed_PerformFit:
+#     self.x_fit,self.y_fit,self.fit_result=self.holder.do_gaussian_fit(self.mw1_freq*1e6,self.data)
+
+        elif self._odmr_logic.pulsedODMRLogic.measurement_running or self._odmr_logic.pulsedODMRLogic.pulsed_update_after_stop:
+            odmr_data_x=self._odmr_logic.pulsedODMRLogic.mw1_freq*1e6
+            odmr_data_y=self._odmr_logic.pulsedODMRLogic.data
+            odmr_matrix=self._odmr_logic.pulsedODMRLogic.scanmatrix
+            odmr_detect_x=self._odmr_logic.pulsedODMRLogic.indexes/1e12
+            odmr_detect_y= self._odmr_logic.pulsedODMRLogic.data_detect
+
             #print(odmr_data_x, odmr_data_y, odmr_matrix)
             self.pulsed_odmr_data_image.setData(odmr_data_x, odmr_data_y)
+            self._mw.pulsed_odmr_data_PlotWidget.removeItem(self.pulsed_odmr_data_image_fit)
+            self._odmr_logic.pulsedODMRLogic.pulsed_update_after_stop=False
 
             self.pulsed_odmr_detect_image.setData(odmr_detect_x, odmr_detect_y)
-            if True: #TODO Only when checkbox
-                self.odmr_data_image_fit.setData(self._odmr_logic.pulsedODMRLogic.x_fit, self._odmr_logic.pulsedODMRLogic.y_fit)
+            if self._odmr_logic.pulsedODMRLogic.pulsed_PerformFit: #TODO Only when checkbox
+                self._mw.pulsed_odmr_data_PlotWidget.addItem(self.pulsed_odmr_data_image_fit)
+
+                self._odmr_logic.pulsedODMRLogic.x_fit,self._odmr_logic.pulsedODMRLogic.y_fit,self._odmr_logic.pulsedODMRLogic.fit_result=self._odmr_logic.do_gaussian_fit(self._odmr_logic.pulsedODMRLogic.mw1_freq*1e6,self._odmr_logic.pulsedODMRLogic.data)
+
+                self.pulsed_odmr_data_image_fit.setData(self._odmr_logic.pulsedODMRLogic.x_fit, self._odmr_logic.pulsedODMRLogic.y_fit)
+                self._mw.pulsed_Contrast_Fit_Label.setText(str(self._odmr_logic.Contrast_Fit))
+                self._mw.pulsed_Linewidths_Fit_Label.setText(str(self._odmr_logic.Linewidths_Fit))
+                self._mw.pulsed_Frequencies_Fit_Label.setText(str(self._odmr_logic.Frequencies_Fit))
 
             self.pulsed_odmr_matrix_image.setRect(
                 QtCore.QRectF(

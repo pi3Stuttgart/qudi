@@ -336,12 +336,10 @@ class FitContainer(QtCore.QObject):
             @param fit_dict dict: fit dictionary with function references etc
 
         """
-        #print(f"fit dict {fit_dict} ++++++++++++++++++++") #UNFUG
         try:
             self.fit_list = self.fit_logic.validate_load_fits(fit_dict)[self.dimension]
         except KeyError:
             self.fit_list = OrderedDict()
-        #print(f"fit list {self.fit_list} ++++++++++++++++++++") #UNFUG
 
     def save_to_dict(self):
         """ Convert self.fit_list to a storable dictionary.
@@ -362,7 +360,6 @@ class FitContainer(QtCore.QObject):
         """ Set the configured fit functions for this container.
             @param fit_functions dict: configured fit functions dictionary
         """
-        print("hi, ich lebe!!!!!")
         self.fit_list = fit_functions
         self.set_current_fit(self.current_fit)
 
@@ -374,7 +371,6 @@ class FitContainer(QtCore.QObject):
         If the name given is not in the list of fits, the current fit will be 'No Fit'.
         This is a reserved name that will do nothing and should not display a fit line if set.
         """
-        # print("self.fit_list:    \n",self.fit_list[current_fit]) #UNFUG
         if current_fit not in self.fit_list and current_fit != 'No Fit':
             self.fit_logic.log.warning('{0} not in {1} fit list!'.format(current_fit, self.name))
             self.current_fit = 'No Fit'

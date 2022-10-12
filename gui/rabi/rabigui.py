@@ -53,7 +53,7 @@ class RabiWindow(QtWidgets.QMainWindow):
 class RabiGUI(GUIBase,rabi_default_functions):
 
     ## declare connectors
-    rabi_logic = Connector(interface='RabiLogic')
+    rabilogic = Connector(interface='RabiLogic')
 
     # sigA1 = QtCore.Signal(bool)
     # sigA2 = QtCore.Signal(bool)
@@ -81,7 +81,7 @@ class RabiGUI(GUIBase,rabi_default_functions):
         # Configuring the dock widgets
         # Use the inherited class 'CounterMainWindow' to create the GUI window
         self._mw = RabiWindow()
-        self._rabi_logic= self.rabi_logic()
+        self._rabi_logic= self.rabilogic()
         self.initialize_connections_and_defaultvalues() #outsource all the connectors into a second file, to keep the GUI file clean
 
 
@@ -115,7 +115,7 @@ class RabiGUI(GUIBase,rabi_default_functions):
                                         symbolBrush=pg.mkColor(255, 255, 255),
                                         symbolSize=7)
 
-        self.rabi_data_fit_image = pg.PlotDataItem(
+        self.rabi_data_image_fit = pg.PlotDataItem(
                                             np.arange(20),
                                             np.arange(20),
                                             pen=pg.mkPen(palette.c2))
@@ -136,6 +136,7 @@ class RabiGUI(GUIBase,rabi_default_functions):
 
         # Add the display item to the xy and xz ViewWidget, which was defined in the UI file.
         self._mw.rabi_data_PlotWidget.addItem(self.rabi_data_image)
+        self._mw.rabi_data_PlotWidget.addItem(self.rabi_data_image_fit)
         self._mw.rabi_data_PlotWidget.setLabel(axis='left', text='Counts', units='Counts')
         self._mw.rabi_data_PlotWidget.setLabel(axis='bottom', text='Tau', units='s')
         self._mw.rabi_data_PlotWidget.showGrid(x=True, y=True, alpha=0.8)
@@ -224,13 +225,26 @@ class RabiGUI(GUIBase,rabi_default_functions):
 
 
 
-
-    def update_plots(self,rabi_data_x=None, rabi_data_y=None, rabi_matrix=None, rabi_detect_x=None, rabi_detect_y=None):
-        if self._rabi_logic.measurement_running:
+    def update_plots(self):
+        if self._rabi_logic.measurement_running or self._rabi_logic.update_after_stop:
             #print(rabi_data_x, rabi_data_y, rabi_matrix)
+            rabi_data_x=self._rabi_logic.tau_duration*1e-9
+            rabi_data_y=self._rabi_logic.data
+            rabi_matrix=self._rabi_logic.scanmatrix
+            rabi_detect_x=self._rabi_logic.measured_times
+            rabi_detect_y=self._rabi_logic.data_detect
+            print("we are further")
             self.rabi_data_image.setData(rabi_data_x, rabi_data_y)
 
             self.rabi_detect_image.setData(rabi_detect_x, rabi_detect_y)
+            self._mw.rabi_data_PlotWidget.removeItem(self.rabi_data_image_fit)
+            self._rabi_logic.update_after_stop=False
+
+            if self._rabi_logic.rabi_PerformFit:
+                self._rabi_logic.do_fit(self._rabi_logic.tau_duration,self._rabi_logic.data,self._rabi_logic.rabi_FitFunction)
+                self._mw.rabi_FitResults_TextBrowser.setText(self._rabi_logic.rabi_FitParams)
+                self._mw.rabi_data_PlotWidget.addItem(self.rabi_data_image_fit)
+                self.rabi_data_image_fit.setData(self._rabi_logic.interplolated_x_data/1e9,self._rabi_logic.fit_data)
 
             self.rabi_matrix_image.setRect(
                 QtCore.QRectF(

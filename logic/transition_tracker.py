@@ -585,7 +585,7 @@ class TransitionTracker(GenericLogic):
         self.zero_field_splitting = get_last_value_from_file('zfs')
         self.transition_name_list = [['+1', '0', '-1'], ['+1', '0', '-1']] + [['+0.5', '-0.5']] * len(self.c13_list)
         self.states_list = [range(len(i)) for i in self.transition_name_list]
-        self.spin_name_list = ['e'] + self.c13_list + self.si29_list
+        self.spin_name_list = ['e', '14N'] + self.c13_list# + self.si29_list
         self.set_h_diag()
         self.set_ntd()
         self.load_transitions()
@@ -648,8 +648,8 @@ class TransitionTracker(GenericLogic):
         for c13 in self.c13_list:
             self.nvham.add_spin(np.matrix(np.diag([0.0, 0.0, self.hf_para_n[c13]])), self.nvham.h_13c(), [0, 1])
 
-        for si29 in self.si29_list:
-            self.nvham.add_spin(np.matrix(np.diag([0.0, 0.0, self.hf_para_n[si29]])), self.nvham.h_13c(), [0, 1])
+        #for si29 in self.si29_list:
+            #self.nvham.add_spin(np.matrix(np.diag([0.0, 0.0, self.hf_para_n[si29]])), self.nvham.h_13c(), [0, 1])
 
         eval_evec = self.nvham.h_nv.eigenstates()
         # *np.linalg.eig(self.nvham.h_nv.data.todense())[::-1]

@@ -896,9 +896,10 @@ class NuclearOPs(DataGeneration):
             t0 = time.time()
             super(NuclearOPs, self).save(notify=True) #### IMPORTANT
             self.save_sequence_file()
-            self.queue.save_self.queueiamond(destination_dir=self.save_dir)
+            self.queue.save_pi3diamond(destination_dir=self.save_dir)
             save_qutip_enhanced(destination_dir=self.save_dir)
-            logging.getLogger().info("saved nuclear to '{} ({:.3f})".format(self.save_dir, time.time() - t0))
+            #TODO
+            # has to switch to qudi log. logging.getLogger().info("saved nuclear to '{} ({:.3f})".format(self.save_dir, time.time() - t0))
 
     def save_sequence_file(self):
         pass

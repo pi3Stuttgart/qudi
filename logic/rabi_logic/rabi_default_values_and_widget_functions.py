@@ -55,6 +55,10 @@ class rabi_default_values_and_widget_functions:
         rabi_Frequencies_Fit:float=70
         rabi_Linewidths_Fit:float=1
 
+        rabi_FitFunction:str='Cosinus'
+        rabi_FitParams:str=""
+        update_after_stop:bool=F
+
         def rabi_Stop_Button_Clicked(self,on):
                 #print('done something with rabi_Stop_Button')
                 self.stop_awg()
@@ -297,6 +301,8 @@ class rabi_default_values_and_widget_functions:
         def rabi_PerformFit_CheckBox_StateChanged(self,on):
                 #print('done something with rabi_PerformFit_CheckBox')
                 self.rabi_PerformFit=on==2
+                self.update_after_stop=True #sorry magnificient programmer going throug this,      
+                self.sigRabiPlotsUpdated.emit()
 
         def rabi_NumberOfPeaks_LineEdit_textEdited(self,text):
                 #print('done something with rabi_NumberOfPeaks_LineEdit. Text=',text)
@@ -321,3 +327,7 @@ class rabi_default_values_and_widget_functions:
 
                 except:
                         pass
+
+        def rabi_SelectFit_ComboBox_currentTextChanged(self, text):
+                print("combo box sagt: ", text)
+                self.rabi_FitFunction = text

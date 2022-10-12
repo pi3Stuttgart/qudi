@@ -6,6 +6,7 @@ from logic.generic_logic import GenericLogic
 import sys
 import logging; logger = logging.getLogger(__name__)
 from core.pi3_utils import delay
+import time
 
 sys.path.append('C:\src\qudi\hardware\Keysight_AWG_M8190\pyarbtools_master') #quickfix to proceed, should be improved
 
@@ -40,6 +41,8 @@ class SetupControlLogic(GenericLogic):
     enable_A2:bool=False
     enable_Repump:bool=False
     enable_Green:bool=False
+    active_chanels=[] # used to talk to the pulsestreamer directly
+    flip_mirror=False
 
     SigReadPower= QtCore.Signal()
 
@@ -137,41 +140,55 @@ class SetupControlLogic(GenericLogic):
         self._awg.mcas_dict["setupcontrol"] = seq
         #self._awg.mcas_dict.print_info()
         self._awg.mcas_dict["setupcontrol"].run()
- 
+    
+    def write_to_pulsestreamer(self):
+        self.ps=self._awg.mcas_dict.awgs["ps"]
+        self.active_chanels=list(filter(("").__ne__, ["A1"*self.enable_A1,"A2"*self.enable_A2,"green"*self.enable_Green,"repump"*self.enable_Repump,'FlipMirror'*self.flip_mirror]))
+        self.ps.constant(pulse=(0,self.active_chanels,0,0))
+
+    def MW_on(self):
+        return self.enable_MW1 or self.enable_MW2 or self.enable_MW3
+
+    def run(self):
+        if self.MW_on():
+            self.setup_seq()
+        else:
+            self.write_to_pulsestreamer()
+
     def A1_Button_Clicked(self,on):
         #print('done something with A1_Button')
         self.enable_A1=on
-        self.setup_seq()
+        self.run()
 
     def A2_Button_Clicked(self,on):
         #print('done something with A2_Button')
         self.enable_A2=on
-        self.setup_seq()
+        self.run()
 
     def Repump_Button_Clicked(self,on):
         #print('done something with Repump_Button')
         self.enable_Repump=on
-        self.setup_seq()
+        self.run()
 
     def Green_Button_Clicked(self,on):
         #print('done something with Green_Button')
         self.enable_Green=on
-        self.setup_seq()
+        self.run()
 
     def MW1_on_Button_Clicked(self,on):
         #print('done something with MW1_on_Button')
         self.enable_MW1=on
-        self.setup_seq()
+        self.run()
 
     def MW2_on_Button_Clicked(self,on):
         #print('done something with MW2_on_Button')
         self.enable_MW2=on
-        self.setup_seq()
+        self.run()
 
     def MW3_on_Button_Clicked(self,on):
         #print('done something with MW3_on_Button')
         self.enable_MW3=on
-        self.setup_seq()
+        self.run()
         
     def MW1_power_DoubleSpinBox_Edited(self,value):
         #print('done something with MW1_power_DoubleSpinBox. Value=',value)
@@ -198,11 +215,17 @@ class SetupControlLogic(GenericLogic):
         self.MW3_freq=value
 
     def Flipmirror_Button_Clicked(self,on):
-        if self.flipmirror_sequence_created == False:
-            self.create_flipmirror_sequence()
-        self._awg.mcas_dict['FlippyFloppy'].run()
-        delay(20)
+        awg_running_seq="" #TODO get the active running sequence
         self._awg.mcas_dict.stop_awgs()
+        self.flip_mirror=True
+        self.write_to_pulsestreamer()
+        time.sleep(0.01)
+        self.flip_mirror=False
+        if self.MW_on():
+            self._awg.mcas_dict["setupcontrol"].run()
+        else:
+            self.write_to_pulsestreamer()
+
 
     def create_flipmirror_sequence(self):
         seq = self._awg.mcas(name="FlippyFloppy", ch_dict={"2g": [1,2],"ps": [1]})
