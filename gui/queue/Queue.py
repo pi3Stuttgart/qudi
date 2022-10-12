@@ -165,20 +165,20 @@ class queue_gui(GUIBase):
                 getattr(self, "{}_signal_emitted".format(name)))
         self._mw.selected_user_script_combo_box.currentIndexChanged.connect(
             self.update_selected_user_script_from_combo_box)
-        self._mw.remove_next_script_button.clicked.connect(self.no_qt.remove_last_script)
-        self._mw.set_stop_request_button.clicked.connect(self.no_qt.set_stop_request)
+        self._mw.remove_next_script_button.clicked.connect(self._queue_logic.remove_last_script)
+        self._mw.set_stop_request_button.clicked.connect(self._queue_logic.set_stop_request)
         self._mw.add_to_queue_button.clicked.connect(self.add_to_queue)
-        self._mw.add_rco_button.clicked.connect(self.no_qt.add_rco)
-        self._mw.evaluate_button.clicked.connect(self.no_qt.evaluate)
-        self._mw.write_standard_awg_sequences_button.clicked.connect(self.no_qt.write_standard_awg_sequences)
+        self._mw.add_rco_button.clicked.connect(self._queue_logic.add_rco)
+        self._mw.evaluate_button.clicked.connect(self._queue_logic.evaluate)
+        self._mw.write_standard_awg_sequences_button.clicked.connect(self._queue_logic.write_standard_awg_sequences)
         #self._mw.user_script_folder_text_field.textChanged.connect(self.user_script_folder_text_field_text_changed)
         self._mw.user_script_folder_pushButton.clicked.connect(self.open_user_script_folder_file_dialog)
         #self.show()
-        self.no_qt.update_selected_user_script_combo_box_signal.connect(self.update_selected_user_script_combo_box)
+        self._queue_logic.update_selected_user_script_combo_box_signal.connect(self.update_selected_user_script_combo_box)
 
     def on_activate(self):
         self._mw = window()
-        self.no_qt = self.queue_logic()
+        self._queue_logic = self.queue_logic()
         self.init_gui()
 
     def show(self):
@@ -194,7 +194,7 @@ class queue_gui(GUIBase):
 
 
     def add_to_queue(self, stupid_argument_emitted_by_qt_signal):
-        self.no_qt.add_to_queue()
+        self._queue_logic.add_to_queue()
 
 
     def update_selected_user_script_combo_box(self,val):
@@ -212,7 +212,7 @@ class queue_gui(GUIBase):
 
 
     def update_selected_user_script_from_combo_box(self):
-        self.no_qt.selected_user_script = str(self._mw.selected_user_script_combo_box.currentText())
+        self._queue_logic.selected_user_script = str(self._mw.selected_user_script_combo_box.currentText())
 
 
     def update_script_queue_table_data(self, val):
@@ -250,9 +250,9 @@ class queue_gui(GUIBase):
         self.user_script_folder = QFileDialog.getExistingDirectory(
             self._mw,
             'Select user_script_folder',
-            r"/Users/vvv/Documents/GitHub/qudi/notebooks/UserScripts",
+            r"C:\src\qudi\notebooks\UserScripts",
         )
-        self.no_qt.user_script_folder = self.user_script_folder
+        self._queue_logic.user_script_folder = self.user_script_folder
         #this is working - need to do now the gui, no?
         #it calls a setter which then updates the text, why not update it here?
         self.update_user_script_folder_text_field(self.user_script_folder)

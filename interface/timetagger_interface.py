@@ -90,7 +90,7 @@ class TimeTaggerInterface(metaclass=InterfaceMetaclass):
     def combiner(self, channels):
         pass
 
-    def count_between_markers(self, click_channel, begin_channel, end_channel, n_values):
+    def count_between_markers(self, n_values, **kwargs):
         pass
     def time_differences(self,
                          **kwargs):  # , click_channel, start_channel, next_channel, binwidth,n_bins, n_histograms):

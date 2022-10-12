@@ -52,8 +52,8 @@ class GatedCounterGui(GUIBase):
     """ Main GUI for the Gated Counting. """
 
     # declare connectors
-    gatedcounterlogic1 = Connector(interface='CounterLogic')
-    traceanalysislogic1 = Connector(interface='TraceAnalysisLogic')
+    gatedcounterlogic1 = Connector(interface='GatedCounter')
+    #traceanalysislogic1 = Connector(interface='TraceAnalysisLogic')
 
 
     sigStartGatedCounter = QtCore.Signal()
@@ -81,7 +81,7 @@ class GatedCounterGui(GUIBase):
         """
 
         self._counter_logic = self.gatedcounterlogic1()
-        self._trace_analysis = self.traceanalysislogic1()
+        #self._trace_analysis = self.traceanalysislogic1()
 
         self._mw = GatedCounterMainWindow()
         self._mw.centralwidget.hide()
@@ -142,6 +142,8 @@ class GatedCounterGui(GUIBase):
         self._mw.hist_bins_SpinBox.valueChanged.connect(self.num_bins_changed)
         self._trace_analysis.sigHistogramUpdated.connect(self.update_histogram)
 
+        self._gated_counter_logic.sigTraceUpdated_signal_emitted.connect(self.update_plot_signal_emitted)
+        self._gated_counter_logic.clear_plot_signal_signal_emitted.connect(self.clear_plot_signal_emitted)
 
         # starting the physical measurement:
         self.sigStartGatedCounter.connect(self._counter_logic.startCount)
@@ -243,18 +245,18 @@ class GatedCounterGui(GUIBase):
         """
         self._counter_logic.set_counting_samples(samples=self._mw.count_per_readout_SpinBox.value())
 
-    def update_trace(self):
+    def update_trace(self, trace):
         """ The function that grabs the data and sends it to the plot. """
 
         if self._counter_logic.module_state() == 'locked':
-            self._trace1.setData(x=np.arange(0, self._counter_logic.get_count_length()),
-                                 y=self._counter_logic.countdata[0] )
+            self._trace1.setData(x=np.arange(0, self._gated_counter_logic.n_values),
+                                 y=trace)
 
-    def update_histogram(self):
+    def update_histogram(self, bins, hist):
         """ Update procedure for the histogram to display the new data. """
 
-        self._histoplot1.setData(x=self._trace_analysis.hist_data[0],
-                                 y=self._trace_analysis.hist_data[1],
+        self._histoplot1.setData(x=bins,
+                                 y=hist,
                                  stepMode=True, fillLevel=0,
                                  brush=palettedark.c1)
 
@@ -271,7 +273,6 @@ class GatedCounterGui(GUIBase):
         self._trace_analysis.set_num_bins_histogram(num_bins)
         self._mw.hist_bins_SpinBox.setValue(num_bins)
         self._mw.hist_bins_Slider.setValue(num_bins)
-
 
     def fit_clicked(self):
         """ Do the configured fit and show it in the sum plot """
@@ -292,10 +293,43 @@ class GatedCounterGui(GUIBase):
 
         return
 
-
     def update_analysis_results(self):
         """ Update the spin flip probability and the fidelities. """
 
         self._mw.spin_flip_prob_DSpinBox.setValue(self._trace_analysis.spin_flip_prob*100)
         self._mw.fidelity_left_DSpinBox.setValue(self._trace_analysis.fidelity_left*100)
         self._mw.fidelity_right_DSpinBox.setValue(self._trace_analysis.fidelity_right*100)
+
+    def clear_plot_signal_emitted(self, number_of_subtraces):
+        try:
+            self._trace1.clear() #FIXME
+            self._histoplot1.clear()
+            self._fit_image.clear()
+        except:
+            pass
+            # #TODO with qudi log
+            # exc_type, exc_value, exc_tb = sys.exc_info()
+            # traceback.print_exception(exc_type, exc_value, exc_tb)
+
+
+    def update_plot_signal_emitted(self, effective_subtrace_list, hist_list):
+        try:
+            import time
+            t0 = time.time()
+            for nst, st in enumerate(effective_subtrace_list):
+                self.axes[nst, 0].cla()
+                self.axes[nst, 0].plot(st)
+                self.axes[nst, 1].cla()
+
+                self._trace1.setData(x=np.arange(0, self._gated_counter_logic.n_values),
+                                     y=st)
+
+                if len(hist_list[nst]) > 0:
+                    for h in hist_list[nst]:
+                        self.axes[nst, 1].plot(h['bin_edges'], h['hist'])
+
+        except:
+            pass
+            # #TODO with qudi log.
+            # exc_type, exc_value, exc_tb = sys.exc_info()
+            # traceback.print_exception(exc_type, exc_value, exc_tb)

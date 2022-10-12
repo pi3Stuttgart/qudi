@@ -361,10 +361,10 @@ class queue_logic(GenericLogic):
             self._selected_user_script = self.user_script_list[0]
             #if hasattr(self, '_gui'):
             val = collections.OrderedDict([('user_script_list', self.user_script_list), ('selected_user_script', self.selected_user_script)])
-
             #self.update_selected_user_script_combo_box(val)
             #Instead emit a signal which will updates it.
             self.update_selected_user_script_combo_box_signal.emit(val)
+
 
     @property
     def selected_user_script(self):
@@ -419,7 +419,7 @@ class queue_logic(GenericLogic):
             traceback.print_exception(exc_type, exc_value, exc_tb)
 
     def add_rco(self):
-        folder = r"/Users/vvv/Documents/GitHub/qudi/notebooks/UserScripts"
+        folder = r"C:\src\qudi\notebooks\UserScripts"
         name = 'refocus_confocal_odmr'
         pd = self.user_script_params
         self.add_to_queue(name, pd, folder)
@@ -456,7 +456,7 @@ class queue_logic(GenericLogic):
         self.thread.stop_request.set()
 
     def write_standard_awg_sequences(self):
-        self.add_to_queue('standard_awg_sequences', folder=r'/Users/vvv/Documents/GitHub/qudi/notebooks/UserScripts/helpers')
+        self.add_to_queue('standard_awg_sequences', folder=r'C:\src\qudi\notebooks\UserScripts\helpers')
 
     def dl(self, key, *args, **kwargs):
         return self._mcas_dict[key].dl(*args, **kwargs)

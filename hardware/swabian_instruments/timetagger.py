@@ -17,6 +17,7 @@ class TT(Base, TimeTaggerInterface):
     _counter = ConfigOption('counter', False, missing='warn')
     _test_channels = ConfigOption('test_channels', False, missing='warn')
     _channels_params = ConfigOption('channels_params', False, missing='warn')
+    _count_between_markers = ConfigOption('count_between_markers', False, missing='warn')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -155,12 +156,15 @@ class TT(Base, TimeTaggerInterface):
     def combiner(self, channels):
         return Combiner(self.tagger, channels)
 
-    def count_between_markers(self, click_channel, begin_channel, end_channel, n_values):
-        return CountBetweenMarkers(self.tagger,
-                                click_channel,
-                                begin_channel,
-                                end_channel,
-                                n_values)     
+    def count_between_markers(self, n_values = 1, **kwargs):
+
+        #TODO parse the channels from kwargs, otherwise if not present keep default.
+        # something liek this.  cl_ch = getattr(kwargs['cl_ch'], self._click_channel)
+        self.gated_counter_countbetweenmarkers = CountBetweenMarkers(self.tagger,
+                                click_channel=self._count_between_markers['click_channel'],
+                                begin_channel=self._count_between_markers['begin_channel'],
+                                end_channel=self._count_between_markers['end_channel'],
+                                n_values = n_values)
 
     def time_differences(self,**kwargs): #, click_channel, start_channel, next_channel, binwidth,n_bins, n_histograms):
         return TimeDifferences(self.tagger, 

@@ -16,6 +16,7 @@ import PyQt5.QtCore
 import numpy as np
 import logging
 from hardware.Keysight_AWG_M8190.pym8190a import MultiChSeq as MCAS
+from hardware.Keysight_AWG_M8190.pym8190a import start_awgs as start_awgs
 import zmq
 import logic.qudip_enhanced.qtgui.gui_helpers
 from numbers import Number
@@ -89,7 +90,6 @@ class GatedCounter(GenericLogic):
     #                           Raw Data Analysis
     # =========================================================================
 
-
     @property
     def points(self):
         if hasattr(self, 'n_values'):
@@ -119,10 +119,10 @@ class GatedCounter(GenericLogic):
     def read_trace(self):
         import time
         t0 = time.time()
-        self.gated_counter_data = np.random.normal(loc=20,scale = np.sqrt(20),size=100)#FIXME#self._fast_counter_device.gated_counter_countbetweenmarkers.getData()
+        self.gated_counter_data = self._fast_counter_device.gated_counter_countbetweenmarkers.getData()
 
-        # print('1 tt:',time.time()-t0)
-        if False:# self.ZPL_counter: do later #Fixme
+        #print('1 tt:',time.time()-t0)
+        if False:#self.ZPL_counter: do later #Fixme
             if self.raw_clicks_processing:
                 counter_name = 'raw_zpl'
                 #print('init raw clicks processing name: ', counter_name)
@@ -179,8 +179,6 @@ class GatedCounter(GenericLogic):
                             setattr(self, trace_name,zpl_counter_data)
 
                         # print('22 tt:',time.time()-t0)
-
-
         # print('tt3:',time.time()-t0)
 
         self.set_progress()
@@ -286,7 +284,7 @@ class GatedCounter(GenericLogic):
             self.set_counter()
 
             if not self._mcas_dict.mcas_dict.debug_mode:
-                MCAS.start_awgs(self._mcas_dict.mcas_dict.awgs, ch_dict=ch_dict)
+                start_awgs(self._mcas_dict.mcas_dict.awgs, ch_dict=ch_dict)
 
             self.progress = 0
             while True:
@@ -327,57 +325,56 @@ class GatedCounter(GenericLogic):
         def f():
             nlp_per_point = sum([step[3] for step in self.trace.analyze_sequence])
 
-            ##TODO redo the interfaces . Init counter to gated counter now, or make it inside the TT class?
-            self._fast_counter_device.init_counter(
-                'gated_counter_countbetweenmarkers',
-                n_values=self.n_values - self.n_values % nlp_per_point if hasattr(self, '_n_values') else nlp_per_point * self.points,
+            #TODO redo the interfaces . Init counter to gated counter now, or make it inside the TT class?
+            self._fast_counter_device.count_between_markers(
+                n_values=self.n_values - self.n_values % nlp_per_point if hasattr(self, '_n_values') else nlp_per_point * self.points
             )
 
+            #ZPL STUF
+            # if False: # self.raw_clicks_processing:
+            #     name = 'raw_zpl'
+            #     n_bins = self.n_values - self.n_values % nlp_per_point if hasattr(self,
+            #                                                                       '_n_values') else nlp_per_point * self.points,
+            #
+            #     # print('n_bins ',n_bins)
+            #     kwargs = dict(n_bins = n_bins[0]*len(self.raw_clicks_processing_channels),
+            #                   channels=self.raw_clicks_processing_channels)
+            #     # print('kwargs["n_bins"] ',kwargs["n_bins"])
+            #
+            #     self._fast_counter_device.create_stream(counter_name=name, kwargs=kwargs)
+            #
+            #     # if self.two_zpl_apd:
+            #     #     name = 'raw_2_zpl'
+            #     #     self._fast_counter_device.create_stream(counter_name=name, kwargs=kwargs)
+            #
+            #
+            #     self.ZPL_counter = True
 
-            if self.raw_clicks_processing:
-                name = 'raw_zpl'
-                n_bins = self.n_values - self.n_values % nlp_per_point if hasattr(self,
-                                                                                  '_n_values') else nlp_per_point * self.points,
-
-                # print('n_bins ',n_bins)
-                kwargs = dict(n_bins = n_bins[0]*len(self.raw_clicks_processing_channels),
-                              channels=self.raw_clicks_processing_channels)
-                # print('kwargs["n_bins"] ',kwargs["n_bins"])
-
-                self._fast_counter_device.create_stream(counter_name=name, kwargs=kwargs)
-
-                # if self.two_zpl_apd:
-                #     name = 'raw_2_zpl'
-                #     self._fast_counter_device.create_stream(counter_name=name, kwargs=kwargs)
-
-
-                self.ZPL_counter = True
-
-            else:
-                for i, start_trigger_delay_ps in enumerate(self.start_trigger_delay_ps_list):
-                    for j, window_ps in enumerate(self.window_ps_list):
-                        if (start_trigger_delay_ps is not None) and (window_ps is not None):
-
-                            name = 'gated_cbm_zpl_{i}_{j}'.format(i=i, j=j)
-                            self._fast_counter_device.init_counter(
-                                name,
-                                n_values=self.n_values - self.n_values % nlp_per_point if hasattr(self,
-                                                                                                  '_n_values') else nlp_per_point * self.points,
-                                delay_ps=start_trigger_delay_ps,
-                                window_ps=window_ps
-                            )
-
-                            if self.two_zpl_apd:
-                                name = 'gated_cbm_2_zpl_{i}_{j}'.format(i=i, j=j)
-                                self._fast_counter_device.init_counter(
-                                    name,
-                                    n_values=self.n_values - self.n_values % nlp_per_point if hasattr(self,
-                                                                                                      '_n_values') else nlp_per_point * self.points,
-                                    delay_ps=start_trigger_delay_ps,
-                                    window_ps=window_ps
-                                )
-
-                            self.ZPL_counter = True
+            # else:
+            #     for i, start_trigger_delay_ps in enumerate(self.start_trigger_delay_ps_list):
+            #         for j, window_ps in enumerate(self.window_ps_list):
+            #             if (start_trigger_delay_ps is not None) and (window_ps is not None):
+            #
+            #                 name = 'gated_cbm_zpl_{i}_{j}'.format(i=i, j=j)
+            #                 self._fast_counter_device.init_counter(
+            #                     name,
+            #                     n_values=self.n_values - self.n_values % nlp_per_point if hasattr(self,
+            #                                                                                       '_n_values') else nlp_per_point * self.points,
+            #                     delay_ps=start_trigger_delay_ps,
+            #                     window_ps=window_ps
+            #                 )
+            #
+            #                 if self.two_zpl_apd:
+            #                     name = 'gated_cbm_2_zpl_{i}_{j}'.format(i=i, j=j)
+            #                     self._fast_counter_device.init_counter(
+            #                         name,
+            #                         n_values=self.n_values - self.n_values % nlp_per_point if hasattr(self,
+            #                                                                                           '_n_values') else nlp_per_point * self.points,
+            #                         delay_ps=start_trigger_delay_ps,
+            #                         window_ps=window_ps
+            #                     )
+            #
+            #                 self.ZPL_counter = True
 
         for i in range(2):
             t = threading.Thread(target=f)
@@ -386,7 +383,7 @@ class GatedCounter(GenericLogic):
             if t.is_alive():
                 logging.getLogger().info('Setting up counter failed!')
                 logging.getLogger().info('Trying to restart timetagger..')
-                pi3d.restart_timetagger()
+                self._fast_counter_device.restart_timetagger() #FIXME
             else:
                 break
         else:
@@ -427,11 +424,14 @@ class GatedCounter(GenericLogic):
             #self.gui.update_plot(self.effective_subtrace_list, self.hist_list)
             self.sigTraceUpdated.emit(self.effective_subtrace_list, self.hist_list)
 
+    def clear_plot(self, number_of_subtraces):
+        self.clear_plot_signal.emit(number_of_subtraces)
 
 ### This is now replaced by the gated_counter_gui.py from qudi.
 class GatedCounterQt(logic.qudip_enhanced.qtgui.gui_helpers.QtGuiClass):
     def __init__(self, parent=None, no_qt=None):
-        super(GatedCounterQt, self).__init__(parent=parent, no_qt=no_qt, ui_filepath=os.path.join(pi3d.app_dir, 'qtgui/gated_counter.ui'))
+        super(GatedCounterQt, self).__init__(parent=parent, no_qt=no_qt, ui_filepath=os.path.join('C:\src\qudi\gui',
+                                                                                                  r'qtgui\gated_counter.ui'))
 
     clear_plot_signal = PyQt5.QtCore.pyqtSignal(int)
     update_plot_signal = PyQt5.QtCore.pyqtSignal(list, list)

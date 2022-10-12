@@ -104,7 +104,7 @@ def electron_pi_and_rf_on(mcas, new_segment = False,iq_mixer=__IQ_MIXER__, **all
             raise Exception
         else:
             mixer_deg = np.array(kwargs['mixer_deg'])
-    elif isinstance(kwargs['mixer_deg'], (int, long, float, complex)):
+    elif isinstance(kwargs['mixer_deg'], (int, float, complex)):
         kwargs['mixer_deg'] = np.array([kwargs['mixer_deg']])
     else:
         raise Exception
@@ -113,7 +113,7 @@ def electron_pi_and_rf_on(mcas, new_segment = False,iq_mixer=__IQ_MIXER__, **all
             if len(kwargs['phases']) != len(kwargs['frequencies']):
                 raise Exception
             kwargs['phases'] = np.array(kwargs['phases'])
-        elif isinstance(kwargs['phases'], (int, long, float, complex)):
+        elif isinstance(kwargs['phases'], (int, float, complex)):
             kwargs['phases'] = np.array([kwargs['phases']])
     else:
         kwargs['phases'] = np.zeros(len(kwargs['frequencies']))
@@ -149,7 +149,7 @@ def electron_rabi(mcas, name='e_rabi', iq_mixer=__IQ_MIXER__, mixer_deg=-90, new
             raise Exception
         else:
             mixer_deg = np.array(mixer_deg)
-    elif isinstance(mixer_deg, (int, long, float, complex)):
+    elif isinstance(mixer_deg, (int, int, float, complex)):
         mixer_deg = np.array([mixer_deg])
     else:
         raise Exception
@@ -158,7 +158,7 @@ def electron_rabi(mcas, name='e_rabi', iq_mixer=__IQ_MIXER__, mixer_deg=-90, new
             if len(kwargs['phases']) != len(kwargs['frequencies']):
                 raise Exception
             kwargs['phases'] = np.array(kwargs['phases'])
-        elif isinstance(kwargs['phases'], (int, long, float, complex)):
+        elif isinstance(kwargs['phases'], (int, int, float, complex)):
             kwargs['phases'] = np.array([kwargs['phases']])
     else:
         kwargs['phases'] = np.zeros(len(kwargs['frequencies']))
@@ -171,31 +171,31 @@ def electron_rabi(mcas, name='e_rabi', iq_mixer=__IQ_MIXER__, mixer_deg=-90, new
     else:
         mcas.asc(pd2g1=pd2g[1], name=name, **pd)
 
-def single_robust_electron_pi(mcas, nuc, **kwargs):
-    if 'mixer_deg' in kwargs:
-        raise Exception('Error: mixer_deg can not be set manually.')
-    nuc = nuc.replace('14N', '14n').replace('13C', '13c')
-    if nuc in ['14n+1', '14n-1', '14n', '13c414']:
-        wave_file = WaveFile(filepath=__STANDARD_WAVEFILE__,
-                             rp=pi3d.tt.rabi_parameters['e_rabi_ou{:.0f}deg-90'.format(pi3d.awgs['2g'].ch[1].output_amplitude*1000)],
-                             scaling_factor=__WAVE_FILE_SCALING_FACTOR_DICT__[nuc])
-        kwargs['wave_file'] = wave_file
-        kwargs['mixer_deg'] = -90
-    elif nuc == 'all': #flip electron independently of nuclear spin state
-        max_rabi_file = 'e_rabi_ou{:.0f}deg-90'.format(pi3d.awgs['2g'].ch[1].output_amplitude*1000)
-        # if pi3d.tt.rp(max_rabi_file, amp=1.0).omega > 15.:
-        kwargs['length_mus'] = pi3d.tt.rp(max_rabi_file, amp=1.0).pi
-        kwargs['amplitudes'] = [1.0]
-        kwargs['mixer_deg'] = -90
-        # else:
-        #     wave_file = WaveFile(filepath='D:/Python/pi3diamond/UserScripts/Robust/test_pi_three_nitrogen/p4.dat',
-        #                          rp=pi3d.tt.rabi_parameters['e_rabi_ou{:.0f}deg-90'.format(pi3d.awgs['2g'].ch[1].output_amplitude*1000)],
-        #                          )
-        #     kwargs['wave_file'] = wave_file
-        #     kwargs['mixer_deg'] = -90
-    else:
-        raise Exception('Nuc does not exist!')
-    electron_rabi(mcas, **kwargs)
+# def single_robust_electron_pi(mcas, nuc, **kwargs):
+#     if 'mixer_deg' in kwargs:
+#         raise Exception('Error: mixer_deg can not be set manually.')
+#     nuc = nuc.replace('14N', '14n').replace('13C', '13c')
+#     if nuc in ['14n+1', '14n-1', '14n', '13c414']:
+#         wave_file = WaveFile(filepath=__STANDARD_WAVEFILE__,
+#                              rp=pi3d.tt.rabi_parameters['e_rabi_ou{:.0f}deg-90'.format(pi3d.awgs['2g'].ch[1].output_amplitude*1000)],
+#                              scaling_factor=__WAVE_FILE_SCALING_FACTOR_DICT__[nuc])
+#         kwargs['wave_file'] = wave_file
+#         kwargs['mixer_deg'] = -90
+#     elif nuc == 'all': #flip electron independently of nuclear spin state
+#         max_rabi_file = 'e_rabi_ou{:.0f}deg-90'.format(pi3d.awgs['2g'].ch[1].output_amplitude*1000)
+#         # if pi3d.tt.rp(max_rabi_file, amp=1.0).omega > 15.:
+#         kwargs['length_mus'] = pi3d.tt.rp(max_rabi_file, amp=1.0).pi
+#         kwargs['amplitudes'] = [1.0]
+#         kwargs['mixer_deg'] = -90
+#         # else:
+#         #     wave_file = WaveFile(filepath='D:/Python/pi3diamond/UserScripts/Robust/test_pi_three_nitrogen/p4.dat',
+#         #                          rp=pi3d.tt.rabi_parameters['e_rabi_ou{:.0f}deg-90'.format(pi3d.awgs['2g'].ch[1].output_amplitude*1000)],
+#         #                          )
+#         #     kwargs['wave_file'] = wave_file
+#         #     kwargs['mixer_deg'] = -90
+#     else:
+#         raise Exception('Nuc does not exist!')
+#     electron_rabi(mcas, **kwargs)
 
 def polarize_red(mcas, new_segment=False, length_mus=__T_POL_RED__, red_laserdelay =__RED_LASER__DELAY__, **kwargs):
     if new_segment:
@@ -228,107 +228,107 @@ def polarize_green(mcas, new_segment=False, length_mus=0.2, laser_delay=0.1, **k
 
 polarize = polarize_red
 
-def init_13c(mcas, s='90', state='left', new_segment=False, waitmwrf=0.5, rotation_angles=None, **pd):
-    rotation_angles = [np.pi] if rotation_angles is None else rotation_angles
-    if state in {'+', '-'}: #only true for ms-1
-        state = {'-': 'left', '+': 'right'}[state]
-    if new_segment:
-        mcas.start_new_segment(name='init_13c' + s)
-    polarize(mcas=mcas, new_segment=False, **pd)
-    mcas.asc(length_mus=waitmwrf, name='waitmwrf', **pd)
-    if s == '414':
-        single_robust_electron_pi(
-            mcas,
-            nuc='13c{}'.format(s),
-            frequencies=pi3d.tt.mfl("13c{}_{}".format(s, {'left': 'right', 'right': 'left'}[state])),
-        )
-        mcas.asc(length_mus=waitmwrf, name='waitmwrf', **pd)
-    elif s == '90':
-        period = 40.
-        electron_rabi(mcas,
-                      length_mus=0.5*period,
-                      amplitudes=[pi3d.tt.rp('e_rabi_ou{:.0f}deg-90'.format(1000*pi3d.awgs['2g'].ch[1].output_amplitude), period=period).amp],
-                      frequencies=pi3d.tt.mfl("13c{}_{}".format(s, {'left': 'right', 'right': 'left'}[state])),
-                      new_segment=False,
-                      mixer_deg=-90,
-                      **pd
-                      )
-        mcas.asc(length_mus=waitmwrf, name='waitmwrf', **pd)
-    else:
-        raise Exception('Nuc does not exist!')
-    transition = "13c{} mS-1".format(s)
-    try:
-        amp = pi3d.tt.rp(transition, period=100.).amp
-    except:
-        amp = 1.
-    nuclear_rabi(mcas,
-                 length_mus=pym8190a.elements.round_length_mus_full_sample(pi3d.tt.rp(transition, amp=amp).pi*rotation_angles[0]/np.pi),
-                 amplitudes=[amp],
-                 name=transition,
-                 new_segment=False,
-                 frequencies=[pi3d.tt.t(transition).current_frequency],
-                 **pd)
-    mcas.asc(length_mus=waitmwrf, name='waitmwrf', **pd)
+# def init_13c(mcas, s='90', state='left', new_segment=False, waitmwrf=0.5, rotation_angles=None, **pd):
+#     rotation_angles = [np.pi] if rotation_angles is None else rotation_angles
+#     if state in {'+', '-'}: #only true for ms-1
+#         state = {'-': 'left', '+': 'right'}[state]
+#     if new_segment:
+#         mcas.start_new_segment(name='init_13c' + s)
+#     polarize(mcas=mcas, new_segment=False, **pd)
+#     mcas.asc(length_mus=waitmwrf, name='waitmwrf', **pd)
+#     if s == '414':
+#         single_robust_electron_pi(
+#             mcas,
+#             nuc='13c{}'.format(s),
+#             frequencies=pi3d.tt.mfl("13c{}_{}".format(s, {'left': 'right', 'right': 'left'}[state])),
+#         )
+#         mcas.asc(length_mus=waitmwrf, name='waitmwrf', **pd)
+#     elif s == '90':
+#         period = 40.
+#         electron_rabi(mcas,
+#                       length_mus=0.5*period,
+#                       amplitudes=[pi3d.tt.rp('e_rabi_ou{:.0f}deg-90'.format(1000*pi3d.awgs['2g'].ch[1].output_amplitude), period=period).amp],
+#                       frequencies=pi3d.tt.mfl("13c{}_{}".format(s, {'left': 'right', 'right': 'left'}[state])),
+#                       new_segment=False,
+#                       mixer_deg=-90,
+#                       **pd
+#                       )
+#         mcas.asc(length_mus=waitmwrf, name='waitmwrf', **pd)
+#     else:
+#         raise Exception('Nuc does not exist!')
+#     transition = "13c{} mS-1".format(s)
+#     try:
+#         amp = pi3d.tt.rp(transition, period=100.).amp
+#     except:
+#         amp = 1.
+#     nuclear_rabi(mcas,
+#                  length_mus=pym8190a.elements.round_length_mus_full_sample(pi3d.tt.rp(transition, amp=amp).pi*rotation_angles[0]/np.pi),
+#                  amplitudes=[amp],
+#                  name=transition,
+#                  new_segment=False,
+#                  frequencies=[pi3d.tt.t(transition).current_frequency],
+#                  **pd)
+#     mcas.asc(length_mus=waitmwrf, name='waitmwrf', **pd)
 
-init_13C = init_13c
+# init_13C = init_13c
 
-def init_14n(mcas, mn='+1', new_segment=False, waitmwrf=0.5, rotation_angles=None, **pd):
-    rotation_angles = [np.pi, np.pi] if rotation_angles is None else rotation_angles
-    if mn == '+':
-        mn = '+1'
-    if mn == '-':
-        mn = '-1'
-    if isinstance(mn, numbers.Number):
-        mn = "{:+d}".format(mn)
-    if mn == "+0":
-        mn = "0"
-    s = [
-        dict(
-            e={'+1': '0', '0': '0', '-1': '0'},
-            n={'+1': '-1', '0': '-1', '-1': '+1'}
-        ),
-        dict(
-            e={'+1': '+1', '0': '0', '-1': '-1'},
-            n={'+1': '+1', '0': '+1', '-1': '-1'}
-        )
-    ]
-    if new_segment:
-        mcas.start_new_segment(name='init_14n' + mn)
-    for idx, ss in enumerate(s):
-        if rotation_angles[idx] > 0.0:
-            polarize(mcas, new_segment=False, **pd)
-            mcas.asc(length_mus=waitmwrf, name='waitmwrf', **pd)
-            single_robust_electron_pi(mcas, frequencies=pi3d.tt.mfl({'14n': [int(ss['e'][mn])]}), nuc='14n', new_segment=False, **pd)
-            mcas.asc(length_mus=waitmwrf, name='waitmwrf', **pd)
-            try:
-                amp = pi3d.tt.rp(transition, period=100.).amp
-            except:
-                amp = 1.0
-            transition = '14n{} mS0'.format(ss['n'][mn])
-            nuclear_rabi(mcas,
-                         amplitudes=[amp],
-                         length_mus=pym8190a.elements.round_length_mus_full_sample(pi3d.tt.rp(transition, amp=amp).pi*rotation_angles[idx]/np.pi),
-                         name=transition,
-                         frequencies=[pi3d.tt.t(transition).current_frequency],
-                         new_segment=False,
-                         **pd)
-            mcas.asc(length_mus=waitmwrf, name='waitmwrf', **pd)
-
-
-init_14N = init_14n
+# def init_14n(mcas, mn='+1', new_segment=False, waitmwrf=0.5, rotation_angles=None, **pd):
+#     rotation_angles = [np.pi, np.pi] if rotation_angles is None else rotation_angles
+#     if mn == '+':
+#         mn = '+1'
+#     if mn == '-':
+#         mn = '-1'
+#     if isinstance(mn, numbers.Number):
+#         mn = "{:+d}".format(mn)
+#     if mn == "+0":
+#         mn = "0"
+#     s = [
+#         dict(
+#             e={'+1': '0', '0': '0', '-1': '0'},
+#             n={'+1': '-1', '0': '-1', '-1': '+1'}
+#         ),
+#         dict(
+#             e={'+1': '+1', '0': '0', '-1': '-1'},
+#             n={'+1': '+1', '0': '+1', '-1': '-1'}
+#         )
+#     ]
+#     if new_segment:
+#         mcas.start_new_segment(name='init_14n' + mn)
+#     for idx, ss in enumerate(s):
+#         if rotation_angles[idx] > 0.0:
+#             polarize(mcas, new_segment=False, **pd)
+#             mcas.asc(length_mus=waitmwrf, name='waitmwrf', **pd)
+#             single_robust_electron_pi(mcas, frequencies=pi3d.tt.mfl({'14n': [int(ss['e'][mn])]}), nuc='14n', new_segment=False, **pd)
+#             mcas.asc(length_mus=waitmwrf, name='waitmwrf', **pd)
+#             try:
+#                 amp = pi3d.tt.rp(transition, period=100.).amp
+#             except:
+#                 amp = 1.0
+#             transition = '14n{} mS0'.format(ss['n'][mn])
+#             nuclear_rabi(mcas,
+#                          amplitudes=[amp],
+#                          length_mus=pym8190a.elements.round_length_mus_full_sample(pi3d.tt.rp(transition, amp=amp).pi*rotation_angles[idx]/np.pi),
+#                          name=transition,
+#                          frequencies=[pi3d.tt.t(transition).current_frequency],
+#                          new_segment=False,
+#                          **pd)
+#             mcas.asc(length_mus=waitmwrf, name='waitmwrf', **pd)
 
 
-def init(mcas, nuc, n=1, **kwargs):
-    nuc = nuc.replace('14N', '14n').replace('13C', '13c')
-    sms = sch.ret_sms(nuc=nuc)
-    if '13c' in nuc:
-        initf = init_13c
-    elif '14n' in nuc:
-        initf = init_14n
-    else:
-        raise Exception('Nuc {} not found'.format(nuc))
-    for i in range(n):
-        initf(mcas, sms['s'], **kwargs)
+# init_14N = init_14n
+
+
+# def init(mcas, nuc, n=1, **kwargs):
+#     nuc = nuc.replace('14N', '14n').replace('13C', '13c')
+#     sms = sch.ret_sms(nuc=nuc)
+#     if '13c' in nuc:
+#         initf = init_13c
+#     elif '14n' in nuc:
+#         initf = init_14n
+#     else:
+#         raise Exception('Nuc {} not found'.format(nuc))
+#     for i in range(n):
+#         initf(mcas, sms['s'], **kwargs)
 
 
 # def init_multiple(mcas, init_14n='not', init_13c414='not', init_13c90='not', ssr_repetitions=450, number_of_frequencies=1, **kwargs):
@@ -394,15 +394,14 @@ class SSR(object):
     __GATE_OR_TRIGGER__ = 'trigger'
     # __WAIT_DARK_COUNTS__ = 10*192 #5*1920
 
-    def __init__(self, mcas, frequencies, wait_dur=1., **kwargs):
+    def __init__(self, mcas, queue, frequencies, wait_dur=1., **kwargs):
         super(SSR, self).__init__()
 
         if 'nuc' in kwargs and kwargs['nuc'] is not None:
             kwargs['nuc'] = kwargs['nuc'].replace('14N', '14n').replace('13C', '13c')
-
+        self.queue = queue
         self.mcas = mcas
         self.frequencies = frequencies
-
         self.gate_or_trigger = kwargs.get('gate_or_trigger', self.__GATE_OR_TRIGGER__)
         self.set_laser_dur(kwargs)
         self.iq_mixer = kwargs.get('iq_mixer', __IQ_MIXER__)
@@ -485,8 +484,8 @@ class SSR(object):
             else:
                 ms_transition = 'L'
 
-            self.rp = pi3d.tt.rabi_parameters['e_rabi_ou{:.0f}deg{}-{}'.format(
-                pi3d.awgs['2g'].ch[1].output_amplitude*1000,
+            self.rp = self.queue.tt.rabi_parameters['e_rabi_ou{:.0f}deg{}-{}'.format(
+                self.queue._awg.mcas_dict.awgs['2g'].ch[1].output_amplitude*1000, #TODO
                 self.mixer_deg,
                 ms_transition
             )]
@@ -614,24 +613,23 @@ class SSR(object):
 
     def compile(self):
         optical = False
-        optical = ('nuc' in self.kwargs.keys()) and (self.kwargs['nuc'] in ['charge_state',
-                        'charge_state_A1_aom_Ex',
-                        'charge_state_ExMW',
-                        'ple_Ex',
+        optical = ('nuc' in self.kwargs.keys()) and (self.kwargs['nuc'] in [
+                        'charge_state',
+                        'ple_A2',
                         'ple_A1',
-                        'Ex_pi_readout_6ns',
-                        'Ex_ampl_sweep_SSR',
-                        'opt_mw_delays_calibration',
-                        'opt_mw_delays_calibration2',
-                        '2_opt_mw_delays_calibration',
-                        'Ex_RO',
-                        '2opt_withMW_pi',
-                        'entanglement_for_tests',
-                        'HOM',
-                        'entanglement',
-                        'Ex_ampl_sweep_SSR_6ns',
-                        'Ex_pi_readout_10ns' ,
-                        'Ex_pi_readout'
+                        # 'Ex_pi_readout_6ns',
+                        # 'Ex_ampl_sweep_SSR',
+                        # 'opt_mw_delays_calibration',
+                        # 'opt_mw_delays_calibration2',
+                        # '2_opt_mw_delays_calibration',
+
+                        # '2opt_withMW_pi',
+                        # 'entanglement_for_tests',
+                        # 'HOM',
+                        # 'entanglement',
+                        # 'Ex_ampl_sweep_SSR_6ns',
+                        # 'Ex_pi_readout_10ns' ,
+                        # 'Ex_pi_readout'
                           ])
         if optical:
             self.compileOptical()
@@ -698,2169 +696,1996 @@ class SSR(object):
                 if 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'charge_state':
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
 
-                    pd2g2 = dict(type='sine',
-                                 frequencies=[pi3d.ple_Ex.eom_freq],
-                                 amplitudes=[0.0],
-                                 )
+                    #EOM on
+                    # pd2g2 = dict(type='sine',
+                    #              frequencies=[self.queue.ple_Ex.eom_freq],
+                    #              amplitudes=[0.0],
+                    #              )
 
                     self.mcas.asc(length_mus=self.dur_step[alt_step][5],
-                                  pd2g2 = pd2g2,
-                                  Ex_RO=True,aom_A1=True,
+                                  A1=True, A2=True,
                                   name='State_check', **aa)
 
                     self.mcas.asc(length_mus=2.0,name = 'wait')
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
 
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'charge_state_A1_aom_Ex':
 
-                    if 'eom_ampl' in self.kwargs.keys():
-                        ampl = self.kwargs['eom_ampl']
-                    else:
-                        ampl =pi3d.ple_Ex.eom_amplitude
-
+                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_A2':
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-
-
-                    pd2g2 = dict(type='sine',
-                                 frequencies=[pi3d.ple_Ex.eom_freq],
-                                 amplitudes=[ampl],
-                                 )
-
-
-                    self.mcas.asc(length_mus=self.dur_step[alt_step][5],
-                                  pd2g2 = pd2g2,
-                                  aom_Ex=True,aom_A1=True,
-                                  name='charge_state_A1_aom_Ex', **aa)
-
-                    self.mcas.asc(length_mus=2.0,name = 'wait')
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
-
-
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'charge_state_ExMW':
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                    # pd2g1 = dict(type='sine', frequencies=d[1][2]['frequencies'], amplitudes=d[1][2]['amplitudes'])
-                    freqs = [pi3d.ple_Ex.mw_frequency, pi3d.ple_Ex.mw_frequency + 2.16, pi3d.ple_Ex.mw_frequency - 2.16,
-                             pi3d.ple_Ex.mw_frequency2, pi3d.ple_Ex.mw_frequency2 + 2.16, pi3d.ple_Ex.mw_frequency2 - 2.16]
-                    amplitudes = [pi3d.ple_Ex.mw_amplitude, pi3d.ple_Ex.mw_amplitude, pi3d.ple_Ex.mw_amplitude,
-                                  5 * pi3d.ple_Ex.mw_amplitude, 5 * pi3d.ple_Ex.mw_amplitude, 5 * pi3d.ple_Ex.mw_amplitude]
-
-                    self.mcas.asc(
-                        pd2g1=dict(type='sine', frequencies=freqs, amplitudes=amplitudes),
-                        Ex_RO=True, length_mus=self.dur_step[alt_step][5],name='State check_Ex')
-
-                    # self.mcas.asc(length_mus=self.dur_step[alt_step][5],pd2g1 = pd2g1, aom_Ex=True, name='State check_Ex', **aa)
-
-
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_Ex':
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                    if 'eom_ampl' in self.kwargs.keys():
-                        ampl = self.kwargs['eom_ampl']
-                    else:
-                        ampl =pi3d.ple_Ex.eom_amplitude
-
                     # print('ampl ',ampl)
 
                     self.mcas.asc(
-                        pd2g2=dict(type='sine',
-                                   frequencies=[pi3d.ple_Ex.eom_freq],
-                                   amplitudes=[ampl],
-                                   phase_offset_type='absolute',
-                                   phase=[0]),
-                        aom_Ex=True, length_mus=self.dur_step[alt_step][5], name = 'ple_Ex_readout')
+                        # pd2g2=dict(type='sine', ###EOM is off
+                        #            frequencies=[pi3d.ple_Ex.eom_freq],
+                        #            amplitudes=[ampl],
+                        #            phase_offset_type='absolute',
+                        #            phase=[0]),
+                        A2=True, length_mus=self.dur_step[alt_step][5], name = 'ple_Ex_readout')
 
                     self.mcas.asc(length_mus=2.0,name = 'wait')
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
 
                     # delta+=self.dur_step[alt_step][5]
-
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'Ex_RO':
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                    self.mcas.asc(
-                        Ex_RO=True, length_mus=self.dur_step[alt_step][5], name = 'Ex_RO_readout')
-
-                    self.mcas.asc(length_mus=2.0,name = 'wait')
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
-
                     # delta+=self.dur_step[alt_step][5]
 
                 elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_A1':
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
                     self.mcas.asc(aom_A1=True, length_mus=self.dur_step[alt_step][5], name = 'ple_A1_readout')
-
                     self.mcas.asc(length_mus=2.0,name = 'wait')
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
 
                     # delta+=self.dur_step[alt_step][5]
-
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'Ex_pi_readout_6ns':
-                    # print('snipets were updated')
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                    for i in range(1):
-                        self.mcas.asc(length_mus=0.02, aom_Ex=True)
-                        self.mcas.asc(length_mus=0.145)
-                        self.mcas.asc(
-                            pd2g2=dict(
-                                type='gauss_6ns',
-                                inv_fwhm=1,
-                                amplitudes=[1.0]),
-                            # aom_Ex = True,
-                            # gate = True,
-                            # memory = True,
-                            length_smpl=481 * 3,
-                        )
-                        if i == 0:
-                            g=True
-                        else:
-                            g=False
-                        self.mcas.asc(gate=g, memory=False, length_mus=0.1)
-                        # mcas.asc(length_mus=0.550, aom_Ex=True)
-                        self.mcas.asc(length_mus=0.05)
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True)
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'Ex_pi_readout_10ns':
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                    # print('snipets were updated')
-                    self.mcas.asc(length_mus=0.050, aom_Ex=True)
-                    self.mcas.asc(length_mus=0.15)
-                    self.mcas.asc(
-                        name='Ex_pi_readout_10ns',
-                        pd2g2=dict(
-                            type='gauss_6ns',
-                            inv_fwhm=1,
-                            amplitudes=[1.0],
-                        ),
-                        length_smpl=481*5,
-                        **aa
-                    )
-                    self.mcas.asc(length_mus=1.0)
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'Ex_pi_readout':
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                    # print('snipets were updated')
-                    for i in range(10): # why we have here 10 iterations??
-                        self.mcas.asc(length_mus=0.050, aom_Ex=True)
-                        self.mcas.asc(length_mus=0.15)
-                        self.mcas.asc(
-                            name='Ex_pi_readout',
-                            pd2g2=dict(
-                                type='gauss',
-                                inv_fwhm=1,
-                                amplitudes=[1.0],
-                            ),
-                            length_smpl=481,
-                            **aa
-                        )
-                        self.mcas.asc(length_mus=1.0)
-
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True)
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'Ex_ampl_sweep_SSR_6ns':
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                    # print('snipets were updated')
-                    self.mcas.asc(length_mus=0.09, aom_Ex=True)
-                    self.mcas.asc(length_mus=0.08, name='aom_delay')
-                    self.mcas.asc(
-                        pd2g2=dict(
-                            type='gauss_6ns',
-                            inv_fwhm=1,
-                            amplitudes=[self.kwargs['eom_ampl']]),
-                        length_mus=481 * 3. / __SAMPLE_FREQUENCY__,
-                        name='Gauss')
-
-                    self.mcas.asc(length_mus=1.0)
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True)
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'Ex_ampl_sweep_SSR':
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-
-
-                    # self.mcas.asc(length_mus=0.02, aom_Ex=True)
-                    # self.mcas.asc(length_mus=0.137, name='aom_delay')
-                    #
-                    self.mcas.asc(length_mus=0.009, aom_Ex=True)
-                    self.mcas.asc(length_mus=0.151, name='aom_delay')
-                    # self.mcas.asc(length_mus=0.015, aom_Ex=True)
-                    # self.mcas.asc(length_mus=0.155, name='aom_delay')
-
-                    self.mcas.asc(
-                        pd2g2=dict(
-                            type='gauss',
-                            inv_fwhm=1,
-                            amplitudes=[self.kwargs['eom_ampl']]),
-                        length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
-                        name='Gauss')
-
-                    self.mcas.asc(length_mus=0.1)
-
-
-
-                    # =========DELETE IT AFTER TEST!!!
-                    #
-                    # self.mcas.asc(length_mus=0.009, aom_Ex=True)
-                    # self.mcas.asc(length_mus=0.151, name='aom_delay')
-                    # # self.mcas.asc(length_mus=0.015, aom_Ex=True)
-                    # # self.mcas.asc(length_mus=0.155, name='aom_delay')
-                    #
-                    # self.mcas.asc(
-                    #     pd2g2=dict(
-                    #         type='gauss',
-                    #         inv_fwhm=1,
-                    #         amplitudes=[self.kwargs['eom_ampl']]),
-                    #     length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
-                    #     name='Gauss')
-                    # =========DELETE IT AFTER TEST!!!
-
-
-                    self.mcas.asc(length_mus=0.5)
-                    self.mcas.asc(length_mus=self.laser_dur)
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'opt_mw_delays_calibration':
-
-                    pi_dur = self.kwargs['pi_dur']
-                    mw_amplitude = self.kwargs['mw_amplitude']
-                    # print('kwargs keys: ',self.kwargs.keys())
-                    # print('self.frequencies: ',self.frequencies)
-
-                    mw_freq = self.frequencies[0]
-                    tau = self.kwargs['tau']
-                    # aom_Ex_dur = 0.015#0.02
-                    # aom_delay = 0.155#0.137
-                    aom_Ex_dur = 0.02#0.02
-                    aom_delay = 0.137#0.137
-                    opt_pi_dur = 481 * 1. / __SAMPLE_FREQUENCY__
-                    # print('======= Tau is: ',tau)
-                    # tau determines the start of the MW pulse relative to start of the aom pulse
-
-                    if tau <0 and np.abs(tau)>=pi_dur:
-
-                        # print('if_1')
-                        if np.abs(tau) < __TT_TRIGGER_LENGTH__:
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                            # print('if_1.1')
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(pi_dur),
-                                name='MW_pi',
-                            )
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(np.abs(tau) - pi_dur), name='wait')
-
-                            self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,name='Ex_aom')
-                            self.mcas.asc(length_mus=aom_delay, name='aom_delay')
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[self.kwargs['eom_ampl']]),
-                                length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
-                                name='Gauss')
-                        elif np.abs(tau) >= __TT_TRIGGER_LENGTH__:
-                            # print('if_1.2')
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(pi_dur),
-                                name='MW_pi',
-                            )
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(np.abs(tau) - pi_dur-__TT_TRIGGER_LENGTH__), name='wait')
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                            self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,name='Ex_aom')
-                            self.mcas.asc(length_mus=aom_delay, name='aom_delay')
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[self.kwargs['eom_ampl']]),
-                                length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
-                                name='Gauss')
-
-                        self.mcas.asc(length_mus=self.laser_dur)
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
-
-                    elif tau < 0 and np.abs(tau) < pi_dur:
-                        # print('if_2')
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            length_mus=E.round_length_mus_full_sample(np.abs(tau)),
-                            name='MW_pi',
-                        )
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            length_mus=E.round_length_mus_full_sample(pi_dur-np.abs(tau)),
-                            name='MW_pi_with_aom_Ex',
-                            aom_Ex = True
-                        )
-
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur-(pi_dur-np.abs(tau))),
-                                      aom_Ex=True,name='Ex_aom_residual')
-
-                        self.mcas.asc(length_mus=aom_delay, name='aom_delay')
-                        self.mcas.asc(
-                            pd2g2=dict(
-                                type='gauss',
-                                inv_fwhm=1,
-                                amplitudes=[self.kwargs['eom_ampl']]),
-                            length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
-                            name='Gauss')
-
-                        self.mcas.asc(length_mus=self.laser_dur)
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
-
-                    elif tau >= 0 and np.abs(tau) <aom_Ex_dur:
-                        # print('if_3')
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau),
-                                      aom_Ex=True,name='Ex_aom')
-                        if pi_dur <= (aom_Ex_dur-tau):
-                            # print('if_3.1')
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(pi_dur),
-                                name='MW_pi_with_aom_Ex', aom_Ex=True
-                            )
-
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur - (pi_dur + tau)),
-                                          aom_Ex=True,name='Ex_aom_residiual')
-
-                            self.mcas.asc(length_mus=aom_delay, name='aom_delay')
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[self.kwargs['eom_ampl']]),
-                                length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
-                                name='Gauss')
-
-                            self.mcas.asc(length_mus=self.laser_dur)
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
-
-                        if pi_dur > (aom_Ex_dur-tau):
-                            # print('if_3.2')
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(aom_Ex_dur - tau),
-                                name='MW_pi_with_aom_Ex',aom_Ex=True
-                            )
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(pi_dur - (aom_Ex_dur - tau)),
-                                name='MW_pi'
-                            )
-
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_delay - (pi_dur - (aom_Ex_dur - tau))),#aom_delay
-                                          name='aom_delay')
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[self.kwargs['eom_ampl']]),
-                                length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
-                                name='Gauss')
-
-                            self.mcas.asc(length_mus=self.laser_dur)
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
-
-                    elif tau > 0 and np.abs(tau) >= aom_Ex_dur and (np.abs(tau)+pi_dur)<=(aom_delay+aom_Ex_dur):
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                        # print('if_4')
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur),
-                                      aom_Ex=True,name='Ex_aom')
-
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - aom_Ex_dur))
-
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            length_mus=E.round_length_mus_full_sample(pi_dur),
-                            name='MW_pi')
-
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_delay-pi_dur-(tau - aom_Ex_dur)),
-                                      name='aom_delay')
-
-                        self.mcas.asc(
-                            pd2g2=dict(
-                                type='gauss',
-                                inv_fwhm=1,
-                                amplitudes=[self.kwargs['eom_ampl']]),
-                            length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
-                            name='Gauss')
-
-                        self.mcas.asc(length_mus=self.laser_dur)
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-                    elif tau > 0 and np.abs(tau) >= aom_Ex_dur and (np.abs(tau)+pi_dur)>(aom_delay+aom_Ex_dur):
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                        # print('if_5')
-                        if np.abs(tau)<=(aom_delay+aom_Ex_dur):
-                            # print('if_5.1')
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur),
-                                          aom_Ex=True,name='Ex_aom')
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - aom_Ex_dur))
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(aom_delay - (tau - aom_Ex_dur)),
-                                name='MW_pi')
-
-                            remaining_mw_dur = pi_dur - (aom_delay-(tau-aom_Ex_dur))
-                            # print('remaining mw_dur = ',remaining_mw_dur)
-                            if remaining_mw_dur >= opt_pi_dur:
-                                # print('if_5.1.1')
-                                self.mcas.asc(
-                                    pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
-                                    pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                    length_mus=opt_pi_dur,
-                                    name='Gauss')
-
-                                self.mcas.asc(
-                                    pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                    length_mus=E.round_length_mus_full_sample(remaining_mw_dur - opt_pi_dur),
-                                    name='MW_pi')
-                                self.mcas.asc(length_mus=self.laser_dur)
-                                self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-                            if remaining_mw_dur < opt_pi_dur:
-                                # print('if_5.1.2')
-                                self.mcas.asc(
-                                    pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
-                                    pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                    length_mus=remaining_mw_dur,
-                                    name='Gauss')
-                                already_written_samples = np.around(remaining_mw_dur * __SAMPLE_FREQUENCY__).astype(int)
-
-                                self.mcas.asc(
-                                    pd2g2=dict(type='gauss', inv_fwhm=1, wf_start=already_written_samples,amplitudes=[self.kwargs['eom_ampl']]),
-
-                                    length_mus=opt_pi_dur - remaining_mw_dur,
-                                    name='Gauss')
-
-                                self.mcas.asc(length_mus=self.laser_dur)
-                                self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-
-                        if np.abs(tau)>(aom_delay+aom_Ex_dur):
-                            # print('if_5.2')
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur),
-                                          aom_Ex=True,name='Ex_aom')
-                            self.mcas.asc(length_mus=aom_delay, name='aom_delay')
-
-
-                            if tau >=(aom_delay+aom_Ex_dur+opt_pi_dur):
-                                # print('if_5.2.1')
-                                if tau >=(aom_delay+aom_Ex_dur+opt_pi_dur+__TT_TRIGGER_LENGTH__):
-                                    self.mcas.asc(
-                                        pd2g2=dict(
-                                            type='gauss',
-                                            inv_fwhm=1,
-                                            amplitudes=[self.kwargs['eom_ampl']]),
-                                        length_mus=opt_pi_dur,
-                                        name='Gauss')
-
-
-                                    self.mcas.asc(length_mus=self.laser_dur)
-                                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-                                    self.mcas.asc(length_mus=tau - (opt_pi_dur + aom_delay + aom_Ex_dur+__TT_TRIGGER_LENGTH__),
-                                                  name='wait for mw')
-
-                                    self.mcas.asc(
-                                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                        length_mus=E.round_length_mus_full_sample(pi_dur),
-                                        name='MW_pi',
-                                    )
-
-                                    # self.mcas.asc(length_mus=self.laser_dur)
-                                    # self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-
-                                else:
-                                    self.mcas.asc(
-                                        pd2g2=dict(
-                                            type='gauss',
-                                            inv_fwhm=1,
-                                            amplitudes=[self.kwargs['eom_ampl']]),
-                                        length_mus=opt_pi_dur,
-                                        name='Gauss')
-
-                                    self.mcas.asc(length_mus=tau - (opt_pi_dur+aom_delay+aom_Ex_dur), name='wait for mw')
-                                    self.mcas.asc(
-                                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                        length_mus=E.round_length_mus_full_sample(pi_dur),
-                                        name='MW_pi',
-                                    )
-
-                                    self.mcas.asc(length_mus=self.laser_dur)
-                                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-
-                            if tau < (aom_delay + aom_Ex_dur + opt_pi_dur):
-                                # print('if_5.2.2')
-
-                                self.mcas.asc(
-                                    pd2g2=dict(
-                                        type='gauss',
-                                        inv_fwhm=1,
-                                        amplitudes=[self.kwargs['eom_ampl']]),
-                                    length_mus=E.round_length_mus_full_sample(tau-aom_Ex_dur-aom_delay),
-                                    name='Gauss_begin')
-
-                                already_written_samples = np.around((tau-aom_Ex_dur-aom_delay) * __SAMPLE_FREQUENCY__).astype(int)
-                                remaining_optical = opt_pi_dur - (tau-aom_Ex_dur-aom_delay)
-                                if pi_dur >= remaining_optical:
-                                    # print('if_5.2.2.1')
-
-                                    self.mcas.asc(
-                                        pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
-                                        wf_start=already_written_samples,
-
-                                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                        length_mus=remaining_optical,
-                                        name='Gauss_end')
-
-                                    self.mcas.asc(
-                                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                        length_mus=E.round_length_mus_full_sample(pi_dur-remaining_optical),
-                                        name='MW_pi')
-                                    self.mcas.asc(length_mus=self.laser_dur)
-                                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-                                if pi_dur < remaining_optical:
-                                    # print('if_5.2.2.2')
-
-                                    self.mcas.asc(
-                                        pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
-                                        wf_start=already_written_samples,
-
-                                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                        length_mus=pi_dur,
-                                        name='Gauss_MW')
-                                    already_written_samples+= np.around(pi_dur* __SAMPLE_FREQUENCY__).astype(int)
-
-                                    self.mcas.asc(
-                                        pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
-                                        wf_start=already_written_samples,
-                                        # length_mus=pi_dur,
-                                        length_mus=opt_pi_dur - (tau-aom_Ex_dur-aom_delay)-pi_dur,
-                                        name='Gauss_end')
-
-                                    self.mcas.asc(length_mus=self.laser_dur)
-                                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'opt_mw_delays_calibration2':
-
-                    pi_dur = self.kwargs['pi_dur']
-                    mw_amplitude = self.kwargs['mw_amplitude']
-                    mw_freq = self.frequencies[0]
-                    tau = self.kwargs['tau']
-                    aom_Ex_dur = 0.02#0.02
-                    aom_delay = 0.137#0.137
-                    opt_pi_dur = 481 * 1. / __SAMPLE_FREQUENCY__
-
-                    if tau <0 and np.abs(tau)>=pi_dur:
-
-                        # print('if_1')
-                        if np.abs(tau) < __TT_TRIGGER_LENGTH__:
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                            # print('if_1.1')
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(pi_dur),
-                                name='MW_pi',
-                            )
-                            self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(np.abs(tau) - pi_dur), name='wait')
-
-                            self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=aom_Ex_dur, aom_Ex=True,name='Ex_aom')
-                            self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=aom_delay, name='aom_delay')
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[self.kwargs['eom_ampl']]),
-                                length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
-                                name='Gauss')
-                        elif np.abs(tau) >= __TT_TRIGGER_LENGTH__:
-                            # print('if_1.2')
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(pi_dur),
-                                name='MW_pi',
-                            )
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(np.abs(tau) - pi_dur-__TT_TRIGGER_LENGTH__), name='wait')
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=aom_Ex_dur, aom_Ex=True,name='Ex_aom')
-                            self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=aom_delay, name='aom_delay')
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[self.kwargs['eom_ampl']]),
-                                length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
-                                name='Gauss')
-
-                        self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            length_mus=self.laser_dur,)
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
-
-                    elif tau < 0 and np.abs(tau) < pi_dur:
-                        print('tau is : ', tau)
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            length_mus=E.round_length_mus_full_sample(np.abs(tau)),
-                            name='MW_pi',
-                        )
-
-                        self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            length_mus=E.round_length_mus_full_sample(aom_Ex_dur),
-                                      aom_Ex=True,name='Ex_aom_residual')
-
-                        self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            length_mus=aom_delay, name='aom_delay')
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            pd2g2=dict(
-                                type='gauss',
-                                inv_fwhm=1,
-                                amplitudes=[self.kwargs['eom_ampl']]),
-                            length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
-                            name='Gauss')
-
-                        self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                      length_mus=self.laser_dur)
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
-
-                    elif tau >= 0 and np.abs(tau) <aom_Ex_dur:
-                        # print('if_3')
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau),
-                                      aom_Ex=True,name='Ex_aom')
-                        if pi_dur <= (aom_Ex_dur-tau):
-                            # print('if_3.1')
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(pi_dur),
-                                name='MW_pi_with_aom_Ex', aom_Ex=True
-                            )
-
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur - (pi_dur + tau)),
-                                          pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                          aom_Ex=True,name='Ex_aom_residiual')
-
-                            self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=aom_delay, name='aom_delay')
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[self.kwargs['eom_ampl']]),
-                                length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
-                                name='Gauss')
-
-                            self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                          length_mus=self.laser_dur)
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
-
-                        if pi_dur > (aom_Ex_dur-tau):
-                            # print('if_3.2')
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(aom_Ex_dur - tau),
-                                name='MW_pi_with_aom_Ex',aom_Ex=True
-                            )
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(pi_dur - (aom_Ex_dur - tau)),
-                                name='MW_pi'
-                            )
-
-                            self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(aom_delay - (pi_dur - (aom_Ex_dur - tau))),#aom_delay
-                                          name='aom_delay')
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[self.kwargs['eom_ampl']]),
-                                length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
-                                name='Gauss')
-
-                            self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=self.laser_dur)
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
-
-                    elif tau > 0 and np.abs(tau) >= aom_Ex_dur and (np.abs(tau)+pi_dur)<=(aom_delay+aom_Ex_dur):
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                        # print('if_4')
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur),
-                                      aom_Ex=True,name='Ex_aom')
-
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - aom_Ex_dur))
-
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            length_mus=E.round_length_mus_full_sample(pi_dur),
-                            name='MW_pi')
-
-                        self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            length_mus=E.round_length_mus_full_sample(aom_delay-pi_dur-(tau - aom_Ex_dur)),
-                                      name='aom_delay')
-
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            pd2g2=dict(
-                                type='gauss',
-                                inv_fwhm=1,
-                                amplitudes=[self.kwargs['eom_ampl']]),
-                            length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
-                            name='Gauss')
-
-                        self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                      length_mus=self.laser_dur)
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-                    elif tau > 0 and np.abs(tau) >= aom_Ex_dur and (np.abs(tau)+pi_dur)>(aom_delay+aom_Ex_dur):
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-
-                        # print('if_5')
-                        if np.abs(tau)<=(aom_delay+aom_Ex_dur):
-                            # print('if_5.1')
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur),
-                                          aom_Ex=True,name='Ex_aom')
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - aom_Ex_dur))
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(aom_delay - (tau - aom_Ex_dur)),
-                                name='MW_pi')
-
-                            remaining_mw_dur = pi_dur - (aom_delay-(tau-aom_Ex_dur))
-                            # print('remaining mw_dur = ',remaining_mw_dur)
-                            if remaining_mw_dur >= opt_pi_dur:
-                                # print('if_5.1.1')
-                                self.mcas.asc(
-                                    pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
-                                    pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                    length_mus=opt_pi_dur,
-                                    name='Gauss')
-
-                                self.mcas.asc(
-                                    pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                    length_mus=E.round_length_mus_full_sample(remaining_mw_dur - opt_pi_dur),
-                                    name='MW_pi')
-                                self.mcas.asc(length_mus=self.laser_dur)
-                                self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-                            if remaining_mw_dur < opt_pi_dur:
-                                # print('if_5.1.2')
-                                self.mcas.asc(
-                                    pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
-                                    pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                    length_mus=remaining_mw_dur,
-                                    name='Gauss')
-                                already_written_samples = np.around(remaining_mw_dur * __SAMPLE_FREQUENCY__).astype(int)
-
-                                self.mcas.asc(
-                                    pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                    pd2g2=dict(type='gauss', inv_fwhm=1, wf_start=already_written_samples,amplitudes=[self.kwargs['eom_ampl']]),
-
-                                    length_mus=opt_pi_dur - remaining_mw_dur,
-                                    name='Gauss')
-
-                                self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                              length_mus=self.laser_dur)
-                                self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-
-                        if np.abs(tau)>(aom_delay+aom_Ex_dur):
-                            # print('if_5.2')
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur),
-                                          aom_Ex=True,name='Ex_aom')
-                            self.mcas.asc(length_mus=aom_delay, name='aom_delay')
-
-
-                            if tau >=(aom_delay+aom_Ex_dur+opt_pi_dur):
-                                # print('if_5.2.1')
-                                if tau >=(aom_delay+aom_Ex_dur+opt_pi_dur+__TT_TRIGGER_LENGTH__):
-                                    self.mcas.asc(
-                                        pd2g2=dict(
-                                            type='gauss',
-                                            inv_fwhm=1,
-                                            amplitudes=[self.kwargs['eom_ampl']]),
-                                        length_mus=opt_pi_dur,
-                                        name='Gauss')
-
-
-                                    self.mcas.asc(length_mus=self.laser_dur)
-                                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-                                    self.mcas.asc(length_mus=tau - (opt_pi_dur + aom_delay + aom_Ex_dur+__TT_TRIGGER_LENGTH__),
-                                                  name='wait for mw')
-
-                                    self.mcas.asc(
-                                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                        length_mus=E.round_length_mus_full_sample(pi_dur),
-                                        name='MW_pi',
-                                    )
-
-                                    # self.mcas.asc(length_mus=self.laser_dur)
-                                    # self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-
-                                else:
-                                    self.mcas.asc(
-                                        pd2g2=dict(
-                                            type='gauss',
-                                            inv_fwhm=1,
-                                            amplitudes=[self.kwargs['eom_ampl']]),
-                                        length_mus=opt_pi_dur,
-                                        name='Gauss')
-
-                                    self.mcas.asc(length_mus=tau - (opt_pi_dur+aom_delay+aom_Ex_dur), name='wait for mw')
-                                    self.mcas.asc(
-                                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                        length_mus=E.round_length_mus_full_sample(pi_dur),
-                                        name='MW_pi',
-                                    )
-
-                                    self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                                  length_mus=self.laser_dur)
-                                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-
-                            if tau < (aom_delay + aom_Ex_dur + opt_pi_dur):
-                                # print('if_5.2.2')
-
-                                self.mcas.asc(
-                                    pd2g2=dict(
-                                        type='gauss',
-                                        inv_fwhm=1,
-                                        amplitudes=[self.kwargs['eom_ampl']]),
-                                    length_mus=E.round_length_mus_full_sample(tau-aom_Ex_dur-aom_delay),
-                                    name='Gauss_begin')
-
-                                already_written_samples = np.around((tau-aom_Ex_dur-aom_delay) * __SAMPLE_FREQUENCY__).astype(int)
-                                remaining_optical = opt_pi_dur - (tau-aom_Ex_dur-aom_delay)
-                                if pi_dur >= remaining_optical:
-                                    # print('if_5.2.2.1')
-
-                                    self.mcas.asc(
-                                        pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
-                                        wf_start=already_written_samples,
-
-                                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                        length_mus=remaining_optical,
-                                        name='Gauss_end')
-
-                                    self.mcas.asc(
-                                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                        length_mus=E.round_length_mus_full_sample(pi_dur-remaining_optical),
-                                        name='MW_pi')
-                                    self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                                  length_mus=self.laser_dur)
-                                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-                                if pi_dur < remaining_optical:
-                                    # print('if_5.2.2.2')
-
-                                    self.mcas.asc(
-                                        pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
-                                        wf_start=already_written_samples,
-
-                                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                        length_mus=pi_dur,
-                                        name='Gauss_MW')
-                                    already_written_samples+= np.around(pi_dur* __SAMPLE_FREQUENCY__).astype(int)
-
-                                    self.mcas.asc(
-                                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                        pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
-                                        wf_start=already_written_samples,
-                                        # length_mus=pi_dur,
-                                        length_mus=opt_pi_dur - (tau-aom_Ex_dur-aom_delay)-pi_dur,
-                                        name='Gauss_end')
-
-                                    self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                                  length_mus=self.laser_dur)
-                                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == '2_opt_mw_delays_calibration_old':
-
-
-                    mw_amplitude = self.kwargs['mw_amplitude']
-                    if 'mw_pihalf_ampl' in self.kwargs.keys():
-                        mw_pihalf_ampl = self.kwargs['mw_pihalf_ampl']
-                    else:
-                        mw_pihalf_ampl = mw_amplitude
-
-                    optical_delay = self.kwargs['optical_delay'] #56ns (was 125ns) delay between optical pulses aka interferometer length
-
-                    pi_dur = self.kwargs['pi_dur']
-                    mw_freq = self.frequencies[0]
-                    tau = self.kwargs['tau']
-                    pihalf_dur =self.kwargs['pihalf_dur']
-                    eom_ampl = self.kwargs['eom_ampl']
-                    aom_Ex_dur = 0.02#0.02
-                    aom_delay = 0.137#0.137
-                    opt_pi_dur = 481 * 1. / __SAMPLE_FREQUENCY__
-                    # tau determines the start of the MW pulse relative to start of the aom pulse
-                    # if aom_delay +aom_Ex_dur + optical_delay <tau < (aom_delay+aom_Ex_dur):
-
-                    if tau< optical_delay+aom_Ex_dur:
-                        raise Exception('Tau is too short. must be greater than 76ns')
-
-
-                    if tau <= (aom_delay+aom_Ex_dur):
-                        if tau+pi_dur>=(aom_delay+aom_Ex_dur):
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True,
-                                          name='gate1')  # 160ns Gated counter
-                            self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                          name='Ex_aom_1')  # 20 ns. AOM for the first pulse
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
-                                length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                                name='MW_pihalf')  # 13.5ns. First pi/2 pulse
-
-                            self.mcas.asc(length_mus=optical_delay - aom_Ex_dur-pihalf_dur,
-                                          name='wait_1.1')  # 36ns ns. Delay between first and second AOM_Ex pulses
-                            self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                          name='Ex_aom_2')  # 20 ns. AOM for the first puls
-
-                            self.mcas.asc(length_mus=tau - (optical_delay+aom_Ex_dur) , name='wait_2')
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(aom_Ex_dur + aom_delay - tau),
-                                name='MW_begin')  # 13.5ns. First pi/2 pulse
-
-                            gauss1_begin = pi_dur - (aom_Ex_dur + aom_delay - tau)
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                length_mus=E.round_length_mus_full_sample(gauss1_begin),
-                                name='Gauss1_MW')  # First EOM Pulse
-                            already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-
-                                wf_start=already_written_samples,
-                                length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss1_begin),  #
-                                name='Gauss1_end')
-
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - opt_pi_dur),
-                                          name='wait')  #
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                length_mus=opt_pi_dur,  # 0.04008333333333333 ns Second EOM pulse starts
-                                name='Gauss2')
-                            self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-
-
-                        else:
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True,
-                                          name='gate1')  # 160ns Gated counter
-                            self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                          name='Ex_aom_1')  # 20 ns. AOM for the first pulse
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
-                                length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                                name='MW_pihalf')  # 13.5ns. First pi/2 pulse
-
-                            self.mcas.asc(length_mus=optical_delay - aom_Ex_dur - pihalf_dur,
-                                          name='wait_1.1')  # 36ns ns. Delay between first and second AOM_Ex pulses
-                            self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                          name='Ex_aom_2')  # 20 ns. AOM for the first puls
-
-                            self.mcas.asc(length_mus=tau - (optical_delay + aom_Ex_dur), name='wait_2')
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(pi_dur),
-                                name='MW_begin')  # 13.5ns. First pi/2 pulse
-
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur +aom_delay - (tau+pi_dur)),
-                                          name='wait_3')
-
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                length_mus=E.round_length_mus_full_sample(opt_pi_dur),
-                                name='Gauss1')  # First EOM Pulse
-
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - opt_pi_dur),
-                                          name='wait')  #
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                length_mus=opt_pi_dur,  # 0.04008333333333333 ns Second EOM pulse starts
-                                name='Gauss2')
-
-                            self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-
-                    elif aom_delay +aom_Ex_dur + optical_delay <=tau<aom_delay +aom_Ex_dur + optical_delay +opt_pi_dur:
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
-                        self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                      name='Ex_aom_1')  # 20 ns. AOM for the first pulse
-                        self.mcas.asc(length_mus=optical_delay - aom_Ex_dur,
-                                      name='wait_1.1')  # 36ns ns. Delay between first and second AOM_Ex pulses
-                        self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                      name='Ex_aom_2')  # 20 ns. AOM for the first puls
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.007), name='wait_1')  # 7ns
-
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
-                            length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                            name='MW_pihalf')  # 13.5ns. First pi/2 pulse
-
-                        self.mcas.asc(length_mus=0.0605, name='wait_2')
-                        self.mcas.asc(
-                            pd2g2=dict(
-                                type='gauss',
-                                inv_fwhm=1,
-                                amplitudes=[eom_ampl]),
-                            length_mus=E.round_length_mus_full_sample(opt_pi_dur),
-                            name='Gauss1')  # First EOM Pulse
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - opt_pi_dur), name='wait_2')
-
-                        gauss2_begin = tau - (aom_Ex_dur+aom_delay+optical_delay)
-                        self.mcas.asc(
-                            pd2g2=dict(
-                                type='gauss',
-                                inv_fwhm=1,
-                                amplitudes=[eom_ampl]),
-                            length_mus=E.round_length_mus_full_sample(gauss2_begin),
-                            name='Gauss2_begin')  # First EOM Pulse
-                        already_written_samples = np.around(gauss2_begin * __SAMPLE_FREQUENCY__).astype(int)
-
-                        if tau + pi_dur <= aom_delay +aom_Ex_dur + optical_delay +opt_pi_dur:
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-
-                                wf_start=already_written_samples,
-                                length_mus=E.round_length_mus_full_sample(pi_dur),  #
-                                name='Gauss2_MW')
-                            already_written_samples+=np.around(pi_dur * __SAMPLE_FREQUENCY__).astype(int)
-
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-
-                                wf_start=already_written_samples,
-                                length_mus=E.round_length_mus_full_sample(opt_pi_dur - (gauss2_begin + pi_dur)),
-                                name='Gauss2_end')
-
-                            self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-
-                        else:
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                wf_start=already_written_samples,
-                                length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss2_begin),  #
-                                name='Gauss2_MW')
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(pi_dur-(opt_pi_dur - gauss2_begin)),
-                                name='MW_end')
-
-                            self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-
-                    elif tau >= aom_delay + aom_Ex_dur + optical_delay + opt_pi_dur:
-                        # ---------------
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
-                        self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                      name='Ex_aom_1')  # 20 ns. AOM for the first pulse
-                        self.mcas.asc(length_mus=optical_delay - aom_Ex_dur,
-                                      name='wait_1.1')  # 36ns ns. Delay between first and second AOM_Ex pulses
-                        self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                      name='Ex_aom_2')  # 20 ns. AOM for the first puls
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.007), name='wait_1')  # 7ns
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
-                            length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                            name='MW_pihalf')  # 13.5ns. First pi/2 pulse
-                        self.mcas.asc(length_mus=0.0605, name='wait_2')
-                        self.mcas.asc(
-                            pd2g2=dict(
-                                type='gauss',
-                                inv_fwhm=1,
-                                amplitudes=[eom_ampl]),
-                            length_mus=E.round_length_mus_full_sample(opt_pi_dur),
-                            name='Gauss1')  # First EOM Pulse
-
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - opt_pi_dur), name='wait_2')
-
-                        self.mcas.asc(
-                            pd2g2=dict(
-                                type='gauss',
-                                inv_fwhm=1,
-                                amplitudes=[eom_ampl]),
-                            length_mus=E.round_length_mus_full_sample(opt_pi_dur),
-                            name='Gauss2')  # Second EOM Pulse
-
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - ( aom_delay + aom_Ex_dur + optical_delay + opt_pi_dur)), name='wait_2')
-
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            length_mus=E.round_length_mus_full_sample(pi_dur),
-                            name='MW_pi')  # 27ns
-
-                        self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-
-                    else:
-                        # !!!!!! THIS PART IS USED
-
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
-                        self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                      name='Ex_aom_1')  # 20 ns. AOM for the first pulse
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - aom_Ex_dur),
-                                      name='wait_1.1')  # 36ns ns. Delay between first and second AOM_Ex pulses
-                        self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                      name='Ex_aom_2')  # 20 ns. AOM for the first puls
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.007), name='wait_1')  # 7ns
-
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
-                            length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                            name='MW_pihalf')  # 13.5ns. First pi/2 pulse
-
-                        self.mcas.asc(length_mus=0.0605, name='wait_2')
-
-                        if tau >= aom_delay + aom_Ex_dur and tau + pi_dur <= (aom_delay + aom_Ex_dur + opt_pi_dur):
-
-                            gauss1_begin = tau - (aom_delay + aom_Ex_dur)
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                length_mus=E.round_length_mus_full_sample(gauss1_begin),
-                                name='Gauss1_begin')  # First EOM Pulse
-                            already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-
-                                wf_start=already_written_samples,
-                                length_mus=E.round_length_mus_full_sample(pi_dur),  #
-                                name='Gauss1_MW')
-                            already_written_samples += np.around(pi_dur * __SAMPLE_FREQUENCY__).astype(int)
-
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-
-                                wf_start=already_written_samples,
-                                length_mus=E.round_length_mus_full_sample(opt_pi_dur - pi_dur - gauss1_begin),  #
-                                name='Gauss1_end')
-                            self.mcas.asc(length_mus=optical_delay - opt_pi_dur,
-                                          name='wait_3')  # 14.5ns wait before second optical pi pulse
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                length_mus=opt_pi_dur,  # 0.04008333333333333 ns Second EOM pulse starts
-                                name='Gauss2')
-                            self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-
-                        elif aom_delay + aom_Ex_dur < tau < aom_delay + aom_Ex_dur +opt_pi_dur \
-                                and aom_delay + aom_Ex_dur +optical_delay>=tau + pi_dur > (aom_delay + aom_Ex_dur + opt_pi_dur):
-                            gauss1_begin = tau - (aom_delay + aom_Ex_dur)
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                length_mus=E.round_length_mus_full_sample(gauss1_begin),
-                                name='Gauss1_begin')  # First EOM Pulse
-                            already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-
-                                wf_start=already_written_samples,
-                                length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss1_begin),  #
-                                name='Gauss1_MW')
-
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(pi_dur - (opt_pi_dur - gauss1_begin)),  #
-                                name='MW_end')
-
-                            self.mcas.asc(length_mus=optical_delay - (opt_pi_dur+pi_dur - (opt_pi_dur - gauss1_begin)),
-                                          name='wait_3')  # 14.5ns wait before second optical pi pulse
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                length_mus=opt_pi_dur,  # 0.04008333333333333 ns Second EOM pulse starts
-                                name='Gauss2')
-                            self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-
-                        elif aom_delay + aom_Ex_dur < tau < aom_delay + aom_Ex_dur +opt_pi_dur \
-                                and aom_delay + aom_Ex_dur +optical_delay < tau + pi_dur:
-                            # !!!!!! THIS PART IS USED
-
-                            gauss1_begin = tau - (aom_delay + aom_Ex_dur)
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                length_mus=E.round_length_mus_full_sample(gauss1_begin),
-                                name='Gauss1_begin')  # First EOM Pulse
-                            already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-
-                                wf_start=already_written_samples,
-                                length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss1_begin),  #
-                                name='Gauss1_MW')
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(optical_delay - opt_pi_dur),  #
-                                name='MW')
-
-                            gauss2_begin =E.round_length_mus_full_sample(pi_dur - (opt_pi_dur - gauss1_begin + optical_delay - opt_pi_dur))
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                length_mus=gauss2_begin,  # 0.04008333333333333 ns Second EOM pulse starts
-                                name='Gauss2_MW')
-                            already_written_samples = np.around(gauss2_begin * __SAMPLE_FREQUENCY__).astype(int)
-
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-
-                                wf_start=already_written_samples,
-                                length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss2_begin),  #
-                                name='Gauss2_end')
-
-
-
-                            if 'tau_bell' in self.kwargs.keys():
-                                self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.075917),
-                                              name='wait_before_MW')  # 100ns
-                                tau_bell = self.kwargs['tau_bell']
-                                self.mcas.asc(
-                                    pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
-                                    length_mus=E.round_length_mus_full_sample(tau_bell),
-                                    name='tau bell')  # 13.5ns. First pi/2 pulse
-
-
-
-
-
-                            self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-
-                        elif aom_delay + aom_Ex_dur + optical_delay > tau > aom_delay + aom_Ex_dur + opt_pi_dur :
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                length_mus=E.round_length_mus_full_sample(opt_pi_dur),
-                                name='Gauss1_begin')  # First EOM Pulse
-
-                            self.mcas.asc(length_mus=tau - (aom_delay + aom_Ex_dur + opt_pi_dur),
-                                          name='wait_3')  # 14.5ns wait before second optical pi pulse
-
-                            # pd2g1 = dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(aom_delay + aom_Ex_dur + optical_delay - tau),  #
-                                name='MW_end')
-
-                            gauss2_begin = pi_dur - (aom_delay + aom_Ex_dur + optical_delay - tau)
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                length_mus=gauss2_begin,  # 0.04008333333333333 ns Second EOM pulse starts
-                                name='Gauss2_MW')
-                            already_written_samples = np.around(gauss2_begin * __SAMPLE_FREQUENCY__).astype(int)
-
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-
-                                wf_start=already_written_samples,
-                                length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss2_begin),  #
-                                name='Gauss')
-
-                            self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-
-
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == '2_opt_mw_delays_calibration':
-
-
-                    mw_amplitude = self.kwargs['mw_amplitude']
-                    if 'mw_pihalf_ampl' in self.kwargs.keys():
-                        mw_pihalf_ampl = self.kwargs['mw_pihalf_ampl']
-                    else:
-                        mw_pihalf_ampl = mw_amplitude
-
-                    optical_delay = self.kwargs['optical_delay'] #56ns (was 125ns) delay between optical pulses aka interferometer length
-
-                    pi_dur = self.kwargs['pi_dur']
-                    mw_freq = self.frequencies[0]
-                    tau = self.kwargs['tau']
-                    pihalf_dur =self.kwargs['pihalf_dur']
-                    eom_ampl = self.kwargs['eom_ampl']
-                    aom_Ex_dur = 0.009#0.02
-                    aom_delay = 0.151#0.137
-                    opt_pi_dur = 1201 * 1. / __SAMPLE_FREQUENCY__
-                    # tau determines the start of the MW pulse relative to start of the aom pulse
-                    # if aom_delay +aom_Ex_dur + optical_delay <tau < (aom_delay+aom_Ex_dur):
-
-                    if tau< optical_delay+aom_Ex_dur:
-                        raise Exception('Tau is too short. must be greater than 76ns')
-
-
-                    if tau <= (aom_delay+aom_Ex_dur):
-
-                        if tau+pi_dur>=(aom_delay+aom_Ex_dur):
-                            print(1)
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True,
-                                          name='gate1')  # 160ns Gated counter
-                            self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                          name='Ex_aom_1')  # 5 ns. AOM for the first pulse
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
-                                length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                                name='MW_pihalf')  # 13.5ns. First pi/2 pulse
-
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - aom_Ex_dur-pihalf_dur),
-                                          name='wait_1.1')  # 37.3ns ns. Delay between first and second AOM_Ex pulses
-                            self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                          name='Ex_aom_2')  # 5 ns. AOM for the first puls
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - (optical_delay+aom_Ex_dur)),
-                                          name='wait_2')
-
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(aom_Ex_dur + aom_delay - tau),
-                                name='MW_begin')  #
-
-                            gauss1_begin = pi_dur - (aom_Ex_dur + aom_delay - tau)
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                pd2g2=dict(
-                                    type='gauss_2_pulses',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                length_mus=E.round_length_mus_full_sample(gauss1_begin),
-                                name='Gauss1_MW')  # First EOM Pulse
-                            already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss_2_pulses',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-
-                                wf_start=already_written_samples,
-                                length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss1_begin),  #
-                                name='Gauss1_end')
-
-
-                            self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-
-
-                        else:
-                            print(2)
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True,
-                                          name='gate1')  # 160ns Gated counter
-                            self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                          name='Ex_aom_1')  # 5 ns. AOM for the first pulse
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
-                                length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                                name='MW_pihalf')  # 13.5ns. First pi/2 pulse
-
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - aom_Ex_dur - pihalf_dur),
-                                          name='wait_1.1')  # 37.3 ns. Delay between first and second AOM_Ex pulses
-                            self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                          name='Ex_aom_2')  # 5 ns. AOM for the first puls
-
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - (optical_delay + aom_Ex_dur)),
-                                          name='wait_2')
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(pi_dur),
-                                name='MW_pi')  # 13.5ns. First pi/2 pulse
-
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur +aom_delay - (tau+pi_dur)),
-                                          name='wait_3')
-
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss_2_pulses',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                length_mus=E.round_length_mus_full_sample(opt_pi_dur),
-                                name='Gauss1')  # First EOM Pulse
-
-                            self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-
-                    elif (aom_delay+aom_Ex_dur + opt_pi_dur) > tau > (aom_delay+aom_Ex_dur): #0.155 to 0.255083333
-                        if tau + pi_dur < (aom_delay + aom_Ex_dur + opt_pi_dur): # tau <0.2280833333
-                            # THIS CASE IS USED
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True,
-                                          name='gate1')  # 160ns Gated counter
-                            self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                          name='Ex_aom_1')  # 5 ns. AOM for the first pulse
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
-                                length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                                name='MW_pihalf')  # 13.5ns. First pi/2 pulse
-
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - aom_Ex_dur - pihalf_dur),
-                                          name='wait_1.1')  # 37.3ns ns. Delay between first and second AOM_Ex pulses
-                            self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                          name='Ex_aom_2')  # 5 ns. AOM for the first puls
-
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_delay - optical_delay),
-                                     name='aom_delay_wait')
-
-
-                            gauss1_begin = tau - (aom_delay+aom_Ex_dur)
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss_2_pulses',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                length_mus=E.round_length_mus_full_sample(gauss1_begin),
-                                name='2Gauss')  # First EOM Pulse
-                            already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
-
-
-                            self.mcas.asc(
-
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                pd2g2=dict(
-                                    type='gauss_2_pulses',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-
-                                wf_start=already_written_samples,
-                                length_mus=E.round_length_mus_full_sample(pi_dur),  #
-                                name='2Gauss_MW')
-                            already_written_samples2 = np.around(pi_dur * __SAMPLE_FREQUENCY__).astype(int)
-
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss_2_pulses',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-
-                                wf_start=already_written_samples2+already_written_samples,
-                                length_mus=E.round_length_mus_full_sample(opt_pi_dur - (gauss1_begin + pi_dur)),  #
-                                name='2Gauss_end')
-
-                            self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-
-                        else:
-                            print(4)
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True,
-                                          name='gate1')  # 160ns Gated counter
-                            self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                          name='Ex_aom_1')  # 5 ns. AOM for the first pulse
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
-                                length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                                name='MW_pihalf')  # 13.5ns. First pi/2 pulse
-
-                            # print(optical_delay)
-                            # print(aom_Ex_dur)
-                            # print(pihalf_dur)
-
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - aom_Ex_dur - pihalf_dur),
-                                          name='wait_1.1')  # 37.3ns ns. Delay between first and second AOM_Ex pulses
-                            self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                          name='Ex_aom_2')  # 5 ns. AOM for the first puls
-
-                            self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_delay - optical_delay),
-                                     name='aom_delay_wait')
-
-
-                            gauss1_begin = tau - (aom_delay+aom_Ex_dur)
-                            self.mcas.asc(
-                                pd2g2=dict(
-                                    type='gauss_2_pulses',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-                                length_mus=E.round_length_mus_full_sample(gauss1_begin),
-                                name='2Gauss')  # First EOM Pulse
-                            already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
-
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                pd2g2=dict(
-                                    type='gauss_2_pulses',
-                                    inv_fwhm=1,
-                                    amplitudes=[eom_ampl]),
-
-                                wf_start=already_written_samples,
-                                length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss1_begin),  #
-                                name='2Gauss_MW')
-
-
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(pi_dur - (opt_pi_dur - gauss1_begin)),  #
-                                name='MW_end')
-
-                            self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                            self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-
-
-
-
-                    elif (aom_delay+aom_Ex_dur + opt_pi_dur) <= tau:
-
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True,
-                                      name='gate1')  # 160ns Gated counter
-                        self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                      name='Ex_aom_1')  # 5 ns. AOM for the first pulse
-
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
-                            length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                            name='MW_pihalf')  # 13.5ns. First pi/2 pulse
-
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - aom_Ex_dur - pihalf_dur),
-                                      name='wait_1.1')  # 37.3ns ns. Delay between first and second AOM_Ex pulses
-                        self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                      name='Ex_aom_2')  # 5 ns. AOM for the first puls
-
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_delay - optical_delay),
-                                      name='aom_delay_wait')
-
-                        self.mcas.asc(
-                            pd2g2=dict(
-                                type='gauss_2_pulses',
-                                inv_fwhm=1,
-                                amplitudes=[eom_ampl]),
-                            length_mus=E.round_length_mus_full_sample(opt_pi_dur),
-                            name='2Gauss')  # First EOM Pulse
-
-                        self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - (aom_Ex_dur+aom_delay+opt_pi_dur)),
-                                      name='wait before MW')
-
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            length_mus=E.round_length_mus_full_sample(pi_dur),
-                            name='MW_pi')  # 13.5ns. First pi/2 pulse
-
-                        self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-
-
-
-
-
-                    else:
-                        raise('smth is wrong tau is {}'.format(tau))
-                    # elif aom_delay +aom_Ex_dur + optical_delay <= tau <aom_delay +aom_Ex_dur + optical_delay +opt_pi_dur:
-                    #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
-                    #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                    #                   name='Ex_aom_1')  # 20 ns. AOM for the first pulse
-                    #     self.mcas.asc(length_mus=optical_delay - aom_Ex_dur,
-                    #                   name='wait_1.1')  # 36ns ns. Delay between first and second AOM_Ex pulses
-                    #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                    #                   name='Ex_aom_2')  # 20 ns. AOM for the first puls
-                    #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.007), name='wait_1')  # 7ns
-                    #
-                    #     self.mcas.asc(
-                    #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
-                    #         length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                    #         name='MW_pihalf')  # 13.5ns. First pi/2 pulse
-                    #
-                    #     self.mcas.asc(length_mus=0.0605, name='wait_2')
-                    #     self.mcas.asc(
-                    #         pd2g2=dict(
-                    #             type='gauss',
-                    #             inv_fwhm=1,
-                    #             amplitudes=[eom_ampl]),
-                    #         length_mus=E.round_length_mus_full_sample(opt_pi_dur),
-                    #         name='Gauss1')  # First EOM Pulse
-                    #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - opt_pi_dur), name='wait_2')
-                    #
-                    #     gauss2_begin = tau - (aom_Ex_dur+aom_delay+optical_delay)
-                    #     self.mcas.asc(
-                    #         pd2g2=dict(
-                    #             type='gauss',
-                    #             inv_fwhm=1,
-                    #             amplitudes=[eom_ampl]),
-                    #         length_mus=E.round_length_mus_full_sample(gauss2_begin),
-                    #         name='Gauss2_begin')  # First EOM Pulse
-                    #     already_written_samples = np.around(gauss2_begin * __SAMPLE_FREQUENCY__).astype(int)
-                    #
-                    #     if tau + pi_dur <= aom_delay +aom_Ex_dur + optical_delay +opt_pi_dur:
-                    #         self.mcas.asc(
-                    #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #
-                    #             wf_start=already_written_samples,
-                    #             length_mus=E.round_length_mus_full_sample(pi_dur),  #
-                    #             name='Gauss2_MW')
-                    #         already_written_samples+=np.around(pi_dur * __SAMPLE_FREQUENCY__).astype(int)
-                    #
-                    #         self.mcas.asc(
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #
-                    #             wf_start=already_written_samples,
-                    #             length_mus=E.round_length_mus_full_sample(opt_pi_dur - (gauss2_begin + pi_dur)),
-                    #             name='Gauss2_end')
-                    #
-                    #         self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                    #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-                    #
-                    #     else:
-                    #         self.mcas.asc(
-                    #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #             wf_start=already_written_samples,
-                    #             length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss2_begin),  #
-                    #             name='Gauss2_MW')
-                    #
-                    #         self.mcas.asc(
-                    #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #             length_mus=E.round_length_mus_full_sample(pi_dur-(opt_pi_dur - gauss2_begin)),
-                    #             name='MW_end')
-                    #
-                    #         self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                    #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-                    #
-                    # elif tau >= aom_delay + aom_Ex_dur + optical_delay + opt_pi_dur:
-                    #     # ---------------
-                    #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
-                    #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                    #                   name='Ex_aom_1')  # 20 ns. AOM for the first pulse
-                    #     self.mcas.asc(length_mus=optical_delay - aom_Ex_dur,
-                    #                   name='wait_1.1')  # 36ns ns. Delay between first and second AOM_Ex pulses
-                    #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                    #                   name='Ex_aom_2')  # 20 ns. AOM for the first puls
-                    #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.007), name='wait_1')  # 7ns
-                    #     self.mcas.asc(
-                    #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
-                    #         length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                    #         name='MW_pihalf')  # 13.5ns. First pi/2 pulse
-                    #     self.mcas.asc(length_mus=0.0605, name='wait_2')
-                    #     self.mcas.asc(
-                    #         pd2g2=dict(
-                    #             type='gauss',
-                    #             inv_fwhm=1,
-                    #             amplitudes=[eom_ampl]),
-                    #         length_mus=E.round_length_mus_full_sample(opt_pi_dur),
-                    #         name='Gauss1')  # First EOM Pulse
-                    #
-                    #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - opt_pi_dur), name='wait_2')
-                    #
-                    #     self.mcas.asc(
-                    #         pd2g2=dict(
-                    #             type='gauss',
-                    #             inv_fwhm=1,
-                    #             amplitudes=[eom_ampl]),
-                    #         length_mus=E.round_length_mus_full_sample(opt_pi_dur),
-                    #         name='Gauss2')  # Second EOM Pulse
-                    #
-                    #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - ( aom_delay + aom_Ex_dur + optical_delay + opt_pi_dur)), name='wait_2')
-                    #
-                    #     self.mcas.asc(
-                    #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #         length_mus=E.round_length_mus_full_sample(pi_dur),
-                    #         name='MW_pi')  # 27ns
-                    #
-                    #     self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                    #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-                    #
-                    # else:
-                    #     # !!!!!! THIS PART IS USED
-                    #
-                    #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
-                    #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                    #                   name='Ex_aom_1')  # 20 ns. AOM for the first pulse
-                    #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - aom_Ex_dur),
-                    #                   name='wait_1.1')  # 36ns ns. Delay between first and second AOM_Ex pulses
-                    #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                    #                   name='Ex_aom_2')  # 20 ns. AOM for the first puls
-                    #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.007), name='wait_1')  # 7ns
-                    #
-                    #     self.mcas.asc(
-                    #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
-                    #         length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                    #         name='MW_pihalf')  # 13.5ns. First pi/2 pulse
-                    #
-                    #     self.mcas.asc(length_mus=0.0605, name='wait_2')
-                    #
-                    #     if tau >= aom_delay + aom_Ex_dur and tau + pi_dur <= (aom_delay + aom_Ex_dur + opt_pi_dur):
-                    #
-                    #         gauss1_begin = tau - (aom_delay + aom_Ex_dur)
-                    #         self.mcas.asc(
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #             length_mus=E.round_length_mus_full_sample(gauss1_begin),
-                    #             name='Gauss1_begin')  # First EOM Pulse
-                    #         already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
-                    #
-                    #         self.mcas.asc(
-                    #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #
-                    #             wf_start=already_written_samples,
-                    #             length_mus=E.round_length_mus_full_sample(pi_dur),  #
-                    #             name='Gauss1_MW')
-                    #         already_written_samples += np.around(pi_dur * __SAMPLE_FREQUENCY__).astype(int)
-                    #
-                    #         self.mcas.asc(
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #
-                    #             wf_start=already_written_samples,
-                    #             length_mus=E.round_length_mus_full_sample(opt_pi_dur - pi_dur - gauss1_begin),  #
-                    #             name='Gauss1_end')
-                    #         self.mcas.asc(length_mus=optical_delay - opt_pi_dur,
-                    #                       name='wait_3')  # 14.5ns wait before second optical pi pulse
-                    #         self.mcas.asc(
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #             length_mus=opt_pi_dur,  # 0.04008333333333333 ns Second EOM pulse starts
-                    #             name='Gauss2')
-                    #         self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                    #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-                    #
-                    #     elif aom_delay + aom_Ex_dur < tau < aom_delay + aom_Ex_dur +opt_pi_dur \
-                    #             and aom_delay + aom_Ex_dur +optical_delay>=tau + pi_dur > (aom_delay + aom_Ex_dur + opt_pi_dur):
-                    #         gauss1_begin = tau - (aom_delay + aom_Ex_dur)
-                    #         self.mcas.asc(
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #             length_mus=E.round_length_mus_full_sample(gauss1_begin),
-                    #             name='Gauss1_begin')  # First EOM Pulse
-                    #         already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
-                    #
-                    #         self.mcas.asc(
-                    #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #
-                    #             wf_start=already_written_samples,
-                    #             length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss1_begin),  #
-                    #             name='Gauss1_MW')
-                    #
-                    #
-                    #         self.mcas.asc(
-                    #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #             length_mus=E.round_length_mus_full_sample(pi_dur - (opt_pi_dur - gauss1_begin)),  #
-                    #             name='MW_end')
-                    #
-                    #         self.mcas.asc(length_mus=optical_delay - (opt_pi_dur+pi_dur - (opt_pi_dur - gauss1_begin)),
-                    #                       name='wait_3')  # 14.5ns wait before second optical pi pulse
-                    #         self.mcas.asc(
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #             length_mus=opt_pi_dur,  # 0.04008333333333333 ns Second EOM pulse starts
-                    #             name='Gauss2')
-                    #         self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                    #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-                    #
-                    #     elif aom_delay + aom_Ex_dur < tau < aom_delay + aom_Ex_dur +opt_pi_dur \
-                    #             and aom_delay + aom_Ex_dur +optical_delay < tau + pi_dur:
-                    #         # !!!!!! THIS PART IS USED
-                    #
-                    #         gauss1_begin = tau - (aom_delay + aom_Ex_dur)
-                    #         self.mcas.asc(
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #             length_mus=E.round_length_mus_full_sample(gauss1_begin),
-                    #             name='Gauss1_begin')  # First EOM Pulse
-                    #         already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
-                    #
-                    #         self.mcas.asc(
-                    #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #
-                    #             wf_start=already_written_samples,
-                    #             length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss1_begin),  #
-                    #             name='Gauss1_MW')
-                    #
-                    #         self.mcas.asc(
-                    #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #             length_mus=E.round_length_mus_full_sample(optical_delay - opt_pi_dur),  #
-                    #             name='MW')
-                    #
-                    #         gauss2_begin =E.round_length_mus_full_sample(pi_dur - (opt_pi_dur - gauss1_begin + optical_delay - opt_pi_dur))
-                    #         self.mcas.asc(
-                    #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #             length_mus=gauss2_begin,  # 0.04008333333333333 ns Second EOM pulse starts
-                    #             name='Gauss2_MW')
-                    #         already_written_samples = np.around(gauss2_begin * __SAMPLE_FREQUENCY__).astype(int)
-                    #
-                    #         self.mcas.asc(
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #
-                    #             wf_start=already_written_samples,
-                    #             length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss2_begin),  #
-                    #             name='Gauss2_end')
-                    #
-                    #
-                    #
-                    #         if 'tau_bell' in self.kwargs.keys():
-                    #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.075917),
-                    #                           name='wait_before_MW')  # 100ns
-                    #             tau_bell = self.kwargs['tau_bell']
-                    #             self.mcas.asc(
-                    #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
-                    #                 length_mus=E.round_length_mus_full_sample(tau_bell),
-                    #                 name='tau bell')  # 13.5ns. First pi/2 pulse
-                    #
-                    #
-                    #
-                    #
-                    #
-                    #         self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                    #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-                    #
-                    #     elif aom_delay + aom_Ex_dur + optical_delay > tau > aom_delay + aom_Ex_dur + opt_pi_dur :
-                    #         self.mcas.asc(
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #             length_mus=E.round_length_mus_full_sample(opt_pi_dur),
-                    #             name='Gauss1_begin')  # First EOM Pulse
-                    #
-                    #         self.mcas.asc(length_mus=tau - (aom_delay + aom_Ex_dur + opt_pi_dur),
-                    #                       name='wait_3')  # 14.5ns wait before second optical pi pulse
-                    #
-                    #         # pd2g1 = dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #
-                    #
-                    #         self.mcas.asc(
-                    #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #             length_mus=E.round_length_mus_full_sample(aom_delay + aom_Ex_dur + optical_delay - tau),  #
-                    #             name='MW_end')
-                    #
-                    #         gauss2_begin = pi_dur - (aom_delay + aom_Ex_dur + optical_delay - tau)
-                    #         self.mcas.asc(
-                    #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #             length_mus=gauss2_begin,  # 0.04008333333333333 ns Second EOM pulse starts
-                    #             name='Gauss2_MW')
-                    #         already_written_samples = np.around(gauss2_begin * __SAMPLE_FREQUENCY__).astype(int)
-                    #
-                    #         self.mcas.asc(
-                    #             pd2g2=dict(
-                    #                 type='gauss',
-                    #                 inv_fwhm=1,
-                    #                 amplitudes=[eom_ampl]),
-                    #
-                    #             wf_start=already_written_samples,
-                    #             length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss2_begin),  #
-                    #             name='Gauss')
-                    #
-                    #         self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
-                    #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
-
-
-
-
-
-
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == '2opt_withMW_pi':
-                    pi_dur = self.kwargs['pi_dur']
-                    mw_amplitude = self.kwargs['mw_amplitude']
-                    mw_freq = self.frequencies[0]
-                    mw_delay = self.kwargs['mw_delay']#delay betweenn first optical pulse and MW pulse (measured from aom_Ex open)
-                    optical_delay = self.kwargs['optical_delay'] #delay between optical pulses aka interferometer length
-                    aom_Ex_dur = 0.015#0.02
-                    aom_delay = 0.155#0.137
-                    opt_pi_dur = 481 * 1. / __SAMPLE_FREQUENCY__
-
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-                    self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_1')
-                    self.mcas.asc(length_mus=optical_delay - aom_Ex_dur, name='wait_1')
-                    self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_2')
-                    self.mcas.asc(length_mus=aom_delay-aom_Ex_dur-(optical_delay - aom_Ex_dur), name='wait_2')
-
-
-                    self.mcas.asc(
-                        pd2g2=dict(
-                            type='gauss',
-                            inv_fwhm=1,
-                            amplitudes=[self.kwargs['eom_ampl']]),
-                        length_mus=E.round_length_mus_full_sample(mw_delay-aom_Ex_dur-aom_delay),
-                        name='Gauss1')
-
-                    already_written_samples = np.around((mw_delay-aom_Ex_dur-aom_delay) * __SAMPLE_FREQUENCY__).astype(int)
-                    remaining_optical = opt_pi_dur - (mw_delay-aom_Ex_dur-aom_delay)
-                    self.mcas.asc(
-                        pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
-                        wf_start=already_written_samples,
-
-                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                        length_mus=remaining_optical,
-                        name='Gauss1_MW')
-
-                    self.mcas.asc(
-                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                        length_mus=E.round_length_mus_full_sample(pi_dur - remaining_optical),
-                        name='MW_pi_residual')
-
-                    self.mcas.asc(length_mus=optical_delay+aom_Ex_dur+aom_delay-(mw_delay+pi_dur), name='wait_3')
-                    self.mcas.asc(
-                        pd2g2=dict(
-                            type='gauss',
-                            inv_fwhm=1,
-                            amplitudes=[self.kwargs['eom_ampl']]),
-                        length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
-                        name='Gauss2')
-
-                    self.mcas.asc(length_mus=self.laser_dur,name='wait_4')
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
-
-
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'entanglement_for_tests':
-
-
-                    eom_ampl = self.kwargs['eom_ampl']
-
-
-
-                    pihalf_dur =self.kwargs['pihalf_dur'] #0.0135
-                    hahn_echo_tau = 0.075 # temp thing to make pi instead of first pi/2
-
-                    pi_dur = self.kwargs['pi_dur'] #0.027
-                    mw_amplitude = self.kwargs['mw_amplitude']
-                    mw_freq = self.frequencies[0]
-                    mw_delay = self.kwargs['mw_delay']#213ns (was 180ns) delay betweenn first optical pulse and MW pulse (measured from aom_Ex open)
-                    optical_delay = self.kwargs['optical_delay'] #56ns (was 125ns) delay between optical pulses aka interferometer length
-
-                    aom_Ex_dur = 0.02#0.02
-                    aom_delay = 0.137#0.137
-                    opt_pi_dur = 481 * 1. / __SAMPLE_FREQUENCY__
-                    gauss1_begin = (optical_delay - pi_dur) / 2 #14.5ns - time between first opt pi begin and mw pi begin
-                    remaining_optical = opt_pi_dur - (gauss1_begin) # 0.025583333333333333 ns
-                    remaining_mw_dur = pi_dur - remaining_optical
-                    wait2 = hahn_echo_tau-gauss1_begin # 60.5ns
-
-                    wait1 = 0.007 # 0.007000000000000018 ns delay between second aom_Ex and MW pi/2
-                    wait2 = aom_delay - (optical_delay-aom_Ex_dur) - aom_Ex_dur - wait1 - pihalf_dur
-
-
-                    # wait3 = gauss1_begin #14.5ns
-                    wait4 = hahn_echo_tau-gauss1_begin-opt_pi_dur #0.020416666666666666
-
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
-
-                    self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_1')  #20 ns. AOM for the first pulse
-
-                    self.mcas.asc(length_mus=optical_delay-aom_Ex_dur, name='wait_1.1')# 36ns ns. Delay between first and second AOM_Ex pulses
-                    self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
-                                  name='Ex_aom_2')  # 20 ns. AOM for the first puls
-
-                    self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.007), name='wait_1') #7ns
-
-
-                    self.mcas.asc(
-                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                        length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                        name='MW_pihalf')#13.5ns. First pi/2 pulse
-
-                    self.mcas.asc(length_mus=0.0605, name='wait_2')
-
-                    self.mcas.asc(
-                        pd2g2=dict(
-                            type='gauss',
-                            inv_fwhm=1,
-                            amplitudes=[eom_ampl]),
-                        length_mus=E.round_length_mus_full_sample(opt_pi_dur),
-                        name='Gauss1') #14.5 ns. First EOM Pulse
-
-
-                    self.mcas.asc(length_mus=optical_delay - opt_pi_dur, name='wait_3') #14.5ns wait before second optical pi pulse
-
-
-                    self.mcas.asc(
-                        pd2g2=dict(
-                            type='gauss',
-                            inv_fwhm=1,
-                            amplitudes=[eom_ampl]),
-                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-
-                        length_mus=pi_dur, # 0.04008333333333333 ns Second EOM pulse starts
-                        name='Gauss2_MW')
-
-                    already_written_samples = np.around(pi_dur * __SAMPLE_FREQUENCY__).astype(int)
-
-                    self.mcas.asc(
-                        pd2g2=dict(
-                            type='gauss',
-                            inv_fwhm=1,
-                            amplitudes=[eom_ampl]),
-
-                        wf_start = already_written_samples,
-                        length_mus=opt_pi_dur-pi_dur, # 0.013083333333333332 ns Second EOM pulse starts
-                        name='Gauss2end')
-
-
-                    self.mcas.asc(length_mus= 0.1165 - (opt_pi_dur-pi_dur), name='wait4')#111.91666666666664 ns
-
-                    if 'tau_bell' in self.kwargs.keys():
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq,
-                                       amplitudes=[mw_amplitude]),
-                            length_mus=E.round_length_mus_full_sample(self.kwargs['tau_bell']),
-                            name='tau_bell')  # 14.5ns. Second pi/2 pulse
-
-
-                    self.mcas.asc(length_mus=self.laser_dur,name='wait_before_memory') #100ns
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory') #160ns
-
-
-
                 #
+                # elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'Ex_pi_readout_6ns':
+                #     # print('snipets were updated')
+                #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #     for i in range(1):
+                #         self.mcas.asc(length_mus=0.02, aom_Ex=True)
+                #         self.mcas.asc(length_mus=0.145)
+                #         self.mcas.asc(
+                #             pd2g2=dict(
+                #                 type='gauss_6ns',
+                #                 inv_fwhm=1,
+                #                 amplitudes=[1.0]),
+                #             # aom_Ex = True,
+                #             # gate = True,
+                #             # memory = True,
+                #             length_smpl=481 * 3,
+                #         )
+                #         if i == 0:
+                #             g=True
+                #         else:
+                #             g=False
+                #         self.mcas.asc(gate=g, memory=False, length_mus=0.1)
+                #         # mcas.asc(length_mus=0.550, aom_Ex=True)
+                #         self.mcas.asc(length_mus=0.05)
+                #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True)
+                # elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'Ex_pi_readout_10ns':
+                #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #     # print('snipets were updated')
+                #     self.mcas.asc(length_mus=0.050, aom_Ex=True)
+                #     self.mcas.asc(length_mus=0.15)
+                #     self.mcas.asc(
+                #         name='Ex_pi_readout_10ns',
+                #         pd2g2=dict(
+                #             type='gauss_6ns',
+                #             inv_fwhm=1,
+                #             amplitudes=[1.0],
+                #         ),
+                #         length_smpl=481*5,
+                #         **aa
+                #     )
+                #     self.mcas.asc(length_mus=1.0)
+                # elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'Ex_pi_readout':
+                #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #     # print('snipets were updated')
+                #     for i in range(10): # why we have here 10 iterations??
+                #         self.mcas.asc(length_mus=0.050, aom_Ex=True)
+                #         self.mcas.asc(length_mus=0.15)
+                #         self.mcas.asc(
+                #             name='Ex_pi_readout',
+                #             pd2g2=dict(
+                #                 type='gauss',
+                #                 inv_fwhm=1,
+                #                 amplitudes=[1.0],
+                #             ),
+                #             length_smpl=481,
+                #             **aa
+                #         )
+                #         self.mcas.asc(length_mus=1.0)
+                #
+                #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True)
+                # elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'Ex_ampl_sweep_SSR_6ns':
+                #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #     # print('snipets were updated')
+                #     self.mcas.asc(length_mus=0.09, aom_Ex=True)
+                #     self.mcas.asc(length_mus=0.08, name='aom_delay')
+                #     self.mcas.asc(
+                #         pd2g2=dict(
+                #             type='gauss_6ns',
+                #             inv_fwhm=1,
+                #             amplitudes=[self.kwargs['eom_ampl']]),
+                #         length_mus=481 * 3. / __SAMPLE_FREQUENCY__,
+                #         name='Gauss')
+                #
+                #     self.mcas.asc(length_mus=1.0)
+                #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True)
+                # elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'Ex_ampl_sweep_SSR':
+                #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #
+                #
+                #     # self.mcas.asc(length_mus=0.02, aom_Ex=True)
+                #     # self.mcas.asc(length_mus=0.137, name='aom_delay')
+                #     #
+                #     self.mcas.asc(length_mus=0.009, aom_Ex=True)
+                #     self.mcas.asc(length_mus=0.151, name='aom_delay')
+                #     # self.mcas.asc(length_mus=0.015, aom_Ex=True)
+                #     # self.mcas.asc(length_mus=0.155, name='aom_delay')
+                #
+                #     self.mcas.asc(
+                #         pd2g2=dict(
+                #             type='gauss',
+                #             inv_fwhm=1,
+                #             amplitudes=[self.kwargs['eom_ampl']]),
+                #         length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
+                #         name='Gauss')
+                #
+                #     self.mcas.asc(length_mus=0.1)
+                #
+                #
+                #
+                #     # =========DELETE IT AFTER TEST!!!
+                #     #
+                #     # self.mcas.asc(length_mus=0.009, aom_Ex=True)
+                #     # self.mcas.asc(length_mus=0.151, name='aom_delay')
+                #     # # self.mcas.asc(length_mus=0.015, aom_Ex=True)
+                #     # # self.mcas.asc(length_mus=0.155, name='aom_delay')
+                #     #
+                #     # self.mcas.asc(
+                #     #     pd2g2=dict(
+                #     #         type='gauss',
+                #     #         inv_fwhm=1,
+                #     #         amplitudes=[self.kwargs['eom_ampl']]),
+                #     #     length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
+                #     #     name='Gauss')
+                #     # =========DELETE IT AFTER TEST!!!
+                #
+                #
+                #     self.mcas.asc(length_mus=0.5)
+                #     self.mcas.asc(length_mus=self.laser_dur)
+                #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
+                # elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'opt_mw_delays_calibration':
+                #
+                #     pi_dur = self.kwargs['pi_dur']
+                #     mw_amplitude = self.kwargs['mw_amplitude']
+                #     # print('kwargs keys: ',self.kwargs.keys())
+                #     # print('self.frequencies: ',self.frequencies)
+                #
+                #     mw_freq = self.frequencies[0]
+                #     tau = self.kwargs['tau']
+                #     # aom_Ex_dur = 0.015#0.02
+                #     # aom_delay = 0.155#0.137
+                #     aom_Ex_dur = 0.02#0.02
+                #     aom_delay = 0.137#0.137
+                #     opt_pi_dur = 481 * 1. / __SAMPLE_FREQUENCY__
+                #     # print('======= Tau is: ',tau)
+                #     # tau determines the start of the MW pulse relative to start of the aom pulse
+                #
+                #     if tau <0 and np.abs(tau)>=pi_dur:
+                #
+                #         # print('if_1')
+                #         if np.abs(tau) < __TT_TRIGGER_LENGTH__:
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #             # print('if_1.1')
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(pi_dur),
+                #                 name='MW_pi',
+                #             )
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(np.abs(tau) - pi_dur), name='wait')
+                #
+                #             self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,name='Ex_aom')
+                #             self.mcas.asc(length_mus=aom_delay, name='aom_delay')
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[self.kwargs['eom_ampl']]),
+                #                 length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
+                #                 name='Gauss')
+                #         elif np.abs(tau) >= __TT_TRIGGER_LENGTH__:
+                #             # print('if_1.2')
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(pi_dur),
+                #                 name='MW_pi',
+                #             )
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(np.abs(tau) - pi_dur-__TT_TRIGGER_LENGTH__), name='wait')
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #             self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,name='Ex_aom')
+                #             self.mcas.asc(length_mus=aom_delay, name='aom_delay')
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[self.kwargs['eom_ampl']]),
+                #                 length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
+                #                 name='Gauss')
+                #
+                #         self.mcas.asc(length_mus=self.laser_dur)
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
+                #
+                #     elif tau < 0 and np.abs(tau) < pi_dur:
+                #         # print('if_2')
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #         self.mcas.asc(
+                #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #             length_mus=E.round_length_mus_full_sample(np.abs(tau)),
+                #             name='MW_pi',
+                #         )
+                #         self.mcas.asc(
+                #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #             length_mus=E.round_length_mus_full_sample(pi_dur-np.abs(tau)),
+                #             name='MW_pi_with_aom_Ex',
+                #             aom_Ex = True
+                #         )
+                #
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur-(pi_dur-np.abs(tau))),
+                #                       aom_Ex=True,name='Ex_aom_residual')
+                #
+                #         self.mcas.asc(length_mus=aom_delay, name='aom_delay')
+                #         self.mcas.asc(
+                #             pd2g2=dict(
+                #                 type='gauss',
+                #                 inv_fwhm=1,
+                #                 amplitudes=[self.kwargs['eom_ampl']]),
+                #             length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
+                #             name='Gauss')
+                #
+                #         self.mcas.asc(length_mus=self.laser_dur)
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
+                #
+                #     elif tau >= 0 and np.abs(tau) <aom_Ex_dur:
+                #         # print('if_3')
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau),
+                #                       aom_Ex=True,name='Ex_aom')
+                #         if pi_dur <= (aom_Ex_dur-tau):
+                #             # print('if_3.1')
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(pi_dur),
+                #                 name='MW_pi_with_aom_Ex', aom_Ex=True
+                #             )
+                #
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur - (pi_dur + tau)),
+                #                           aom_Ex=True,name='Ex_aom_residiual')
+                #
+                #             self.mcas.asc(length_mus=aom_delay, name='aom_delay')
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[self.kwargs['eom_ampl']]),
+                #                 length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
+                #                 name='Gauss')
+                #
+                #             self.mcas.asc(length_mus=self.laser_dur)
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
+                #
+                #         if pi_dur > (aom_Ex_dur-tau):
+                #             # print('if_3.2')
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(aom_Ex_dur - tau),
+                #                 name='MW_pi_with_aom_Ex',aom_Ex=True
+                #             )
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(pi_dur - (aom_Ex_dur - tau)),
+                #                 name='MW_pi'
+                #             )
+                #
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_delay - (pi_dur - (aom_Ex_dur - tau))),#aom_delay
+                #                           name='aom_delay')
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[self.kwargs['eom_ampl']]),
+                #                 length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
+                #                 name='Gauss')
+                #
+                #             self.mcas.asc(length_mus=self.laser_dur)
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
+                #
+                #     elif tau > 0 and np.abs(tau) >= aom_Ex_dur and (np.abs(tau)+pi_dur)<=(aom_delay+aom_Ex_dur):
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #         # print('if_4')
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur),
+                #                       aom_Ex=True,name='Ex_aom')
+                #
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - aom_Ex_dur))
+                #
+                #         self.mcas.asc(
+                #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #             length_mus=E.round_length_mus_full_sample(pi_dur),
+                #             name='MW_pi')
+                #
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_delay-pi_dur-(tau - aom_Ex_dur)),
+                #                       name='aom_delay')
+                #
+                #         self.mcas.asc(
+                #             pd2g2=dict(
+                #                 type='gauss',
+                #                 inv_fwhm=1,
+                #                 amplitudes=[self.kwargs['eom_ampl']]),
+                #             length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
+                #             name='Gauss')
+                #
+                #         self.mcas.asc(length_mus=self.laser_dur)
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
+                #
+                #     elif tau > 0 and np.abs(tau) >= aom_Ex_dur and (np.abs(tau)+pi_dur)>(aom_delay+aom_Ex_dur):
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #         # print('if_5')
+                #         if np.abs(tau)<=(aom_delay+aom_Ex_dur):
+                #             # print('if_5.1')
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur),
+                #                           aom_Ex=True,name='Ex_aom')
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - aom_Ex_dur))
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(aom_delay - (tau - aom_Ex_dur)),
+                #                 name='MW_pi')
+                #
+                #             remaining_mw_dur = pi_dur - (aom_delay-(tau-aom_Ex_dur))
+                #             # print('remaining mw_dur = ',remaining_mw_dur)
+                #             if remaining_mw_dur >= opt_pi_dur:
+                #                 # print('if_5.1.1')
+                #                 self.mcas.asc(
+                #                     pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
+                #                     pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                     length_mus=opt_pi_dur,
+                #                     name='Gauss')
+                #
+                #                 self.mcas.asc(
+                #                     pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                     length_mus=E.round_length_mus_full_sample(remaining_mw_dur - opt_pi_dur),
+                #                     name='MW_pi')
+                #                 self.mcas.asc(length_mus=self.laser_dur)
+                #                 self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
+                #
+                #             if remaining_mw_dur < opt_pi_dur:
+                #                 # print('if_5.1.2')
+                #                 self.mcas.asc(
+                #                     pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
+                #                     pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                     length_mus=remaining_mw_dur,
+                #                     name='Gauss')
+                #                 already_written_samples = np.around(remaining_mw_dur * __SAMPLE_FREQUENCY__).astype(int)
+                #
+                #                 self.mcas.asc(
+                #                     pd2g2=dict(type='gauss', inv_fwhm=1, wf_start=already_written_samples,amplitudes=[self.kwargs['eom_ampl']]),
+                #
+                #                     length_mus=opt_pi_dur - remaining_mw_dur,
+                #                     name='Gauss')
+                #
+                #                 self.mcas.asc(length_mus=self.laser_dur)
+                #                 self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
+                #
+                #
+                #         if np.abs(tau)>(aom_delay+aom_Ex_dur):
+                #             # print('if_5.2')
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur),
+                #                           aom_Ex=True,name='Ex_aom')
+                #             self.mcas.asc(length_mus=aom_delay, name='aom_delay')
+                #
+                #
+                #             if tau >=(aom_delay+aom_Ex_dur+opt_pi_dur):
+                #                 # print('if_5.2.1')
+                #                 if tau >=(aom_delay+aom_Ex_dur+opt_pi_dur+__TT_TRIGGER_LENGTH__):
+                #                     self.mcas.asc(
+                #                         pd2g2=dict(
+                #                             type='gauss',
+                #                             inv_fwhm=1,
+                #                             amplitudes=[self.kwargs['eom_ampl']]),
+                #                         length_mus=opt_pi_dur,
+                #                         name='Gauss')
+                #
+                #
+                #                     self.mcas.asc(length_mus=self.laser_dur)
+                #                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
+                #
+                #                     self.mcas.asc(length_mus=tau - (opt_pi_dur + aom_delay + aom_Ex_dur+__TT_TRIGGER_LENGTH__),
+                #                                   name='wait for mw')
+                #
+                #                     self.mcas.asc(
+                #                         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                         length_mus=E.round_length_mus_full_sample(pi_dur),
+                #                         name='MW_pi',
+                #                     )
+                #
+                #                     # self.mcas.asc(length_mus=self.laser_dur)
+                #                     # self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
+                #
+                #
+                #                 else:
+                #                     self.mcas.asc(
+                #                         pd2g2=dict(
+                #                             type='gauss',
+                #                             inv_fwhm=1,
+                #                             amplitudes=[self.kwargs['eom_ampl']]),
+                #                         length_mus=opt_pi_dur,
+                #                         name='Gauss')
+                #
+                #                     self.mcas.asc(length_mus=tau - (opt_pi_dur+aom_delay+aom_Ex_dur), name='wait for mw')
+                #                     self.mcas.asc(
+                #                         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                         length_mus=E.round_length_mus_full_sample(pi_dur),
+                #                         name='MW_pi',
+                #                     )
+                #
+                #                     self.mcas.asc(length_mus=self.laser_dur)
+                #                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
+                #
+                #
+                #             if tau < (aom_delay + aom_Ex_dur + opt_pi_dur):
+                #                 # print('if_5.2.2')
+                #
+                #                 self.mcas.asc(
+                #                     pd2g2=dict(
+                #                         type='gauss',
+                #                         inv_fwhm=1,
+                #                         amplitudes=[self.kwargs['eom_ampl']]),
+                #                     length_mus=E.round_length_mus_full_sample(tau-aom_Ex_dur-aom_delay),
+                #                     name='Gauss_begin')
+                #
+                #                 already_written_samples = np.around((tau-aom_Ex_dur-aom_delay) * __SAMPLE_FREQUENCY__).astype(int)
+                #                 remaining_optical = opt_pi_dur - (tau-aom_Ex_dur-aom_delay)
+                #                 if pi_dur >= remaining_optical:
+                #                     # print('if_5.2.2.1')
+                #
+                #                     self.mcas.asc(
+                #                         pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
+                #                         wf_start=already_written_samples,
+                #
+                #                         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                         length_mus=remaining_optical,
+                #                         name='Gauss_end')
+                #
+                #                     self.mcas.asc(
+                #                         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                         length_mus=E.round_length_mus_full_sample(pi_dur-remaining_optical),
+                #                         name='MW_pi')
+                #                     self.mcas.asc(length_mus=self.laser_dur)
+                #                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
+                #
+                #                 if pi_dur < remaining_optical:
+                #                     # print('if_5.2.2.2')
+                #
+                #                     self.mcas.asc(
+                #                         pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
+                #                         wf_start=already_written_samples,
+                #
+                #                         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                         length_mus=pi_dur,
+                #                         name='Gauss_MW')
+                #                     already_written_samples+= np.around(pi_dur* __SAMPLE_FREQUENCY__).astype(int)
+                #
+                #                     self.mcas.asc(
+                #                         pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
+                #                         wf_start=already_written_samples,
+                #                         # length_mus=pi_dur,
+                #                         length_mus=opt_pi_dur - (tau-aom_Ex_dur-aom_delay)-pi_dur,
+                #                         name='Gauss_end')
+                #
+                #                     self.mcas.asc(length_mus=self.laser_dur)
+                #                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
+                # elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'opt_mw_delays_calibration2':
+                #
+                #     pi_dur = self.kwargs['pi_dur']
+                #     mw_amplitude = self.kwargs['mw_amplitude']
+                #     mw_freq = self.frequencies[0]
+                #     tau = self.kwargs['tau']
+                #     aom_Ex_dur = 0.02#0.02
+                #     aom_delay = 0.137#0.137
+                #     opt_pi_dur = 481 * 1. / __SAMPLE_FREQUENCY__
+                #
+                #     if tau <0 and np.abs(tau)>=pi_dur:
+                #
+                #         # print('if_1')
+                #         if np.abs(tau) < __TT_TRIGGER_LENGTH__:
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #             # print('if_1.1')
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(pi_dur),
+                #                 name='MW_pi',
+                #             )
+                #             self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(np.abs(tau) - pi_dur), name='wait')
+                #
+                #             self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=aom_Ex_dur, aom_Ex=True,name='Ex_aom')
+                #             self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=aom_delay, name='aom_delay')
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[self.kwargs['eom_ampl']]),
+                #                 length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
+                #                 name='Gauss')
+                #         elif np.abs(tau) >= __TT_TRIGGER_LENGTH__:
+                #             # print('if_1.2')
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(pi_dur),
+                #                 name='MW_pi',
+                #             )
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(np.abs(tau) - pi_dur-__TT_TRIGGER_LENGTH__), name='wait')
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=aom_Ex_dur, aom_Ex=True,name='Ex_aom')
+                #             self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=aom_delay, name='aom_delay')
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[self.kwargs['eom_ampl']]),
+                #                 length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
+                #                 name='Gauss')
+                #
+                #         self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #             length_mus=self.laser_dur,)
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
+                #
+                #     elif tau < 0 and np.abs(tau) < pi_dur:
+                #         print('tau is : ', tau)
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #         self.mcas.asc(
+                #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #             length_mus=E.round_length_mus_full_sample(np.abs(tau)),
+                #             name='MW_pi',
+                #         )
+                #
+                #         self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #             length_mus=E.round_length_mus_full_sample(aom_Ex_dur),
+                #                       aom_Ex=True,name='Ex_aom_residual')
+                #
+                #         self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #             length_mus=aom_delay, name='aom_delay')
+                #         self.mcas.asc(
+                #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #             pd2g2=dict(
+                #                 type='gauss',
+                #                 inv_fwhm=1,
+                #                 amplitudes=[self.kwargs['eom_ampl']]),
+                #             length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
+                #             name='Gauss')
+                #
+                #         self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                       length_mus=self.laser_dur)
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
+                #
+                #     elif tau >= 0 and np.abs(tau) <aom_Ex_dur:
+                #         # print('if_3')
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau),
+                #                       aom_Ex=True,name='Ex_aom')
+                #         if pi_dur <= (aom_Ex_dur-tau):
+                #             # print('if_3.1')
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(pi_dur),
+                #                 name='MW_pi_with_aom_Ex', aom_Ex=True
+                #             )
+                #
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur - (pi_dur + tau)),
+                #                           pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                           aom_Ex=True,name='Ex_aom_residiual')
+                #
+                #             self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=aom_delay, name='aom_delay')
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[self.kwargs['eom_ampl']]),
+                #                 length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
+                #                 name='Gauss')
+                #
+                #             self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                           length_mus=self.laser_dur)
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
+                #
+                #         if pi_dur > (aom_Ex_dur-tau):
+                #             # print('if_3.2')
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(aom_Ex_dur - tau),
+                #                 name='MW_pi_with_aom_Ex',aom_Ex=True
+                #             )
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(pi_dur - (aom_Ex_dur - tau)),
+                #                 name='MW_pi'
+                #             )
+                #
+                #             self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(aom_delay - (pi_dur - (aom_Ex_dur - tau))),#aom_delay
+                #                           name='aom_delay')
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[self.kwargs['eom_ampl']]),
+                #                 length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
+                #                 name='Gauss')
+                #
+                #             self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=self.laser_dur)
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
+                #
+                #     elif tau > 0 and np.abs(tau) >= aom_Ex_dur and (np.abs(tau)+pi_dur)<=(aom_delay+aom_Ex_dur):
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #         # print('if_4')
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur),
+                #                       aom_Ex=True,name='Ex_aom')
+                #
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - aom_Ex_dur))
+                #
+                #         self.mcas.asc(
+                #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #             length_mus=E.round_length_mus_full_sample(pi_dur),
+                #             name='MW_pi')
+                #
+                #         self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #             length_mus=E.round_length_mus_full_sample(aom_delay-pi_dur-(tau - aom_Ex_dur)),
+                #                       name='aom_delay')
+                #
+                #         self.mcas.asc(
+                #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #             pd2g2=dict(
+                #                 type='gauss',
+                #                 inv_fwhm=1,
+                #                 amplitudes=[self.kwargs['eom_ampl']]),
+                #             length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
+                #             name='Gauss')
+                #
+                #         self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                       length_mus=self.laser_dur)
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
+                #
+                #     elif tau > 0 and np.abs(tau) >= aom_Ex_dur and (np.abs(tau)+pi_dur)>(aom_delay+aom_Ex_dur):
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #
+                #         # print('if_5')
+                #         if np.abs(tau)<=(aom_delay+aom_Ex_dur):
+                #             # print('if_5.1')
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur),
+                #                           aom_Ex=True,name='Ex_aom')
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - aom_Ex_dur))
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(aom_delay - (tau - aom_Ex_dur)),
+                #                 name='MW_pi')
+                #
+                #             remaining_mw_dur = pi_dur - (aom_delay-(tau-aom_Ex_dur))
+                #             # print('remaining mw_dur = ',remaining_mw_dur)
+                #             if remaining_mw_dur >= opt_pi_dur:
+                #                 # print('if_5.1.1')
+                #                 self.mcas.asc(
+                #                     pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
+                #                     pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                     length_mus=opt_pi_dur,
+                #                     name='Gauss')
+                #
+                #                 self.mcas.asc(
+                #                     pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                     length_mus=E.round_length_mus_full_sample(remaining_mw_dur - opt_pi_dur),
+                #                     name='MW_pi')
+                #                 self.mcas.asc(length_mus=self.laser_dur)
+                #                 self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
+                #
+                #             if remaining_mw_dur < opt_pi_dur:
+                #                 # print('if_5.1.2')
+                #                 self.mcas.asc(
+                #                     pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
+                #                     pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                     length_mus=remaining_mw_dur,
+                #                     name='Gauss')
+                #                 already_written_samples = np.around(remaining_mw_dur * __SAMPLE_FREQUENCY__).astype(int)
+                #
+                #                 self.mcas.asc(
+                #                     pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                     pd2g2=dict(type='gauss', inv_fwhm=1, wf_start=already_written_samples,amplitudes=[self.kwargs['eom_ampl']]),
+                #
+                #                     length_mus=opt_pi_dur - remaining_mw_dur,
+                #                     name='Gauss')
+                #
+                #                 self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                               length_mus=self.laser_dur)
+                #                 self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
+                #
+                #
+                #         if np.abs(tau)>(aom_delay+aom_Ex_dur):
+                #             # print('if_5.2')
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur),
+                #                           aom_Ex=True,name='Ex_aom')
+                #             self.mcas.asc(length_mus=aom_delay, name='aom_delay')
+                #
+                #
+                #             if tau >=(aom_delay+aom_Ex_dur+opt_pi_dur):
+                #                 # print('if_5.2.1')
+                #                 if tau >=(aom_delay+aom_Ex_dur+opt_pi_dur+__TT_TRIGGER_LENGTH__):
+                #                     self.mcas.asc(
+                #                         pd2g2=dict(
+                #                             type='gauss',
+                #                             inv_fwhm=1,
+                #                             amplitudes=[self.kwargs['eom_ampl']]),
+                #                         length_mus=opt_pi_dur,
+                #                         name='Gauss')
+                #
+                #
+                #                     self.mcas.asc(length_mus=self.laser_dur)
+                #                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
+                #
+                #                     self.mcas.asc(length_mus=tau - (opt_pi_dur + aom_delay + aom_Ex_dur+__TT_TRIGGER_LENGTH__),
+                #                                   name='wait for mw')
+                #
+                #                     self.mcas.asc(
+                #                         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                         length_mus=E.round_length_mus_full_sample(pi_dur),
+                #                         name='MW_pi',
+                #                     )
+                #
+                #                     # self.mcas.asc(length_mus=self.laser_dur)
+                #                     # self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
+                #
+                #
+                #                 else:
+                #                     self.mcas.asc(
+                #                         pd2g2=dict(
+                #                             type='gauss',
+                #                             inv_fwhm=1,
+                #                             amplitudes=[self.kwargs['eom_ampl']]),
+                #                         length_mus=opt_pi_dur,
+                #                         name='Gauss')
+                #
+                #                     self.mcas.asc(length_mus=tau - (opt_pi_dur+aom_delay+aom_Ex_dur), name='wait for mw')
+                #                     self.mcas.asc(
+                #                         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                         length_mus=E.round_length_mus_full_sample(pi_dur),
+                #                         name='MW_pi',
+                #                     )
+                #
+                #                     self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                                   length_mus=self.laser_dur)
+                #                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
+                #
+                #
+                #             if tau < (aom_delay + aom_Ex_dur + opt_pi_dur):
+                #                 # print('if_5.2.2')
+                #
+                #                 self.mcas.asc(
+                #                     pd2g2=dict(
+                #                         type='gauss',
+                #                         inv_fwhm=1,
+                #                         amplitudes=[self.kwargs['eom_ampl']]),
+                #                     length_mus=E.round_length_mus_full_sample(tau-aom_Ex_dur-aom_delay),
+                #                     name='Gauss_begin')
+                #
+                #                 already_written_samples = np.around((tau-aom_Ex_dur-aom_delay) * __SAMPLE_FREQUENCY__).astype(int)
+                #                 remaining_optical = opt_pi_dur - (tau-aom_Ex_dur-aom_delay)
+                #                 if pi_dur >= remaining_optical:
+                #                     # print('if_5.2.2.1')
+                #
+                #                     self.mcas.asc(
+                #                         pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
+                #                         wf_start=already_written_samples,
+                #
+                #                         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                         length_mus=remaining_optical,
+                #                         name='Gauss_end')
+                #
+                #                     self.mcas.asc(
+                #                         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                         length_mus=E.round_length_mus_full_sample(pi_dur-remaining_optical),
+                #                         name='MW_pi')
+                #                     self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                                   length_mus=self.laser_dur)
+                #                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
+                #
+                #                 if pi_dur < remaining_optical:
+                #                     # print('if_5.2.2.2')
+                #
+                #                     self.mcas.asc(
+                #                         pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
+                #                         wf_start=already_written_samples,
+                #
+                #                         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                         length_mus=pi_dur,
+                #                         name='Gauss_MW')
+                #                     already_written_samples+= np.around(pi_dur* __SAMPLE_FREQUENCY__).astype(int)
+                #
+                #                     self.mcas.asc(
+                #                         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                         pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
+                #                         wf_start=already_written_samples,
+                #                         # length_mus=pi_dur,
+                #                         length_mus=opt_pi_dur - (tau-aom_Ex_dur-aom_delay)-pi_dur,
+                #                         name='Gauss_end')
+                #
+                #                     self.mcas.asc(pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                                   length_mus=self.laser_dur)
+                #                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
+                # elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == '2_opt_mw_delays_calibration_old':
+                #
+                #
+                #     mw_amplitude = self.kwargs['mw_amplitude']
+                #     if 'mw_pihalf_ampl' in self.kwargs.keys():
+                #         mw_pihalf_ampl = self.kwargs['mw_pihalf_ampl']
+                #     else:
+                #         mw_pihalf_ampl = mw_amplitude
+                #
+                #     optical_delay = self.kwargs['optical_delay'] #56ns (was 125ns) delay between optical pulses aka interferometer length
+                #
+                #     pi_dur = self.kwargs['pi_dur']
+                #     mw_freq = self.frequencies[0]
+                #     tau = self.kwargs['tau']
+                #     pihalf_dur =self.kwargs['pihalf_dur']
+                #     eom_ampl = self.kwargs['eom_ampl']
+                #     aom_Ex_dur = 0.02#0.02
+                #     aom_delay = 0.137#0.137
+                #     opt_pi_dur = 481 * 1. / __SAMPLE_FREQUENCY__
+                #     # tau determines the start of the MW pulse relative to start of the aom pulse
+                #     # if aom_delay +aom_Ex_dur + optical_delay <tau < (aom_delay+aom_Ex_dur):
+                #
+                #     if tau< optical_delay+aom_Ex_dur:
+                #         raise Exception('Tau is too short. must be greater than 76ns')
+                #
+                #
+                #     if tau <= (aom_delay+aom_Ex_dur):
+                #         if tau+pi_dur>=(aom_delay+aom_Ex_dur):
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True,
+                #                           name='gate1')  # 160ns Gated counter
+                #             self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                           name='Ex_aom_1')  # 20 ns. AOM for the first pulse
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
+                #                 length_mus=E.round_length_mus_full_sample(pihalf_dur),
+                #                 name='MW_pihalf')  # 13.5ns. First pi/2 pulse
+                #
+                #             self.mcas.asc(length_mus=optical_delay - aom_Ex_dur-pihalf_dur,
+                #                           name='wait_1.1')  # 36ns ns. Delay between first and second AOM_Ex pulses
+                #             self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                           name='Ex_aom_2')  # 20 ns. AOM for the first puls
+                #
+                #             self.mcas.asc(length_mus=tau - (optical_delay+aom_Ex_dur) , name='wait_2')
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(aom_Ex_dur + aom_delay - tau),
+                #                 name='MW_begin')  # 13.5ns. First pi/2 pulse
+                #
+                #             gauss1_begin = pi_dur - (aom_Ex_dur + aom_delay - tau)
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 length_mus=E.round_length_mus_full_sample(gauss1_begin),
+                #                 name='Gauss1_MW')  # First EOM Pulse
+                #             already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #
+                #                 wf_start=already_written_samples,
+                #                 length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss1_begin),  #
+                #                 name='Gauss1_end')
+                #
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - opt_pi_dur),
+                #                           name='wait')  #
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 length_mus=opt_pi_dur,  # 0.04008333333333333 ns Second EOM pulse starts
+                #                 name='Gauss2')
+                #             self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #
+                #
+                #         else:
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True,
+                #                           name='gate1')  # 160ns Gated counter
+                #             self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                           name='Ex_aom_1')  # 20 ns. AOM for the first pulse
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
+                #                 length_mus=E.round_length_mus_full_sample(pihalf_dur),
+                #                 name='MW_pihalf')  # 13.5ns. First pi/2 pulse
+                #
+                #             self.mcas.asc(length_mus=optical_delay - aom_Ex_dur - pihalf_dur,
+                #                           name='wait_1.1')  # 36ns ns. Delay between first and second AOM_Ex pulses
+                #             self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                           name='Ex_aom_2')  # 20 ns. AOM for the first puls
+                #
+                #             self.mcas.asc(length_mus=tau - (optical_delay + aom_Ex_dur), name='wait_2')
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(pi_dur),
+                #                 name='MW_begin')  # 13.5ns. First pi/2 pulse
+                #
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur +aom_delay - (tau+pi_dur)),
+                #                           name='wait_3')
+                #
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 length_mus=E.round_length_mus_full_sample(opt_pi_dur),
+                #                 name='Gauss1')  # First EOM Pulse
+                #
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - opt_pi_dur),
+                #                           name='wait')  #
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 length_mus=opt_pi_dur,  # 0.04008333333333333 ns Second EOM pulse starts
+                #                 name='Gauss2')
+                #
+                #             self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #
+                #     elif aom_delay +aom_Ex_dur + optical_delay <=tau<aom_delay +aom_Ex_dur + optical_delay +opt_pi_dur:
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
+                #         self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                       name='Ex_aom_1')  # 20 ns. AOM for the first pulse
+                #         self.mcas.asc(length_mus=optical_delay - aom_Ex_dur,
+                #                       name='wait_1.1')  # 36ns ns. Delay between first and second AOM_Ex pulses
+                #         self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                       name='Ex_aom_2')  # 20 ns. AOM for the first puls
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.007), name='wait_1')  # 7ns
+                #
+                #         self.mcas.asc(
+                #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
+                #             length_mus=E.round_length_mus_full_sample(pihalf_dur),
+                #             name='MW_pihalf')  # 13.5ns. First pi/2 pulse
+                #
+                #         self.mcas.asc(length_mus=0.0605, name='wait_2')
+                #         self.mcas.asc(
+                #             pd2g2=dict(
+                #                 type='gauss',
+                #                 inv_fwhm=1,
+                #                 amplitudes=[eom_ampl]),
+                #             length_mus=E.round_length_mus_full_sample(opt_pi_dur),
+                #             name='Gauss1')  # First EOM Pulse
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - opt_pi_dur), name='wait_2')
+                #
+                #         gauss2_begin = tau - (aom_Ex_dur+aom_delay+optical_delay)
+                #         self.mcas.asc(
+                #             pd2g2=dict(
+                #                 type='gauss',
+                #                 inv_fwhm=1,
+                #                 amplitudes=[eom_ampl]),
+                #             length_mus=E.round_length_mus_full_sample(gauss2_begin),
+                #             name='Gauss2_begin')  # First EOM Pulse
+                #         already_written_samples = np.around(gauss2_begin * __SAMPLE_FREQUENCY__).astype(int)
+                #
+                #         if tau + pi_dur <= aom_delay +aom_Ex_dur + optical_delay +opt_pi_dur:
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #
+                #                 wf_start=already_written_samples,
+                #                 length_mus=E.round_length_mus_full_sample(pi_dur),  #
+                #                 name='Gauss2_MW')
+                #             already_written_samples+=np.around(pi_dur * __SAMPLE_FREQUENCY__).astype(int)
+                #
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #
+                #                 wf_start=already_written_samples,
+                #                 length_mus=E.round_length_mus_full_sample(opt_pi_dur - (gauss2_begin + pi_dur)),
+                #                 name='Gauss2_end')
+                #
+                #             self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #
+                #         else:
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 wf_start=already_written_samples,
+                #                 length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss2_begin),  #
+                #                 name='Gauss2_MW')
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(pi_dur-(opt_pi_dur - gauss2_begin)),
+                #                 name='MW_end')
+                #
+                #             self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #
+                #     elif tau >= aom_delay + aom_Ex_dur + optical_delay + opt_pi_dur:
+                #         # ---------------
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
+                #         self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                       name='Ex_aom_1')  # 20 ns. AOM for the first pulse
+                #         self.mcas.asc(length_mus=optical_delay - aom_Ex_dur,
+                #                       name='wait_1.1')  # 36ns ns. Delay between first and second AOM_Ex pulses
+                #         self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                       name='Ex_aom_2')  # 20 ns. AOM for the first puls
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.007), name='wait_1')  # 7ns
+                #         self.mcas.asc(
+                #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
+                #             length_mus=E.round_length_mus_full_sample(pihalf_dur),
+                #             name='MW_pihalf')  # 13.5ns. First pi/2 pulse
+                #         self.mcas.asc(length_mus=0.0605, name='wait_2')
+                #         self.mcas.asc(
+                #             pd2g2=dict(
+                #                 type='gauss',
+                #                 inv_fwhm=1,
+                #                 amplitudes=[eom_ampl]),
+                #             length_mus=E.round_length_mus_full_sample(opt_pi_dur),
+                #             name='Gauss1')  # First EOM Pulse
+                #
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - opt_pi_dur), name='wait_2')
+                #
+                #         self.mcas.asc(
+                #             pd2g2=dict(
+                #                 type='gauss',
+                #                 inv_fwhm=1,
+                #                 amplitudes=[eom_ampl]),
+                #             length_mus=E.round_length_mus_full_sample(opt_pi_dur),
+                #             name='Gauss2')  # Second EOM Pulse
+                #
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - ( aom_delay + aom_Ex_dur + optical_delay + opt_pi_dur)), name='wait_2')
+                #
+                #         self.mcas.asc(
+                #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #             length_mus=E.round_length_mus_full_sample(pi_dur),
+                #             name='MW_pi')  # 27ns
+                #
+                #         self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #
+                #     else:
+                #         # !!!!!! THIS PART IS USED
+                #
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
+                #         self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                       name='Ex_aom_1')  # 20 ns. AOM for the first pulse
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - aom_Ex_dur),
+                #                       name='wait_1.1')  # 36ns ns. Delay between first and second AOM_Ex pulses
+                #         self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                       name='Ex_aom_2')  # 20 ns. AOM for the first puls
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.007), name='wait_1')  # 7ns
+                #
+                #         self.mcas.asc(
+                #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
+                #             length_mus=E.round_length_mus_full_sample(pihalf_dur),
+                #             name='MW_pihalf')  # 13.5ns. First pi/2 pulse
+                #
+                #         self.mcas.asc(length_mus=0.0605, name='wait_2')
+                #
+                #         if tau >= aom_delay + aom_Ex_dur and tau + pi_dur <= (aom_delay + aom_Ex_dur + opt_pi_dur):
+                #
+                #             gauss1_begin = tau - (aom_delay + aom_Ex_dur)
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 length_mus=E.round_length_mus_full_sample(gauss1_begin),
+                #                 name='Gauss1_begin')  # First EOM Pulse
+                #             already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #
+                #                 wf_start=already_written_samples,
+                #                 length_mus=E.round_length_mus_full_sample(pi_dur),  #
+                #                 name='Gauss1_MW')
+                #             already_written_samples += np.around(pi_dur * __SAMPLE_FREQUENCY__).astype(int)
+                #
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #
+                #                 wf_start=already_written_samples,
+                #                 length_mus=E.round_length_mus_full_sample(opt_pi_dur - pi_dur - gauss1_begin),  #
+                #                 name='Gauss1_end')
+                #             self.mcas.asc(length_mus=optical_delay - opt_pi_dur,
+                #                           name='wait_3')  # 14.5ns wait before second optical pi pulse
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 length_mus=opt_pi_dur,  # 0.04008333333333333 ns Second EOM pulse starts
+                #                 name='Gauss2')
+                #             self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #
+                #         elif aom_delay + aom_Ex_dur < tau < aom_delay + aom_Ex_dur +opt_pi_dur \
+                #                 and aom_delay + aom_Ex_dur +optical_delay>=tau + pi_dur > (aom_delay + aom_Ex_dur + opt_pi_dur):
+                #             gauss1_begin = tau - (aom_delay + aom_Ex_dur)
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 length_mus=E.round_length_mus_full_sample(gauss1_begin),
+                #                 name='Gauss1_begin')  # First EOM Pulse
+                #             already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #
+                #                 wf_start=already_written_samples,
+                #                 length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss1_begin),  #
+                #                 name='Gauss1_MW')
+                #
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(pi_dur - (opt_pi_dur - gauss1_begin)),  #
+                #                 name='MW_end')
+                #
+                #             self.mcas.asc(length_mus=optical_delay - (opt_pi_dur+pi_dur - (opt_pi_dur - gauss1_begin)),
+                #                           name='wait_3')  # 14.5ns wait before second optical pi pulse
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 length_mus=opt_pi_dur,  # 0.04008333333333333 ns Second EOM pulse starts
+                #                 name='Gauss2')
+                #             self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #
+                #         elif aom_delay + aom_Ex_dur < tau < aom_delay + aom_Ex_dur +opt_pi_dur \
+                #                 and aom_delay + aom_Ex_dur +optical_delay < tau + pi_dur:
+                #             # !!!!!! THIS PART IS USED
+                #
+                #             gauss1_begin = tau - (aom_delay + aom_Ex_dur)
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 length_mus=E.round_length_mus_full_sample(gauss1_begin),
+                #                 name='Gauss1_begin')  # First EOM Pulse
+                #             already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #
+                #                 wf_start=already_written_samples,
+                #                 length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss1_begin),  #
+                #                 name='Gauss1_MW')
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(optical_delay - opt_pi_dur),  #
+                #                 name='MW')
+                #
+                #             gauss2_begin =E.round_length_mus_full_sample(pi_dur - (opt_pi_dur - gauss1_begin + optical_delay - opt_pi_dur))
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 length_mus=gauss2_begin,  # 0.04008333333333333 ns Second EOM pulse starts
+                #                 name='Gauss2_MW')
+                #             already_written_samples = np.around(gauss2_begin * __SAMPLE_FREQUENCY__).astype(int)
+                #
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #
+                #                 wf_start=already_written_samples,
+                #                 length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss2_begin),  #
+                #                 name='Gauss2_end')
+                #
+                #
+                #
+                #             if 'tau_bell' in self.kwargs.keys():
+                #                 self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.075917),
+                #                               name='wait_before_MW')  # 100ns
+                #                 tau_bell = self.kwargs['tau_bell']
+                #                 self.mcas.asc(
+                #                     pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
+                #                     length_mus=E.round_length_mus_full_sample(tau_bell),
+                #                     name='tau bell')  # 13.5ns. First pi/2 pulse
+                #
+                #
+                #
+                #
+                #
+                #             self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #
+                #         elif aom_delay + aom_Ex_dur + optical_delay > tau > aom_delay + aom_Ex_dur + opt_pi_dur :
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 length_mus=E.round_length_mus_full_sample(opt_pi_dur),
+                #                 name='Gauss1_begin')  # First EOM Pulse
+                #
+                #             self.mcas.asc(length_mus=tau - (aom_delay + aom_Ex_dur + opt_pi_dur),
+                #                           name='wait_3')  # 14.5ns wait before second optical pi pulse
+                #
+                #             # pd2g1 = dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(aom_delay + aom_Ex_dur + optical_delay - tau),  #
+                #                 name='MW_end')
+                #
+                #             gauss2_begin = pi_dur - (aom_delay + aom_Ex_dur + optical_delay - tau)
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 length_mus=gauss2_begin,  # 0.04008333333333333 ns Second EOM pulse starts
+                #                 name='Gauss2_MW')
+                #             already_written_samples = np.around(gauss2_begin * __SAMPLE_FREQUENCY__).astype(int)
+                #
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #
+                #                 wf_start=already_written_samples,
+                #                 length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss2_begin),  #
+                #                 name='Gauss')
+                #
+                #             self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                # elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == '2_opt_mw_delays_calibration':
+                #
+                #
+                #     mw_amplitude = self.kwargs['mw_amplitude']
+                #     if 'mw_pihalf_ampl' in self.kwargs.keys():
+                #         mw_pihalf_ampl = self.kwargs['mw_pihalf_ampl']
+                #     else:
+                #         mw_pihalf_ampl = mw_amplitude
+                #
+                #     optical_delay = self.kwargs['optical_delay'] #56ns (was 125ns) delay between optical pulses aka interferometer length
+                #
+                #     pi_dur = self.kwargs['pi_dur']
+                #     mw_freq = self.frequencies[0]
+                #     tau = self.kwargs['tau']
+                #     pihalf_dur =self.kwargs['pihalf_dur']
+                #     eom_ampl = self.kwargs['eom_ampl']
+                #     aom_Ex_dur = 0.009#0.02
+                #     aom_delay = 0.151#0.137
+                #     opt_pi_dur = 1201 * 1. / __SAMPLE_FREQUENCY__
+                #     # tau determines the start of the MW pulse relative to start of the aom pulse
+                #     # if aom_delay +aom_Ex_dur + optical_delay <tau < (aom_delay+aom_Ex_dur):
+                #
+                #     if tau< optical_delay+aom_Ex_dur:
+                #         raise Exception('Tau is too short. must be greater than 76ns')
+                #
+                #
+                #     if tau <= (aom_delay+aom_Ex_dur):
+                #
+                #         if tau+pi_dur>=(aom_delay+aom_Ex_dur):
+                #             print(1)
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True,
+                #                           name='gate1')  # 160ns Gated counter
+                #             self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                           name='Ex_aom_1')  # 5 ns. AOM for the first pulse
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
+                #                 length_mus=E.round_length_mus_full_sample(pihalf_dur),
+                #                 name='MW_pihalf')  # 13.5ns. First pi/2 pulse
+                #
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - aom_Ex_dur-pihalf_dur),
+                #                           name='wait_1.1')  # 37.3ns ns. Delay between first and second AOM_Ex pulses
+                #             self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                           name='Ex_aom_2')  # 5 ns. AOM for the first puls
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - (optical_delay+aom_Ex_dur)),
+                #                           name='wait_2')
+                #
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(aom_Ex_dur + aom_delay - tau),
+                #                 name='MW_begin')  #
+                #
+                #             gauss1_begin = pi_dur - (aom_Ex_dur + aom_delay - tau)
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 pd2g2=dict(
+                #                     type='gauss_2_pulses',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 length_mus=E.round_length_mus_full_sample(gauss1_begin),
+                #                 name='Gauss1_MW')  # First EOM Pulse
+                #             already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss_2_pulses',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #
+                #                 wf_start=already_written_samples,
+                #                 length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss1_begin),  #
+                #                 name='Gauss1_end')
+                #
+                #
+                #             self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #
+                #
+                #         else:
+                #             print(2)
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True,
+                #                           name='gate1')  # 160ns Gated counter
+                #             self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                           name='Ex_aom_1')  # 5 ns. AOM for the first pulse
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
+                #                 length_mus=E.round_length_mus_full_sample(pihalf_dur),
+                #                 name='MW_pihalf')  # 13.5ns. First pi/2 pulse
+                #
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - aom_Ex_dur - pihalf_dur),
+                #                           name='wait_1.1')  # 37.3 ns. Delay between first and second AOM_Ex pulses
+                #             self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                           name='Ex_aom_2')  # 5 ns. AOM for the first puls
+                #
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - (optical_delay + aom_Ex_dur)),
+                #                           name='wait_2')
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(pi_dur),
+                #                 name='MW_pi')  # 13.5ns. First pi/2 pulse
+                #
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_Ex_dur +aom_delay - (tau+pi_dur)),
+                #                           name='wait_3')
+                #
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss_2_pulses',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 length_mus=E.round_length_mus_full_sample(opt_pi_dur),
+                #                 name='Gauss1')  # First EOM Pulse
+                #
+                #             self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #
+                #     elif (aom_delay+aom_Ex_dur + opt_pi_dur) > tau > (aom_delay+aom_Ex_dur): #0.155 to 0.255083333
+                #         if tau + pi_dur < (aom_delay + aom_Ex_dur + opt_pi_dur): # tau <0.2280833333
+                #             # THIS CASE IS USED
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True,
+                #                           name='gate1')  # 160ns Gated counter
+                #             self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                           name='Ex_aom_1')  # 5 ns. AOM for the first pulse
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
+                #                 length_mus=E.round_length_mus_full_sample(pihalf_dur),
+                #                 name='MW_pihalf')  # 13.5ns. First pi/2 pulse
+                #
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - aom_Ex_dur - pihalf_dur),
+                #                           name='wait_1.1')  # 37.3ns ns. Delay between first and second AOM_Ex pulses
+                #             self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                           name='Ex_aom_2')  # 5 ns. AOM for the first puls
+                #
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_delay - optical_delay),
+                #                      name='aom_delay_wait')
+                #
+                #
+                #             gauss1_begin = tau - (aom_delay+aom_Ex_dur)
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss_2_pulses',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 length_mus=E.round_length_mus_full_sample(gauss1_begin),
+                #                 name='2Gauss')  # First EOM Pulse
+                #             already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
+                #
+                #
+                #             self.mcas.asc(
+                #
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 pd2g2=dict(
+                #                     type='gauss_2_pulses',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #
+                #                 wf_start=already_written_samples,
+                #                 length_mus=E.round_length_mus_full_sample(pi_dur),  #
+                #                 name='2Gauss_MW')
+                #             already_written_samples2 = np.around(pi_dur * __SAMPLE_FREQUENCY__).astype(int)
+                #
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss_2_pulses',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #
+                #                 wf_start=already_written_samples2+already_written_samples,
+                #                 length_mus=E.round_length_mus_full_sample(opt_pi_dur - (gauss1_begin + pi_dur)),  #
+                #                 name='2Gauss_end')
+                #
+                #             self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #
+                #         else:
+                #             print(4)
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True,
+                #                           name='gate1')  # 160ns Gated counter
+                #             self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                           name='Ex_aom_1')  # 5 ns. AOM for the first pulse
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
+                #                 length_mus=E.round_length_mus_full_sample(pihalf_dur),
+                #                 name='MW_pihalf')  # 13.5ns. First pi/2 pulse
+                #
+                #             # print(optical_delay)
+                #             # print(aom_Ex_dur)
+                #             # print(pihalf_dur)
+                #
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - aom_Ex_dur - pihalf_dur),
+                #                           name='wait_1.1')  # 37.3ns ns. Delay between first and second AOM_Ex pulses
+                #             self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                           name='Ex_aom_2')  # 5 ns. AOM for the first puls
+                #
+                #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_delay - optical_delay),
+                #                      name='aom_delay_wait')
+                #
+                #
+                #             gauss1_begin = tau - (aom_delay+aom_Ex_dur)
+                #             self.mcas.asc(
+                #                 pd2g2=dict(
+                #                     type='gauss_2_pulses',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #                 length_mus=E.round_length_mus_full_sample(gauss1_begin),
+                #                 name='2Gauss')  # First EOM Pulse
+                #             already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
+                #
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 pd2g2=dict(
+                #                     type='gauss_2_pulses',
+                #                     inv_fwhm=1,
+                #                     amplitudes=[eom_ampl]),
+                #
+                #                 wf_start=already_written_samples,
+                #                 length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss1_begin),  #
+                #                 name='2Gauss_MW')
+                #
+                #
+                #             self.mcas.asc(
+                #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #                 length_mus=E.round_length_mus_full_sample(pi_dur - (opt_pi_dur - gauss1_begin)),  #
+                #                 name='MW_end')
+                #
+                #             self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #             self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #
+                #
+                #
+                #
+                #     elif (aom_delay+aom_Ex_dur + opt_pi_dur) <= tau:
+                #
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True,
+                #                       name='gate1')  # 160ns Gated counter
+                #         self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                       name='Ex_aom_1')  # 5 ns. AOM for the first pulse
+                #
+                #         self.mcas.asc(
+                #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
+                #             length_mus=E.round_length_mus_full_sample(pihalf_dur),
+                #             name='MW_pihalf')  # 13.5ns. First pi/2 pulse
+                #
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - aom_Ex_dur - pihalf_dur),
+                #                       name='wait_1.1')  # 37.3ns ns. Delay between first and second AOM_Ex pulses
+                #         self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #                       name='Ex_aom_2')  # 5 ns. AOM for the first puls
+                #
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(aom_delay - optical_delay),
+                #                       name='aom_delay_wait')
+                #
+                #         self.mcas.asc(
+                #             pd2g2=dict(
+                #                 type='gauss_2_pulses',
+                #                 inv_fwhm=1,
+                #                 amplitudes=[eom_ampl]),
+                #             length_mus=E.round_length_mus_full_sample(opt_pi_dur),
+                #             name='2Gauss')  # First EOM Pulse
+                #
+                #         self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - (aom_Ex_dur+aom_delay+opt_pi_dur)),
+                #                       name='wait before MW')
+                #
+                #         self.mcas.asc(
+                #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #             length_mus=E.round_length_mus_full_sample(pi_dur),
+                #             name='MW_pi')  # 13.5ns. First pi/2 pulse
+                #
+                #         self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #
+                #
+                #
+                #
+                #
+                #     else:
+                #         raise('smth is wrong tau is {}'.format(tau))
+                #     # elif aom_delay +aom_Ex_dur + optical_delay <= tau <aom_delay +aom_Ex_dur + optical_delay +opt_pi_dur:
+                #     #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
+                #     #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #     #                   name='Ex_aom_1')  # 20 ns. AOM for the first pulse
+                #     #     self.mcas.asc(length_mus=optical_delay - aom_Ex_dur,
+                #     #                   name='wait_1.1')  # 36ns ns. Delay between first and second AOM_Ex pulses
+                #     #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #     #                   name='Ex_aom_2')  # 20 ns. AOM for the first puls
+                #     #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.007), name='wait_1')  # 7ns
+                #     #
+                #     #     self.mcas.asc(
+                #     #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
+                #     #         length_mus=E.round_length_mus_full_sample(pihalf_dur),
+                #     #         name='MW_pihalf')  # 13.5ns. First pi/2 pulse
+                #     #
+                #     #     self.mcas.asc(length_mus=0.0605, name='wait_2')
+                #     #     self.mcas.asc(
+                #     #         pd2g2=dict(
+                #     #             type='gauss',
+                #     #             inv_fwhm=1,
+                #     #             amplitudes=[eom_ampl]),
+                #     #         length_mus=E.round_length_mus_full_sample(opt_pi_dur),
+                #     #         name='Gauss1')  # First EOM Pulse
+                #     #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - opt_pi_dur), name='wait_2')
+                #     #
+                #     #     gauss2_begin = tau - (aom_Ex_dur+aom_delay+optical_delay)
+                #     #     self.mcas.asc(
+                #     #         pd2g2=dict(
+                #     #             type='gauss',
+                #     #             inv_fwhm=1,
+                #     #             amplitudes=[eom_ampl]),
+                #     #         length_mus=E.round_length_mus_full_sample(gauss2_begin),
+                #     #         name='Gauss2_begin')  # First EOM Pulse
+                #     #     already_written_samples = np.around(gauss2_begin * __SAMPLE_FREQUENCY__).astype(int)
+                #     #
+                #     #     if tau + pi_dur <= aom_delay +aom_Ex_dur + optical_delay +opt_pi_dur:
+                #     #         self.mcas.asc(
+                #     #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #
+                #     #             wf_start=already_written_samples,
+                #     #             length_mus=E.round_length_mus_full_sample(pi_dur),  #
+                #     #             name='Gauss2_MW')
+                #     #         already_written_samples+=np.around(pi_dur * __SAMPLE_FREQUENCY__).astype(int)
+                #     #
+                #     #         self.mcas.asc(
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #
+                #     #             wf_start=already_written_samples,
+                #     #             length_mus=E.round_length_mus_full_sample(opt_pi_dur - (gauss2_begin + pi_dur)),
+                #     #             name='Gauss2_end')
+                #     #
+                #     #         self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #     #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #     #
+                #     #     else:
+                #     #         self.mcas.asc(
+                #     #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #             wf_start=already_written_samples,
+                #     #             length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss2_begin),  #
+                #     #             name='Gauss2_MW')
+                #     #
+                #     #         self.mcas.asc(
+                #     #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #     #             length_mus=E.round_length_mus_full_sample(pi_dur-(opt_pi_dur - gauss2_begin)),
+                #     #             name='MW_end')
+                #     #
+                #     #         self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #     #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #     #
+                #     # elif tau >= aom_delay + aom_Ex_dur + optical_delay + opt_pi_dur:
+                #     #     # ---------------
+                #     #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
+                #     #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #     #                   name='Ex_aom_1')  # 20 ns. AOM for the first pulse
+                #     #     self.mcas.asc(length_mus=optical_delay - aom_Ex_dur,
+                #     #                   name='wait_1.1')  # 36ns ns. Delay between first and second AOM_Ex pulses
+                #     #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #     #                   name='Ex_aom_2')  # 20 ns. AOM for the first puls
+                #     #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.007), name='wait_1')  # 7ns
+                #     #     self.mcas.asc(
+                #     #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
+                #     #         length_mus=E.round_length_mus_full_sample(pihalf_dur),
+                #     #         name='MW_pihalf')  # 13.5ns. First pi/2 pulse
+                #     #     self.mcas.asc(length_mus=0.0605, name='wait_2')
+                #     #     self.mcas.asc(
+                #     #         pd2g2=dict(
+                #     #             type='gauss',
+                #     #             inv_fwhm=1,
+                #     #             amplitudes=[eom_ampl]),
+                #     #         length_mus=E.round_length_mus_full_sample(opt_pi_dur),
+                #     #         name='Gauss1')  # First EOM Pulse
+                #     #
+                #     #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - opt_pi_dur), name='wait_2')
+                #     #
+                #     #     self.mcas.asc(
+                #     #         pd2g2=dict(
+                #     #             type='gauss',
+                #     #             inv_fwhm=1,
+                #     #             amplitudes=[eom_ampl]),
+                #     #         length_mus=E.round_length_mus_full_sample(opt_pi_dur),
+                #     #         name='Gauss2')  # Second EOM Pulse
+                #     #
+                #     #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(tau - ( aom_delay + aom_Ex_dur + optical_delay + opt_pi_dur)), name='wait_2')
+                #     #
+                #     #     self.mcas.asc(
+                #     #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #     #         length_mus=E.round_length_mus_full_sample(pi_dur),
+                #     #         name='MW_pi')  # 27ns
+                #     #
+                #     #     self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #     #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #     #
+                #     # else:
+                #     #     # !!!!!! THIS PART IS USED
+                #     #
+                #     #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
+                #     #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #     #                   name='Ex_aom_1')  # 20 ns. AOM for the first pulse
+                #     #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(optical_delay - aom_Ex_dur),
+                #     #                   name='wait_1.1')  # 36ns ns. Delay between first and second AOM_Ex pulses
+                #     #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
+                #     #                   name='Ex_aom_2')  # 20 ns. AOM for the first puls
+                #     #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.007), name='wait_1')  # 7ns
+                #     #
+                #     #     self.mcas.asc(
+                #     #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
+                #     #         length_mus=E.round_length_mus_full_sample(pihalf_dur),
+                #     #         name='MW_pihalf')  # 13.5ns. First pi/2 pulse
+                #     #
+                #     #     self.mcas.asc(length_mus=0.0605, name='wait_2')
+                #     #
+                #     #     if tau >= aom_delay + aom_Ex_dur and tau + pi_dur <= (aom_delay + aom_Ex_dur + opt_pi_dur):
+                #     #
+                #     #         gauss1_begin = tau - (aom_delay + aom_Ex_dur)
+                #     #         self.mcas.asc(
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #             length_mus=E.round_length_mus_full_sample(gauss1_begin),
+                #     #             name='Gauss1_begin')  # First EOM Pulse
+                #     #         already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
+                #     #
+                #     #         self.mcas.asc(
+                #     #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #
+                #     #             wf_start=already_written_samples,
+                #     #             length_mus=E.round_length_mus_full_sample(pi_dur),  #
+                #     #             name='Gauss1_MW')
+                #     #         already_written_samples += np.around(pi_dur * __SAMPLE_FREQUENCY__).astype(int)
+                #     #
+                #     #         self.mcas.asc(
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #
+                #     #             wf_start=already_written_samples,
+                #     #             length_mus=E.round_length_mus_full_sample(opt_pi_dur - pi_dur - gauss1_begin),  #
+                #     #             name='Gauss1_end')
+                #     #         self.mcas.asc(length_mus=optical_delay - opt_pi_dur,
+                #     #                       name='wait_3')  # 14.5ns wait before second optical pi pulse
+                #     #         self.mcas.asc(
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #             length_mus=opt_pi_dur,  # 0.04008333333333333 ns Second EOM pulse starts
+                #     #             name='Gauss2')
+                #     #         self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #     #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #     #
+                #     #     elif aom_delay + aom_Ex_dur < tau < aom_delay + aom_Ex_dur +opt_pi_dur \
+                #     #             and aom_delay + aom_Ex_dur +optical_delay>=tau + pi_dur > (aom_delay + aom_Ex_dur + opt_pi_dur):
+                #     #         gauss1_begin = tau - (aom_delay + aom_Ex_dur)
+                #     #         self.mcas.asc(
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #             length_mus=E.round_length_mus_full_sample(gauss1_begin),
+                #     #             name='Gauss1_begin')  # First EOM Pulse
+                #     #         already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
+                #     #
+                #     #         self.mcas.asc(
+                #     #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #
+                #     #             wf_start=already_written_samples,
+                #     #             length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss1_begin),  #
+                #     #             name='Gauss1_MW')
+                #     #
+                #     #
+                #     #         self.mcas.asc(
+                #     #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #     #             length_mus=E.round_length_mus_full_sample(pi_dur - (opt_pi_dur - gauss1_begin)),  #
+                #     #             name='MW_end')
+                #     #
+                #     #         self.mcas.asc(length_mus=optical_delay - (opt_pi_dur+pi_dur - (opt_pi_dur - gauss1_begin)),
+                #     #                       name='wait_3')  # 14.5ns wait before second optical pi pulse
+                #     #         self.mcas.asc(
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #             length_mus=opt_pi_dur,  # 0.04008333333333333 ns Second EOM pulse starts
+                #     #             name='Gauss2')
+                #     #         self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #     #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #     #
+                #     #     elif aom_delay + aom_Ex_dur < tau < aom_delay + aom_Ex_dur +opt_pi_dur \
+                #     #             and aom_delay + aom_Ex_dur +optical_delay < tau + pi_dur:
+                #     #         # !!!!!! THIS PART IS USED
+                #     #
+                #     #         gauss1_begin = tau - (aom_delay + aom_Ex_dur)
+                #     #         self.mcas.asc(
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #             length_mus=E.round_length_mus_full_sample(gauss1_begin),
+                #     #             name='Gauss1_begin')  # First EOM Pulse
+                #     #         already_written_samples = np.around(gauss1_begin * __SAMPLE_FREQUENCY__).astype(int)
+                #     #
+                #     #         self.mcas.asc(
+                #     #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #
+                #     #             wf_start=already_written_samples,
+                #     #             length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss1_begin),  #
+                #     #             name='Gauss1_MW')
+                #     #
+                #     #         self.mcas.asc(
+                #     #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #     #             length_mus=E.round_length_mus_full_sample(optical_delay - opt_pi_dur),  #
+                #     #             name='MW')
+                #     #
+                #     #         gauss2_begin =E.round_length_mus_full_sample(pi_dur - (opt_pi_dur - gauss1_begin + optical_delay - opt_pi_dur))
+                #     #         self.mcas.asc(
+                #     #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #             length_mus=gauss2_begin,  # 0.04008333333333333 ns Second EOM pulse starts
+                #     #             name='Gauss2_MW')
+                #     #         already_written_samples = np.around(gauss2_begin * __SAMPLE_FREQUENCY__).astype(int)
+                #     #
+                #     #         self.mcas.asc(
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #
+                #     #             wf_start=already_written_samples,
+                #     #             length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss2_begin),  #
+                #     #             name='Gauss2_end')
+                #     #
+                #     #
+                #     #
+                #     #         if 'tau_bell' in self.kwargs.keys():
+                #     #             self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.075917),
+                #     #                           name='wait_before_MW')  # 100ns
+                #     #             tau_bell = self.kwargs['tau_bell']
+                #     #             self.mcas.asc(
+                #     #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_pihalf_ampl]),
+                #     #                 length_mus=E.round_length_mus_full_sample(tau_bell),
+                #     #                 name='tau bell')  # 13.5ns. First pi/2 pulse
+                #     #
+                #     #
+                #     #
+                #     #
+                #     #
+                #     #         self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #     #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                #     #
+                #     #     elif aom_delay + aom_Ex_dur + optical_delay > tau > aom_delay + aom_Ex_dur + opt_pi_dur :
+                #     #         self.mcas.asc(
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #             length_mus=E.round_length_mus_full_sample(opt_pi_dur),
+                #     #             name='Gauss1_begin')  # First EOM Pulse
+                #     #
+                #     #         self.mcas.asc(length_mus=tau - (aom_delay + aom_Ex_dur + opt_pi_dur),
+                #     #                       name='wait_3')  # 14.5ns wait before second optical pi pulse
+                #     #
+                #     #         # pd2g1 = dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #     #
+                #     #
+                #     #         self.mcas.asc(
+                #     #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #     #             length_mus=E.round_length_mus_full_sample(aom_delay + aom_Ex_dur + optical_delay - tau),  #
+                #     #             name='MW_end')
+                #     #
+                #     #         gauss2_begin = pi_dur - (aom_delay + aom_Ex_dur + optical_delay - tau)
+                #     #         self.mcas.asc(
+                #     #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #             length_mus=gauss2_begin,  # 0.04008333333333333 ns Second EOM pulse starts
+                #     #             name='Gauss2_MW')
+                #     #         already_written_samples = np.around(gauss2_begin * __SAMPLE_FREQUENCY__).astype(int)
+                #     #
+                #     #         self.mcas.asc(
+                #     #             pd2g2=dict(
+                #     #                 type='gauss',
+                #     #                 inv_fwhm=1,
+                #     #                 amplitudes=[eom_ampl]),
+                #     #
+                #     #             wf_start=already_written_samples,
+                #     #             length_mus=E.round_length_mus_full_sample(opt_pi_dur - gauss2_begin),  #
+                #     #             name='Gauss')
+                #     #
+                #     #         self.mcas.asc(length_mus=self.laser_dur, name='wait_before_memory')  # 100ns
+                #     #         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')  # 160ns
+                # elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == '2opt_withMW_pi':
+                #     pi_dur = self.kwargs['pi_dur']
+                #     mw_amplitude = self.kwargs['mw_amplitude']
+                #     mw_freq = self.frequencies[0]
+                #     mw_delay = self.kwargs['mw_delay']#delay betweenn first optical pulse and MW pulse (measured from aom_Ex open)
+                #     optical_delay = self.kwargs['optical_delay'] #delay between optical pulses aka interferometer length
+                #     aom_Ex_dur = 0.015#0.02
+                #     aom_delay = 0.155#0.137
+                #     opt_pi_dur = 481 * 1. / __SAMPLE_FREQUENCY__
+                #
+                #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_1')
+                #     self.mcas.asc(length_mus=optical_delay - aom_Ex_dur, name='wait_1')
+                #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_2')
+                #     self.mcas.asc(length_mus=aom_delay-aom_Ex_dur-(optical_delay - aom_Ex_dur), name='wait_2')
+                #
+                #
+                #     self.mcas.asc(
+                #         pd2g2=dict(
+                #             type='gauss',
+                #             inv_fwhm=1,
+                #             amplitudes=[self.kwargs['eom_ampl']]),
+                #         length_mus=E.round_length_mus_full_sample(mw_delay-aom_Ex_dur-aom_delay),
+                #         name='Gauss1')
+                #
+                #     already_written_samples = np.around((mw_delay-aom_Ex_dur-aom_delay) * __SAMPLE_FREQUENCY__).astype(int)
+                #     remaining_optical = opt_pi_dur - (mw_delay-aom_Ex_dur-aom_delay)
+                #     self.mcas.asc(
+                #         pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
+                #         wf_start=already_written_samples,
+                #
+                #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #         length_mus=remaining_optical,
+                #         name='Gauss1_MW')
+                #
+                #     self.mcas.asc(
+                #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #         length_mus=E.round_length_mus_full_sample(pi_dur - remaining_optical),
+                #         name='MW_pi_residual')
+                #
+                #     self.mcas.asc(length_mus=optical_delay+aom_Ex_dur+aom_delay-(mw_delay+pi_dur), name='wait_3')
+                #     self.mcas.asc(
+                #         pd2g2=dict(
+                #             type='gauss',
+                #             inv_fwhm=1,
+                #             amplitudes=[self.kwargs['eom_ampl']]),
+                #         length_mus=481 * 1. / __SAMPLE_FREQUENCY__,
+                #         name='Gauss2')
+                #
+                #     self.mcas.asc(length_mus=self.laser_dur,name='wait_4')
+                #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory')
                 # elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'entanglement_for_tests':
-                #
                 #
                 #     eom_ampl = self.kwargs['eom_ampl']
                 #
@@ -2882,19 +2707,23 @@ class SSR(object):
                 #     remaining_optical = opt_pi_dur - (gauss1_begin) # 0.025583333333333333 ns
                 #     remaining_mw_dur = pi_dur - remaining_optical
                 #     wait2 = hahn_echo_tau-gauss1_begin # 60.5ns
-                #     wait1 = aom_delay-optical_delay-wait2-pihalf_dur # 0.007000000000000018 ns delay between second aom_Ex and MW pi/2
-                #     wait3 = gauss1_begin #14.5ns
+                #
+                #     wait1 = 0.007 # 0.007000000000000018 ns delay between second aom_Ex and MW pi/2
+                #     wait2 = aom_delay - (optical_delay-aom_Ex_dur) - aom_Ex_dur - wait1 - pihalf_dur
+                #
+                #
+                #     # wait3 = gauss1_begin #14.5ns
                 #     wait4 = hahn_echo_tau-gauss1_begin-opt_pi_dur #0.020416666666666666
                 #
                 #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
                 #
                 #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_1')  #20 ns. AOM for the first pulse
                 #
-                #     self.mcas.asc(length_mus=optical_delay-aom_Ex_dur, name='wait_1.1')# 56ns ns. Delay between first and second AOM_Ex pulses
+                #     self.mcas.asc(length_mus=optical_delay-aom_Ex_dur, name='wait_1.1')# 36ns ns. Delay between first and second AOM_Ex pulses
                 #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True,
                 #                   name='Ex_aom_2')  # 20 ns. AOM for the first puls
                 #
-                #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(wait1), name='wait_1') #7ns
+                #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(0.007), name='wait_1') #7ns
                 #
                 #
                 #     self.mcas.asc(
@@ -2902,30 +2731,18 @@ class SSR(object):
                 #         length_mus=E.round_length_mus_full_sample(pihalf_dur),
                 #         name='MW_pihalf')#13.5ns. First pi/2 pulse
                 #
-                #     self.mcas.asc(length_mus=wait2, name='wait_2')
+                #     self.mcas.asc(length_mus=0.0605, name='wait_2')
                 #
                 #     self.mcas.asc(
                 #         pd2g2=dict(
                 #             type='gauss',
                 #             inv_fwhm=1,
                 #             amplitudes=[eom_ampl]),
-                #         length_mus=E.round_length_mus_full_sample(gauss1_begin),
-                #         name='Gauss1_begin') #14.5 ns. First EOM Pulse
+                #         length_mus=E.round_length_mus_full_sample(opt_pi_dur),
+                #         name='Gauss1') #14.5 ns. First EOM Pulse
                 #
-                #     already_written_samples = np.around((gauss1_begin) * __SAMPLE_FREQUENCY__).astype(int) # 174samples
-                #     self.mcas.asc(
-                #         pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[eom_ampl]),
-                #         wf_start=already_written_samples,
-                #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[0.0]),
-                #         length_mus=remaining_optical, #0.025583333333333333 ns. MW pi starts, first optical pi finishes
-                #         name='Gauss1_end_MW')
                 #
-                #     self.mcas.asc(
-                #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[0.0]),
-                #         length_mus=E.round_length_mus_full_sample(remaining_mw_dur), # 00.0014166666666666668 MW pi ends
-                #         name='remaining_mw')
-                #
-                #     self.mcas.asc(length_mus=wait3, name='wait_3') #14.5ns wait before second optical pi pulse
+                #     self.mcas.asc(length_mus=optical_delay - opt_pi_dur, name='wait_3') #14.5ns wait before second optical pi pulse
                 #
                 #
                 #     self.mcas.asc(
@@ -2933,12 +2750,25 @@ class SSR(object):
                 #             type='gauss',
                 #             inv_fwhm=1,
                 #             amplitudes=[eom_ampl]),
+                #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
                 #
-                #         length_mus=opt_pi_dur, # 0.04008333333333333 ns Second EOM pulse starts
-                #         name='Gauss2')
+                #         length_mus=pi_dur, # 0.04008333333333333 ns Second EOM pulse starts
+                #         name='Gauss2_MW')
+                #
+                #     already_written_samples = np.around(pi_dur * __SAMPLE_FREQUENCY__).astype(int)
+                #
+                #     self.mcas.asc(
+                #         pd2g2=dict(
+                #             type='gauss',
+                #             inv_fwhm=1,
+                #             amplitudes=[eom_ampl]),
+                #
+                #         wf_start = already_written_samples,
+                #         length_mus=opt_pi_dur-pi_dur, # 0.013083333333333332 ns Second EOM pulse starts
+                #         name='Gauss2end')
                 #
                 #
-                #     self.mcas.asc(length_mus=wait4, name='wait4')#111.91666666666664 ns
+                #     self.mcas.asc(length_mus= 0.1165 - (opt_pi_dur-pi_dur), name='wait4')#111.91666666666664 ns
                 #
                 #     if 'tau_bell' in self.kwargs.keys():
                 #         self.mcas.asc(
@@ -2950,257 +2780,9 @@ class SSR(object):
                 #
                 #     self.mcas.asc(length_mus=self.laser_dur,name='wait_before_memory') #100ns
                 #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory') #160ns
-
-
-
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'entanglement':
-                    pihalf_dur =self.kwargs['pihalf_dur'] #0.0135
-                    hahn_echo_tau = 0.075 # self.kwargs['hahn_echo_tau'] #373ns
-
-                    pi_dur = self.kwargs['pi_dur'] #0.027
-                    mw_amplitude = self.kwargs['mw_amplitude']
-                    mw_freq = self.frequencies[0]
-                    mw_delay = self.kwargs['mw_delay']#190ns (was 180ns) delay betweenn first optical pulse and MW pulse (measured from aom_Ex open)
-                    optical_delay = self.kwargs['optical_delay'] #56ns (was 125ns) delay between optical pulses aka interferometer length
-
-                    aom_Ex_dur = 0.02#0.02
-                    aom_delay = 0.137#0.137
-                    opt_pi_dur = 481 * 1. / __SAMPLE_FREQUENCY__
-                    gauss1_begin = (optical_delay - pi_dur) / 2 #14.5ns - time between first opt pi begin and mw pi begin
-                    remaining_optical = opt_pi_dur - (gauss1_begin) # 0.025583333333333333 ns
-                    remaining_mw_dur = pi_dur - remaining_optical
-                    wait2 = hahn_echo_tau-gauss1_begin # 60.5ns
-                    wait1 = aom_delay-optical_delay-wait2-pihalf_dur # 0.007000000000000018 ns delay between second aom_Ex and MW pi/2
-                    wait3 = gauss1_begin #14.5ns
-                    wait4 = hahn_echo_tau-gauss1_begin-opt_pi_dur #0.020416666666666666
-
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
-                    self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_1')  #20 ns. AOM for the first pulse
-                    self.mcas.asc(length_mus=optical_delay-aom_Ex_dur, name='wait_1.1')# 56ns ns. Delay between first and second AOM_Ex pulses
-                    self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_2')  #20 ns. AOM for the first puls
-
-                    self.mcas.asc(length_mus=E.round_length_mus_full_sample(wait1), name='wait_1') #7ns
-
-
-                    self.mcas.asc(
-                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                        length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                        name='MW_pihalf')#13.5ns. First pi/2 pulse
-
-                    self.mcas.asc(length_mus=wait2, name='wait_2')
-
-
-
-
-                    self.mcas.asc(
-                        pd2g2=dict(
-                            type='gauss',
-                            inv_fwhm=1,
-                            amplitudes=[self.kwargs['eom_ampl']]),
-                        length_mus=E.round_length_mus_full_sample(gauss1_begin),
-                        name='Gauss1_begin') #14.5 ns. First EOM Pulse
-
-                    already_written_samples = np.around((gauss1_begin) * __SAMPLE_FREQUENCY__).astype(int) # 174samples
-                    self.mcas.asc(
-                        pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
-                        wf_start=already_written_samples,
-                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                        length_mus=remaining_optical, #0.025583333333333333 ns. MW pi starts, first optical pi finishes
-                        name='Gauss1_end_MW')
-
-                    self.mcas.asc(
-                        pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                        length_mus=E.round_length_mus_full_sample(remaining_mw_dur), # 00.0014166666666666668 MW pi ends
-                        name='remaining_mw')
-
-                    self.mcas.asc(length_mus=wait3, name='wait_3') #14.5ns wait before second optical pi pulse
-
-
-                    self.mcas.asc(
-                        pd2g2=dict(
-                            type='gauss',
-                            inv_fwhm=1,
-                            amplitudes=[self.kwargs['eom_ampl']]),
-
-                        length_mus=opt_pi_dur, # 0.04008333333333333 ns Second EOM pulse starts
-                        name='Gauss2')
-
-
-                    self.mcas.asc(length_mus=wait4, name='wait4')#111.91666666666664 ns
-
-                    if 'readout_state' in self.kwargs.keys():
-                        if self.kwargs['readout_state']:
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(3*pihalf_dur),
-                                name='_MW_3pihalf_2')  # 43.5ns. Second pi/2 pulse
-                        else:
-                            self.mcas.asc(
-                                pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                                length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                                name='_MW_pihalf_2')  # 14.5ns. Second pi/2 pulse
-
-                    else:
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                            name='MW_pihalf_2')  # 14.5ns. Second pi/2 pulse
-
-                    self.mcas.asc(length_mus=self.laser_dur,name='wait_before_memory') #100ns
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory') #160ns
-
-
-
-                    # pihalf_dur =self.kwargs['pihalf_dur'] #0.0135
-                    # hahn_echo_tau = 0.148 # self.kwargs['hahn_echo_tau'] #373ns
-                    #
-                    # pi_dur = self.kwargs['pi_dur'] #0.027
-                    # mw_amplitude = self.kwargs['mw_amplitude']
-                    # mw_freq = self.frequencies[0]
-                    # mw_delay = self.kwargs['mw_delay']#190ns (was 180ns) delay betweenn first optical pulse and MW pulse (measured from aom_Ex open)
-                    # optical_delay = self.kwargs['optical_delay'] #56ns (was 125ns) delay between optical pulses aka interferometer length
-                    #
-                    # aom_Ex_dur = 0.015#0.02
-                    # aom_delay = 0.155#0.137
-                    # opt_pi_dur = 481 * 1. / __SAMPLE_FREQUENCY__
-                    #
-                    # self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
-                    # self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_1') #15 ns. AOM for the first pulse
-                    #
-                    #
-                    #
-                    #
-                    # #wait1_2 = hahn echo delay - Gauss1_begin - wait2 - Ex_aom_2 ##Names of blocks below
-                    # wait1_2 = hahn_echo_tau-(E.round_length_mus_full_sample(mw_delay-aom_Ex_dur-aom_delay))-(aom_delay-(optical_delay - aom_Ex_dur)-aom_Ex_dur)-aom_Ex_dur
-                    # # wait1_1 = delay_between_two_aoms - wait1_2 -pihalf_dur
-                    # wait1_1 = (optical_delay-aom_Ex_dur)-wait1_2 -pihalf_dur
-                    #
-                    # self.mcas.asc(length_mus=wait1_1, name='wait_1.1')# 13.5 ns. Delay between first AOM_Ex pulse and MW pi/2
-                    # self.mcas.asc(
-                    #     pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #     length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                    #     name='MW_pihalf_1')#13.5ns. First pi/2 pulse
-                    # self.mcas.asc(length_mus=wait1_2, name='wait_1.2')#14 ns. Delay between MW pi/2 and the second AOM_Ex pulse
-                    #
-                    #
-                    #
-                    #
-                    # self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_2') #15 ns. The second AOM pulse
-                    # self.mcas.asc(length_mus=aom_delay-(optical_delay - aom_Ex_dur)-aom_Ex_dur, name='wait_2') #99ns
-                    #
-                    # self.mcas.asc(
-                    #     pd2g2=dict(
-                    #         type='gauss',
-                    #         inv_fwhm=1,
-                    #         amplitudes=[self.kwargs['eom_ampl']]),
-                    #     length_mus=E.round_length_mus_full_sample(mw_delay-aom_Ex_dur-aom_delay),
-                    #     name='Gauss1_begin') #20ns. First EOM Pulse
-                    #
-                    # already_written_samples = np.around((mw_delay-aom_Ex_dur-aom_delay) * __SAMPLE_FREQUENCY__).astype(int)
-                    # remaining_optical = opt_pi_dur - (mw_delay-aom_Ex_dur-aom_delay) # 20.083333333333342 ns
-                    # self.mcas.asc(
-                    #     pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
-                    #     wf_start=already_written_samples,
-                    #
-                    #     pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #     length_mus=remaining_optical, #20.083333333333342 ns. MW pi starts, first optical pi finishes
-                    #     name='Gauss1_end_MW')
-                    # # print ('remaining_optical ',remaining_optical)
-                    # self.mcas.asc(
-                    #     pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #     length_mus=E.round_length_mus_full_sample(pi_dur - remaining_optical), # 6.920000000000002 ???? for some reason was written this: 8.91666666666666ns MW pi finishes
-                    #     name='MW_pi_residual')
-                    # wait3_1 = optical_delay+aom_Ex_dur+aom_delay-(mw_delay+pi_dur)
-                    # self.mcas.asc(length_mus=wait3_1, name='wait_3_1') #9ns for some reason was written 7ns
-                    # self.mcas.asc(
-                    #     pd2g2=dict(
-                    #         type='gauss',
-                    #         inv_fwhm=1,
-                    #         amplitudes=[self.kwargs['eom_ampl']]),
-                    #     length_mus=481 * 1. / __SAMPLE_FREQUENCY__, #40ns. Second EOM pulse
-                    #     name='Gauss2')
-                    #
-                    # wait3_2 = hahn_echo_tau - wait3_1 - opt_pi_dur
-                    # self.mcas.asc(length_mus=wait3_2, name='wait3_2')#98.917ns
-                    #
-                    # if 'readout_state' in self.kwargs.keys():
-                    #     if self.kwargs['readout_state']:
-                    #         self.mcas.asc(
-                    #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #             length_mus=E.round_length_mus_full_sample(3*pihalf_dur),
-                    #             name='_MW_3pihalf_2')  # 14.5ns. Second pi/2 pulse
-                    #     else:
-                    #         self.mcas.asc(
-                    #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #             length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                    #             name='_MW_pihalf_2')  # 14.5ns. Second pi/2 pulse
-                    #
-                    # else:
-                    #     self.mcas.asc(
-                    #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #         length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                    #         name='MW_pihalf_2')  # 14.5ns. Second pi/2 pulse
-                    #
-                    # self.mcas.asc(length_mus=self.laser_dur,name='wait_4') #100ns
-                    # self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory') #160ns
-
-                    # self.mcas.asc(
-                    #     pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #     length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                    #     name='MW_pihalf_1',
-                    # )
-                    # self.mcas.asc(length_mus=0.033, name='wait_0')# 33.5ns
-                    # self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
-                    # self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_1') #20ns
-                    # self.mcas.asc(length_mus=optical_delay - aom_Ex_dur, name='wait_1')#105ns
-                    # self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_2')#20ns
-                    # self.mcas.asc(length_mus=aom_delay-aom_Ex_dur-(optical_delay - aom_Ex_dur), name='wait_2') #12ns
-                    #
-                    #
-                    # self.mcas.asc(
-                    #     pd2g2=dict(
-                    #         type='gauss',
-                    #         inv_fwhm=1,
-                    #         amplitudes=[self.kwargs['eom_ampl']]),
-                    #     length_mus=E.round_length_mus_full_sample(mw_delay-aom_Ex_dur-aom_delay), #23ns
-                    #     name='Gauss1')
-                    #
-                    # already_written_samples = np.around((mw_delay-aom_Ex_dur-aom_delay) * __SAMPLE_FREQUENCY__).astype(int)
-                    # remaining_optical = opt_pi_dur - (mw_delay-aom_Ex_dur-aom_delay) #17ns
-                    # self.mcas.asc(
-                    #     pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
-                    #     wf_start=already_written_samples,
-                    #
-                    #     pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #     length_mus=remaining_optical, #17ns
-                    #     name='Gauss1_MW')
-                    #
-                    # self.mcas.asc(
-                    #     pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #     length_mus=E.round_length_mus_full_sample(pi_dur - remaining_optical), #12ns
-                    #     name='MW_pi_residual')
-                    #
-                    # self.mcas.asc(length_mus=optical_delay+aom_Ex_dur+aom_delay-(mw_delay+pi_dur), name='wait_3') #73ns
-                    # self.mcas.asc(
-                    #     pd2g2=dict(
-                    #         type='gauss',
-                    #         inv_fwhm=1,
-                    #         amplitudes=[self.kwargs['eom_ampl']]),
-                    #     length_mus=481 * 1. / __SAMPLE_FREQUENCY__, #40ns
-                    #     name='Gauss2')
-                    #
-                    # self.mcas.asc(length_mus=self.laser_dur,name='wait_4') #100ns
-                    # self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory') #160ns
-                    # self.mcas.asc(
-                    #     pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                    #     length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                    #     name='MW_pihalf_2',
-                    # )
-
-                #
                 # elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'entanglement':
                 #     pihalf_dur =self.kwargs['pihalf_dur'] #0.0135
-                #     hahn_echo_tau = 0.148 # self.kwargs['hahn_echo_tau'] #373ns
+                #     hahn_echo_tau = 0.075 # self.kwargs['hahn_echo_tau'] #373ns
                 #
                 #     pi_dur = self.kwargs['pi_dur'] #0.027
                 #     mw_amplitude = self.kwargs['mw_amplitude']
@@ -3211,81 +2793,74 @@ class SSR(object):
                 #     aom_Ex_dur = 0.02#0.02
                 #     aom_delay = 0.137#0.137
                 #     opt_pi_dur = 481 * 1. / __SAMPLE_FREQUENCY__
+                #     gauss1_begin = (optical_delay - pi_dur) / 2 #14.5ns - time between first opt pi begin and mw pi begin
+                #     remaining_optical = opt_pi_dur - (gauss1_begin) # 0.025583333333333333 ns
+                #     remaining_mw_dur = pi_dur - remaining_optical
+                #     wait2 = hahn_echo_tau-gauss1_begin # 60.5ns
+                #     wait1 = aom_delay-optical_delay-wait2-pihalf_dur # 0.007000000000000018 ns delay between second aom_Ex and MW pi/2
+                #     wait3 = gauss1_begin #14.5ns
+                #     wait4 = hahn_echo_tau-gauss1_begin-opt_pi_dur #0.020416666666666666
                 #
                 #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
-                #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_1') #15 ns. AOM for the first pulse
+                #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_1')  #20 ns. AOM for the first pulse
+                #     self.mcas.asc(length_mus=optical_delay-aom_Ex_dur, name='wait_1.1')# 56ns ns. Delay between first and second AOM_Ex pulses
+                #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_2')  #20 ns. AOM for the first puls
+                #
+                #     self.mcas.asc(length_mus=E.round_length_mus_full_sample(wait1), name='wait_1') #7ns
                 #
                 #
-                #     #wait1_2 = hahn echo delay - Gauss1_begin - wait2 - Ex_aom_2 ##Names of blocks below
-                #     wait1_2 = hahn_echo_tau-(E.round_length_mus_full_sample(mw_delay-aom_Ex_dur-aom_delay))\
-                #               -(aom_delay-(optical_delay - aom_Ex_dur)-aom_Ex_dur)-aom_Ex_dur #0.013999999999999988
-                #     wait1_1 = (optical_delay-aom_Ex_dur)-wait1_2 -pihalf_dur #0.008500000000000016
-                #
-                #     self.mcas.asc(length_mus=wait1_1, name='wait_1.1')# 8.5 ns. Delay between first AOM_Ex pulse and MW pi/2
                 #     self.mcas.asc(
                 #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
                 #         length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                #         name='MW_pihalf_1')#13.5ns. First pi/2 pulse
-                #     self.mcas.asc(length_mus=wait1_2, name='wait_1.2')#14 ns. Delay between MW pi/2 and the second AOM_Ex pulse
+                #         name='MW_pihalf')#13.5ns. First pi/2 pulse
+                #
+                #     self.mcas.asc(length_mus=wait2, name='wait_2')
                 #
                 #
                 #
-                #
-                #     self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_2') #20 ns. The second AOM pulse
-                #     self.mcas.asc(length_mus=aom_delay-(optical_delay - aom_Ex_dur)-aom_Ex_dur, name='wait_2') #81 ns
                 #
                 #     self.mcas.asc(
                 #         pd2g2=dict(
                 #             type='gauss',
                 #             inv_fwhm=1,
                 #             amplitudes=[self.kwargs['eom_ampl']]),
-                #         length_mus=E.round_length_mus_full_sample(mw_delay-aom_Ex_dur-aom_delay),
-                #         name='Gauss1_begin') #33 ns. First EOM Pulse
+                #         length_mus=E.round_length_mus_full_sample(gauss1_begin),
+                #         name='Gauss1_begin') #14.5 ns. First EOM Pulse
                 #
-                #     already_written_samples = np.around((mw_delay-aom_Ex_dur-aom_delay) * __SAMPLE_FREQUENCY__).astype(int)
-                #     remaining_optical = opt_pi_dur - (mw_delay-aom_Ex_dur-aom_delay) # 0.00708333333333333 ns
+                #     already_written_samples = np.around((gauss1_begin) * __SAMPLE_FREQUENCY__).astype(int) # 174samples
                 #     self.mcas.asc(
                 #         pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
                 #         wf_start=already_written_samples,
                 #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                #         length_mus=remaining_optical, #0.00708333333333333 ns. MW pi starts, first optical pi finishes
+                #         length_mus=remaining_optical, #0.025583333333333333 ns. MW pi starts, first optical pi finishes
                 #         name='Gauss1_end_MW')
                 #
-                #     wait3_1 = optical_delay+aom_Ex_dur+aom_delay-(mw_delay+pi_dur) # NEGATIVE! -0.003999999999999976
-                #
-                #
                 #     self.mcas.asc(
                 #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                #         length_mus=E.round_length_mus_full_sample(pi_dur - remaining_optical+wait3_1), # 0.015916666666666694 mw in progress, second ioptical pi starts
-                #         name='MW_pi_residual_before_2opt_pi_starts')
+                #         length_mus=E.round_length_mus_full_sample(remaining_mw_dur), # 00.0014166666666666668 MW pi ends
+                #         name='remaining_mw')
+                #
+                #     self.mcas.asc(length_mus=wait3, name='wait_3') #14.5ns wait before second optical pi pulse
+                #
                 #
                 #     self.mcas.asc(
                 #         pd2g2=dict(
                 #             type='gauss',
                 #             inv_fwhm=1,
                 #             amplitudes=[self.kwargs['eom_ampl']]),
-                #         pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
                 #
-                #         length_mus=np.abs(wait3_1), #0.003999999999999976 ns Second EOM pulse starts
-                #         name='Gauss2_begin_MW_finishes')
+                #         length_mus=opt_pi_dur, # 0.04008333333333333 ns Second EOM pulse starts
+                #         name='Gauss2')
                 #
-                #     already_written_samples = np.around(np.abs(wait3_1) * __SAMPLE_FREQUENCY__).astype(int)
-                #     remaining_optical = opt_pi_dur - np.abs(wait3_1) # 0.036083333333333356 ns
-                #     self.mcas.asc(
-                #         pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
-                #         wf_start=already_written_samples,
-                #         length_mus=remaining_optical, #0.036083333333333356 ns. second optical pi finishes
-                #         name='Gauss2_end')
                 #
-                #     wait3_2 = hahn_echo_tau - wait3_1 - opt_pi_dur
-                #     self.mcas.asc(length_mus=wait3_2, name='wait3_2')#111.91666666666664 ns
+                #     self.mcas.asc(length_mus=wait4, name='wait4')#111.91666666666664 ns
                 #
                 #     if 'readout_state' in self.kwargs.keys():
                 #         if self.kwargs['readout_state']:
                 #             self.mcas.asc(
                 #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
                 #                 length_mus=E.round_length_mus_full_sample(3*pihalf_dur),
-                #                 name='_MW_3pihalf_2')  # 14.5ns. Second pi/2 pulse
+                #                 name='_MW_3pihalf_2')  # 43.5ns. Second pi/2 pulse
                 #         else:
                 #             self.mcas.asc(
                 #                 pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
@@ -3298,14 +2873,8 @@ class SSR(object):
                 #             length_mus=E.round_length_mus_full_sample(pihalf_dur),
                 #             name='MW_pihalf_2')  # 14.5ns. Second pi/2 pulse
                 #
-                #     self.mcas.asc(length_mus=self.laser_dur,name='wait_4') #100ns
+                #     self.mcas.asc(length_mus=self.laser_dur,name='wait_before_memory') #100ns
                 #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory') #160ns
-                #
-                #
-                #
-                #
-                #
-                #
                 #
                 #
                 #
@@ -3454,79 +3023,77 @@ class SSR(object):
                 #     #     length_mus=E.round_length_mus_full_sample(pihalf_dur),
                 #     #     name='MW_pihalf_2',
                 #     # )
+                # elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'HOM':
                 #
-
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'HOM':
-
-                    pihalf_dur =self.kwargs['pihalf_dur']
-                    hahn_echo_tau = 0.148#self.kwargs['hahn_echo_tau'] #373ns
-
-                    pi_dur = self.kwargs['pi_dur']
-                    mw_amplitude = self.kwargs['mw_amplitude']
-                    mw_freq = self.frequencies[0]
-                    mw_delay = self.kwargs['mw_delay']#190ns (was 180ns) delay betweenn first optical pulse and MW pulse (measured from aom_Ex open)
-                    optical_delay = self.kwargs['optical_delay'] #56ns (was 125ns) delay between optical pulses aka interferometer length
-
-                    aom_Ex_dur = 0.015#0.02
-                    aom_delay = 0.155#0.137
-                    opt_pi_dur = 481 * 1. / __SAMPLE_FREQUENCY__
-
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
-
-                    for i in range(self.kwargs['n_repetitions']):
-                        self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_1') #15 ns. AOM for the first pulse
-
-                        #wait1_2 = hahn echo delay - Gauss1_begin - wait2 - Ex_aom_2 ##Names of blocks below
-                        wait1_2 = hahn_echo_tau-(E.round_length_mus_full_sample(mw_delay-aom_Ex_dur-aom_delay))-(aom_delay-(optical_delay - aom_Ex_dur)-aom_Ex_dur)-aom_Ex_dur
-                        # wait1_1 = delay_between_two_aoms - wait1_2 -pihalf_dur
-                        wait1_1 = (optical_delay-aom_Ex_dur)-wait1_2 -pihalf_dur
-
-                        self.mcas.asc(length_mus=wait1_1, name='wait_1.1')# ns. Delay between first AOM_Ex pulse and MW pi/2
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            length_mus=E.round_length_mus_full_sample(pihalf_dur),
-                            name='MW_pihalf_1')#14.5ns. First pi/2 pulse
-                        self.mcas.asc(length_mus=wait1_2, name='wait_1.2')#14 ns. Delay between MW pi/2 and the second AOM_Ex pulse
-
-                        self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_2') #15 ns. The second AOM pulse
-                        self.mcas.asc(length_mus=aom_delay-(optical_delay - aom_Ex_dur)-aom_Ex_dur, name='wait_2') #99ns
-
-                        self.mcas.asc(
-                            pd2g2=dict(
-                                type='gauss',
-                                inv_fwhm=1,
-                                amplitudes=[self.kwargs['eom_ampl']]),
-                            length_mus=E.round_length_mus_full_sample(mw_delay-aom_Ex_dur-aom_delay),
-                            name='Gauss1_begin') #20ns. First EOM Pulse
-
-                        already_written_samples = np.around((mw_delay-aom_Ex_dur-aom_delay) * __SAMPLE_FREQUENCY__).astype(int)
-                        remaining_optical = opt_pi_dur - (mw_delay-aom_Ex_dur-aom_delay) # 20.083333333333342 ns
-                        self.mcas.asc(
-                            pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
-                            wf_start=already_written_samples,
-
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            length_mus=remaining_optical, #20.083333333333342 ns. MW pi starts, first optical pi finishes
-                            name='Gauss1_end_MW')
-                        # print ('remaining_optical ',remaining_optical)
-                        self.mcas.asc(
-                            pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
-                            length_mus=E.round_length_mus_full_sample(pi_dur - remaining_optical), # 8.91666666666666ns MW pi finishes
-                            name='MW_pi_residual')
-                        wait3_1 = optical_delay+aom_Ex_dur+aom_delay-(mw_delay+pi_dur)
-                        self.mcas.asc(length_mus=wait3_1, name='wait_3_1') #7ns
-                        self.mcas.asc(
-                            pd2g2=dict(
-                                type='gauss',
-                                inv_fwhm=1,
-                                amplitudes=[self.kwargs['eom_ampl']]),
-                            length_mus=481 * 1. / __SAMPLE_FREQUENCY__, #40ns. Second EOM pulse
-                            name='Gauss2')
-                        self.mcas.asc(length_mus=0.1, name='wait3_2')
-
-
-                    self.mcas.asc(length_mus=self.laser_dur,name='wait_4') #100ns
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory') #160ns
+                #     pihalf_dur =self.kwargs['pihalf_dur']
+                #     hahn_echo_tau = 0.148#self.kwargs['hahn_echo_tau'] #373ns
+                #
+                #     pi_dur = self.kwargs['pi_dur']
+                #     mw_amplitude = self.kwargs['mw_amplitude']
+                #     mw_freq = self.frequencies[0]
+                #     mw_delay = self.kwargs['mw_delay']#190ns (was 180ns) delay betweenn first optical pulse and MW pulse (measured from aom_Ex open)
+                #     optical_delay = self.kwargs['optical_delay'] #56ns (was 125ns) delay between optical pulses aka interferometer length
+                #
+                #     aom_Ex_dur = 0.015#0.02
+                #     aom_delay = 0.155#0.137
+                #     opt_pi_dur = 481 * 1. / __SAMPLE_FREQUENCY__
+                #
+                #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # 160ns Gated counter
+                #
+                #     for i in range(self.kwargs['n_repetitions']):
+                #         self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_1') #15 ns. AOM for the first pulse
+                #
+                #         #wait1_2 = hahn echo delay - Gauss1_begin - wait2 - Ex_aom_2 ##Names of blocks below
+                #         wait1_2 = hahn_echo_tau-(E.round_length_mus_full_sample(mw_delay-aom_Ex_dur-aom_delay))-(aom_delay-(optical_delay - aom_Ex_dur)-aom_Ex_dur)-aom_Ex_dur
+                #         # wait1_1 = delay_between_two_aoms - wait1_2 -pihalf_dur
+                #         wait1_1 = (optical_delay-aom_Ex_dur)-wait1_2 -pihalf_dur
+                #
+                #         self.mcas.asc(length_mus=wait1_1, name='wait_1.1')# ns. Delay between first AOM_Ex pulse and MW pi/2
+                #         self.mcas.asc(
+                #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #             length_mus=E.round_length_mus_full_sample(pihalf_dur),
+                #             name='MW_pihalf_1')#14.5ns. First pi/2 pulse
+                #         self.mcas.asc(length_mus=wait1_2, name='wait_1.2')#14 ns. Delay between MW pi/2 and the second AOM_Ex pulse
+                #
+                #         self.mcas.asc(length_mus=aom_Ex_dur, aom_Ex=True, name='Ex_aom_2') #15 ns. The second AOM pulse
+                #         self.mcas.asc(length_mus=aom_delay-(optical_delay - aom_Ex_dur)-aom_Ex_dur, name='wait_2') #99ns
+                #
+                #         self.mcas.asc(
+                #             pd2g2=dict(
+                #                 type='gauss',
+                #                 inv_fwhm=1,
+                #                 amplitudes=[self.kwargs['eom_ampl']]),
+                #             length_mus=E.round_length_mus_full_sample(mw_delay-aom_Ex_dur-aom_delay),
+                #             name='Gauss1_begin') #20ns. First EOM Pulse
+                #
+                #         already_written_samples = np.around((mw_delay-aom_Ex_dur-aom_delay) * __SAMPLE_FREQUENCY__).astype(int)
+                #         remaining_optical = opt_pi_dur - (mw_delay-aom_Ex_dur-aom_delay) # 20.083333333333342 ns
+                #         self.mcas.asc(
+                #             pd2g2=dict(type='gauss', inv_fwhm=1, amplitudes=[self.kwargs['eom_ampl']]),
+                #             wf_start=already_written_samples,
+                #
+                #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #             length_mus=remaining_optical, #20.083333333333342 ns. MW pi starts, first optical pi finishes
+                #             name='Gauss1_end_MW')
+                #         # print ('remaining_optical ',remaining_optical)
+                #         self.mcas.asc(
+                #             pd2g1=dict(type='sine', frequencies=mw_freq, amplitudes=[mw_amplitude]),
+                #             length_mus=E.round_length_mus_full_sample(pi_dur - remaining_optical), # 8.91666666666666ns MW pi finishes
+                #             name='MW_pi_residual')
+                #         wait3_1 = optical_delay+aom_Ex_dur+aom_delay-(mw_delay+pi_dur)
+                #         self.mcas.asc(length_mus=wait3_1, name='wait_3_1') #7ns
+                #         self.mcas.asc(
+                #             pd2g2=dict(
+                #                 type='gauss',
+                #                 inv_fwhm=1,
+                #                 amplitudes=[self.kwargs['eom_ampl']]),
+                #             length_mus=481 * 1. / __SAMPLE_FREQUENCY__, #40ns. Second EOM pulse
+                #             name='Gauss2')
+                #         self.mcas.asc(length_mus=0.1, name='wait3_2')
+                #
+                #
+                #     self.mcas.asc(length_mus=self.laser_dur,name='wait_4') #100ns
+                #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name='memory') #160ns
 
                 ### ===============================
                 ### Conventional repetitive readout
@@ -3550,16 +3117,16 @@ class SSR(object):
 
 
 
-def ssr(mcas, **kwargs):
-    s = SSR(mcas, **kwargs)
+def ssr(mcas,queue,**kwargs):
+    s = SSR(mcas = mcas, queue=queue, **kwargs)
     s.compile()
     if not 'step_idx' in kwargs:
         raise Exception('SSR step index must be given, or the gated counter wont know how to readout and treat the data.')
     if kwargs['step_idx'] is not None:
-        pi3d.gated_counter.trace.analyze_sequence[kwargs['step_idx']][3] = s.repetitions * s.number_of_alternating_steps
-        pi3d.gated_counter.trace.analyze_sequence[kwargs['step_idx']][5] = s.number_of_alternating_steps
-        if pi3d.gated_counter.trace.analyze_sequence[kwargs['step_idx']][5] != 1 and pi3d.gated_counter.trace.analyze_sequence[kwargs['step_idx']][2] == 'auto':
-            pi3d.gated_counter.trace.analyze_sequence[kwargs['step_idx']][2] = 0
+        queue._gated_counter.trace.analyze_sequence[kwargs['step_idx']][3] = s.repetitions * s.number_of_alternating_steps
+        queue._gated_counter.trace.analyze_sequence[kwargs['step_idx']][5] = s.number_of_alternating_steps
+        if queue._gated_counter.trace.analyze_sequence[kwargs['step_idx']][5] != 1 and queue._gated_counter.trace.analyze_sequence[kwargs['step_idx']][2] == 'auto':
+            queue._gated_counter.trace.analyze_sequence[kwargs['step_idx']][2] = 0
 
 wfpd_standard = collections.OrderedDict(
     [
@@ -3639,47 +3206,47 @@ wfpd_all_but_standard = collections.OrderedDict(
     ]
 )
 
-def ssr_single_state(mcas, state, **kwargs):
-    if (len(state) == 1 and state !='qutrit') or len(state) == len(state.lstrip('n')) == 3:
-        wave_file_kwargs = kwargs.pop(
-            'wave_file_kwargs',
-            [
-                dict(
-                    filepath=kwargs.get('wfpd', wfpd_standard)[state],
-                    rp=pi3d.tt.rp('e_rabi', mixer_deg=-90)
-                ),
-                dict(
-                    filepath=kwargs.get('wfpd_all_but', wfpd_all_but_standard)[state],
-                    rp=pi3d.tt.rp('e_rabi', mixer_deg=-90)
-                ),
-            ]
-        )
-        if (len(state) == 1 and state !='qutrit'):
-            nuc = '14n'
-        else:
-            nuc = '13c90'
-    else:
-        if state == 'qutrit':
-            nuc = '14n'
-            wfksl = ['+', '0', '-']
-        else:
-            nuc = '13c414' if len(state) == 2 else '13c90'
-            wfksl = [state.lstrip('n')]
-            wfksl.append({'+': '-', '-': '+'}[wfksl[0]])
-        if 'wave_file_kwargs' in kwargs:
-            wave_file_kwargs = kwargs.pop('wave_file_kwargs')
-        else:
-            wave_file_kwargs =[
-                dict(
-                    filepath=kwargs.get('wfpd', wfpd_standard)[wfks],
-                    rp=pi3d.tt.rp('e_rabi', mixer_deg=-90)
-                ) for wfks in wfksl]
-    ssr(mcas,
-        transition='left',
-        robust=True,
-        laser_dur=kwargs.pop('laser_dur', __LASER_DUR_DICT__.get(state, __LASER_DUR_DICT__['single_state'])),
-        mixer_deg=-90,
-        nuc=kwargs.pop('nuc', nuc),
-        frequencies=kwargs.pop('frequencies', [pi3d.tt.mfl({'14n': [0]}) for i in range(len(wave_file_kwargs))]),
-        wave_file_kwargs=wave_file_kwargs, **kwargs
-    )
+# def ssr_single_state(mcas, state, **kwargs):
+#     if (len(state) == 1 and state !='qutrit') or len(state) == len(state.lstrip('n')) == 3:
+#         wave_file_kwargs = kwargs.pop(
+#             'wave_file_kwargs',
+#             [
+#                 dict(
+#                     filepath=kwargs.get('wfpd', wfpd_standard)[state],
+#                     rp=pi3d.tt.rp('e_rabi', mixer_deg=-90)
+#                 ),
+#                 dict(
+#                     filepath=kwargs.get('wfpd_all_but', wfpd_all_but_standard)[state],
+#                     rp=pi3d.tt.rp('e_rabi', mixer_deg=-90)
+#                 ),
+#             ]
+#         )
+#         if (len(state) == 1 and state !='qutrit'):
+#             nuc = '14n'
+#         else:
+#             nuc = '13c90'
+#     else:
+#         if state == 'qutrit':
+#             nuc = '14n'
+#             wfksl = ['+', '0', '-']
+#         else:
+#             nuc = '13c414' if len(state) == 2 else '13c90'
+#             wfksl = [state.lstrip('n')]
+#             wfksl.append({'+': '-', '-': '+'}[wfksl[0]])
+#         if 'wave_file_kwargs' in kwargs:
+#             wave_file_kwargs = kwargs.pop('wave_file_kwargs')
+#         else:
+#             wave_file_kwargs =[
+#                 dict(
+#                     filepath=kwargs.get('wfpd', wfpd_standard)[wfks],
+#                     rp=pi3d.tt.rp('e_rabi', mixer_deg=-90)
+#                 ) for wfks in wfksl]
+#     ssr(mcas,
+#         transition='left',
+#         robust=True,
+#         laser_dur=kwargs.pop('laser_dur', __LASER_DUR_DICT__.get(state, __LASER_DUR_DICT__['single_state'])),
+#         mixer_deg=-90,
+#         nuc=kwargs.pop('nuc', nuc),
+#         frequencies=kwargs.pop('frequencies', [pi3d.tt.mfl({'14n': [0]}) for i in range(len(wave_file_kwargs))]),
+#         wave_file_kwargs=wave_file_kwargs, **kwargs
+#     )

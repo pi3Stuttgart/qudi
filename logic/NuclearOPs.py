@@ -270,13 +270,13 @@ class NuclearOPs(DataGeneration):
         print('NuclearOps run_measurement')
 
         self.init_run(**kwargs)
-
+        logging.info('passed the init')
         #When the confocal connected #TODO 1
-        confocal = self.queue.confocal
-        x = confocal.x
-        y = confocal.y
-        z = confocal.z
-
+        confocal = self.queue._confocal
+        x = confocal._current_x
+        y = confocal._current_y
+        z = confocal._current_z
+        logging.info('got the confocal position')
         self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[x],confocal_y = [y], confocal_z = [z]))
         #[self._confocal.x], confocal_y=[self._confocal.y], confocal_z=[self._confocal.z]))
 
@@ -285,7 +285,8 @@ class NuclearOPs(DataGeneration):
             #   self.queue.microwave.On()
 
             # TODO uncomment when on the setup
-            self.queue._gated_counter.set_counter(start_trigger_delay_ps_list = self.delay_ps_list ,window_ps_list = self.window_ps_list)
+            #self.queue._gated_counter.set_counter()#
+            #start_trigger_delay_ps_list = self.delay_ps_list ,window_ps_list = self.window_ps_list)
 
             for idx, _ in enumerate(self.iterator()):
                 if abort.is_set(): break
@@ -407,11 +408,11 @@ class NuclearOPs(DataGeneration):
                     # TODO
                     #Measure powers and record them!!!!
                     ##
-                    self.data.set_observations([OrderedDict(EOM_Ex_integrator_voltage=self.queue.power_calibration.pd_list[
-                        'pd_Ex_integrator_voltage'].get_data())] * self.number_of_simultaneous_measurements)
+                    # self.data.set_observations([OrderedDict(EOM_Ex_integrator_voltage=self.queue.power_calibration.pd_list[
+                    #     'pd_Ex_integrator_voltage'].get_data())] * self.number_of_simultaneous_measurements)
 
 
-                    if not self._md.debug_mode:
+                    if False:#not self._md.debug_mode: Laser power calibration #Fixme
                         self._md['red_Ex'].run()
                         #self.data.set_observations([OrderedDict(aom_Ex_power_measured=self.queue.power_calibration.pd_list['pd_A1_power'].get_data())]*self.number_of_simultaneous_measurements)
                         time.sleep(0.1)
@@ -456,11 +457,11 @@ class NuclearOPs(DataGeneration):
                     self.data.set_observations([OrderedDict(delays_ps=self.delay_ps_list)]*self.number_of_simultaneous_measurements)
                     self.data.set_observations([OrderedDict(windows_ps=self.window_ps_list)]*self.number_of_simultaneous_measurements)
 
-                    if self._gated_counter.ZPL_counter:
+                    if False:# self.queue._gated_counter.ZPL_counter:
                         for i, delay_ps in enumerate(self.delay_ps_list):
                             for j, window_ps in enumerate(self.window_ps_list):
                                 name = 'zpl_counter_data_{i}_{j}'.format(i=i, j=j)
-                                dd = getattr(self._gated_counter,name)
+                                dd = getattr(self.queue._gated_counter,name)
                                 if self.save_smartly:
 
                                     self.data.set_observations([
@@ -839,6 +840,7 @@ class NuclearOPs(DataGeneration):
                                  raw_clicks_processing_channels = self.raw_clicks_processing_channels)
 
     def setup_rf(self, current_iterator_df):
+        logging.info('setting up the rf')
         self.mcas = ''
         self.mcas = self.ret_mcas(self,current_iterator_df)
         while self.mcas=='':
@@ -846,6 +848,7 @@ class NuclearOPs(DataGeneration):
 
         time.sleep(0.1)
         self.queue._awg.mcas_dict[self.mcas.name] = self.mcas
+        logging.info('finished setting up the sequence')
 
     def analyze(self, data=None, ana_trace=None, start_idx=None):
         if ana_trace is None:

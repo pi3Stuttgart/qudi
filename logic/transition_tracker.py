@@ -366,7 +366,7 @@ class RabiParametersStatic:
 
     def parse(self, **kwargs):
         tni, kwargs = self.pop_tni(**kwargs)
-        key, val = kwargs.items()[0]
+        key, val = list(kwargs.items())[0]
         val = np.array(val)
         if len(val.shape) > 2:
             raise Exception('Arrays must be 1D or 2D. Given shape is {}'.format(val.shape))
@@ -452,7 +452,7 @@ class RabiParametersSingle(object):
         self.set_statics(tni=tni, **kwargs)
 
     def set_statics(self, tni=None, round_to_full_sample=True, **kwargs):
-        key, val = kwargs.items()[0]
+        key, val = list(kwargs.items())[0]
         val = np.array(val)
         zero_d_input = False
         if len(val.shape) == 0:
@@ -494,13 +494,13 @@ class RabiParametersSingle(object):
     def is_valid_input(self, **kwargs):
         if len(kwargs) != 1:
             raise ValueError('Exactly one input must be given. (Instead of {})'.format(len(kwargs)))
-        val = np.array(kwargs.values()[0])
+        val = np.array(list(kwargs.values())[0])
         if len(val.shape) not in [0, 1]:
             raise ValueError('Input value must be 0D or 1D but was {}'.format(len(val.shape)))
         if len(val.shape) == 1 and val.shape[0] > self.rp.tnf:
             raise ValueError('Input value is too large for given rabi file. ({}, tnf: {}'.format(val.shape[0], self.rp.tnf))
-        if kwargs.keys()[0] not in ['amp', 'omega', 'period']:
-            raise Exception("input parameter names must be in ['amp', 'omega', 'period'], but {} was given".format(kwargs.keys()[0]))
+        if list(kwargs.keys())[0] not in ['amp', 'omega', 'period']:
+            raise Exception("input parameter names must be in ['amp', 'omega', 'period'], but {} was given".format(list(kwargs.keys())[0]))
         return kwargs
 
 class Transition:
@@ -585,14 +585,13 @@ class TransitionTracker(GenericLogic):
         self.zero_field_splitting = get_last_value_from_file('zfs')
         self.transition_name_list = [['+1', '0', '-1'], ['+1', '0', '-1']] + [['+0.5', '-0.5']] * len(self.c13_list)
         self.states_list = [range(len(i)) for i in self.transition_name_list]
-        self.spin_name_list = ['e', '14N'] + self.c13_list# + self.si29_list
+        self.spin_name_list = ['e', '14n'] + self.c13_list# + self.si29_list
         self.set_h_diag()
         self.set_ntd()
         self.load_transitions()
         if not self._awg.mcas_dict.debug_mode:
             self.load_rabi_parameters()
         self.update_stuff()
-
         pass
         #self._transition_tracker_gui = self.transition_tracker_gui()
 
@@ -993,7 +992,7 @@ class TransitionTracker(GenericLogic):
         if len(fd14n) > 0:
             if not '14n+1 ms0' in fd14n and '14n-1 ms0' in fd14n:
                 raise Exception('Error: {}'.format(fd14n))
-            mod = qutip_enhanced.lmfit_models.NVHam14NModel(fd14n, diag=True)
+            mod = logic.qudip_enhanced.lmfit_models.NVHam14NModel(fd14n, diag=True)
             params = mod.make_params()
             params['magnet_field'].value = self.current_magnetic_field
             params['magnet_field'].vary = False
