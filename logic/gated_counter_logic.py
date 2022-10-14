@@ -43,6 +43,8 @@ class GatedCounter(GenericLogic):
     mcas_holder = Connector(interface='McasDictHolderInterface')
     sigHistogramUpdated = QtCore.Signal()
     sigMeasurementFinished = QtCore.Signal()
+    clear_plot_signal = PyQt5.QtCore.pyqtSignal(int)
+    update_plot_signal = PyQt5.QtCore.pyqtSignal(list, list)
     sigTraceUpdated = pyqtSignal(list, list)
     readout_interval = misc.ret_property_typecheck('readout_interval', Number)
     progress = misc.ret_property_typecheck('progress', int)
@@ -54,6 +56,7 @@ class GatedCounter(GenericLogic):
             self.log.debug('{0}: {1}'.format(key, config[key]))
         self.readout_interval = 1e6 # DO NOT SET BELOW 0.2, plotting runs in main loop, and takes around 0.15, which then makes the console annoying to work with.
         self.readout_duration = 10e6
+        self.n_values = 10
         self.trace = Analysis.Trace()
         self.analyze_trace_during_experiment = True #TODO make it False compatible.
         self.title = 'Gated_counter'
@@ -63,6 +66,7 @@ class GatedCounter(GenericLogic):
         #self.tim
         self.raw_clicks_processing = False
         self.raw_clicks_processing_function = None
+        self.ZPL_counter = False
 
     def on_activate(self):
         """ Initialisation performed during activation of the module.
@@ -122,7 +126,7 @@ class GatedCounter(GenericLogic):
         self.gated_counter_data = self._fast_counter_device.gated_counter_countbetweenmarkers.getData()
 
         #print('1 tt:',time.time()-t0)
-        if False:#self.ZPL_counter: do later #Fixme
+        if self.ZPL_counter:
             if self.raw_clicks_processing:
                 counter_name = 'raw_zpl'
                 #print('init raw clicks processing name: ', counter_name)
@@ -196,7 +200,7 @@ class GatedCounter(GenericLogic):
         # print('tt5:',t1-t0)
 
     def clear_timetaggers(self):
-        #self._fast_counter_device.gated_counter_countbetweenmarkers.clear()
+        self._fast_counter_device.gated_counter_countbetweenmarkers.clear()
         if self.ZPL_counter:
             if self.raw_clicks_processing:
                 counter_name = 'raw_zpl'
@@ -215,6 +219,15 @@ class GatedCounter(GenericLogic):
                         if self.two_zpl_apd:
                             counter_name = 'gated_cbm_2_zpl_{i}_{j}'.format(i=i, j=j)
                             #getattr(self._fast_counter_device, counter_name).clear()
+    def get_counting_samples(self):
+        return self.n_values
+
+    def get_count_length(self):
+        if self.n_values is not None:
+            return self.n_values
+        else:
+            return 1
+        #print('to be implemented')
 
 
     def stop_timetaggers(self):
@@ -276,10 +289,10 @@ class GatedCounter(GenericLogic):
         self.two_zpl_apd = two_zpl_apd
         self.raw_clicks_processing = raw_clicks_processing
         self.raw_clicks_processing_channels = raw_clicks_processing_channels
-
+        number_of_subtraces = 1 #fixme, later put a len of analyze sequence
 
         if hasattr(self, '_gui'):
-            self.gui.clear_plot(len(self.trace.analyze_sequence))
+            self.clear_plot_signal.emit(number_of_subtraces)
         try:
             self.set_counter()
 
@@ -304,6 +317,7 @@ class GatedCounter(GenericLogic):
             self.update_plot()
 
         except Exception as e:
+            print(e)
             abort.set()
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb)
@@ -321,7 +335,7 @@ class GatedCounter(GenericLogic):
 
     def set_counter(self):
         self.ZPL_counter = False
-        ## Needs to be adjusted to the qudi gated counter #TODO
+        ## Needs to be adjusted tohas the qudi gated counter #TODO
         def f():
             nlp_per_point = sum([step[3] for step in self.trace.analyze_sequence])
 
@@ -397,7 +411,8 @@ class GatedCounter(GenericLogic):
 
     def init_plot(self):
         if hasattr(self, '_gui'):
-            self.gui.init_plot()
+            #self.gui.init_plot()
+            pass
 
     def update_plot_data(self):
         self.effective_subtrace_list = []
@@ -413,7 +428,9 @@ class GatedCounter(GenericLogic):
                 else:
                     for t in estl:
                         self.hist_list[-1].append(self.trace.hist(t))
-            except:
+            except Exception as e:
+                logging.error(e)
+                print(e)
                 pass
 
     def update_plot(self):

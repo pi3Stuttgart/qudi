@@ -911,7 +911,7 @@ class NuclearOPs(DataGeneration):
             for ch in [1,2]:
                 try:
                     pass
-                    seq_message.append(self._md[self.mcas.name].sequences[k][ch].ret_info()) ##TODO why is it also printing??
+                    seq_message.append('')#self._md[self.mcas.name].sequences[k][ch].ret_info()) ##TODO why is it also printing??
                 except:
                     pass
 

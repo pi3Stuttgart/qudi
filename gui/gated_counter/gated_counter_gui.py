@@ -19,6 +19,7 @@ along with Qudi. If not, see <http://www.gnu.org/licenses/>.
 Copyright (c) the Qudi Developers. See the COPYRIGHT.txt file at the
 top-level directory of this distribution and at <https://github.com/Ulm-IQO/qudi/>
 """
+import logging
 
 import numpy as np
 import os
@@ -81,6 +82,7 @@ class GatedCounterGui(GUIBase):
         """
 
         self._counter_logic = self.gatedcounterlogic1()
+        self._counter_logic._gui = 'gui'
         #self._trace_analysis = self.traceanalysislogic1()
 
         self._mw = GatedCounterMainWindow()
@@ -118,7 +120,7 @@ class GatedCounterGui(GUIBase):
         self._mw.hist_bins_Slider.setSingleStep(1)
 
         # set the counting mode in the logic:
-        self._counter_logic.set_counting_mode('FINITE_GATED')
+        #self._counter_logic.set_counting_mode('FINITE_GATED')
 
         # Setting default parameters
         self._mw.count_length_SpinBox.setValue(self._counter_logic.get_count_length())
@@ -140,28 +142,28 @@ class GatedCounterGui(GUIBase):
         self._mw.count_per_readout_SpinBox.editingFinished.connect(self.count_per_readout_changed)
         self._mw.hist_bins_Slider.valueChanged.connect(self.num_bins_changed)
         self._mw.hist_bins_SpinBox.valueChanged.connect(self.num_bins_changed)
-        self._trace_analysis.sigHistogramUpdated.connect(self.update_histogram)
+        #self._trace_analysis.sigHistogramUpdated.connect(self.update_histogram)
 
-        self._gated_counter_logic.sigTraceUpdated_signal_emitted.connect(self.update_plot_signal_emitted)
-        self._gated_counter_logic.clear_plot_signal_signal_emitted.connect(self.clear_plot_signal_emitted)
+        self._counter_logic.sigTraceUpdated.connect(self.update_plot_signal_emitted)
+        self._counter_logic.clear_plot_signal.connect(self.clear_plot_signal_emitted)
 
         # starting the physical measurement:
-        self.sigStartGatedCounter.connect(self._counter_logic.startCount)
-        self.sigStopGatedCounter.connect(self._counter_logic.stopCount)
+        #self.sigStartGatedCounter.connect(self._counter_logic.startCount)
+        #self.sigStopGatedCounter.connect(self._counter_logic.stopCount)
 
         # connect to signals in the logic:
-        self._counter_logic.sigCounterUpdated.connect(self.update_trace)
-        self._counter_logic.sigGatedCounterFinished.connect(self.reset_toolbar_display)
+        #self._counter_logic.sigCounterUpdated.connect(self.update_trace)
+        #self._counter_logic.sigGatedCounterFinished.connect(self.reset_toolbar_display)
 
         # configuration of the combo widget
-        fit_functions = self._trace_analysis.get_fit_functions()
-        self._mw.fit_methods_ComboBox.addItems(fit_functions)
+        #fit_functions = self._trace_analysis.get_fit_functions()
+        #self._mw.fit_methods_ComboBox.addItems(fit_functions)
 
         # Push buttons
         self._mw.fit_PushButton.clicked.connect(self.fit_clicked)
 
         # Connect analysis result update
-        self._trace_analysis.sigAnalysisResultsUpdated.connect(self.update_analysis_results)
+        #self._trace_analysis.sigAnalysisResultsUpdated.connect(self.update_analysis_results)
 
 
     def on_deactivate(self):
@@ -248,8 +250,8 @@ class GatedCounterGui(GUIBase):
     def update_trace(self, trace):
         """ The function that grabs the data and sends it to the plot. """
 
-        if self._counter_logic.module_state() == 'locked':
-            self._trace1.setData(x=np.arange(0, self._gated_counter_logic.n_values),
+        #if self._counter_logic.module_state() == 'locked':
+        self._trace1.setData(x=np.arange(0, trace.shape[0]),
                                  y=trace)
 
     def update_histogram(self, bins, hist):
@@ -270,37 +272,40 @@ class GatedCounterGui(GUIBase):
         in two seperate methods.
         """
 
-        self._trace_analysis.set_num_bins_histogram(num_bins)
+        #self._trace_analysis.set_num_bins_histogram(num_bins)
         self._mw.hist_bins_SpinBox.setValue(num_bins)
         self._mw.hist_bins_Slider.setValue(num_bins)
 
     def fit_clicked(self):
         """ Do the configured fit and show it in the sum plot """
-        self._mw.fit_param_TextEdit.clear()
-
-        current_fit_function = self._mw.fit_methods_ComboBox.currentText()
-
-        fit_x, fit_y, fit_param_dict, fit_result = self._trace_analysis.do_fit(fit_function=current_fit_function)
-
-        self._fit_image.setData(x=fit_x, y=fit_y, pen=pg.mkPen(palette.c2, width=2))
-
-        if len(fit_param_dict) == 0:
-            fit_result = 'No Fit parameter passed.'
-
-        else:
-            fit_result = units.create_formatted_output(fit_param_dict)
-        self._mw.fit_param_TextEdit.setPlainText(fit_result)
-
+        # self._mw.fit_param_TextEdit.clear()
+        #
+        # current_fit_function = self._mw.fit_methods_ComboBox.currentText()
+        #
+        # fit_x, fit_y, fit_param_dict, fit_result = self._trace_analysis.do_fit(fit_function=current_fit_function)
+        #
+        # self._fit_image.setData(x=fit_x, y=fit_y, pen=pg.mkPen(palette.c2, width=2))
+        #
+        # if len(fit_param_dict) == 0:
+        #     fit_result = 'No Fit parameter passed.'
+        #
+        # else:
+        #     fit_result = units.create_formatted_output(fit_param_dict)
+        # self._mw.fit_param_TextEdit.setPlainText(fit_result)
+        pass
         return
 
     def update_analysis_results(self):
         """ Update the spin flip probability and the fidelities. """
 
-        self._mw.spin_flip_prob_DSpinBox.setValue(self._trace_analysis.spin_flip_prob*100)
-        self._mw.fidelity_left_DSpinBox.setValue(self._trace_analysis.fidelity_left*100)
-        self._mw.fidelity_right_DSpinBox.setValue(self._trace_analysis.fidelity_right*100)
+        # self._mw.spin_flip_prob_DSpinBox.setValue(self._trace_analysis.spin_flip_prob*100)
+        # self._mw.fidelity_left_DSpinBox.setValue(self._trace_analysis.fidelity_left*100)
+        # self._mw.fidelity_right_DSpinBox.setValue(self._trace_analysis.fidelity_right*100)
 
-    def clear_plot_signal_emitted(self, number_of_subtraces):
+    def clear_plot_signal_emitted(self, number_of_subtraces=1):
+        '''
+        number_of_subtraces: multiple readouts in 1 sequence
+        '''
         try:
             self._trace1.clear() #FIXME
             self._histoplot1.clear()
@@ -317,18 +322,13 @@ class GatedCounterGui(GUIBase):
             import time
             t0 = time.time()
             for nst, st in enumerate(effective_subtrace_list):
-                self.axes[nst, 0].cla()
-                self.axes[nst, 0].plot(st)
-                self.axes[nst, 1].cla()
-
-                self._trace1.setData(x=np.arange(0, self._gated_counter_logic.n_values),
-                                     y=st)
-
+                self.update_trace(st.flatten())
                 if len(hist_list[nst]) > 0:
                     for h in hist_list[nst]:
-                        self.axes[nst, 1].plot(h['bin_edges'], h['hist'])
+                        self.update_histogram(np.append(np.array([0]),h['bin_edges']), h['hist'])
 
-        except:
+        except Exception as e:
+            logging.error('Plotting error:'+str(e))
             pass
             # #TODO with qudi log.
             # exc_type, exc_value, exc_tb = sys.exc_info()
