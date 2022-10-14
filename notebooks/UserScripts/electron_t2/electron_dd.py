@@ -29,7 +29,7 @@ ael = 1.0
 def ret_ret_mcas(pdc):
     def ret_mcas(self, current_iterator_df):
         sequence_name = 'Electron_test'
-        print(self, current_iterator_df)
+        #print(self, current_iterator_df)
         mcas = MultiChSeq(name=sequence_name, ch_dict={'2g': [1, 2], 'ps': [1]})
         mcas.start_new_segment('start_sequence')
         mcas.asc(length_mus=0.1)  # Starting... histogram 0
@@ -128,8 +128,8 @@ def settings(pdc={}):
             #('ddt', ['xy4']),
             ('n_rep_dd', range(1,10)),
             ('delay_ps',[0]), #11110
-            ('tau', E.round_length_mus_full_sample(np.linspace(0.0, 10.0, 100))),
-            ('phase_pi2_2', [0,np.pi]),
+            ('tau', [1.0,2.0,3.0]),#E.round_length_mus_full_sample(np.linspace(0.0, 10.0, 100))),
+            ('phase_pi2_2', [0]),
 
         )
     )

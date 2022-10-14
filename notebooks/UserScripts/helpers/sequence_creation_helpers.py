@@ -105,14 +105,15 @@ def nuclear_settings(nuclear, ret_mcas, analyze_sequence, meas_code, pdc=None, *
 
 def confocal_settings():
     pass
-    print('fix me 2')
+    #print('fix me 2')
     #FIXME later deprecarted in qudi
     #pi3d.confocal.reset_settings()
     #pi3d.confocal.aom_voltage = -6
 
 def gated_counter_settings():
+    pass
     #FIXME depracated in qudi
-    print('fix me 3')
+    #print('fix me 3')
     #pi3d.gated_counter.reset_settings()
 
 def settings(**kwargs):
@@ -129,7 +130,7 @@ def create_nuclear(script_path):
     if not os.path.isfile(script_path):
         raise Exception('Error: ', script_path)
     nuclear = logic.NuclearOPs.NuclearOPs()#TODO fill config here
-    nuclear.make_save_location_params(script_path=script_path, folder=r"C:/Data/NuclearOps", sub_folder_kw="UserScripts")
+    nuclear.make_save_location_params(script_path=script_path, folder= r"C:/Data/NuclearOps", sub_folder_kw="UserScripts")
     nuclear_name = "NuclearOPs{}_{}".format(nuclear.file_name, datetime.datetime.strftime(nuclear.date_of_creation, nuclear.__TITLE_DATE_FORMAT__))
     nuclear.pld = data_handling.PlotData(title=nuclear_name, gui=True)
     nuclear.file_notes = ''#TODO get transition tracker here... file_notes_frequencies()

@@ -35,9 +35,12 @@ def ptrepack(file, folder, tempfile=None, lock=None):
         lock.acquire()
         print('Ok.. hdf_lock acquired.')
     tempfile = 'temp.hdf' if tempfile is None else tempfile
-    ptrepack = r"{}\Scripts\ptrepack.exe".format(os.path.dirname(sys.executable))
+    ptrepack = r"{}\Scripts\ptrepack.exe".format(os.path.dirname(sys.executable)) ##C:\Users\SiC_LT2\anaconda3\Scripts\ptrepack.exe
+    #ptrepack = r'C:\Users\SiC_LT2\anaconda3\Scripts\ptrepack.exe'
     command = [ptrepack, "-o", "--chunkshape=auto", "--propindexes", "--complevel=9", "--complib=blosc", file, tempfile]
     _ = subprocess.call(command, cwd=folder)
+    if _ != 0:
+        print(_, 'ptrepack failed')
     i = 0
     t0 = time.time()
     while i < 1000:
@@ -53,10 +56,14 @@ def ptrepack(file, folder, tempfile=None, lock=None):
         try:
             os.rename(os.path.join(folder, tempfile), os.path.join(folder, file))
             if i > 0:
-                print("Renaming {} to {} was successful after {} tries and a total of {}s)".format(os.path.join(folder, tempfile), os.path.join(folder, file), i, time.time() - t0))
+                print("Renaming {} to {} was successful after {} tries and a total of {}s)".format(
+                    os.path.join(folder, tempfile),
+                                                                                                   os.path.join(folder, file), i, time.time() - t0))
             break
-        except:
-            print("Trying to rename {} to {} again. (Try {}, {}s)".format(os.path.join(folder, tempfile), os.path.join(folder, file), i, time.time() - t0))
+        except Exception as e:
+            print(e)
+            print("Trying to rename {} to {} again. (Try {}, {}s)".format(os.path.join(folder, tempfile),
+                                                                          os.path.join(folder, file), i, time.time() - t0))
             i += 1
     if lock is not None: lock.release()
 
@@ -392,7 +399,8 @@ class Data:
         if filepath.endswith('.csv'):
             t0 = time.time()
             self.df.to_csv(filepath, index=False)
-            print("csv data saved ({:.2f}s).\n If speed is an issue, use hdf. csv format is useful ony for py2-py3-compatibility.".format(time.time() - t0))
+            print("csv data saved ({:.2f}s).\n If speed is an issue, use hdf."
+                  " csv format is useful ony for py2-py3-compatibility.".format(time.time() - t0))
         elif filepath.endswith('.hdf'):
             t0 = time.time()
             t = []

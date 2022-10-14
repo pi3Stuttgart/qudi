@@ -538,12 +538,12 @@ class LaserScannerLogic(GenericLogic, ple_default):
                     'Voltage ramp too short to apply the '
                     'configured smoothing_steps. A simple linear ramp '
                     'was created instead.')
-                num_of_linear_steps = np.rint((v_max - v_min) / linear_v_step)
+                num_of_linear_steps = int(np.rint((v_max - v_min) / linear_v_step))
                 ramp = np.linspace(v_min, v_max, num_of_linear_steps)
 
             else:
-
-                num_of_linear_steps = np.rint((v_max_linear - v_min_linear) / linear_v_step)
+                num_of_linear_steps = int(np.rint((v_max_linear - v_min_linear) / linear_v_step))
+                #num_of_linear_steps = int(num_of_linear_steps) # FIXME. This was not needed before 13.10.2022. Should be already handled by np.rint
 
                 # Calculate voltage step values for smooth acceleration part of ramp
                 smooth_curve = np.array(
@@ -556,7 +556,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 decel_part = v_max - smooth_curve[::-1]
 
                 linear_part = np.linspace(v_min_linear, v_max_linear, num_of_linear_steps)
-
                 ramp = np.hstack((accel_part, linear_part, decel_part))
 
         # Reverse if downwards ramp is required
@@ -838,8 +837,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
             logger.warning("function 3 gaussian peaks not implemeted")
 
-
-        print(x_data.min(),x_data.max(),len(x_data)*10)
         self.interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*5)
         self.fit_data = model.eval(x=self.interplolated_x_data, params=result.params)
         
