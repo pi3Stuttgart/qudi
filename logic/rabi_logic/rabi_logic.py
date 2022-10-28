@@ -31,6 +31,7 @@ class RabiLogic(GenericLogic,rabi_default):
     savelogic = Connector(interface='SaveLogic')
     mcas_holder = Connector(interface='McasDictHolderInterface')
     fitlogic = Connector(interface='FitLogic')
+    #transition_tracker = Connector(interface="TransitionTracker")
 
     CHANNEL_APD0 = 0
     CHANNEL_APD1 = 1
@@ -55,7 +56,9 @@ class RabiLogic(GenericLogic,rabi_default):
     sigRabiPlotsUpdated = QtCore.Signal()
     SigClock= QtCore.Signal()
     SigCheckReady_Beacon = QtCore.Signal()
+    sigFitPerformed= QtCore.Signal(np.float)
 
+    starting_time=0
 
     def on_activate(self):
         self._time_tagger=self.counter_device()
@@ -63,6 +66,7 @@ class RabiLogic(GenericLogic,rabi_default):
         self._save_logic = self.savelogic()
         self._awg = self.mcas_holder()#mcas_dict()
         self._fit_logic = self.fitlogic()
+        #self._transition_tracker=self.transition_tracker()
         
         self.stop_awg = self._awg.mcas_dict.stop_awgs
         self.Timer = RepeatedTimer(1, self.clock) # this clock is not very precise, maybe the solution proposed on https://stackoverflow.com/questions/474528/what-is-the-best-way-to-repeatedly-execute-a-function-every-x-seconds can be helpful.
@@ -93,6 +97,9 @@ class RabiLogic(GenericLogic,rabi_default):
         return 
     
     def get_data(self):
+        if time.time()-self.starting_time>self.rabi_Stoptime and self.rabi_Stoptime!=0:
+            self.rabi_Stop_Button_Clicked(True)
+
         #print("checkready:",self.measurement_running)
         if not(self.measurement_running):
                 return
@@ -176,6 +183,7 @@ class RabiLogic(GenericLogic,rabi_default):
         parameters['Amplitude Fit'] = self.Amplitude_Fit
         parameters['Frequency Fit'] = self.Frequency_Fit
         parameters['Phase Fit'] = self.Phase_Fit
+        parameters['Pi pulse']= self.pi_pulse
 
 
         fig = self.draw_figure(
@@ -502,16 +510,20 @@ class RabiLogic(GenericLogic,rabi_default):
         self.Amplitude_Fit:str=''
         self.Frequency_Fit:str=''
         self.Phase_Fit:str=''
+        self.tau_pulse:float=0 #ns
 
         try:
             self.Amplitude_Fit=str(round(result.params["amplitude"].value,2))
-            self.Frequency_Fit=str(round(result.params["frequency"].value*1e9,2))
-            self.Phase_Fit=str(round(result.params["phase"].value,2))
+            self.Frequency_Fit=str(round(result.params["frequency"].value*1e3,2))
+            self.Phase_Fit=str(round(result.params["phase"].value*180/np.pi,2))
+            self.pi_pulse=round(1/(result.params["frequency"].value)/2,2)
         except Exception as e:
             print("an error occured during fitting in Rabi:\n", e)
 
-        self.rabi_FitParams="Amplitude: "+self.Amplitude_Fit+"\n"+"Frequency: "+self.Frequency_Fit+"\n"+"Phase: "+self.Phase_Fit
+        self.rabi_FitParams="Amplitude: "+self.Amplitude_Fit+"\n"+"Frequency  (MHz): "+self.Frequency_Fit+"\n"+"Pi pulse (ns): "+str(self.pi_pulse)+"\n"+"Phase: "+self.Phase_Fit
         
+        self.sigFitPerformed.emit(1/(result.params["frequency"].value)/2)
+
         return self.interplolated_x_data,self.fit_data,result
 
 from threading import Timer

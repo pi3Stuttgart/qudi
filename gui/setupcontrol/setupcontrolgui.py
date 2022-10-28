@@ -107,7 +107,7 @@ class SetupControlGUI(GUIBase):
         self._mw.StartAutoMeas_Button.clicked.connect(self._setupcontrol_logic.StartAutoMeas_Button_Clicked)
         self._mw.StopAutoMeas_Button.clicked.connect(self._setupcontrol_logic.StopAutoMeas_Button_Clicked)
         self._mw.SavePOIs_Button.clicked.connect(self._setupcontrol_logic.SavePOIs_Button_Clicked)
-        self._setupcontrol_logic.SigReadPower.connect(self.update_laserpower, QtCore.Qt.QueuedConnection)
+        #self._setupcontrol_logic.SigReadPower.connect(self.update_laserpower, QtCore.Qt.QueuedConnection)
         
         self._mw.MW1_power_DoubleSpinBox.setValue(self._setupcontrol_logic.MW1_power)
         self._mw.MW3_freq_DoubleSpinBox.setValue(self._setupcontrol_logic.MW3_freq)
@@ -115,12 +115,12 @@ class SetupControlGUI(GUIBase):
         self._mw.MW2_power_DoubleSpinBox.setValue(self._setupcontrol_logic.MW2_power)
         self._mw.MW2_freq_DoubleSpinBox.setValue(self._setupcontrol_logic.MW2_freq)
         self._mw.MW1_freq_DoubleSpinBox.setValue(self._setupcontrol_logic.MW1_freq)
-        self._mw.Set_Power_DoubleSpinBox.setValue(self._setupcontrol_logic.set_power)
+        self._mw.Set_Power_DoubleSpinBox.setValue(self._setupcontrol_logic.AOM_volt)
 
         # self._mw.Read_Power_Label.setText(str(self._setupcontrol_logic.read_power))
         
-    def update_laserpower(self):
-        self._mw.Read_Power_Label.setText(str(self._setupcontrol_logic.read_power))
+    # def update_laserpower(self):
+    #     self._mw.Read_Power_Label.setText(str(self._setupcontrol_logic.read_power))
 
 
     def on_deactivate(self):

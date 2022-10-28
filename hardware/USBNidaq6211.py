@@ -28,22 +28,27 @@ class streamUSBnidaq(Base, StreamUSBNidaqInterface): #Hardware file
     def on_activate(self):
         # Parameters
         print("Init USB Nidaq...")
-        self.sampling_freq_in = 10  # in Hz
+        self.sampling_freq_in = 42  # in Hz
         self.buffer_in_size = 10
         self.bufsize_callback = self.buffer_in_size
         self.buffer_in_size_cfg = round(self.buffer_in_size * 1)  # clock configuration
-        self.refresh_rate_plot = 10  # in Hz
         self.crop = 10  # number of seconds to drop at acquisition start before saving
         self.my_filename = 'test_3_opms'  # with full path if target folder different from current folder (do not leave trailing /)
         
         # Initialize data placeholders
-        self.buffer_in = np.zeros((len(self.chan_in), self.buffer_in_size))
-        self.data = np.zeros((len(self.chan_in), 1))  # will contain a first column with zeros but that's fine
+        self.buffer_in = np.zeros((1, self.buffer_in_size))
+        self.data = np.zeros((1, 1))  # will contain a first column with zeros but that's fine
+        #self.start_acquisition()
         return
 
     def on_deactivate(self):
-        self.shut_down_streaming()
+        try: #please look away :)
+            self.task_in.is_task_done()
+            self.shut_down_streaming()
+        except:
+            pass
 
+       
     def start_acquisition(self):
         # Configure and setup the tasks
         self.task_in = nidaqmx.Task()
@@ -52,11 +57,12 @@ class streamUSBnidaq(Base, StreamUSBNidaqInterface): #Hardware file
         self.task_in.register_every_n_samples_acquired_into_buffer_event(self.bufsize_callback, self.reading_task_callback) 
         # Registers a callback function to receive an event when the specified number of samples is written from the device to the buffer.
         # But afaik it is not necessary for readout in general. One can just access self.buffer_in at all times. #https://nidaqmx-python.readthedocs.io/en/latest/task.html
+        #self.reading_task_callback()
         self.task_in.start()
 
         self.task_out = nidaqmx.Task()
         self.cfg_write_task(self.task_out)
-        #self.task_out.start()
+        self.task_out.start()
 
     def cfg_read_task(self, acquisition):
         acquisition.ai_channels.add_ai_voltage_chan(self.chan_in)
@@ -66,16 +72,24 @@ class streamUSBnidaq(Base, StreamUSBNidaqInterface): #Hardware file
     
     def cfg_write_task(self, voltage_out_task):
         self.numberOfUsedChannels = 0
-        if self.chan_A1 is not None:
+        print("Channels:")
+        print(self.chan_A2)
+        print(self.chan_A1)
+        if self.chan_A1 != 'None':
+            print("1")
             voltage_out_task.ao_channels.add_ao_voltage_chan(self.chan_A1, min_val=self.voltagerange[0], max_val=self.voltagerange[-1])
             self.numberOfUsedChannels +=1
-        if self.chan_A2 is not None:
+        if self.chan_A2 != 'None':
+            print("1")
             voltage_out_task.ao_channels.add_ao_voltage_chan(self.chan_A2, min_val=self.voltagerange[0], max_val=self.voltagerange[-1])
             self.numberOfUsedChannels +=1      
         print("Connected write task.")
 
     def reading_task_callback(self, task_idx, event_type, num_samples, callback_data):
+        #print("buffer in", self.buffer_in)
+        #print("num samples", num_samples)
         self.stream_in.read_many_sample(self.buffer_in, num_samples, timeout=constants.WAIT_INFINITELY)
+
         return 0  # Absolutely needed for this callback to be well defined (see nidaqmx doc).
     
     def goToVoltage(self, V):

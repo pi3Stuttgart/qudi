@@ -30,6 +30,7 @@ class ODMRLogic_holder(GenericLogic):
     savelogic = Connector(interface='SaveLogic')
     mcas_holder = Connector(interface='McasDictHolderInterface')
     fitlogic = Connector(interface='FitLogic')
+    #transition_tracker = Connector(interface="TransitionTracker")
     CHANNEL_APD0 = 0
     CHANNEL_APD1 = 1
     CHANNEL_DETECT = 2
@@ -53,6 +54,7 @@ class ODMRLogic_holder(GenericLogic):
     sigOdmrPlotsUpdated = QtCore.Signal()
     SigClock= QtCore.Signal()
     SigCheckReady_Beacon = QtCore.Signal()
+    sigFitPerformed =  QtCore.Signal(str)
 
     def on_activate(self):
         """
@@ -64,6 +66,7 @@ class ODMRLogic_holder(GenericLogic):
         self._save_logic = self.savelogic()
         self._awg = self.mcas_holder()#mcas_dict()
         self._fit_logic = self.fitlogic()
+        #self._transition_tracker=self.transition_tracker()
         
         self.stop_awg = self._awg.mcas_dict.stop_awgs
         self.pulsedODMRLogic = pulsedODMRLogic(self)
@@ -116,6 +119,7 @@ class ODMRLogic_holder(GenericLogic):
 
         filepath = self._save_logic.get_path_for_module(module_name='ODMR')
         timestamp = datetime.datetime.now()
+        
 
         if len(tag) > 0:
             filelabel_raw = '{0}_cw_ODMR_raw'.format(tag)
@@ -561,6 +565,7 @@ class ODMRLogic_holder(GenericLogic):
                                 units='Hz',
                                 estimator=self._fit_logic.estimate_gaussiandouble_peak
                                 )
+                                
         elif self.NumberOfPeaks==3:
             model,params=self._fit_logic.make_gaussiantriple_model()
 
@@ -586,11 +591,12 @@ class ODMRLogic_holder(GenericLogic):
         for i in range(self.NumberOfPeaks):
             try:
                 self.Contrast_Fit=self.Contrast_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"amplitude"].value,2))+"; " # because 1 peak and 2 peak gaussian fit dont give the same result keywords, we add the 'gi_' part (missing in the 1 peak case) by multiplying the string by 1 if paeks!=1 and remove it if peaks=1.
-                self.Frequencies_Fit=self.Frequencies_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"center"].value,2))+"; "
-                self.Linewidths_Fit=self.Linewidths_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"fwhm"].value,2))+"; " #TODO convert linewidth from V to MHz
+                self.Frequencies_Fit=self.Frequencies_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"center"].value/1e6,2))+"; "
+                self.Linewidths_Fit=self.Linewidths_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"fwhm"].value/1e3,2))+"; " #TODO convert linewidth from V to MHz
             except Exception as e:
                 print("an error occured:\n", e)
 
+        self.sigFitPerformed.emit(self.Frequencies_Fit)
         return self.interplolated_x_data,self.fit_data,result
   
 
@@ -613,7 +619,12 @@ class ODMRLogic(cw_default):
         self.x_fit = np.arange(20)
         self.y_fit = np.arange(20)
 
+        self.starting_time=0
+
     def data_readout(self):
+        if time.time()-self.starting_time>self.cw_Stoptime and self.cw_Stoptime!=0:
+            self.cw_Stop_Button_Clicked(True)
+
         #print("checkready:",self.measurement_running)
         if not(self.measurement_running or self.syncing):
             #if not(self.syncing):
@@ -795,9 +806,12 @@ class pulsedODMRLogic(pulsed_default):
 
         self.x_fit = np.arange(20)
         self.y_fit = np.arange(20)
+        self.starting_time=0
 
 
     def data_readout(self):
+        if time.time()-self.starting_time>self.pulsed_Stoptime and self.pulsed_Stoptime!=0:
+            self.pulsed_Stop_Button_Clicked(True)
         #print("checkready:",self.measurement_running)
         if not(self.measurement_running or self.syncing):
                 return

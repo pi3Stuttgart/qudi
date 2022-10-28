@@ -197,17 +197,17 @@ class GatedCounterGui(GUIBase):
         self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(8), self._mw.histogram_DockWidget)
 
     def start_clicked(self):
-        """ Handling the Start button to stop and restart the counter. """
-
-        if self._counter_logic.module_state() != 'locked':
+            """ Handling the Start button to stop and restart the counter. """
+            print("start clicked")
+        #if self._counter_logic.module_state() != 'locked':
             self.sigStartGatedCounter.emit()
             self._mw.start_counter_Action.setEnabled(False)
             self._mw.stop_counter_Action.setEnabled(True)
 
     def stop_clicked(self):
-        """ Handling the Stop button to stop and restart the counter. """
+            """ Handling the Stop button to stop and restart the counter. """
 
-        if self._counter_logic.module_state() == 'locked':
+        #if self._counter_logic.module_state() == 'locked':
             self.sigStopGatedCounter.emit()
             self.reset_toolbar_display()
 

@@ -544,7 +544,6 @@ class Transition:
 
 
 # gui QMainWindow, transition_tracker_gui.Ui_window
-
 class TransitionTracker(GenericLogic):
     c13_list = []#['13c414', '13c90', '13c13', '13c6', '13c-5', '13c-6']
     si29_list = []
@@ -555,6 +554,11 @@ class TransitionTracker(GenericLogic):
 
     #transition_tracker_gui = Connector(interface="transition_tracker_gui")
     mcas_holder = Connector(interface='McasDictHolderInterface')
+    rabi_logic= Connector(interface='RabiLogic')
+    odmr_logic= Connector(interface='ODMRLogic_holder')
+    ple_logic= Connector(interface='LaserScannerLogic')
+    powerstabilization_logic = Connector(interface='PowerStabilizationLogic')
+
     update_tt_nuclear_gui = pyqtSignal()
     update_tt_electron_gui = pyqtSignal()
 
@@ -565,6 +569,11 @@ class TransitionTracker(GenericLogic):
         # super(TransitionTracker, self).__init__()
         # self.setupUi(self)
         self._awg = self.mcas_holder()  # mcas_dict()
+        self._rabi_logic= self.rabi_logic()
+        self._odmr_logic= self.odmr_logic()
+        self._ple_logic= self.ple_logic()
+        self._powerstabilization_logic = self.powerstabilization_logic()
+
         self.connect_signals()  # todo
         # title = '' if title is None else title
         # self.setWindowTitle(title)
@@ -598,8 +607,28 @@ class TransitionTracker(GenericLogic):
     def on_deactivate(self):
         pass
 
-    def connect_signals(self):
+    def do_nothing(self,*args,**kwargs):
+        print("done nothing\n", "args are:\n",args)
         pass
+
+    def update_ple(self,freqs=""):
+        self.ple_Ex = float(freqs.split(';')[0])
+
+        # to set the constant voltage, thus lock the frequency, on the peak
+        self._ple_logic._change_voltage(self.ple_Ex)
+
+    def update_ODMR(self,freqs=""):
+        self.mw_transition_frequency=float(freqs.split(';')[0])
+
+    def update_rabi(self,pi_dur):
+        # pi_dur is already a float
+        self.current_local_oscillator_freq=pi_dur
+
+    def connect_signals(self):
+        self._rabi_logic.sigFitPerformed.connect(self.do_nothing)
+        self._odmr_logic.sigFitPerformed.connect(self.do_nothing)
+        self._ple_logic.sigFitPerformed.connect(self.update_ple)
+
         #self.update_tt_nuclear_gui.connect(self.update_gui_nuclear)
         #self.update_tt_electron_gui.connect(self.update_gui_electron)
 

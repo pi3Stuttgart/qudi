@@ -77,14 +77,14 @@ class pulsed_ODMR_default_values_and_widget_functions:
         def pulsed_Interval_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_Interval_LineEdit. Text=',text)
                 try:
-                        self.pulsed_Interval=float(text)
+                        self.pulsed_Interval=float(text.replace(",","."))
                 except:
                         pass
 
         def pulsed_StartFreq_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_StartFreq_LineEdit. Text=',text)
                 try:
-                        self.pulsed_StartFreq=float(text)
+                        self.pulsed_StartFreq=float(text.replace(",","."))
                 except:
                         pass
 
@@ -95,7 +95,7 @@ class pulsed_ODMR_default_values_and_widget_functions:
         def pulsed_MW2_Freq_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_MW2_Freq_LineEdit. Text=',text)
                 try:
-                        self.pulsed_MW2_Freq=float(text)
+                        self.pulsed_MW2_Freq=float(text.replace(",","."))
                 except:
                         pass
 
@@ -120,14 +120,14 @@ class pulsed_ODMR_default_values_and_widget_functions:
         def pulsed_MW1_Power_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_MW1_Power_LineEdit. Text=',text)
                 try:
-                        self.pulsed_MW1_Power=float(text)
+                        self.pulsed_MW1_Power=float(text.replace(",","."))
                 except:
                         pass
 
         def pulsed_StopFreq_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_StopFreq_LineEdit. Text=',text)
                 try:
-                        self.pulsed_StopFreq=float(text)
+                        self.pulsed_StopFreq=float(text.replace(",","."))
                 except:
                         pass
 
@@ -158,28 +158,28 @@ class pulsed_ODMR_default_values_and_widget_functions:
         def pulsed_MW3_Power_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_MW3_Power_LineEdit. Text=',text)
                 try:
-                        self.pulsed_MW3_Power=float(text)
+                        self.pulsed_MW3_Power=float(text.replace(",","."))
                 except:
                         pass
 
         def pulsed_MaxIterations_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_MaxIterations_LineEdit. Text=',text)
                 try:
-                        self.pulsed_MaxIterations=float(text)
+                        self.pulsed_MaxIterations=float(text.replace(",","."))
                 except:
                         pass
 
         def pulsed_MW2_Power_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_MW2_Power_LineEdit. Text=',text)
                 try:
-                        self.pulsed_MW2_Power=float(text)
+                        self.pulsed_MW2_Power=float(text.replace(",","."))
                 except:
                         pass
 
         def pulsed_SecondsPerPoint_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_SecondsPerPoint_LineEdit. Text=',text)
                 try:
-                        self.pulsed_SecondsPerPoint=float(text)
+                        self.pulsed_SecondsPerPoint=float(text.replace(",","."))
                 except:
                         pass
 
@@ -205,21 +205,22 @@ class pulsed_ODMR_default_values_and_widget_functions:
         def pulsed_Stepsize_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_Stepsize_LineEdit. Text=',text)
                 try:
-                        self.pulsed_Stepsize=float(text)
+                        self.pulsed_Stepsize=float(text.replace(",","."))
                 except:
                         pass
 
         def pulsed_MW3_Freq_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_MW3_Freq_LineEdit. Text=',text)
                 try:
-                        self.pulsed_MW3_Freq=float(text)
+                        self.pulsed_MW3_Freq=float(text.replace(",","."))
                 except:
                         pass
 
         def pulsed_NumberOfPeaks_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_NumberOfPeaks_LineEdit. Text=',text)
                 try:
-                        self.NumberOfPeaks=float(text)
+                        self.NumberOfPeaks=float(text.replace(",","."))
+                        self.holder.NumberOfPeaks=self.NumberOfPeaks
                 except:
                         pass
 
@@ -242,12 +243,12 @@ class pulsed_ODMR_default_values_and_widget_functions:
         def pulsed_Stoptime_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_Stoptime_LineEdit. Text=',text)
                 try:
-                        self.pulsed_Stoptime=float(text)
+                        self.pulsed_Stoptime=float(text.replace(",","."))
                 except:
                         pass
 
         def pulsed_Save_Button_Clicked(self,on):
-                self.holder.save_pulsed_odmr_data()
+                self.holder.save_pulsed_odmr_data(tag=self.pulsed_Filename)
 
         def pulsed_Run_Button_Clicked(self,on):
                 self.holder.Contrast_Fit = ''
@@ -266,14 +267,14 @@ class pulsed_ODMR_default_values_and_widget_functions:
         def pulsed_RepumpDecay_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_RepumpDecay_LineEdit. Text=',text)
                 try:
-                        self.pulsed_RepumpDecay=float(text)
+                        self.pulsed_RepumpDecay=float(text.replace(",","."))
                 except:
                         pass
 
         def pulsed_RepumpDuration_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_RepumpDuration_LineEdit. Text=',text)
                 try:
-                        self.pulsed_RepumpDuration=float(text)
+                        self.pulsed_RepumpDuration=float(text.replace(",","."))
                 except:
                         pass
 
@@ -285,56 +286,56 @@ class pulsed_ODMR_default_values_and_widget_functions:
         def pulsed_AOMDelay_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_AOMDelay_LineEdit. Text=',text)
                 try:
-                        self.pulsed_AOMDelay=float(text)
+                        self.pulsed_AOMDelay=float(text.replace(",","."))
                 except:
                         pass
 
         def pulsed_InitTime_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_InitTime_LineEdit. Text=',text)
                 try:
-                        self.pulsed_InitTime=float(text)
+                        self.pulsed_InitTime=float(text.replace(",","."))
                 except:
                         pass
 
         def pulsed_DecayInit_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_DecayInit_LineEdit. Text=',text)
                 try:
-                        self.pulsed_DecayInit=float(text)
+                        self.pulsed_DecayInit=float(text.replace(",","."))
                 except:
                         pass
 
         def pulsed_ReadoutTime_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_ReadoutTime_LineEdit. Text=',text)
                 try:
-                        self.pulsed_ReadoutTime=float(text)
+                        self.pulsed_ReadoutTime=float(text.replace(",","."))
                 except:
                         pass
 
         def pulsed_ReadoutDecay_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_ReadoutDecay_LineEdit. Text=',text)
                 try:
-                        self.pulsed_ReadoutDecay=float(text)
+                        self.pulsed_ReadoutDecay=float(text.replace(",","."))
                 except:
                         pass
 
         def pulsed_PiDecay_lineEdit_textEdited(self,text):
                 #print('done something with pulsed_PiDecay_lineEdit. Text=',text)
                 try:
-                        self.pulsed_PiDecay=float(text)
+                        self.pulsed_PiDecay=float(text.replace(",","."))
                 except:
                         pass
 
         def pulsed_piPulseDuration_lineEdit_textEdited(self,text):
                 #print('done something with pulsed_piPulseDuration_lineEdit. Text=',text)
                 try:
-                        self.pulsed_piPulseDuration=float(text)
+                        self.pulsed_piPulseDuration=float(text.replace(",","."))
                 except:
                         pass
 
         def pulsed_Binning_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_Binning_LineEdit. Text=',text)
                 try:
-                        self.pulsed_Binning=float(text)
+                        self.pulsed_Binning=float(text.replace(",","."))
                 except:
                         pass
         def pulsed_SelectGaussianFit_RadioButton_clicked(self):

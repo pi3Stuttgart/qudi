@@ -61,6 +61,16 @@ class LaserScannerLogic(GenericLogic, ple_default):
     _scan_speed = StatusVar('scan_speed', 0.1)
     _static_v = StatusVar('goto_voltage', 0)
     fc = StatusVar('fits', None)
+    MW1_Freq = StatusVar('MW1_freq', 70)
+    MW2_Freq = StatusVar('MW2_freq', 140)
+    MW3_Freq = StatusVar('MW3_freq', 210)
+    _MW1_Power = StatusVar('MW1_Power', -21)
+    MW2_Power = StatusVar('MW2_Power', -21)
+    MW3_Power = StatusVar('MW3_Power', -21)
+
+
+
+
 
     sigChangeVoltage = QtCore.Signal(float)
     sigVoltageChanged = QtCore.Signal(float)
@@ -68,6 +78,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
     sigUpdatePlots = QtCore.Signal()
     sigScanFinished = QtCore.Signal()
     sigScanStarted = QtCore.Signal()
+    sigFitPerformed =  QtCore.Signal(str)
+    SigIonized = QtCore.Signal()
 
     # to cut the scan line into smaller parts:
     slices=11
@@ -88,6 +100,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         # self.A1_on_during_retrace=0
         self.local_counts=[]
         self.slice_number=0
+        self.MW1_Power=-21
 
  
         
@@ -95,6 +108,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.fit_x = []
         self.fit_y = []
         self.plot_x = []
+        self.plot_x_frequency=[]
         self.plot_y = []
         self.plot_y2 = []
 
@@ -122,6 +136,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         # Sets connections between signals and functions
         self.sigChangeVoltage.connect(self._change_voltage, QtCore.Qt.QueuedConnection)
         self.sigScanNextLine.connect(self._do_next_line, QtCore.Qt.QueuedConnection)
+        self.sigFitPerformed.connect(self.goto_fitted_peak, QtCore.Qt.QueuedConnection)
 
         # Initialization of internal counter for scanning
         self._scan_counter_up = 0
@@ -183,6 +198,11 @@ class LaserScannerLogic(GenericLogic, ple_default):
         @return int: error code (0:OK, -1:error)
         """
         ramp_scan = self._generate_ramp(self.get_current_voltage(), new_voltage, 0.75)
+        if len(ramp_scan[0])==1:
+            ramp_scan=np.hstack((ramp_scan,ramp_scan))
+        elif len(ramp_scan[0])<1:
+            return 0
+
         self._initialise_scanner()
         ignored_counts = self._scan_line(ramp_scan)
         self._close_scanner()
@@ -193,12 +213,19 @@ class LaserScannerLogic(GenericLogic, ple_default):
         if voltage is None:
             return -1
 
-        if abs(self.get_current_voltage()-voltage)<0.01: #avoid a strange situation where we get an error
-            goto_ramp = self._generate_ramp(self.get_current_voltage(), voltage+0.05, 0.75)
-            ignored_counts = self._scan_line(goto_ramp)
+        #if abs(self.get_current_voltage()-voltage)<0.01: #avoid a strange situation where we get an error
+        #    goto_ramp = self._generate_ramp(self.get_current_voltage(), voltage+0.05, 0.75)
+
+        #    ignored_counts = self._scan_line(goto_ramp)
 
         goto_ramp = self._generate_ramp(self.get_current_voltage(), voltage, 0.75)
+        if len(goto_ramp[0])==1:
+            # this fix works only in this case, it is not meant to work when another channel than the last one (the 4th)
+            goto_ramp=np.hstack((goto_ramp,goto_ramp))
+            goto_ramp[3,1]=voltage
+        
         ignored_counts = self._scan_line(goto_ramp)
+
         
         return 0
 
@@ -249,6 +276,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.scan_matrix = np.zeros((self.number_of_repeats, scan_length))
         self.scan_matrix2 = np.zeros((self.number_of_repeats, scan_length))
         self.plot_x = np.linspace(self.scan_range[0], self.scan_range[1], scan_length)
+        #self.plot_x_frequency=self.plot_x*1e9/0.30 #1000 MHz equals 0.22 V on the PLE x range with FeedForward on # 1000 MHz equals 0.30 V on the PLE x range without FeedForward
+        self.plot_x_frequency=self.plot_x/0.30 #1000 MHz equals 0.22 V on the PLE x range with FeedForward on # 1000 MHz equals 0.30 V on the PLE x range without FeedForward
         self.plot_y = np.zeros(scan_length)
         self.plot_y2 = np.zeros(scan_length)
         self.fit_x = np.linspace(self.scan_range[0], self.scan_range[1], scan_length)
@@ -319,8 +348,12 @@ class LaserScannerLogic(GenericLogic, ple_default):
         print("passed time 3", time.time()-self.currenttime)
         
         #this part is used to be able to abort the scanning process more rapidly
+        if self.resolution/self.slices<3: #avoid getting empty scan lines
+
+            self.slices=int(self.resolution/3)
         self._upwards_ramp_slices=self.slice_array(self._upwards_ramp)
         self.slice_number=0
+        self.local_counts = []
 
         self._initialise_data_matrix(len(self._upwards_ramp[3]))
         print("passed time 4", time.time()-self.currenttime)
@@ -329,7 +362,10 @@ class LaserScannerLogic(GenericLogic, ple_default):
         returnvalue = self._initialise_scanner()
         if returnvalue < 0:
             # TODO: error message
+            logging.error('The scanner was not initialised')
             return -1
+
+        self.stopped=False
 
         self.sigScanNextLine.emit()
         self.sigScanStarted.emit()
@@ -351,8 +387,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
         print("Stopping...")
         with self.threadlock:
             if self.module_state() == 'locked':
-                #self._close_scanner() # hope this will not destroy something
-                #self._initialise_scanner()
+                self._close_scanner() # hope this will not destroy something
+                self._initialise_scanner()
                 self.stopRequested = True
                 #self._do_next_line()
         return 0
@@ -381,10 +417,12 @@ class LaserScannerLogic(GenericLogic, ple_default):
         if ((self.stopRequested and self.slice_number==0) or self._scan_counter_down >= self.number_of_repeats or self.AbortRequested):
             self._goto_during_scan(self._static_v)
             self._close_scanner()
+            self.stopped=True
             self.sigScanFinished.emit()
             self.local_counts=[]
             self.slice_number=0
             self._awg.mcas_dict.stop_awgs()
+            
             return
 
         if self._scan_counter_up == 0 and self.slice_number==0:
@@ -399,6 +437,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
             if self.slice_number==self.slices:
                 self.scan_matrix[self._scan_counter_up] =self.local_counts # Here occurs an error "cannot copy sequence with size 21 to array axis with dimension 20". This only occured, when variables where changed while the programm is running.
                 self.plot_y = self.plot_y + np.array(self.local_counts)
+                self.check_if_ionized()
                 self.local_counts=[]
                 self._scan_counter_up += 1
                 self.upwards_scan = False
@@ -419,13 +458,22 @@ class LaserScannerLogic(GenericLogic, ple_default):
             self.upwards_scan = True
 
 
-
-        
         self.sigScanNextLine.emit()
 # Create sequence which runs only once for repump pulse
 # Create sequence for upwards scan
 
+    def check_if_ionized(self):
+        peak_min_counts=100
+        ionized=not(np.sum(np.asarray(self.local_counts)>peak_min_counts))
+        if ionized:
+            print("Ionized")
+            self.SigIonized.emit()
+
+
     def retrace_seq(self):
+
+        ##TODO - if the sequence is already in the memory, and it was not changed - do not rewrite: get the seq hash and compare them. see minsik's ODMR
+
         seq = self._awg.mcas(name="PLE_retrace", ch_dict={"2g": [1, 2], "ps": [1]})
         seq.start_new_segment("sequence")
         seq.asc(name="without MW",
@@ -451,9 +499,21 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 )
         self._awg.mcas_dict["PLE_retrace_noRepump"] = seq
         return
+    
+    @property
+    def MW1_Power(self):
+        return self._MW1_Power
+
+    @MW1_Power.setter
+    def MW1_Power(self,val):
+        self._MW1_Power=val
 
     def trace_seq(self):
         self.power = []
+        print("MW  POWER IN PLE")
+        print(self.MW1_Power)
+        print(self.MW2_Power)
+        print(self.MW3_Power)
         if self.enable_MW1:
             self.power += [self.MW1_Power]
         if self.enable_MW2:
@@ -609,11 +669,24 @@ class LaserScannerLogic(GenericLogic, ple_default):
             self.log.exception('Could not unlock scanning device.')
         return 0
 
+    def goto_fitted_peak(self):
+        if self.stopped:
+            print("going to fitted peak")
+            freqs=np.array(self.Frequencies_Fit.split(";")[:-1]).astype(float)
+            print(freqs)
+            peak_volt=max(freqs)
+            print(peak_volt)
+            if peak_volt<self.scan_range[1] and peak_volt>self.scan_range[0]:
+                self.goto_voltage(peak_volt)
+            else: 
+                print("Goto voltage out of scan range, assuming fiting error.")
+
     def save_data(self, tag=None, colorscale_range=None, percentile_range=None):
         """ Save the counter trace data and writes it to a file.
 
         @return int: error code (0:OK, -1:error)
         """
+        print("im am the save data of PLE")
         if tag is None:
             tag = ''
 
@@ -632,7 +705,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         
         # prepare the data in a dict or in an OrderedDict:
         data = OrderedDict()
-        data['frequency (Hz)'] = self.plot_x
+        data['frequency (Hz)'] = self.plot_x_frequency
         data['trace count data (counts/s)'] = self.plot_y
 
         data2 = OrderedDict()
@@ -647,6 +720,13 @@ class LaserScannerLogic(GenericLogic, ple_default):
         parameters['ContrastFit'] = self.Contrast_Fit
         parameters['FrequenciesFit'] = self.Frequencies_Fit
         parameters['LinewidthsFit'] = self.Linewidths_Fit
+        parameters['MW1 Power (dBm)'] = self.MW1_Power
+        parameters['MW2 Power (dBm)'] = self.MW2_Power
+        parameters['MW3 Power (dBm)'] = self.MW3_Power
+        parameters['MW1 freq (MHz)'] = self.MW1_Freq
+        parameters['MW2 freq (MHz)'] = self.MW2_Freq
+        parameters['MW3 freq (MHz)'] = self.MW3_Freq
+
 
         fig = self.draw_figure(
             self.scan_matrix,
@@ -802,7 +882,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         return fig
     
     def do_gaussian_fit(self):
-        
+        print("doing gaussian fit")
         x_data=self.plot_x.astype(np.float)
         y_data=self.plot_y.astype(np.float)
         if self.NumberOfPeaks==1:
@@ -844,6 +924,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.Frequencies_Fit:str=''
         self.Linewidths_Fit:str=''
 
+
         for i in range(self.NumberOfPeaks):
             try:
                 self.Contrast_Fit=self.Contrast_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"amplitude"].value,2))+"; " # because 1 peak and 2 peak gaussian fit dont give the same result keywords, we add the 'gi_' part (missing in the 1 peak case) by multiplying the string by 1 if paeks!=1 and remove it if peaks=1.
@@ -852,4 +933,5 @@ class LaserScannerLogic(GenericLogic, ple_default):
             except Exception as e:
                 print("an error occured:\n", e)
 
+        self.sigFitPerformed.emit(self.Frequencies_Fit)
         return self.interplolated_x_data,self.fit_data,result

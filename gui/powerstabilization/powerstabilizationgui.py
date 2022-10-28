@@ -27,9 +27,9 @@ from gui.colordefs import QudiPalettePale as palette
 from gui.guibase import GUIBase
 
 import pyqtgraph as pg
-from qtpy import QtCore
-from qtpy import QtWidgets
-from qtpy import uic
+from PyQt5 import QtCore
+from PyQt5 import QtWidgets
+from PyQt5 import uic
 
 from gui.powerstabilization.connectors_and_setdefault import powerstab_default_gui as powerstab_default_gui
 
@@ -38,13 +38,13 @@ class PowerControlMainWindow(QtWidgets.QMainWindow):
 
     """ Create the Main Window based on the *.ui file. """
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         # Get the path to the *.ui file
         this_dir = os.path.dirname(__file__)
-        ui_file = os.path.join(this_dir, 'ui_power_control.ui')
+        ui_file = os.path.join(this_dir, 'ui_power_control2.ui')
 
         # Load it
-        super().__init__(**kwargs)
+        super(PowerControlMainWindow, self).__init__()
         uic.loadUi(ui_file, self)
         self.show()
 
@@ -61,8 +61,7 @@ class PowerStabilizationGui(GUIBase, powerstab_default_gui):
     # declare connectors
     powerstabilizationlogic = Connector(interface='PowerStabilizationLogic')
     
-    # sigStartCounter = QtCore.Signal()
-    # sigStopCounter = QtCore.Signal()
+
 
     def __init__(self, config, **kwargs):
         print("Init")
@@ -77,6 +76,9 @@ class PowerStabilizationGui(GUIBase, powerstab_default_gui):
         
         self._mw = PowerControlMainWindow()
         self._power_stabilization = self.powerstabilizationlogic()
+        self._power_stabilization.SigUpdatePlots.connect(self.update_plots,type=QtCore.Qt.QueuedConnection)
+        self._power_stabilization.SigStabilized.connect(self.set_stabilization_to_off,type=QtCore.Qt.QueuedConnection)
+
         self.initialize_connections_and_defaultvalues()
         
         self.laserpower_image = pg.PlotDataItem(
@@ -97,19 +99,10 @@ class PowerStabilizationGui(GUIBase, powerstab_default_gui):
         # )
 
         self._mw.power_trace_PlotWidget.addItem(self.laserpower_image)
-        self._mw.power_trace_PlotWidget.setLabel(axis='left', text='Power', units='nW')
+        self._mw.power_trace_PlotWidget.setLabel(axis='left', text='Power', units='W')
         self._mw.power_trace_PlotWidget.setLabel(axis='bottom', text='Time', units='s')
         self._mw.power_trace_PlotWidget.showGrid(x=True, y=True, alpha=0.8)
 
-        # self._counting_logic.sigCounterUpdated.connect(self.updateData)
-        # self._counting_logic.sigCountingSamplesChanged.connect(self.update_oversampling_SpinBox)
-        # self._counting_logic.sigCountLengthChanged.connect(self.update_count_length_SpinBox)
-        # self._counting_logic.sigCountFrequencyChanged.connect(self.update_count_freq_SpinBox)
-        # self._counting_logic.sigSavingStatusChanged.connect(self.update_saving_Action)
-        # self._counting_logic.sigCountingModeChanged.connect(self.update_counting_mode_ComboBox)
-        # self._counting_logic.sigCountStatusChanged.connect(self.update_count_status_Action)
-
-        # self.show()
 
     def show(self):
         """Make window visible and put it above all other windows.
@@ -120,21 +113,12 @@ class PowerStabilizationGui(GUIBase, powerstab_default_gui):
         return
 
     def on_deactivate(self):
-        self.disconnect_all()
-
-        # self.sigStartCounter.disconnect()
-        # self.sigStopCounter.disconnect()
-        self._mw.close()
-        return
-        
-    def on_deactivate(self):
         """ Deactivate the module properly.
         """
         self.disconnect_all()
-        
-        # self._odmr_logic.sigOdmrPlotsUpdated.disconnect() # TODO: disconnect all used signals
-
         self._mw.close()
+        return
+        
 
     def restoreDefaultView(self):
         """ Restore the arrangement of DockWidgets to the default
@@ -151,9 +135,17 @@ class PowerStabilizationGui(GUIBase, powerstab_default_gui):
         self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(1), self._mw.adjustDockWidget)
         self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(2), self._mw.plotDockWidget)
     
+    def set_stabilization_to_off(self):
+        self._mw.Off_RadioButton.toggle()
+
+    @QtCore.pyqtSlot()
     def update_plots(self, data_x=None, data_y=None):
+        
         #data_x=self._odmr_logic.ODMRLogic.mw1_freq*1e6
         #data_y=self._odmr_logic.ODMRLogic.data
-        data_x = np.arange(20)
-        data_y = random.randint(100, size=(20))
+        self._mw.PowerValue_Label.setText(str(round(self._power_stabilization.current_power,2))[:5]+"nW")
+        self._mw.VoltageValue_Label.setText(str(round(self._power_stabilization.feedback_voltage-self._power_stabilization.voltage_offset,4))+"V")
+        self._mw.AOM_Volt_label.setText(str(round(self._power_stabilization._setupcontrol_logic.AOM_volt,2))+"V to AOM")
+        data_y = np.asarray(self._power_stabilization.power_list)[-self._power_stabilization.datapoints:]*1e-9
+        data_x = np.arange(len(data_y))*self._power_stabilization.sleep_time
         self.laserpower_image.setData(data_x, data_y)

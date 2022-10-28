@@ -166,7 +166,6 @@ class ODMRLogic(GenericLogic):
     @fc.constructor
     def sv_set_fits(self, val):
         # Setup fit container
-        print("sv_set_fits AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") #UNFUG
         fc = self.fitlogic().make_fit_container('ODMR sum', '1d')
         fc.set_units(['Hz', 'c/s'])
         if isinstance(val, dict) and len(val) > 0:
@@ -200,7 +199,6 @@ class ODMRLogic(GenericLogic):
 
     @fc.representer
     def sv_get_fits(self, val):
-        print("sv_get_fits AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") #UNFUG
         
         """ save configured fits """
         if len(val.fit_list) > 0:

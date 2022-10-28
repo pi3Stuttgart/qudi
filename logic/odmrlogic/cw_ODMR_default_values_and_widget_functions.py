@@ -61,7 +61,7 @@ class cw_ODMR_default_values_and_widget_functions:
 
         def cw_StartFreq_LineEdit_textEdited(self,text):
                 try:
-                        self.cw_StartFreq=float(text)
+                        self.cw_StartFreq=float(text.replace(",","."))
                 except:
                         pass
 
@@ -76,28 +76,28 @@ class cw_ODMR_default_values_and_widget_functions:
 
         def cw_Stoptime_LineEdit_textEdited(self,text):
                 try:
-                        self.cw_Stoptime=float(text)
+                        self.cw_Stoptime=float(text.replace(",","."))
                 except:
                         pass
 
         def cw_Interval_LineEdit_textEdited(self,text):
                 try:
-                        self.cw_Interval=float(text)
+                        self.cw_Interval=float(text.replace(",","."))
                 except:
                         pass
 
         def cw_RepumpDuration_LineEdit_textEdited(self,text):
                 try:
-                        self.cw_RepumpDuration=float(text)
+                        self.cw_RepumpDuration=float(text.replace(",","."))
                 except:
                         pass
 
         def cw_Save_Button_Clicked(self,on):
-                self.holder.save_cw_odmr_data()
+                self.holder.save_cw_odmr_data(tag=self.cw_Filename)
 
         def cw_MW3_Power_LineEdit_textEdited(self,text):
                 try:
-                        self.cw_MW3_Power=float(text)
+                        self.cw_MW3_Power=float(text.replace(",","."))
                 except:
                         pass
 
@@ -106,13 +106,13 @@ class cw_ODMR_default_values_and_widget_functions:
 
         def cw_MW3_Freq_LineEdit_textEdited(self,text):
                 try:
-                        self.cw_MW3_Freq=float(text)
+                        self.cw_MW3_Freq=float(text.replace(",","."))
                 except:
                         pass
 
         def cw_MW2_Power_LineEdit_textEdited(self,text):
                 try:
-                        self.cw_MW2_Power=float(text)
+                        self.cw_MW2_Power=float(text.replace(",","."))
                 except:
                         pass
 
@@ -121,19 +121,20 @@ class cw_ODMR_default_values_and_widget_functions:
 
         def cw_MaxIterations_LineEdit_textEdited(self,text):
                 try:
-                        self.cw_MaxIterations=float(text)
+                        self.cw_MaxIterations=float(text.replace(",","."))
                 except:
                         pass
 
         def cw_RepumpDecay_LineEdit_textEdited(self,text):
                 try:
-                        self.cw_RepumpDecay=float(text)
+                        self.cw_RepumpDecay=float(text.replace(",","."))
                 except:
                         pass
 
         def cw_NumberOfPeaks_LineEdit_textEdited(self,text):
                 try:
-                        self.NumberOfPeaks=float(text)
+                        self.NumberOfPeaks=float(text.replace(",","."))
+                        self.holder.NumbrOfPeaks=self.NumberOfPeaks
                 except:
                         pass
 
@@ -157,7 +158,7 @@ class cw_ODMR_default_values_and_widget_functions:
 
         def cw_MW2_Freq_LineEdit_textEdited(self,text):
                 try:
-                        self.cw_MW2_Freq=float(text)
+                        self.cw_MW2_Freq=float(text.replace(",","."))
                 except:
                         pass
 
@@ -166,7 +167,7 @@ class cw_ODMR_default_values_and_widget_functions:
 
         def cw_MW1_Power_LineEdit_textEdited(self,text):
                 try:
-                        self.cw_MW1_Power=float(text)
+                        self.cw_MW1_Power=float(text.replace(",","."))
                 except:
                         pass
 
@@ -181,13 +182,13 @@ class cw_ODMR_default_values_and_widget_functions:
 
         def cw_StopFreq_LineEdit_textEdited(self,text):
                 try:
-                        self.cw_StopFreq=float(text)
+                        self.cw_StopFreq=float(text.replace(",","."))
                 except:
                         pass
 
         def cw_SecondsPerPoint_LineEdit_textEdited(self,text):
                 try:
-                        self.cw_SecondsPerPoint=float(text)
+                        self.cw_SecondsPerPoint=float(text.replace(",","."))
                 except:
                         pass
 
@@ -211,7 +212,7 @@ class cw_ODMR_default_values_and_widget_functions:
 
         def cw_Stepsize_LineEdit_textEdited(self,text):
                 try:
-                        self.cw_Stepsize=float(text)
+                        self.cw_Stepsize=float(text.replace(",","."))
                 except:
                         pass
 

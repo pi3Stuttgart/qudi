@@ -90,6 +90,7 @@ class PulseStreamer(Base, PulserInterface):
         self.__currently_loaded_waveform = ''
         self.current_status = 0
 
+
     def on_deactivate(self):
         self.reset()
         del self.pulse_streamer

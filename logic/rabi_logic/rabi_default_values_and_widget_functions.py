@@ -59,6 +59,8 @@ class rabi_default_values_and_widget_functions:
         rabi_FitParams:str=""
         update_after_stop:bool=F
 
+        pi_pulse:float=100 #ns
+
         def rabi_Stop_Button_Clicked(self,on):
                 #print('done something with rabi_Stop_Button')
                 self.stop_awg()
@@ -91,7 +93,7 @@ class rabi_default_values_and_widget_functions:
         def rabi_InitTime_LineEdit_textEdited(self,text):
                 #print('done something with rabi_InitTime_LineEdit. Text=',text)
                 try:
-                        self.rabi_InitTime=float(text)
+                        self.rabi_InitTime=float(text.replace(",","."))
                 except:
                         pass
 
@@ -101,21 +103,21 @@ class rabi_default_values_and_widget_functions:
         def rabi_MW2_Freq_LineEdit_textEdited(self,text):
                 #print('done something with rabi_MW2_Freq_LineEdit. Text=',text)
                 try:
-                        self.rabi_MW2_Freq=float(text)
+                        self.rabi_MW2_Freq=float(text.replace(",","."))
                 except:
                         pass
 
         def rabi_RepumpDecay_LineEdit_textEdited(self,text):
                 #print('done something with rabi_RepumpDecay_LineEdit. Text=',text)
                 try:
-                        self.rabi_RepumpDecay=float(text)
+                        self.rabi_RepumpDecay=float(text.replace(",","."))
                 except:
                         pass
 
         def rabi_Stoptime_LineEdit_textEdited(self,text):
                 #print('done something with rabi_Stoptime_LineEdit. Text=',text)
                 try:
-                        self.rabi_Stoptime=float(text)
+                        self.rabi_Stoptime=float(text.replace(",","."))
                 except:
                         pass
 
@@ -126,14 +128,14 @@ class rabi_default_values_and_widget_functions:
         def rabi_Tau_Decay_lineEdit_textEdited(self,text):
                 #print('done something with rabi_Tau_Decay_lineEdit. Text=',text)
                 try:
-                        self.rabi_Tau_Decay=float(text)
+                        self.rabi_Tau_Decay=float(text.replace(",","."))
                 except:
                         pass
 
         def rabi_Tau_Max_lineEdit_textEdited(self,text):
                 #print('done something with rabi_Tau_Max_lineEdit. Text=',text)
                 try:
-                        self.rabi_Tau_Max=float(text)
+                        self.rabi_Tau_Max=float(text.replace(",","."))
                 except:
                         pass
 
@@ -144,7 +146,7 @@ class rabi_default_values_and_widget_functions:
         def rabi_RepumpDuration_LineEdit_textEdited(self,text):
                 #print('done something with rabi_RepumpDuration_LineEdit. Text=',text)
                 try:
-                        self.rabi_RepumpDuration=float(text)
+                        self.rabi_RepumpDuration=float(text.replace(",","."))
                 except:
                         pass
 
@@ -159,7 +161,7 @@ class rabi_default_values_and_widget_functions:
         def rabi_Interval_LineEdit_textEdited(self,text):
                 #print('done something with rabi_Interval_LineEdit. Text=',text)
                 try:
-                        self.rabi_Interval=float(text)
+                        self.rabi_Interval=float(text.replace(",","."))
                 except:
                         pass
 
@@ -170,14 +172,14 @@ class rabi_default_values_and_widget_functions:
         def rabi_MW2_Power_LineEdit_textEdited(self,text):
                 #print('done something with rabi_MW2_Power_LineEdit. Text=',text)
                 try:
-                        self.rabi_MW2_Power=float(text)
+                        self.rabi_MW2_Power=float(text.replace(",","."))
                 except:
                         pass
 
         def rabi_DecayInit_LineEdit_textEdited(self,text):
                 #print('done something with rabi_DecayInit_LineEdit. Text=',text)
                 try:
-                        self.rabi_DecayInit=float(text)
+                        self.rabi_DecayInit=float(text.replace(",","."))
                 except:
                         pass
 
@@ -208,14 +210,14 @@ class rabi_default_values_and_widget_functions:
         def rabi_MW1_Freq_LineEdit_textEdited(self,text):
                 #print('done something with rabi_MW1_Freq_LineEdit. Text=',text)
                 try:
-                        self.rabi_MW1_Freq=float(text)
+                        self.rabi_MW1_Freq=float(text.replace(",","."))
                 except:
                         pass
 
         def rabi_Tau_Min_lineEdit_textEdited(self,text):
                 #print('done something with rabi_Tau_Min_lineEdit. Text=',text)
                 try:
-                        self.rabi_Tau_Min=float(text)
+                        self.rabi_Tau_Min=float(text.replace(",","."))
                 except:
                         pass
 
@@ -226,7 +228,7 @@ class rabi_default_values_and_widget_functions:
         def rabi_ReadoutTime_LineEdit_textEdited(self,text):
                 #print('done something with rabi_ReadoutTime_LineEdit. Text=',text)
                 try:
-                        self.rabi_ReadoutTime=float(text)
+                        self.rabi_ReadoutTime=float(text.replace(",","."))
                 except:
                         pass
 
@@ -241,7 +243,7 @@ class rabi_default_values_and_widget_functions:
         def rabi_Tau_Step_lineEdit_textEdited(self,text):
                 #print('done something with rabi_Tau_Step_lineEdit. Text=',text)
                 try:
-                        self.rabi_Tau_Step=float(text)
+                        self.rabi_Tau_Step=float(text.replace(",","."))
                 except:
                         pass
 
@@ -252,21 +254,21 @@ class rabi_default_values_and_widget_functions:
         def rabi_MW3_Freq_LineEdit_textEdited(self,text):
                 #print('done something with rabi_MW3_Freq_LineEdit. Text=',text)
                 try:
-                        self.rabi_MW3_Freq=float(text)
+                        self.rabi_MW3_Freq=float(text.replace(",","."))
                 except:
                         pass
 
         def rabi_MW3_Power_LineEdit_textEdited(self,text):
                 #print('done something with rabi_MW3_Power_LineEdit. Text=',text)
                 try:
-                        self.rabi_MW3_Power=float(text)
+                        self.rabi_MW3_Power=float(text.replace(",","."))
                 except:
                         pass
 
         def rabi_AOMDelay_LineEdit_textEdited(self,text):
                 #print('done something with rabi_AOMDelay_LineEdit. Text=',text)
                 try:
-                        self.rabi_AOMDelay=float(text)
+                        self.rabi_AOMDelay=float(text.replace(",","."))
                 except:
                         pass
 
@@ -280,21 +282,21 @@ class rabi_default_values_and_widget_functions:
         def rabi_ReadoutDecay_LineEdit_textEdited(self,text):
                 #print('done something with rabi_ReadoutDecay_LineEdit. Text=',text)
                 try:
-                        self.rabi_ReadoutDecay=float(text)
+                        self.rabi_ReadoutDecay=float(text.replace(",","."))
                 except:
                         pass
 
         def rabi_MW1_Power_LineEdit_textEdited(self,text):
                 #print('done something with rabi_MW1_Power_LineEdit. Text=',text)
                 try:
-                        self.rabi_MW1_Power=float(text)
+                        self.rabi_MW1_Power=float(text.replace(",","."))
                 except:
                         pass
 
         def rabi_MaxIterations_LineEdit_textEdited(self,text):
                 #print('done something with rabi_MaxIterations_LineEdit. Text=',text)
                 try:
-                        self.rabi_MaxIterations=float(text)
+                        self.rabi_MaxIterations=float(text.replace(",","."))
                 except:
                         pass
 
@@ -307,21 +309,21 @@ class rabi_default_values_and_widget_functions:
         def rabi_NumberOfPeaks_LineEdit_textEdited(self,text):
                 #print('done something with rabi_NumberOfPeaks_LineEdit. Text=',text)
                 try:
-                        self.rabi_NumberOfPeaks=float(text)
+                        self.rabi_NumberOfPeaks=float(text.replace(",","."))
                 except:
                         pass
 
         def rabi_Binning_LineEdit_textEdited(self,text):
                 #print('done something with rabi_Binning_LineEdit. Text=',text)
                 try:
-                        self.rabi_Binning=float(text)
+                        self.rabi_Binning=float(text.replace(",","."))
                 except:
                         pass
 
         def rabi_IntegrationTime_lineEdit_textEdited(self,text):
                 #print('done something with rabi_IntegrationTime_lineEdit. Text=',text)
                 try:
-                        rabi_IntegrationTime=float(text)
+                        rabi_IntegrationTime=float(text.replace(",","."))
                         if rabi_IntegrationTime>=2*self.rabi_Binning:
                                 self.rabi_IntegrationTime=rabi_IntegrationTime
 

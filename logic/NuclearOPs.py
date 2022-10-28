@@ -829,7 +829,9 @@ class NuclearOPs(DataGeneration):
         # print('get_trace NuclearOps delay', delay_ps_list)
         # print('get_trace NuclearOps window_ps', window_ps_list)
         if not self._md.debug_mode:
+            print("initiALIZING")
             self.mcas.initialize()
+            print("after init mcas")
 
         self.queue._gated_counter.count(abort, #FIXme get connector.
                                  ch_dict=self.mcas.ch_dict,

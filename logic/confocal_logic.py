@@ -589,7 +589,6 @@ class ConfocalLogic(GenericLogic):
 
             self.xy_image[:, :, 2] = self._current_z * np.ones(
                 (len(self._image_vert_axis), len(self._X)))
-
             self.sigImageXYInitialized.emit()
         return 0
 
@@ -712,6 +711,7 @@ class ConfocalLogic(GenericLogic):
 
         @return int: error code (0:OK, -1:error)
         """
+        current_pos = self.get_position()
         self._initialise_scanner()
         spatial_pos = self._scanning_device.get_scanner_position()
         rs = self.return_slowness if rs is None else rs
@@ -724,7 +724,7 @@ class ConfocalLogic(GenericLogic):
             start_line = np.vstack([lsx, lsy, lsz][0:n_ch])
         else:
             start_line = np.vstack(
-                [lsx, lsy, lsz, np.ones(lsx.shape) * self._current_a])
+                [lsx, lsy, lsz, np.ones(lsx.shape) * current_pos[3]])
         # move to the start position of the scan, counts are thrown away
         start_line_counts = self._scanning_device.scan_line(start_line)
         self._close_scanner()
@@ -759,19 +759,60 @@ class ConfocalLogic(GenericLogic):
             if self.module_state.can('unlock'):
                 self.module_state.unlock()
 
+    def set_up_scanner(self):
+        ### starting the scanner
+        self.module_state.lock()
+        self._scanning_device.module_state.lock()
+
+        clock_status = self._scanning_device.set_up_scanner_clock(
+            clock_frequency=self._clock_frequency)
+
+        if clock_status < 0:
+            self._scanning_device.module_state.unlock()
+            self.module_state.unlock()
+            self.set_position('scanner')
+            return -1
+        
+        scanner_status = self._scanning_device.set_up_scanner()
+
+        if scanner_status < 0:
+            self._scanning_device.close_scanner_clock()
+            self._scanning_device.module_state.unlock()
+            self.module_state.unlock()
+            self.set_position('scanner')
+            return -1
+
+    def stop_scanner(self):
+        self.kill_scanner()
+        self.module_state.unlock()
+
     def _change_position(self, tag):
         """ Threaded method to change the hardware position.
 
         @return int: error code (0:OK, -1:error)
         """
-        ch_array = ['x', 'y', 'z', 'a']
-        pos_array = [self._current_x, self._current_y, self._current_z, self._current_a]
-        pos_dict = {}
+        # ch_array = ['x', 'y', 'z', 'a']
+        # pos_array = [self._current_x, self._current_y, self._current_z, self._current_a]
+        # pos_dict = {}
 
-        for i, ch in enumerate(self.get_scanner_axes()):
-            pos_dict[ch_array[i]] = pos_array[i]
 
-        self._scanning_device.scanner_set_position(**pos_dict)
+        # for i, ch in enumerate(self.get_scanner_axes()):
+        #     pos_dict[ch_array[i]] = pos_array[i]
+        self.set_up_scanner()
+
+        current_pos = self.get_position()
+        rs = self.return_slowness
+        return_line = np.vstack([
+                    np.linspace(current_pos[0], self._current_x,rs),
+                    np.linspace(current_pos[1], self._current_y,rs),
+                    np.linspace(current_pos[2], self._current_z,rs),
+                    np.ones(rs) * current_pos[3]
+                ])
+        line_counts = self._scanning_device.scan_line(return_line)
+        self.stop_scanner()
+
+
+        # self._scanning_device.scanner_set_position(**pos_dict)
         return 0
 
     def get_position(self):
@@ -798,10 +839,10 @@ class ConfocalLogic(GenericLogic):
         """scanning an image in either depth or xy
 
         """
+        current_pos = self.get_position()
         # stops scanning
         if self.stopRequested:
             # return the scanner to the crosshair position, counts are thrown away
-            current_pos = self.get_position()
             crosshair_pos = self.crosshair_posi
             rs = self.return_slowness
             n_ch = len(self.get_scanner_axes())
@@ -817,7 +858,7 @@ class ConfocalLogic(GenericLogic):
                     np.linspace(current_pos[0], crosshair_pos[0],rs),
                     np.linspace(current_pos[1], crosshair_pos[1],rs),
                     np.linspace(current_pos[2], crosshair_pos[2],rs),
-                    np.ones(npointsshape) * self._current_a #no idea what _current_a does, just copied from below
+                    np.ones(npointsshape) * current_pos[3] #no idea what _current_a does, just copied from below
                 ])
             return_line_counts = self._scanning_device.scan_line(return_line)
             # now actually stop the scan
@@ -827,6 +868,7 @@ class ConfocalLogic(GenericLogic):
                 self.module_state.unlock()
                 self.signal_xy_image_updated.emit()
                 self.signal_depth_image_updated.emit()
+                time.sleep(0.2) # avoid that the emitted thread sees the scanner locked
                 self.set_position('scanner')
                 if self._zscan:
                     self._depth_line_pos = self._scan_counter
@@ -857,7 +899,7 @@ class ConfocalLogic(GenericLogic):
                     start_line = np.vstack([lsx, lsy, lsz][0:n_ch])
                 else:
                     start_line = np.vstack(
-                        [lsx, lsy, lsz, np.ones(lsx.shape) * self._current_a])
+                        [lsx, lsy, lsz, np.ones(lsx.shape) * current_pos[3]])
                 # move to the start position of the scan, counts are thrown away
                 start_line_counts = self._scanning_device.scan_line(start_line)
                 if np.any(start_line_counts == -1):
@@ -878,7 +920,7 @@ class ConfocalLogic(GenericLogic):
                 line = np.vstack([lsx, lsy, lsz][0:n_ch])
             else:
                 line = np.vstack(
-                    [lsx, lsy, lsz, np.ones(lsx.shape) * self._current_a])
+                    [lsx, lsy, lsz, np.ones(lsx.shape) * current_pos[3]])
 
             # scan the line in the scan
             line_counts = self._scanning_device.scan_line(line, pixel_clock=True)
@@ -923,7 +965,7 @@ class ConfocalLogic(GenericLogic):
                             self._return_XL,
                             image[self._scan_counter, 0, 1] * np.ones(self._return_XL.shape),
                             image[self._scan_counter, 0, 2] * np.ones(self._return_XL.shape),
-                            np.ones(self._return_XL.shape) * self._current_a
+                            np.ones(self._return_XL.shape) * current_pos[3]
                         ])
                 else: # if in last line
                     # get current position
@@ -942,7 +984,7 @@ class ConfocalLogic(GenericLogic):
                             np.linspace(current_pos[0], crosshair_pos[0],npoints),
                             np.linspace(current_pos[1], crosshair_pos[1],npoints),
                             np.linspace(current_pos[2], crosshair_pos[2],npoints),
-                            np.ones(npointsshape) * self._current_a #no idea what _current_a does, just copied from above
+                            np.ones(npointsshape) * current_pos[3] #no idea what _current_a does, just copied from above
                         ])
             else:
                 if n_ch <= 3:
@@ -956,7 +998,7 @@ class ConfocalLogic(GenericLogic):
                             image[self._scan_counter, 0, 1] * np.ones(self._return_YL.shape),
                             self._return_YL,
                             image[self._scan_counter, 0, 2] * np.ones(self._return_YL.shape),
-                            np.ones(self._return_YL.shape) * self._current_a
+                            np.ones(self._return_YL.shape) * current_pos[3]
                         ])
 
             # return the scanner to the start of next line, counts are thrown away

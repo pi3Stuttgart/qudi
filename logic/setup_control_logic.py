@@ -22,7 +22,7 @@ class SetupControlLogic(GenericLogic):
     sigUpdate = QtCore.Signal()
 
     mcas_holder = Connector(interface='McasDictHolderInterface')
-    powercontrol = Connector(interface='LaserPowerHolder')
+    #powercontrol = Connector(interface='LaserPowerHolder')
     #automizedmeasurementlogic = Connector(interface = 'Automatedmeasurement')
     savelogic = Connector(interface = 'SaveLogic')
 
@@ -32,7 +32,7 @@ class SetupControlLogic(GenericLogic):
     MW2_power:float=-21
     MW2_freq:float=140
     MW1_freq:float=70
-    set_power:float=1
+    _AOM_volt:float=1
     read_power:str='-'
     enable_MW1:bool=False
     enable_MW2:bool=False
@@ -54,18 +54,53 @@ class SetupControlLogic(GenericLogic):
         """
 
         self._awg = self.mcas_holder()
-        self._powercontrol = self.powercontrol()
+        #self._powercontrol = self.powercontrol()
         #self._automized_measurement_logic = self.automizedmeasurementlogic()
         self._save_logic = self.savelogic()
         self.flipmirror_sequence_created = False
+        self.ps=self._awg.mcas_dict.awgs["ps"]
 
     def on_deactivate(self):
         """ Deactivate module.
         """
+        self.enable_MW1:bool=False
+        self.enable_MW2:bool=False
+        self.enable_MW3:bool=False
+        self.enable_A1:bool=False
+        self.enable_A2:bool=False
+        self.enable_Repump:bool=False
+        self.enable_Green:bool=False
+        self.AOM_volt=0
+        self._awg.mcas_dict.stop_awgs()
+        self.write_to_pulsestreamer()
+        
         del self._awg
-        del self._powercontrol
+        #del self._powercontrol
         return
-    
+
+    @property
+    def AOM_volt(self):
+        #print("getting AOM Volt")
+        return self._AOM_volt
+
+    @AOM_volt.setter
+    def AOM_volt(self,val):
+        #print("setting AOM Volt", val)
+        if val>1:
+            val=1
+            print("Correcting AOM analog Amplitude to 1")
+        elif val<0:
+            val=0
+            print("Correcting AOM analog Amplitude to 0")
+        self._AOM_volt=val
+        self.ps.analog_volt=self._AOM_volt
+        #self.write_to_pulsestreamer()
+
+    @AOM_volt.deleter
+    def AOM_volt(self):
+        #print("deleting OAM Volt")
+        del self._AOM_volt
+
     def power_to_amp(self, power_dBm, impedance=50):
         power_dBm = np.atleast_1d(power_dBm)
         P_watts = 10**(power_dBm / 10) * 1e-3
@@ -142,9 +177,8 @@ class SetupControlLogic(GenericLogic):
         self._awg.mcas_dict["setupcontrol"].run()
     
     def write_to_pulsestreamer(self):
-        self.ps=self._awg.mcas_dict.awgs["ps"]
         self.active_chanels=list(filter(("").__ne__, ["A1"*self.enable_A1,"A2"*self.enable_A2,"green"*self.enable_Green,"repump"*self.enable_Repump,'FlipMirror'*self.flip_mirror]))
-        self.ps.constant(pulse=(0,self.active_chanels,0,0))
+        self.ps.constant(pulse=(0,self.active_chanels,self.AOM_volt,0)) #Ok this is actually not the power we set but the analog input on the A2 AOM
 
     def MW_on(self):
         return self.enable_MW1 or self.enable_MW2 or self.enable_MW3
@@ -153,6 +187,7 @@ class SetupControlLogic(GenericLogic):
         if self.MW_on():
             self.setup_seq()
         else:
+            self._awg.mcas_dict.stop_awgs()
             self.write_to_pulsestreamer()
 
     def A1_Button_Clicked(self,on):
@@ -240,19 +275,20 @@ class SetupControlLogic(GenericLogic):
         print('done something with Autofocus_Button')
 
     def Read_Power_Button_Clicked(self,on):
-        self.read_power = str(self._powercontrol._laser_power._Read_Power_button_fired()) + " nW"
+        #self.read_power = str(self._powercontrol._laser_power._Read_Power_button_fired()) + " nW"
         self.SigReadPower.emit()
 
     def Set_Power_Button_Clicked(self,on):
-        self._powercontrol._laser_power.power_target = self.set_power
-        self._powercontrol._laser_power._run()
-        self.read_power = str(self._powercontrol._laser_power._Read_Power_button_fired()) + " nW"
-        print('Set power to: ', self.read_power)
+        #self._powercontrol._laser_power.power_target = self.set_power
+        #self._powercontrol._laser_power._run()
+        #self.read_power = str(self._powercontrol._laser_power._Read_Power_button_fired()) + " nW"
+        #print('Set power to: ', self.read_power)
         self.SigReadPower.emit()
+        self.write_to_pulsestreamer()
 
     def Set_Power_DoubleSpinBox_Edited(self,value):
         #print('done something with set_power_DoubleSpinBox. Value=',value)
-        self.set_power=value
+        self.AOM_volt=value
         
     def StartAutoMeas_Button_Clicked(self,on):
         # save current POIs

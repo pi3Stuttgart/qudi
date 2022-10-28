@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -646,7 +646,7 @@
           <item row="9" column="10">
            <widget class="QLabel" name="label_21">
             <property name="text">
-             <string>Frequencies:</string>
+             <string>Frequencies(MHz):</string>
             </property>
            </widget>
           </item>
@@ -660,7 +660,7 @@
           <item row="10" column="10">
            <widget class="QLabel" name="label_23">
             <property name="text">
-             <string>Linewidths:</string>
+             <string>Linewidths(kHz):</string>
             </property>
            </widget>
           </item>
@@ -2187,7 +2187,12 @@
   <tabstop>cw_CWRepump_CheckBox</tabstop>
   <tabstop>cw_A1_CheckBox</tabstop>
   <tabstop>cw_A2_CheckBox</tabstop>
+  <tabstop>cw_SelectGaussianFit_RadioButton</tabstop>
+  <tabstop>cw_PerformFit_CheckBox</tabstop>
+  <tabstop>cw_SelectLorentzianFit_RadioButton</tabstop>
+  <tabstop>cw_NumberOfPeaks_LineEdit</tabstop>
   <tabstop>cw_odmr_PlotWidget</tabstop>
+  <tabstop>cw_odmr_matrix_PlotWidget</tabstop>
   <tabstop>cw_odmr_channel_ComboBox</tabstop>
   <tabstop>cw_odmr_cb_max_DoubleSpinBox</tabstop>
   <tabstop>cw_odmr_cb_high_percentile_DoubleSpinBox</tabstop>
@@ -2196,10 +2201,36 @@
   <tabstop>cw_odmr_cb_min_DoubleSpinBox</tabstop>
   <tabstop>cw_odmr_cb_centiles_RadioButton</tabstop>
   <tabstop>cw_odmr_cb_manual_RadioButton</tabstop>
-  <tabstop>cw_odmr_matrix_PlotWidget</tabstop>
-  <tabstop>tabWidget</tabstop>
+  <tabstop>pulsed_Run_Button</tabstop>
+  <tabstop>pulsed_Stop_Button</tabstop>
+  <tabstop>pulsed_Continue_Button</tabstop>
+  <tabstop>pulsed_Save_Button</tabstop>
+  <tabstop>pulsed_Load_Button</tabstop>
+  <tabstop>pulsed_Filename_LineEdit</tabstop>
+  <tabstop>pulsed_PeriodicSaving_CheckBox</tabstop>
+  <tabstop>pulsed_Interval_LineEdit</tabstop>
+  <tabstop>pulsed_Stoptime_LineEdit</tabstop>
+  <tabstop>pulsed_MW1_CheckBox</tabstop>
+  <tabstop>pulsed_MW1_Power_LineEdit</tabstop>
+  <tabstop>pulsed_StartFreq_LineEdit</tabstop>
+  <tabstop>pulsed_StopFreq_LineEdit</tabstop>
+  <tabstop>pulsed_Stepsize_LineEdit</tabstop>
+  <tabstop>pulsed_SecondsPerPoint_LineEdit</tabstop>
   <tabstop>pulsed_piPulseDuration_lineEdit</tabstop>
   <tabstop>pulsed_PiDecay_lineEdit</tabstop>
+  <tabstop>pulsed_NumberOfLines_LineEdit</tabstop>
+  <tabstop>pulsed_MW2_CheckBox</tabstop>
+  <tabstop>pulsed_MW2_Power_LineEdit</tabstop>
+  <tabstop>pulsed_MW2_Freq_LineEdit</tabstop>
+  <tabstop>pulsed_MW3_CheckBox</tabstop>
+  <tabstop>pulsed_MW3_Power_LineEdit</tabstop>
+  <tabstop>pulsed_MW3_Freq_LineEdit</tabstop>
+  <tabstop>pulsed_PulsedRepump_CheckBox</tabstop>
+  <tabstop>pulsed_RepumpDuration_LineEdit</tabstop>
+  <tabstop>pulsed_RepumpDecay_LineEdit</tabstop>
+  <tabstop>pulsed_CWRepump_CheckBox</tabstop>
+  <tabstop>pulsed_A1_CheckBox</tabstop>
+  <tabstop>pulsed_A2_CheckBox</tabstop>
   <tabstop>pulsed_InitTime_LineEdit</tabstop>
   <tabstop>pulsed_DecayInit_LineEdit</tabstop>
   <tabstop>pulsed_A1Readout_checkBox</tabstop>
@@ -2207,48 +2238,65 @@
   <tabstop>pulsed_AOMDelay_LineEdit</tabstop>
   <tabstop>pulsed_ReadoutTime_LineEdit</tabstop>
   <tabstop>pulsed_ReadoutDecay_LineEdit</tabstop>
-  <tabstop>cw_A2_CheckBox_2</tabstop>
+  <tabstop>pulsed_SelectGaussianFit_RadioButton</tabstop>
+  <tabstop>pulsed_PerformFit_CheckBox</tabstop>
+  <tabstop>pulsed_SelectLorentzianFit_RadioButton</tabstop>
+  <tabstop>pulsed_NumberOfPeaks_LineEdit</tabstop>
+  <tabstop>pulsed_Binning_LineEdit</tabstop>
+  <tabstop>pulsed_odmr_data_PlotWidget</tabstop>
+  <tabstop>pulsed_odmr_matrix_PlotWidget</tabstop>
+  <tabstop>pulsed_odmr_detect_PlotWidget</tabstop>
+  <tabstop>pulsed_odmr_channel_ComboBox</tabstop>
+  <tabstop>pulsed_odmr_cb_max_DoubleSpinBox</tabstop>
+  <tabstop>pulsed_odmr_cb_high_percentile_DoubleSpinBox</tabstop>
+  <tabstop>pulsed_odmr_cb_PlotWidget</tabstop>
+  <tabstop>pulsed_odmr_cb_low_percentile_DoubleSpinBox</tabstop>
+  <tabstop>pulsed_odmr_cb_min_DoubleSpinBox</tabstop>
+  <tabstop>pulsed_odmr_cb_centiles_RadioButton</tabstop>
+  <tabstop>pulsed_odmr_cb_manual_RadioButton</tabstop>
+  <tabstop>cw_RepumpDecay_LineEdit_2</tabstop>
   <tabstop>cw_NumberOfPeaks_LineEdit_2</tabstop>
-  <tabstop>cw_Stop_Button_2</tabstop>
+  <tabstop>cw_Interval_LineEdit_2</tabstop>
+  <tabstop>cw_StopFreq_LineEdit_2</tabstop>
+  <tabstop>cw_CWRepump_CheckBox_2</tabstop>
+  <tabstop>cw_odmr_cb_low_percentile_DoubleSpinBox_2</tabstop>
+  <tabstop>cw_Save_Button_2</tabstop>
   <tabstop>cw_MaxIterations_LineEdit_2</tabstop>
   <tabstop>cw_PulsedRepump_CheckBox_2</tabstop>
-  <tabstop>cw_Interval_LineEdit_2</tabstop>
   <tabstop>cw_MW1_CheckBox_2</tabstop>
-  <tabstop>cw_MW1_Power_LineEdit_2</tabstop>
-  <tabstop>cw_PeriodicSaving_CheckBox_2</tabstop>
-  <tabstop>cw_Stepsize_LineEdit_2</tabstop>
-  <tabstop>cw_MW3_Power_LineEdit_2</tabstop>
-  <tabstop>cw_MW3_Freq_LineEdit_2</tabstop>
-  <tabstop>cw_A1_CheckBox_2</tabstop>
-  <tabstop>cw_Run_Button_2</tabstop>
-  <tabstop>cw_CWRepump_CheckBox_2</tabstop>
-  <tabstop>cw_RepumpDecay_LineEdit_2</tabstop>
-  <tabstop>cw_MW2_Power_LineEdit_2</tabstop>
-  <tabstop>cw_PerformFit_CheckBox_2</tabstop>
-  <tabstop>cw_RepumpDuration_LineEdit_2</tabstop>
-  <tabstop>cw_Stoptime_LineEdit_2</tabstop>
-  <tabstop>cw_NumberOfLines_LlineEdit_2</tabstop>
-  <tabstop>cw_Continue_Button_2</tabstop>
-  <tabstop>cw_StartFreq_LineEdit_2</tabstop>
-  <tabstop>cw_MW3_CheckBox_2</tabstop>
-  <tabstop>cw_Save_Button_2</tabstop>
-  <tabstop>cw_StopFreq_LineEdit_2</tabstop>
-  <tabstop>cw_MW2_CheckBox_2</tabstop>
-  <tabstop>cw_SecondsPerPoint_LineEdit_2</tabstop>
-  <tabstop>cw_Filename_LineEdit_2</tabstop>
-  <tabstop>cw_Load_Button_2</tabstop>
   <tabstop>cw_MW2_Freq_LineEdit_2</tabstop>
-  <tabstop>cw_odmr_PlotWidget_3</tabstop>
-  <tabstop>cw_odmr_PlotWidget_4</tabstop>
-  <tabstop>cw_odmr_PlotWidget_2</tabstop>
-  <tabstop>cw_odmr_channel_ComboBox_2</tabstop>
-  <tabstop>cw_odmr_cb_max_DoubleSpinBox_2</tabstop>
+  <tabstop>cw_RepumpDuration_LineEdit_2</tabstop>
   <tabstop>cw_odmr_cb_high_percentile_DoubleSpinBox_2</tabstop>
+  <tabstop>cw_odmr_PlotWidget_2</tabstop>
   <tabstop>cw_odmr_cb_PlotWidget_2</tabstop>
-  <tabstop>cw_odmr_cb_low_percentile_DoubleSpinBox_2</tabstop>
+  <tabstop>cw_A1_CheckBox_2</tabstop>
+  <tabstop>cw_MW2_Power_LineEdit_2</tabstop>
+  <tabstop>cw_Run_Button_2</tabstop>
+  <tabstop>cw_MW3_Freq_LineEdit_2</tabstop>
+  <tabstop>cw_PeriodicSaving_CheckBox_2</tabstop>
+  <tabstop>cw_MW3_CheckBox_2</tabstop>
+  <tabstop>cw_Filename_LineEdit_2</tabstop>
+  <tabstop>cw_SecondsPerPoint_LineEdit_2</tabstop>
+  <tabstop>cw_MW1_Power_LineEdit_2</tabstop>
+  <tabstop>cw_PerformFit_CheckBox_2</tabstop>
   <tabstop>cw_odmr_cb_min_DoubleSpinBox_2</tabstop>
   <tabstop>cw_odmr_cb_centiles_RadioButton_2</tabstop>
   <tabstop>cw_odmr_cb_manual_RadioButton_2</tabstop>
+  <tabstop>cw_MW3_Power_LineEdit_2</tabstop>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>cw_odmr_PlotWidget_4</tabstop>
+  <tabstop>cw_odmr_PlotWidget_3</tabstop>
+  <tabstop>cw_A2_CheckBox_2</tabstop>
+  <tabstop>cw_Stop_Button_2</tabstop>
+  <tabstop>cw_Load_Button_2</tabstop>
+  <tabstop>cw_Stepsize_LineEdit_2</tabstop>
+  <tabstop>cw_NumberOfLines_LlineEdit_2</tabstop>
+  <tabstop>cw_Stoptime_LineEdit_2</tabstop>
+  <tabstop>cw_odmr_cb_max_DoubleSpinBox_2</tabstop>
+  <tabstop>cw_StartFreq_LineEdit_2</tabstop>
+  <tabstop>cw_odmr_channel_ComboBox_2</tabstop>
+  <tabstop>cw_Continue_Button_2</tabstop>
+  <tabstop>cw_MW2_CheckBox_2</tabstop>
  </tabstops>
  <resources/>
  <connections/>

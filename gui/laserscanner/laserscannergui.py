@@ -240,14 +240,17 @@ class VoltScanGui(GUIBase, ple_default_functions):
 
     def refresh_plot(self):
         """ Refresh the xy-plot image """
-        self.scan_image.setData(self._voltscan_logic.plot_x, self._voltscan_logic.plot_y)
+        self.scan_image.setData(self._voltscan_logic.plot_x_frequency, self._voltscan_logic.plot_y)
+        self._mw.ple_data_PlotWidget.removeItem(self.scan_fit_image)
         if self._voltscan_logic.PerformFit:
+            self._mw.ple_data_PlotWidget.addItem(self.scan_fit_image)
             interplolated_x_data,fit_data,result = self._voltscan_logic.do_gaussian_fit()
             self._mw.ple_Contrast_Fit_Label.setText(self._voltscan_logic.Contrast_Fit)
             self._mw.ple_Frequencies_Fit_Label.setText(self._voltscan_logic.Frequencies_Fit)
             self._mw.ple_Linewidths_Fit_Label.setText(self._voltscan_logic.Linewidths_Fit)
         
-            self.scan_fit_image.setData(interplolated_x_data, fit_data)
+            #self.scan_fit_image.setData(interplolated_x_data*1000*1e6/0.30, fit_data) # 0.22 if FeedForward in turned on
+            self.scan_fit_image.setData(interplolated_x_data/0.30, fit_data) # 0.22 if FeedForward in turned on
 
     def refresh_matrix(self):
         """ Refresh the xy-matrix image """

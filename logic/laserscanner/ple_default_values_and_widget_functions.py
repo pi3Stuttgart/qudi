@@ -58,7 +58,7 @@ class ple_default_values_and_widget_functions:
 
         def ple_MW1_Power_LineEdit_textEdited(self,text):
                 try:
-                        self.MW1_Power=float(text)
+                        self.MW1_Power=float(text.replace(",","."))
                 except:
                         pass
 
@@ -66,13 +66,13 @@ class ple_default_values_and_widget_functions:
                 self.AbortRequested = True
         def ple_MW3_Power_LineEdit_textEdited(self,text):
                 try:
-                        self.MW3_Power=float(text)
+                        self.MW3_Power=float(text.replace(",","."))
                 except:
                         pass
 
         def ple_RepumpDuration_LineEdit_textEdited(self,text):
                 try:
-                        self.RepumpDuration=float(text)
+                        self.RepumpDuration=float(text.replace(",","."))
                 except:
                         pass
         
@@ -90,19 +90,19 @@ class ple_default_values_and_widget_functions:
 
         def ple_RepumpDecay_LineEdit_textEdited(self,text):
                 try:
-                        self.RepumpDecay=float(text)
+                        self.RepumpDecay=float(text.replace(",","."))
                 except:
                         pass
 
         def ple_MW1_Freq_LineEdit_textEdited(self,text):
                 try:
-                        self.MW1_Freq=float(text)
+                        self.MW1_Freq=float(text.replace(",","."))
                 except:
                         pass
 
         def ple_MW2_Freq_LineEdit_textEdited(self,text):
                 try:
-                        self.MW2_Freq=float(text)
+                        self.MW2_Freq=float(text.replace(",","."))
                 except:
                         pass
 
@@ -114,7 +114,7 @@ class ple_default_values_and_widget_functions:
 
         def ple_MW2_Power_LineEdit_textEdited(self,text):
                 try:
-                        self.MW2_Power=float(text)
+                        self.MW2_Power=float(text.replace(",","."))
                 except:
                         pass
 
@@ -129,7 +129,7 @@ class ple_default_values_and_widget_functions:
 
         def ple_MW3_Freq_LineEdit_textEdited(self,text):
                 try:
-                        self.MW3_Freq=float(text)
+                        self.MW3_Freq=float(text.replace(",","."))
                 except:
                         pass
 
@@ -146,19 +146,19 @@ class ple_default_values_and_widget_functions:
 
         def ple_Interval_LineEdit_textEdited(self,text):
                 try:
-                        self.Interval=float(text)
+                        self.Interval=float(text.replace(",","."))
                 except:
                         pass
 
         def ple_MaxIterations_LineEdit_textEdited(self,text):
                 try:
-                        self.MaxIterations=float(text)
+                        self.MaxIterations=float(text.replace(",","."))
                 except:
                         pass
 
         def ple_Stoptime_LineEdit_textEdited(self,text):
                 try:
-                        self.Stoptime=float(text)
+                        self.Stoptime=float(text.replace(",","."))
                 except:
                         pass
 

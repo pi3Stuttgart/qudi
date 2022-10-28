@@ -1260,6 +1260,8 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         3 for xyz scanners and 4 for xyz scanners with a special function on the a axis.
         """
         if self._scanner_counter_channels and len(self._scanner_counter_daq_tasks) < 1:
+            print(self._scanner_counter_channels)
+            print(self._scanner_counter_daq_tasks, len(self._scanner_counter_daq_tasks))
             self.log.error('Configured counter is not running, cannot scan a line.')
             return np.array([[-1.]])
 

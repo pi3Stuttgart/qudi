@@ -95,8 +95,8 @@ class PID:
 
             preliminary_output = self.PTerm + (self.Ki * self.ITerm) + (self.Kd * self.DTerm)
 
-            if preliminary_output > 10:
-                self.output = 10
+            if preliminary_output > 1:
+                self.output = 1
             elif preliminary_output < 0:
                 self.output = 0
             else:

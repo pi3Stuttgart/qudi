@@ -344,10 +344,6 @@ class ODMRGUI(GUIBase):
 
             self.update_cw_colorbar()
 
-#self.mw1_freq*1e6,self.data,self.scanmatrix,self.indexes/1e12,self.data_detect #Pulsed
-
-# if self.pulsed_PerformFit:
-#     self.x_fit,self.y_fit,self.fit_result=self.holder.do_gaussian_fit(self.mw1_freq*1e6,self.data)
 
         elif self._odmr_logic.pulsedODMRLogic.measurement_running or self._odmr_logic.pulsedODMRLogic.pulsed_update_after_stop:
             odmr_data_x=self._odmr_logic.pulsedODMRLogic.mw1_freq*1e6

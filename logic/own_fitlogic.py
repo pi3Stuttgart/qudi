@@ -52,7 +52,7 @@ import inspect
 
 class multifunction():
     import inspect
-    def __init__(self,function=None): # the function list will be 2d, firstz index will be the functions that will be added, second argument will be functions that will be multiplied
+    def __init__(self,function=None):
         self.peak_pos=[]
         self.freq_pos=[]
         #logger.info("hi")
@@ -161,6 +161,28 @@ class FitLogic(GenericLogic):
         #self.fit(soothayer,self.x,self.y)
         self.analyse_kwargs={"height":None, "threshold":None, "distance":None, "prominence":0.4, "width":2, "wlen":None, "rel_height":0.5}
 
+        # as I did not find a way to get a method getter, the basic functions (see after the fit function) will be made multicunctions here
+        self.gaussian=self.mf(self.gaussian)
+        self.lorentzian=self.mf(self.lorentzian)
+        self.sine=self.mf(self.sine)
+        self.exp_decay=self.mf(self.exp_decay)
+        self.constant=self.mf(self.constant)
+        self.linear=self.mf(self.linear)
+        self.quadratic=self.mf(self.quadratic)
+        self.stretched_exponential=self.mf(self.stretched_exponential)
+
+        # add the fit method to the functions
+        setattr(self.gaussian,"fit",lambda *args, **kwargs: self.fit(self.gaussian,*args,**kwargs))
+        setattr(self.lorentzian,"fit",lambda *args, **kwargs: self.fit(self.lorentzian,*args,**kwargs))
+        setattr(self.sine,"fit",lambda *args, **kwargs: self.fit(self.sine,*args,**kwargs))
+        setattr(self.exp_decay,"fit",lambda *args, **kwargs: self.fit(self.exp_decay,*args,**kwargs))
+        setattr(self.constant,"fit",lambda *args, **kwargs: self.fit(self.constant,*args,**kwargs))
+        setattr(self.linear,"fit",lambda *args, **kwargs: self.fit(self.linear,*args,**kwargs))
+        setattr(self.quadratic,"fit",lambda *args, **kwargs: self.fit(self.quadratic,*args,**kwargs))
+        setattr(self.stretched_exponential,"fit",lambda *args, **kwargs: self.fit(self.stretched_exponential,*args,**kwargs))
+        
+
+
     def on_activate(self):
         """ Initialisation performed during activation of the module.
         """
@@ -196,9 +218,12 @@ class FitLogic(GenericLogic):
         sorted_peaks=peaks[0][indexes]
         return sorted_peaks
         
-    def fit(self,function,x_data,y_data,init_guess=None,peak_pos_arguments=[],dip_pos_arguments=[],sine_freq_arguments=[],use_multifunction_hints=False): # the peak_pos_arguments=[],dip_pos_arguments=[],sine_freq_arguments=[] give the position in the function argument array of peaks,dips and the sine frequencies
+    def fit(self,function,x_data,y_data,init_guess=None,peak_pos_arguments=[],dip_pos_arguments=[],sine_freq_arguments=[],use_multifunction_hints=False,speedup=None): # the peak_pos_arguments=[],dip_pos_arguments=[],sine_freq_arguments=[] give the position in the function argument array of peaks,dips and the sine frequencies
         # to get faster fitting, one can also order the peak argument position so that the highest peaks correspond to the first peak arguments listed
         fit_time=time.time()
+        if speedup==None:
+            speedup=self.speedup
+
         self.estimation_function=function
         self.x_data=x_data
         self.y_data=y_data
@@ -332,7 +357,7 @@ class FitLogic(GenericLogic):
             holded_res.x=np.array(x0)
             holded_res.fun=mini
         x0=holded_res.x
-        if not self.speedup: # use the given time to get the best optimization 
+        if not speedup: # use the given time to get the best optimization 
             start_time=time.time()
             res_list=[]
             mini=self.function_to_optimize(tuple(x0)) # as initial minimum value we take the function result for x0
@@ -399,45 +424,63 @@ class FitLogic(GenericLogic):
     def stretched_exponential(self,x,ampl, decay, offset, N):
         return ampl*np.exp(-(x/decay)**N)+offset
 
+        
     ############ Now make composed functions
 
     def make_n_gauss_function(self,n_gauss):
-        ngauss=self.mf(self.gaussian)
+        ngauss=self.gaussian
         for i in range(n_gauss-1):
             ngauss=ngauss+self.gaussian
+        setattr(ngauss,"fit",lambda *args,**kwargs: self.make_n_gauss_fit(n_gauss,*args,func=ngauss,**kwargs))
         return ngauss
 
     def make_n_lorentz_function(self,n_lor):
-        nlorentz=self.mf(self.lorentzian)
+        nlorentz=self.lorentzian
         for i in range(n_lor-1):
             nlorentz=nlorentz+self.lorentzian
+        setattr(nlorentz,"fit",lambda *args,**kwargs: self.make_n_lorentz_fit(n_lor,*args,func=nlorentz,**kwargs))
         return nlorentz
 
     def make_n_gauss_function_with_offset(self,n_gauss):
-        return self.make_n_gauss_function(n_gauss)+self.constant
+        n_gauss_function_with_offset=self.make_n_gauss_function(n_gauss)+self.constant
+        setattr(n_gauss_function_with_offset,"fit",lambda *args,**kwargs: self.make_n_gauss_with_offset_fit(n_gauss,*args,func=n_gauss_function_with_offset,**kwargs))
+        return n_gauss_function_with_offset
 
     def make_n_lorentz_function_with_offset(self,n_lorentz):
-        return self.make_n_lorentz_function(n_lorentz)+self.constant
+        n_lorentz_function_with_offset=self.make_n_lorentz_function(n_lorentz)+self.constant
+        setattr(n_lorentz_function_with_offset,"fit",lambda *args,**kwargs: self.make_n_lorentz_with_offset_fit(n_lorentz,*args,func=n_lorentz_function_with_offset,**kwargs))
+        return  n_lorentz_function_with_offset
 
     def make_n_gauss_function_with_linear_offset(self,n_gauss):
-        return self.make_n_gauss_function(n_gauss)+self.linear()
+        n_gauss_function_with_liear_offset=self.make_n_gauss_function(n_gauss)+self.linear
+        setattr(n_gauss_function_with_liear_offset,"fit",lambda *args,**kwargs: self.make_n_gauss_with_linear_offset_fit(n_gauss,*args,func=n_gauss_function_with_liear_offset,**kwargs))
+        return n_gauss_function_with_liear_offset
 
     def make_n_lorentz_function_with_linear_offset(self,n_lorentz):
-        return self.make_n_lorentz_function(n_lorentz)+self.linear
+        n_lorentz_function_with_liear_offset=self.make_n_lorentz_function(n_lorentz)+self.linear
+        setattr(n_lorentz_function_with_liear_offset,"fit",lambda *args,**kwargs: self.make_n_lorentz_with_linear_offset_fit(n_lorentz,*args,func=n_lorentz_function_with_liear_offset,**kwargs))
+        return  n_lorentz_function_with_liear_offset
 
     def make_oscilating_exponential_decay_function(self):
-        return self.sine*self.mf(self.exp_decay)
+        oscilating_exponential_decay_function=self.sine*self.exp_decay
+        setattr(oscilating_exponential_decay_function,"fit",lambda *args,**kwargs: self.make_oscilating_exponential_decay_fit(*args,func=oscilating_exponential_decay_function,**kwargs))
+        return oscilating_exponential_decay_function
 
     def make_oscilating_exponential_decay_with_offset_function(self):
-        return self.sine*self.mf(self.exp_decay)+self.constant
+        oscilating_exponential_decay_with_offset_function=self.sine*self.exp_decay+self.constant
+        setattr(oscilating_exponential_decay_with_offset_function,"fit",lambda *args,**kwargs: self.make_oscilating_exponential_decay_with_offset_fit(*args,func=oscilating_exponential_decay_with_offset_function,**kwargs))
+        return oscilating_exponential_decay_with_offset_function
 
     def make_oscilating_exponential_decay_with_linear_offset_function(self):
-        return self.sine*self.mf(self.exp_decay)+self.linear
+        oscilating_exponential_decay_with_liear_offset_function=self.sine*self.exp_decay+self.linear
+        setattr(oscilating_exponential_decay_with_liear_offset_function,"fit",lambda *args,**kwargs: self.make_oscilating_exponential_decay_with_linear_offset_fit(*args,func=oscilating_exponential_decay_with_liear_offset_function,**kwargs))
+        return oscilating_exponential_decay_with_liear_offset_function
 
     ############ and the fitting part
 
-    def make_n_gauss_fit(self,n_gauss,x_data,y_data,init_guess=None):
-        func=self.make_n_gauss_function(n_gauss)
+    def make_n_gauss_fit(self,n_gauss,x_data,y_data,init_guess=None,func=None):
+        if func==None:
+            func=self.make_n_gauss_function(n_gauss)
         res=self.fit(func,x_data,y_data,use_multifunction_hints=True,init_guess=init_guess)
         params=res.x
         res_dict={}
@@ -450,8 +493,9 @@ class FitLogic(GenericLogic):
             res_dict["gam_"+str(i//3)]=gam
         return res_dict
 
-    def make_n_lorentz_fit(self,n_lor,x_data,y_data,init_guess=None):
-        func=self.make_n_lorentz_function(n_lor)
+    def make_n_lorentz_fit(self,n_lor,x_data,y_data,init_guess=None,func=None):
+        if func==None:
+            func=self.make_n_lorentz_function(n_lor)
         res=self.fit(func,x_data,y_data,use_multifunction_hints=True,init_guess=init_guess)
         params=res.x
         res_dict={}
@@ -464,8 +508,9 @@ class FitLogic(GenericLogic):
             res_dict["gam_"+str(i//3)]=gam
         return res_dict
 
-    def make_n_gauss_with_offset_fit(self,n_gauss,x_data,y_data,init_guess=None):
-        func=self.make_n_gauss_function_with_offset(n_gauss)
+    def make_n_gauss_with_offset_fit(self,n_gauss,x_data,y_data,init_guess=None,func=None):
+        if func==None:
+            func=self.make_n_gauss_function_with_offset(n_gauss)
         res=self.fit(func,x_data,y_data,use_multifunction_hints=True,init_guess=init_guess)
         params=res.x
         res_dict={}
@@ -479,8 +524,9 @@ class FitLogic(GenericLogic):
         res_dict["offset"]=params[-1]
         return res_dict
     
-    def make_n_lorentz_with_offset_fit(self,n_lor,x_data,y_data,init_guess=None):
-        func=self.make_n_lorentz_function_with_offset(n_lor)
+    def make_n_lorentz_with_offset_fit(self,n_lor,x_data,y_data,init_guess=None,func=None):
+        if func==None:
+            func=self.make_n_lorentz_function_with_offset(n_lor)
         res=self.fit(func,x_data,y_data,use_multifunction_hints=True,init_guess=init_guess)
         params=res.x
         res_dict={}
@@ -494,8 +540,9 @@ class FitLogic(GenericLogic):
         res_dict["offset"]=params[-1]
         return res_dict
 
-    def make_n_gauss_with_linear_offset_fit(self,n_gauss,x_data,y_data,init_guess=None):
-        func=self.make_n_gauss_function_with_linear_offset(n_gauss)
+    def make_n_gauss_with_linear_offset_fit(self,n_gauss,x_data,y_data,init_guess=None,func=None):
+        if func==None:
+            func=self.make_n_gauss_function_with_linear_offset(n_gauss)
         res=self.fit(func,x_data,y_data,use_multifunction_hints=True,init_guess=init_guess)
         params=res.x
         res_dict={}
@@ -510,8 +557,9 @@ class FitLogic(GenericLogic):
         res_dict["b"]=params[-1]
         return res_dict
 
-    def make_n_lorentz_with_linear_offset_fit(self,n_lor,x_data,y_data,init_guess=None):
-        func=self.make_n_lorentz_function_with_linear_offset(n_lor)
+    def make_n_lorentz_with_linear_offset_fit(self,n_lor,x_data,y_data,init_guess=None,func=None):
+        if func==None:
+            func=self.make_n_lorentz_function_with_linear_offset(n_lor)
         res=self.fit(func,x_data,y_data,use_multifunction_hints=True,init_guess=init_guess)
         params=res.x
         res_dict={}
@@ -526,8 +574,9 @@ class FitLogic(GenericLogic):
         res_dict["b"]=params[-1]
         return res_dict
 
-    def make_oscilating_exponential_decay_fit(self,x_data,y_data,init_guess=None):
-        func=self.make_oscilating_exponential_decay_function()
+    def make_oscilating_exponential_decay_fit(self,x_data,y_data,init_guess=None,func=None):
+        if func==None:
+            func=self.make_oscilating_exponential_decay_function()
         res=self.fit(func,x_data,y_data,init_guess=init_guess)
         params=res.x
         res_dict={}
@@ -540,8 +589,9 @@ class FitLogic(GenericLogic):
         res_dict["decay"]=params[5]
         return res_dict
         
-    def make_oscilating_exponential_decay_with_offset_fit(self,x_data,y_data,init_guess=None):
-        func=self.make_oscilating_exponential_decay_with_offset_function()
+    def make_oscilating_exponential_decay_with_offset_fit(self,x_data,y_data,init_guess=None,func=None):
+        if func==None:
+            func=self.make_oscilating_exponential_decay_with_offset_function()
         res=self.fit(func,x_data,y_data,init_guess=init_guess)
         params=res.x
         res_dict={}
@@ -555,8 +605,9 @@ class FitLogic(GenericLogic):
         res_dict["offset"]=params[6]
         return res_dict
 
-    def make_oscilating_exponential_decay_with_offset_fit(self,x_data,y_data,init_guess=None):
-        func=self.make_oscilating_exponential_decay_with_offset_function()
+    def make_oscilating_exponential_decay__with_linear_offset_fit(self,x_data,y_data,init_guess=None,func=None):
+        if func==None:
+            func=self.make_oscilating_exponential_decay_with_linear_offset_function()
         res=self.fit(func,x_data,y_data,init_guess=init_guess)
         params=res.x
         res_dict={}

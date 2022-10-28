@@ -29,20 +29,30 @@ class Automatedmeasurement(GenericLogic):
     scannerlogic = Connector(interface='ConfocalLogic')
     spectrumlogic = Connector(interface='SpectrumLogic')
     optimizerlogic = Connector(interface = 'OptimizerLogic')
+    setupcontrollogic = Connector(interface = 'SetupControlLogic')
     mcas_holder = Connector(interface='McasDictHolderInterface')
     counterlogic = Connector(interface='CounterLogic')
     laserscannerlogic = Connector(interface = 'LaserScannerLogic')
+    powerstabilizationlogic= Connector(interface='PowerStabilizationLogic')
     
     # internal signals
     sigNextPoi = QtCore.Signal()
     sigNextStep = QtCore.Signal()
     sigStepDone = QtCore.Signal()
     sigAutomizedRefocus = QtCore.Signal() # connected to confocal gui
-    
+    SigLoop = QtCore.Signal()
+
     abort = False
-    steps = ['move', 'optimize', 'spectrum', 'spectrum']
+    #steps = ['move', 'optimize', 'spectrum', 'spectrum']
     #steps = ['move', 'optimize', 'ple']
-    steps_bg = ['move', 'spectrum']
+    steps_bg = []
+
+    
+    _laser_power_list=list(np.arange(0.3,9.3,0.5))
+    _MW_power_list=list(np.arange(-30,-16,1))
+    
+    steps= (['next laser power']+['next MW power','ple']*len(_MW_power_list))*len(_laser_power_list)
+
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
         self.func_dict = {
@@ -50,6 +60,8 @@ class Automatedmeasurement(GenericLogic):
             'optimize' : self.optimize_on_poi,
             'spectrum' : self.take_spectrum,
             'ple' : self.take_PLE,
+            'next MW power': self.next_MW_power,
+            'next laser power': self.next_laser_power
         }
        
     def on_activate(self):
@@ -62,6 +74,9 @@ class Automatedmeasurement(GenericLogic):
         self._optimizer_logic = self.optimizerlogic()
         self._counter_logic = self.counterlogic()
         self._laser_scanner_logic = self.laserscannerlogic()
+        self._setupcontrol_logic = self.setupcontrollogic()
+        self._powerstabilization_logic = self.powerstabilizationlogic()
+
         # self._poimanagerlogic = self.poimanagerlogic()
      
         self.save_folder = "C:/Data/2022/AutomizedSpectra" # save_folder0
@@ -77,11 +92,13 @@ class Automatedmeasurement(GenericLogic):
         self._laser_scanner_logic.sigScanFinished.connect(self.save_ple, QtCore.Qt.QueuedConnection)
         #spectrumlogic.sig_specdata_updated.connect(self._next_step)
         self._optimizer_logic._sigFinishedAllOptimizationSteps.connect(self._next_step, QtCore.Qt.QueuedConnection)
+        self._powerstabilization_logic.SigStabilized.connect(self.laser_power_stabilized, QtCore.Qt.QueuedConnection)
+        self.SigLoop.connect(self.loop, QtCore.Qt.QueuedConnection)
 
         ## initialisation of variables
         self.angles_for_pol_dep_spec = np.linspace(0,360,3) # TODO: change num to 100
-        self.create_flipmirror_sequence()
-        self.create_repump_sequence()
+        # self.create_flipmirror_sequence()
+        # self.create_repump_sequence()
         
         self.bin_width = int(1e12/50)
         self.n_vals = 300
@@ -89,34 +106,93 @@ class Automatedmeasurement(GenericLogic):
         
         self._spectrum_logic.update_integration_time(20)
         self.measurementStarted = False
+        self.Laserpower_stabilized=False
+        self.Laserpower_stabilized_fail=False
 
     def on_deactivate(self):
         self.stop()
         
-    def create_flipmirror_sequence(self):
-        seq = self._awg.mcas(name="FlippyFloppy", ch_dict={"2g": [1,2],"ps": [1]})
-        seq.start_new_segment("Start", loop_count=100)
-        seq.asc(name='Flip', length_mus=500, FlipMirror=True)
-        self._awg.mcas_dict.stop_awgs()
-        self._awg.mcas_dict['FlippyFloppy'] = seq
-        self._awg.mcas_dict.print_info()
+    # def create_flipmirror_sequence(self):
+    #     seq = self._awg.mcas(name="FlippyFloppy", ch_dict={"2g": [1,2],"ps": [1]})
+    #     seq.start_new_segment("Start", loop_count=100)
+    #     seq.asc(name='Flip', length_mus=500, FlipMirror=True)
+    #     self._awg.mcas_dict.stop_awgs()
+    #     self._awg.mcas_dict['FlippyFloppy'] = seq
+    #     self._awg.mcas_dict.print_info()
 
-    def create_repump_sequence(self):
-        seq = self._awg.mcas(name="Repump", ch_dict={"2g": [1,2],"ps": [1]})
-        seq.start_new_segment("Start", loop_count=200)
-        seq.asc(name='Repump', length_mus=200, repump=True)
-        self._awg.mcas_dict.stop_awgs()
-        self._awg.mcas_dict['Repump'] = seq
-        self._awg.mcas_dict.print_info()
-        
+    # def create_repump_sequence(self):
+    #     seq = self._awg.mcas(name="Repump", ch_dict={"2g": [1,2],"ps": [1]})
+    #     seq.start_new_segment("Start", loop_count=200)
+    #     seq.asc(name='Repump', length_mus=200, repump=True)
+    #     self._awg.mcas_dict.stop_awgs()
+    #     self._awg.mcas_dict['Repump'] = seq
+    #     self._awg.mcas_dict.print_info()
+
+    def next_MW_power(self):
+        print("setting MW Power")
+        if len(self.MW_power_list)>0:
+            new_power=self.MW_power_list.pop(0)
+            print("new power",new_power)
+            # self._setupcontrol_logic.MW1_power=new_power
+            # self._setupcontrol_logic.MW2_power=new_power
+            # self._setupcontrol_logic.MW3_power=new_power
+            self._laser_scanner_logic.MW1_Power=new_power
+            self._laser_scanner_logic.MW2_Power=new_power
+            self._laser_scanner_logic.MW3_Power=new_power
+            print(self._laser_scanner_logic.MW1_Power)
+
+        self.sigNextStep.emit()
+
+    @QtCore.Slot()
+    def laser_power_stabilized(self):
+        self.Laserpower_stabilized=True
+
+    def next_laser_power(self):
+        print("setting laserpower")
+        if len(self.laser_power_list)>0:
+            self._setupcontrol_logic.enable_A2=True
+            self._setupcontrol_logic.enable_A1=False
+            self._setupcontrol_logic.write_to_pulsestreamer()
+
+            new_power=self.laser_power_list.pop(0)
+            self.Laserpower_stabilized=False
+            self._powerstabilization_logic.TargetPower=new_power
+            self._powerstabilization_logic.SigStartControl.emit()
+            self.Laserpower_stabilized_fail=False
+            self.start_time=time.time()
+            self.loop() #wait until power is stabilized
+
+
+    @QtCore.Slot()     
+    def loop(self):
+        #print("looping")
+        if not(self.Laserpower_stabilized):
+            time.sleep(0.25)
+            if time.time()-self.start_time<60: #do not try to sabilize over an infinite time period
+                self.SigLoop.emit()
+            else:
+                print("Stabilization not successful")
+                self.Laserpower_stabilized_fail=True
+                self._setupcontrol_logic.AOM_volt=1
+                self.end_looping()
+        else:
+            self.end_looping()
+
+    def end_looping(self):
+        #self._powerstabilization_logic.SigStopControl.emit()
+        time.sleep(0.2)
+        self._setupcontrol_logic.write_to_pulsestreamer()
+        self.sigNextStep.emit()
+
+
     def flip_spectrometermirror(self):
         # define how you want to flip your mirror. probably just via pulsestreamer or with a separate qudi-module
-        self._awg.mcas_dict['FlippyFloppy'].run()
-        #delay(20)
-        time.sleep(0.02)
-        #self._awg.mcas_dict['Repump'].run()
-        self._awg.mcas_dict["setupcontrol"].run()
-        #delay(1000)
+        self._setupcontrol_logic.Flipmirror_Button_Clicked(True) #simulate a click
+        # #delay(20)
+        # time.sleep(0.02)
+        # #self._awg.mcas_dict['Repump'].run()
+        # self._awg.mcas_dict["setupcontrol"].run()
+        # #delay(1000)
         time.sleep(0.5)
 
     def start(self):
@@ -136,6 +212,9 @@ class Automatedmeasurement(GenericLogic):
         
         self.abort = False
         self.measurementStarted = True
+            
+        self.laser_power_list= self._laser_power_list.copy()
+        self.MW_power_list=self._MW_power_list.copy()
         self.init_pois()
         self.sigNextPoi.emit()
         return
@@ -306,11 +385,12 @@ class Automatedmeasurement(GenericLogic):
         
         """
         #check if most recent spectrum is above threshold at pixel at 917nm
-
+        self._setupcontrol_logic.Repump_Button_Clicked(True)
         self.check_countrate(tag = 'mirror_up')
+        self._setupcontrol_logic.Repump_Button_Clicked(False)
         print("start scanning the laser")
         self._laser_scanner_logic.start_scanning()
-        #After PLE scan is finished, an signal is emitted by _laser_scanner_logic which saves the collected data
+        #After PLE scan is finished, a signal is emitted by _laser_scanner_logic which saves the collected data
         return
 
    
@@ -318,6 +398,7 @@ class Automatedmeasurement(GenericLogic):
     def check_countrate(self, tag = ''):
         countrate_limit = 200
         iteration = 0
+        self._counter_logic.startCount()
         avg_counts = np.sum(self._counter_logic.countdata[0][-10:-1])/10 # average over 10 data points aquired
         if tag == 'mirror_up':
             while (avg_counts < countrate_limit) and (iteration < 3):
@@ -371,6 +452,7 @@ class Automatedmeasurement(GenericLogic):
 
     @QtCore.Slot() #what is this?   
     def save_ple(self):
+        time.sleep(0.4) # give the logic the time to make a fit
         self._laser_scanner_logic.save_data(tag=self._laser_scanner_logic.Filename)
         self.sigStepDone.emit()
         
