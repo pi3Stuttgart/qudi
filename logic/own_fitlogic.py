@@ -71,7 +71,7 @@ class multifunction():
                     sub=1
                 #logger.info(f"{param}, {i}")
 
-                if "mean" == param or "mu" == param or "x0" == param:
+                if "mean" == param or "mu" == param or "x0" == param: #some parameter names may give hints on what is meant with this parameter
                     self.peak_pos.append(i-1-sub)
                 elif "freq" == param or "omega" == param:
                     self.freq_pos.append(i-1-sub)
@@ -267,13 +267,15 @@ class FitLogic(GenericLogic):
 
             anylysis_time=time.time()
             peaks,dips,freqs=self.analyse_data(y_data,**self.analyse_kwargs)
-            logger.info(f"annalysing data took {time.time()-anylysis_time} s")
+            #logger.info(f"annalysing data took {time.time()-anylysis_time} s")
+            #print(f"annalysing data took {time.time()-anylysis_time} s")
 
             Peaks=self.sort_by_prominence(peaks)
             Dips=self.sort_by_prominence(dips)
             Freqs=self.sort_by_prominence(freqs)
 
-            logger.info(f"peaks:{len(Peaks)}, dips:{len(Dips)},freqs:{len(Freqs)}")
+            #logger.info(f"peaks:{len(Peaks)}, dips:{len(Dips)},freqs:{len(Freqs)}")
+            #print(f"peaks:{len(Peaks)}, dips:{len(Dips)},freqs:{len(Freqs)}")
 
             #the frequencies given by fft are symetric around the middle of the freqs list, we remove them
             #Freqs=Freqs[:int(len(Freqs)/2)]
@@ -345,9 +347,11 @@ class FitLogic(GenericLogic):
             init_guess=np.asarray(init_guess)
             x0[init_guess!=None]=init_guess[init_guess!=None]
 
-        logger.info(f"x0={x0}")
+        #logger.info(f"x0={x0}")
+        # print(f"x0={x0}")
 
-        logger.info(f"setting x0 took {time.time()-fit_time} s")
+        # logger.info(f"setting x0 took {time.time()-fit_time} s")
+        # print(f"setting x0 took {time.time()-fit_time} s")
         
         opt_time=time.time()
         mini=self.function_to_optimize(tuple(x0)) # as initial minimum value we take the function result for x0
@@ -362,7 +366,8 @@ class FitLogic(GenericLogic):
             res_list=[]
             mini=self.function_to_optimize(tuple(x0)) # as initial minimum value we take the function result for x0
             for method in methods:
-                logger.info("trying with "+method+" method.")
+                # logger.info("trying with "+method+" method.")
+                # print("trying with "+method+" method.")
                 if time.time()-start_time>self.optimize_time: # do not exceed the given time
                     break
                 res=optimize.minimize(self.function_to_optimize,x0=x0,method=method)
@@ -375,19 +380,25 @@ class FitLogic(GenericLogic):
                         holded_res=res
                         retained_method=method
 
-            logger.info("retained_method: "+retained_method)
+            #logger.info("retained_method: "+retained_method)
+            #print("retained_method: "+retained_method)
 
         if not holded_res.success:
-            logger.warning("Fit was not successful, consider setting speedup to false")
+            #logger.warning("Fit was not successful, consider setting speedup to False")
+            #print("Fit was not successful, consider setting speedup to False")
+
+            pass
                 
         self.next_init_guess=holded_res.x
         self.res=holded_res
-        logger.info(f"optimizing took {time.time()-opt_time} s")
-        logger.info(f"total fit time was: {time.time()-fit_time}")
+        #logger.info(f"optimizing took {time.time()-opt_time} s")
+        #logger.info(f"total fit time was: {time.time()-fit_time}")
+        #print(f"optimizing took {time.time()-opt_time} s")
+        #print(f"total fit time was: {time.time()-fit_time}")
         return self.res
 
     def use_curve_fit(self):
-        logger.warning(("curve fit not implemented"))
+        print("curve fit not implemented")
     
     def analyse_data(self,x,**kwargs): #kwars: height=None, threshold=None, distance=None, prominence=None, width=None, wlen=None, rel_height=0.5, plateau_size=None
         x=signal.savgol_filter(x,int(0.1*len(x)/2)*2+1,3) # for better peak finding we smooth the data. The window size (2nd argumant) must be odd, the filter window is 10% of the data length

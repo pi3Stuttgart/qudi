@@ -427,7 +427,8 @@ class GatedCounter(GenericLogic):
                     self.hist_list[-1].append(self.trace.hist(estl[0, :] - estl[1, :]))
                 else:
                     for t in estl:
-                        self.hist_list[-1].append(self.trace.hist(t))
+                        if sum(t!=0)>0:
+                            self.hist_list[-1].append(self.trace.hist(t))
             except Exception as e:
                 logging.error(e)
                 print(e)

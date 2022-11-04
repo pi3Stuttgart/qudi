@@ -189,16 +189,35 @@ class DataGeneration:
 
     def iterator(self):
         while True:
+            t0 = time.time()
             self.process_remeasure_items()
+            print("T1=", time.time()-t0)
+            t0 = time.time()
             self.iterator_df_done = self.data.df.loc[:, self.data.parameter_names]  # self.iterator_df_done.append(self.current_iterator_df)
+            print("T2=", time.time()-t0)
+            t0 = time.time()
             self.set_iterator_df()
+            print("T3=", time.time()-t0)
+            t0 = time.time()
             self.iterator_df_drop_done()
+            print("T4=", time.time()-t0)
+            t0 = time.time()
             self.update_progress()
+            print("T5=", time.time()-t0)
+            t0 = time.time()
             self.iterator_df, self.current_iterator_df = df_pop(self.iterator_df, min(self.number_of_simultaneous_measurements, len(self.iterator_df)))
+            print("T6=", time.time()-t0)
+            t0 = time.time()
             self.changes_from_previous(self.current_iterator_df)
+            print("T7=", time.time()-t0)
+            t0 = time.time()
             if len(self.current_iterator_df) > 0:
                 self.data.append(self.current_iterator_df)
+            print("T8=", time.time()-t0)
+            t0 = time.time()
             self.update_current_str()
+            print("T9=", time.time()-t0)
+            t0 = time.time()
             if len(self.current_iterator_df) > 0:
                 yield self.current_iterator_df, self.current_iterator_df_changes
             else:

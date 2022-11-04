@@ -612,21 +612,21 @@ class TransitionTracker(GenericLogic):
         pass
 
     def update_ple(self,freqs=""):
-        self.ple_Ex = float(freqs.split(';')[0])
-
+        self.ple_Ex = float(freqs.split(';')[1]) # take the second peak as it is the highest
+        self.ple_A1 = float(freqs.split(';')[0])
         # to set the constant voltage, thus lock the frequency, on the peak
-        self._ple_logic._change_voltage(self.ple_Ex)
+        #self._ple_logic._change_voltage(self.ple_Ex)
 
     def update_ODMR(self,freqs=""):
-        self.mw_transition_frequency=float(freqs.split(';')[0])
+        self.mw_mixing_frequency=float(freqs.split(';')[0])
 
     def update_rabi(self,pi_dur):
         # pi_dur is already a float
         self.current_local_oscillator_freq=pi_dur
 
     def connect_signals(self):
-        self._rabi_logic.sigFitPerformed.connect(self.do_nothing)
-        self._odmr_logic.sigFitPerformed.connect(self.do_nothing)
+        self._rabi_logic.sigFitPerformed.connect(self.update_rabi)
+        self._odmr_logic.sigFitPerformed.connect(self.update_ODMR)
         self._ple_logic.sigFitPerformed.connect(self.update_ple)
 
         #self.update_tt_nuclear_gui.connect(self.update_gui_nuclear)

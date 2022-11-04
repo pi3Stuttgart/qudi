@@ -1,5 +1,6 @@
 import numpy as np
 import time
+from core.statusvariable import StatusVar
 
 class cw_ODMR_default_values_and_widget_functions:
         F=False
@@ -46,7 +47,8 @@ class cw_ODMR_default_values_and_widget_functions:
         cw_NumberOfLines:int=20
 
         cw_update_after_stop:bool=F
-        
+
+
         def cw_NumberOfLines_LineEdit_textEdited(self,text):
                 try:
                         self.cw_NumberOfLines=int(text)
@@ -133,7 +135,7 @@ class cw_ODMR_default_values_and_widget_functions:
 
         def cw_NumberOfPeaks_LineEdit_textEdited(self,text):
                 try:
-                        self.NumberOfPeaks=float(text.replace(",","."))
+                        self.NumberOfPeaks=int(text.replace(",","."))
                         self.holder.NumbrOfPeaks=self.NumberOfPeaks
                 except:
                         pass

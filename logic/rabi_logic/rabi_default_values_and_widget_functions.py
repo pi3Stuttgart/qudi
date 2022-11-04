@@ -309,7 +309,7 @@ class rabi_default_values_and_widget_functions:
         def rabi_NumberOfPeaks_LineEdit_textEdited(self,text):
                 #print('done something with rabi_NumberOfPeaks_LineEdit. Text=',text)
                 try:
-                        self.rabi_NumberOfPeaks=float(text.replace(",","."))
+                        self.rabi_NumberOfPeaks=int(text.replace(",","."))
                 except:
                         pass
 

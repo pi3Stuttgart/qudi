@@ -15,6 +15,7 @@ class ple_default_values_and_widget_functions:
         enable_A2:bool=True
         enable_Repump:bool=False
         enable_PulsedRepump:bool=True
+        Lock_laser:bool=False
         RepumpDuration:float = 10
         RepumpDecay:float = 1000
 
@@ -64,6 +65,7 @@ class ple_default_values_and_widget_functions:
 
         def ple_Abort_Button_Clicked(self,on):
                 self.AbortRequested = True
+
         def ple_MW3_Power_LineEdit_textEdited(self,text):
                 try:
                         self.MW3_Power=float(text.replace(",","."))
@@ -87,6 +89,9 @@ class ple_default_values_and_widget_functions:
 
         def ple_A2_CheckBox_StateChanged(self,on):
                 self.enable_A2=on==2
+
+        def ple_Lock_Laser_CheckBox_StateChanged(self,on):
+                self.Lock_laser=on==2
 
         def ple_RepumpDecay_LineEdit_textEdited(self,text):
                 try:

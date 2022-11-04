@@ -256,7 +256,6 @@ class GatedCounterGui(GUIBase):
 
     def update_histogram(self, bins, hist):
         """ Update procedure for the histogram to display the new data. """
-
         self._histoplot1.setData(x=bins,
                                  y=hist,
                                  stepMode=True, fillLevel=0,

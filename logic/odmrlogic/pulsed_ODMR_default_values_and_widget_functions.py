@@ -219,7 +219,7 @@ class pulsed_ODMR_default_values_and_widget_functions:
         def pulsed_NumberOfPeaks_LineEdit_textEdited(self,text):
                 #print('done something with pulsed_NumberOfPeaks_LineEdit. Text=',text)
                 try:
-                        self.NumberOfPeaks=float(text.replace(",","."))
+                        self.NumberOfPeaks=int(text.replace(",","."))
                         self.holder.NumberOfPeaks=self.NumberOfPeaks
                 except:
                         pass

@@ -670,7 +670,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
         return 0
 
     def goto_fitted_peak(self):
-        if self.stopped:
+        print(self.stopped,self.Lock_laser)
+        if self.stopped and self.Lock_laser:
             print("going to fitted peak")
             freqs=np.array(self.Frequencies_Fit.split(";")[:-1]).astype(float)
             print(freqs)
@@ -678,8 +679,29 @@ class LaserScannerLogic(GenericLogic, ple_default):
             print(peak_volt)
             if peak_volt<self.scan_range[1] and peak_volt>self.scan_range[0]:
                 self.goto_voltage(peak_volt)
+
+                # follow the defect PLE line by applying a voltage to the laser chamber
+                #Range=self.scan_range[1]-self.scan_range[0]
+                Range=0.9
+
+                self.scan_range[0],self.scan_range[1]=peak_volt-0.65*Range,peak_volt+0.35*Range
             else: 
-                print("Goto voltage out of scan range, assuming fiting error.")
+                # emit an error?
+                #retry with bigger scan range:
+                if self.scan_range[1]>=3 or self.scan_range[0]<=-3:
+                    print("No PLE found")
+                    return
+                    
+                self.scan_range[0],self.scan_range[1]=self.scan_range[0]-1,self.scan_range[1]+1
+                self.scan_range=list(np.clip(self.scan_range,-3,3))
+                self.start_scanning()
+
+
+                
+
+                
+
+            
 
     def save_data(self, tag=None, colorscale_range=None, percentile_range=None):
         """ Save the counter trace data and writes it to a file.
@@ -920,6 +942,11 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*5)
         self.fit_data = model.eval(x=self.interplolated_x_data, params=result.params)
         
+        #using own fitlogic
+        # fit_func=self._fit_logic.make_n_gauss_function(self.NumberOfPeaks)
+        # result=fit_func.fit(x_data,y_data)
+        # self.fit_data=fit_func(interplolated_x_data,*result["result"].x)
+
         self.Contrast_Fit:str=''
         self.Frequencies_Fit:str=''
         self.Linewidths_Fit:str=''

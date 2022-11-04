@@ -589,10 +589,10 @@ class PlotData(qudip_enhanced.qtgui.gui_helpers.WithQt):
                     [l.get_label() for l in axes[0].lines],
                     borderaxespad=0.1,  # Small spacing around legend box
                     loc='upper left',
-                    fontsize=20 / len(axes[0].lines) ** .25,
+                    fontsize=60 / len(axes[0].lines),
                 )
             else:
-                axes[0].legend(fontsize=20 / len(axes[0].lines) ** .25, )
+                axes[0].legend(fontsize=60 / len(axes[0].lines), )
         fig.tight_layout()
         return axes
 
@@ -630,7 +630,7 @@ class PlotData(qudip_enhanced.qtgui.gui_helpers.WithQt):
         plt.close(fig)
         plt.ion()
         if notify:
-            logging.getLogger().info('Plot saved to {} in ({:.3f}s)'.format(filepath, time.time() - t0))
+            pass#logging.getLogger().info('Plot saved to {} in ({:.3f}s)'.format(filepath, time.time() - t0))
 
     @property
     @printexception

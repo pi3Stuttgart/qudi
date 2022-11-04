@@ -169,6 +169,7 @@ class MultiChSeq:
     name = util.ret_property_typecheck('name', str)
 
     def init_sequences(self):
+        t1 = time.time()
         # TODO: create a PS sequence also, whcih could be assembled later in asc, startnew segment.
         self.sequences = {}
 
@@ -176,6 +177,7 @@ class MultiChSeq:
             self.sequences[awg_str] = dict([[ch, Sequence(name=self.name)] for ch in chl])
             if awg_str == 'ps':
                 self.sequences[awg_str] = {1:[([],settings.slave_start_delay)]}
+        print(time.time()-t1)
 
     def dl(self, awg, ch, sequence_step_num=None, wave_step_num=None):
         out = self.sequences[awg][ch]
@@ -340,7 +342,7 @@ class MultiChSeq:
 
         self.status = 1
         if notify:
-            logging.getLogger().info("MCAS '{}' finalized ({} s).".format(self.name, time.time() - t0))
+            pass#logging.getLogger().info("MCAS '{}' finalized ({} s).".format(self.name, time.time() - t0))
 
     def fix_avg_rf_power(self, ignore_max_avg_power=False):
         awtd = {}
@@ -409,7 +411,8 @@ class MultiChSeq:
                         traceback.print_exception(exc_type, exc_value, exc_tb)
                         raise Exception('awg {} ch {} could not write sequence {} to memory.'.format(awg_str, ch, self.name))
         if notify:
-            logging.getLogger().info('mcas {} has been written: {}'.format(self.name, time_dict))
+            pass
+            #logging.getLogger().info('mcas {} has been written: {}'.format(self.name, time_dict))
         self.written = True
 
     def delete_from_awg_memory(self):

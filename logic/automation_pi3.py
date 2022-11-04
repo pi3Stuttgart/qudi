@@ -49,7 +49,7 @@ class Automatedmeasurement(GenericLogic):
 
     
     _laser_power_list=list(np.arange(0.3,9.3,0.5))
-    _MW_power_list=list(np.arange(-30,-16,1))
+    _MW_power_list=list(np.arange(-30,-16,1))*len(_laser_power_list)
     
     steps= (['next laser power']+['next MW power','ple']*len(_MW_power_list))*len(_laser_power_list)
 

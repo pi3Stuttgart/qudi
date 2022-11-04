@@ -483,7 +483,8 @@ class RabiLogic(GenericLogic,rabi_default):
         
         x_data=x_data.astype(np.float)
         y_data=y_data.astype(np.float)
-        
+        self.interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*10) # for the fitting part
+
         if tag == 'Cosinus':
             print("Doing Cosinus")
             model,params=self._fit_logic.make_sine_model()
@@ -494,6 +495,11 @@ class RabiLogic(GenericLogic,rabi_default):
                                 units='Hz',
                                 estimator=self._fit_logic.estimate_sine
                                 )
+
+            #fit_func=self._fit_logic.sine
+            #result=fit_func.fit(x_data,y_data)
+            #self.fit_data = fit_func(x=self.interplolated_x_data, *result.x)
+
         if tag == 'Cosinus+Phase':
             print("Doing Cosinus+Phase")
             model,params=self._fit_logic.make_sine_model()
@@ -505,7 +511,7 @@ class RabiLogic(GenericLogic,rabi_default):
                                 estimator=self._fit_logic.estimate_sine
                                 )
 
-        self.interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*10)
+        
         self.fit_data = model.eval(x=self.interplolated_x_data, params=result.params)
         self.Amplitude_Fit:str=''
         self.Frequency_Fit:str=''

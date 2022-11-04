@@ -580,8 +580,14 @@ class ODMRLogic_holder(GenericLogic):
             logger.warning("function 3 gaussian peaks not implemeted")
 
 
-        print(x_data.min(),x_data.max(),len(x_data)*10)
+        #print(x_data.min(),x_data.max(),len(x_data)*10)
         self.interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*5)
+
+        #using own fitlogic
+        # fit_func=self._fit_logic.make_n_gauss_function(self.NumberOfPeaks)
+        # result=fit_func.fit(x_data,y_data)
+        # self.fit_data=fit_func(interplolated_x_data,*result["result"].x)
+    
         self.fit_data = model.eval(x=self.interplolated_x_data, params=result.params)
 
         self.Contrast_Fit:str=''
