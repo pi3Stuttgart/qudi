@@ -49,8 +49,8 @@ marker_alias = {
                 'green': ['ps',1,'green','3'],
                 #ch4 is clock to AWG
                 'A1':['ps',1,'A1','5'],
-                'gate': ['ps',1,'tt_sync','6'],
-                'memory': ['ps',1,'tt_trigger','7'],
+                'gate': ['ps',1,'tt_sync','7'],
+                'memory': ['ps',1,'tt_trigger','6'],
                 'tt_sync': ['ps',1,'tt_sync','6'],
                 'tt_trigger': ['ps',1,'tt_trigger','7']
                 }

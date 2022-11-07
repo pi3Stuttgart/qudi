@@ -40,9 +40,9 @@ def ret_ret_mcas(pdc):
             mcas.asc(length_mus=1.0, name='initial_delay')
             mcas.asc(length_mus=3.0, repump=True, name='Repump')
             mcas.asc(length_mus=1.0)
-            mcas.asc(A2=True, length_mus=30.,
+            mcas.asc(A2=True, length_mus=20.,
                      name='A2_init')  # Init NV with A1 laser (about 1-3 µs). This step can be skipped for the very first tests #as the green laser will also intialise somehow.
-            mcas.asc(length_mus=2.0)
+            mcas.asc(length_mus=1.0)
 
             sna.electron_rabi(
                 mcas,
@@ -55,10 +55,14 @@ def ret_ret_mcas(pdc):
 
             mcas.asc(length_mus=1.0)
 
-            sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
+            # sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
+            #         nuc='ple_A2', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=3.0)
+            if _I_['readout'] == 'A2':
+                sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
                     nuc='ple_Ex', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=3.0)
-
-            mcas.asc(length_mus=1.0)
+            elif _I_['readout'] == 'A1':
+                sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
+                    nuc='ple_A1', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=3.0)
             mcas.asc(length_mus=1.0)
 
         self.queue._gated_counter.set_n_values(mcas) #how to get here the queue?
@@ -100,8 +104,9 @@ def settings(pdc={}):
 
     nuclear.parameters = OrderedDict( # WHAT DOES ALL THIS MEAN ??? WHICH UNITS ??
         (
+            #('mw_duration', E.round_length_mus_full_sample(np.linspace(0.0, 0.3, 31))), 
             ('sweeps', range(10)),
-            ('rabi_period', [0.087]),
+            #('rabi_period', [0.087]),
             ('resonant', [True]),
             ('ms', [-1]),
             ('state_check', [False]),
@@ -110,18 +115,20 @@ def settings(pdc={}):
             #('ddt', ['fid', 'hahn', 'xy4', 'xy16', 'kdd','kdd4', 'kdd16']),
             #('ddt', ['xy4']),
             #('n_rep_dd', range(1,4)),
-            ('delay_ps',[0]), #11110 # actually which delay ?
-            ('amp', np.linspace(0,1,10)),
-            ('mw_duration', E.round_length_mus_full_sample(np.linspace(0.0, 10.0, 100))),
+            ('delay_ps',[0.45]), #11110 # actually which delay ?
+            ('amp', np.array([0.25])),
+            # ('amp', np.linspace(0.5,1,6)),
             ('phase_pi2_2', [0]),
+            ('readout', ['A1', 'A2']),
+            ('mw_duration', E.round_length_mus_full_sample(np.linspace(0.0, 0.3, 31))), 
         )
     )
-    nuclear.number_of_simultaneous_measurements =  len(nuclear.parameters['mw_duration'])#len(nuclear.parameters['phase_pi2_2'])
+    nuclear.number_of_simultaneous_measurements =  2*len(nuclear.parameters['mw_duration'])#len(nuclear.parameters['phase_pi2_2'])
 
 def run_fun(abort, **kwargs):
     print(1,' Nuclear started!!!')
     nuclear.queue = kwargs['queue']
-    nuclear.queue._gated_counter.readout_duration = 1e6
+    nuclear.queue._gated_counter.readout_duration = 10*1e6
     nuclear.debug_mode = False
     settings()
     print('run_fun started')

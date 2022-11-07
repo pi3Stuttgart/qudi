@@ -125,8 +125,9 @@ class GatedCounter(GenericLogic):
         t0 = time.time()
         self.gated_counter_data = self._fast_counter_device.gated_counter_countbetweenmarkers.getData()
 
-        #print('1 tt:',time.time()-t0)
+        print('1 tt:',time.time()-t0)
         if self.ZPL_counter:
+            print("ZPL_counter in gated_counter_logic")
             if self.raw_clicks_processing:
                 counter_name = 'raw_zpl'
                 #print('init raw clicks processing name: ', counter_name)
@@ -183,10 +184,10 @@ class GatedCounter(GenericLogic):
                             setattr(self, trace_name,zpl_counter_data)
 
                         # print('22 tt:',time.time()-t0)
-        # print('tt3:',time.time()-t0)
+        print('tt3:',time.time()-t0)
 
         self.set_progress()
-        # print('tt4:',time.time()-t0)
+        print('tt4:',time.time()-t0)
         if self.analyze_trace_during_experiment:
             self.trace_rep = Analysis.TraceRep(trace=self.gated_counter_data[:self.progress],
                                                analyze_sequence=self.trace.analyze_sequence,
@@ -303,7 +304,7 @@ class GatedCounter(GenericLogic):
             while True:
                 if abort.is_set():
                     break
-                # print('Gated counter is falling asleep for ',int(self.readout_duration / 1e6))
+                print('Gated counter is falling asleep for ',int(self.readout_duration / 1e6))
                 time.sleep(int(self.readout_duration / 1e6))
                 break
                 # ready = self._fast_counter_device.gated_counter_countbetweenmarkers.ready()

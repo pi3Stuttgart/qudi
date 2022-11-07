@@ -142,6 +142,7 @@ def electron_rabi(mcas, name='e_rabi', iq_mixer=__IQ_MIXER__, mixer_deg=-90, new
         for ch in chl:
             if 'pd' + awg_str + str(ch) in kwargs:
                 pd['pd' + awg_str + str(ch)] = kwargs.pop('pd' + awg_str + str(ch), None)
+
     if mixer_deg is None:
         raise Exception('Error: mixer_deg must be given.')
     elif isinstance(mixer_deg, (list, np.ndarray)):
@@ -153,6 +154,7 @@ def electron_rabi(mcas, name='e_rabi', iq_mixer=__IQ_MIXER__, mixer_deg=-90, new
         mixer_deg = np.array([mixer_deg])
     else:
         raise Exception
+
     if 'phases' in kwargs:
         if isinstance(kwargs['phases'], (np.ndarray, list)):
             if len(kwargs['phases']) != len(kwargs['frequencies']):
@@ -167,7 +169,7 @@ def electron_rabi(mcas, name='e_rabi', iq_mixer=__IQ_MIXER__, mixer_deg=-90, new
     if iq_mixer:
         pd2g[2]['phases'] = np.array(pd2g[2]['phases']) + mixer_deg
         pd2g[2]['smpl_marker'] = False
-        mcas.asc(pd2g1=pd2g[1], pd2g2=pd2g[2], name=name, **pd)
+        mcas.asc(pd2g1=pd2g[1], pd2g2=pd2g[2], name=name, **pd) #MW is set here
     else:
         mcas.asc(pd2g1=pd2g[1], name=name, **pd)
 
@@ -617,6 +619,7 @@ class SSR(object):
                         'charge_state',
                         'ple_A2',
                         'ple_A1',
+                        'ple_Ex', #UNFUG
                         # 'Ex_pi_readout_6ns',
                         # 'Ex_ampl_sweep_SSR',
                         # 'opt_mw_delays_calibration',
@@ -637,7 +640,7 @@ class SSR(object):
             self.compileMW()
 
     def compileMW(self):
-        # print('compileMW')
+        # print('compileMW in snippets_awg')
         aa = dict()
         if self.repetitions != 0:
             self.mcas.start_new_segment(name=self.name,
@@ -673,7 +676,7 @@ class SSR(object):
         # print('compileMW finished')
 
     def compileOptical(self):
-        # print('compileOptical')
+        # print('compileOptical in snippets_awg')
         aa = dict()
         if self.repetitions != 0:
             if 'no_new_segment' in self.kwargs.keys():
@@ -728,9 +731,16 @@ class SSR(object):
                     # delta+=self.dur_step[alt_step][5]
                     # delta+=self.dur_step[alt_step][5]
 
+
+                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_Ex': #UNFUG
+                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                    self.mcas.asc(A2=True, length_mus=self.dur_step[alt_step][5], name = 'ple_Ex_readout')
+                    self.mcas.asc(length_mus=1.0,name = 'wait')
+                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
+
                 elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_A1':
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-                    self.mcas.asc(aom_A1=True, length_mus=self.dur_step[alt_step][5], name = 'ple_A1_readout')
+                    self.mcas.asc(A1=False, length_mus=self.dur_step[alt_step][5], name = 'ple_A1_readout')
                     self.mcas.asc(length_mus=2.0,name = 'wait')
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
 

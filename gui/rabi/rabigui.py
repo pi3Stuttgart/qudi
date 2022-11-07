@@ -233,7 +233,6 @@ class RabiGUI(GUIBase,rabi_default_functions):
             rabi_matrix=self._rabi_logic.scanmatrix
             rabi_detect_x=self._rabi_logic.measured_times
             rabi_detect_y=self._rabi_logic.data_detect
-            print("we are further")
             self.rabi_data_image.setData(rabi_data_x, rabi_data_y)
 
             self.rabi_detect_image.setData(rabi_detect_x, rabi_detect_y)
