@@ -27,8 +27,8 @@ __SAMPLE_FREQUENCY__ = 12e3#e.__SAMPLE_FREQUENCY__
 ael = 1.0
 
 def ret_ret_mcas(pdc):
-    def ret_mcas(self, current_iterator_df):
-        sequence_name = 'Electron_rabi_test'
+    def ret_mcas(self, current_iterator_df, sequence_name = None):
+        sequence_name = 'Electron_rabi_test' if sequence_name is None else sequence_name
         #print(self, current_iterator_df)
         mcas = MultiChSeq(name=sequence_name, ch_dict={'2g': [1, 2], 'ps': [1]})
         mcas.start_new_segment('start_sequence')
@@ -40,9 +40,9 @@ def ret_ret_mcas(pdc):
             mcas.asc(length_mus=1.0, name='initial_delay')
             mcas.asc(length_mus=3.0, repump=True, name='Repump')
             mcas.asc(length_mus=1.0)
-            mcas.asc(A2=True, length_mus=20.,
-                     name='A2_init')  # Init NV with A1 laser (about 1-3 µs). This step can be skipped for the very first tests #as the green laser will also intialise somehow.
-            mcas.asc(length_mus=1.0)
+            mcas.asc(A2=False, length_mus=20.,
+                      name='A2_init')  # Init NV with A1 laser (about 1-3 µs). This step can be skipped for the very first tests #as the green laser will also intialise somehow.
+            mcas.asc(length_mus=1.0, name='sequence wait 1')
 
             sna.electron_rabi(
                 mcas,
@@ -59,11 +59,11 @@ def ret_ret_mcas(pdc):
             #         nuc='ple_A2', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=3.0)
             if _I_['readout'] == 'A2':
                 sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
-                    nuc='ple_Ex', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=3.0)
+                    nuc='ple_Ex', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=1.5)
             elif _I_['readout'] == 'A1':
-                sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
-                    nuc='ple_A1', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=3.0)
-            mcas.asc(length_mus=1.0)
+               sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
+                   nuc='ple_A1', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=1.5)
+            mcas.asc(length_mus=1.0, name='sequence wait 2')
 
         self.queue._gated_counter.set_n_values(mcas) #how to get here the queue?
 
@@ -73,9 +73,14 @@ def ret_ret_mcas(pdc):
 def settings(pdc={}):
     ana_seq=[
         ['result', '>', 1, 1, 0, 1],
-        # ['init', '>', 1, 1, 0, 1],
-        # ['init', '>', 5, 1, 0, 1],
     ]
+        #what does each entry do?
+        # ana_seq[0]: ?
+        # ana_seq[1]: ?
+        # ana_seq[2]: "threshold"
+        # ana_seq[3]: "nlp_per_point". What is "nlp"?
+        # ana_seq[4]: set to 100 --> no counts measured; set to 7 --> counts can be measured; --> ?
+        # ana_seq[5]: "number of results" -->?
     sch.settings(
         nuclear=nuclear,
         ret_mcas=ret_ret_mcas(pdc),
@@ -88,14 +93,14 @@ def settings(pdc={}):
     #nuclear.analyze_type = 'consecutive'
     #nuclear.analyze_type = 'standard'
 
-    nuclear.do_ple_refocusEx = False
+    nuclear.do_ple_refocusA2 = True
     nuclear.do_ple_refocusA1 = False
-    nuclear.do_ple_refocus = False
+    nuclear.do_ple_refocus = True
     nuclear.do_odmr_refocus = False
-    nuclear.do_confocal_red_refocus = False
+    nuclear.do_confocal_repump_refocus = True
 
-    nuclear.ple_refocus_interval = 10
-    nuclear.confocal_red_refocus_interval = 100  # 240
+    nuclear.ple_refocus_interval = 1000
+    nuclear.confocal_repump_refocus_interval = 10  # seconds
 
     #rabi refocus ?
 
@@ -105,7 +110,7 @@ def settings(pdc={}):
     nuclear.parameters = OrderedDict( # WHAT DOES ALL THIS MEAN ??? WHICH UNITS ??
         (
             #('mw_duration', E.round_length_mus_full_sample(np.linspace(0.0, 0.3, 31))), 
-            ('sweeps', range(10)),
+            ('sweeps', range(30)),
             #('rabi_period', [0.087]),
             ('resonant', [True]),
             ('ms', [-1]),
@@ -119,8 +124,8 @@ def settings(pdc={}):
             ('amp', np.array([0.25])),
             # ('amp', np.linspace(0.5,1,6)),
             ('phase_pi2_2', [0]),
-            ('readout', ['A1', 'A2']),
             ('mw_duration', E.round_length_mus_full_sample(np.linspace(0.0, 0.3, 31))), 
+            ('readout', ['A2','A1']),
         )
     )
     nuclear.number_of_simultaneous_measurements =  2*len(nuclear.parameters['mw_duration'])#len(nuclear.parameters['phase_pi2_2'])
@@ -128,7 +133,7 @@ def settings(pdc={}):
 def run_fun(abort, **kwargs):
     print(1,' Nuclear started!!!')
     nuclear.queue = kwargs['queue']
-    nuclear.queue._gated_counter.readout_duration = 10*1e6
+    nuclear.queue._gated_counter.readout_duration = 1*1e6#1.4e4 #6e5 #10*1e6
     nuclear.debug_mode = False
     settings()
     print('run_fun started')

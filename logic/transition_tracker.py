@@ -580,8 +580,8 @@ class TransitionTracker(GenericLogic):
         self.reload_nuclear_parameters()
         self.mw_mixing_frequency = get_last_value_from_file('mw_mixing_frequency')
         self.mw_mixing_frequency_p1 = get_last_value_from_file('mw_mixing_frequency_p1')
-        self.ple_Ex = get_last_value_from_file('ple_Ex')
-        self.ple_Ex_fit_params = get_last_value_from_file('ple_Ex_fit_params')
+        self.ple_A2 = get_last_value_from_file('ple_A2')
+        self.ple_A2_fit_params = get_last_value_from_file('ple_A2_fit_params')
         self.interferometer_fit_params = get_last_value_from_file('interferometer_fit_params')
         self.interferometer_history = get_last_value_from_file('interferometer_history')
         self.ple_A1 = get_last_value_from_file('ple_A1')
@@ -612,10 +612,10 @@ class TransitionTracker(GenericLogic):
         pass
 
     def update_ple(self,freqs=""):
-        self.ple_Ex = float(freqs.split(';')[1]) # take the second peak as it is the highest
+        self.ple_A2 = float(freqs.split(';')[1]) # take the second peak as it is the highest
         self.ple_A1 = float(freqs.split(';')[0])
         # to set the constant voltage, thus lock the frequency, on the peak
-        #self._ple_logic._change_voltage(self.ple_Ex)
+        #self._ple_logic._change_voltage(self.ple_A2)
 
     def update_ODMR(self,freqs=""):
         self.mw_mixing_frequency=float(freqs.split(';')[0])
@@ -836,8 +836,8 @@ class TransitionTracker(GenericLogic):
 
     def update_stuff(self):
         for attr_name in ['_current_local_oscillator_freq', '_mw_mixing_frequency',
-                          '_zero_field_splitting','mw_mixing_frequency_p1','_ple_Ex','_ple_A1','_ple_repump',
-                          'ple_Ex_fit_params','ple_A1_fit_params','interferometer_fit_params','interferometer_history']:
+                          '_zero_field_splitting','mw_mixing_frequency_p1','_ple_A2','_ple_A1','_ple_repump',
+                          'ple_A2_fit_params','ple_A1_fit_params','interferometer_fit_params','interferometer_history']:
             if not hasattr(self, attr_name):
                 return
         self.update_tt_electron_gui.emit() #connect to the gui
@@ -871,31 +871,31 @@ class TransitionTracker(GenericLogic):
 
 
     @property
-    def ple_Ex(self):
-        return self._ple_Ex
+    def ple_A2(self):
+        return self._ple_A2
 
 
-    @ple_Ex.setter
-    def ple_Ex(self, val):
-        self._ple_Ex = misc.check_type(val, 'ple_Ex', (list,Number, np.ndarray))
-        # if getattr(self, '_ple_Ex', 0.0) != 0.0:
-        if getattr(self, '_ple_Ex', 0.0) is not None:
+    @ple_A2.setter
+    def ple_A2(self, val):
+        self._ple_A2 = misc.check_type(val, 'ple_A2', (list,Number, np.ndarray))
+        # if getattr(self, '_ple_A2', 0.0) != 0.0:
+        if getattr(self, '_ple_A2', 0.0) is not None:
 
-            save_value_to_file(self.ple_Ex, 'ple_Ex')
+            save_value_to_file(self.ple_A2, 'ple_A2')
         self.update_stuff()
 
 
     @property
-    def ple_Ex_fit_params(self):
-        return self._ple_Ex_fit_params
+    def ple_A2_fit_params(self):
+        return self._ple_A2_fit_params
 
 
-    @ple_Ex_fit_params.setter
-    def ple_Ex_fit_params(self, val):
-        self._ple_Ex_fit_params = misc.check_type(val, 'ple_Ex_fit_params', (list, np.ndarray))
-        if getattr(self, '_ple_Ex_fit_params', 0.0) is not None:
+    @ple_A2_fit_params.setter
+    def ple_A2_fit_params(self, val):
+        self._ple_A2_fit_params = misc.check_type(val, 'ple_A2_fit_params', (list, np.ndarray))
+        if getattr(self, '_ple_A2_fit_params', 0.0) is not None:
 
-            save_value_to_file(self.ple_Ex_fit_params, 'ple_Ex_fit_params')
+            save_value_to_file(self.ple_A2_fit_params, 'ple_A2_fit_params')
         self.update_stuff()
 
     @property
@@ -969,7 +969,7 @@ class TransitionTracker(GenericLogic):
     #     self.mw_transition_frequency_text_field.setText("{:.10f}".format(self.mw_transition_frequency))
     #     self.mw_transition_frequency_p1_text_field.setText("{:.10f}".format(self.mw_transition_frequency_p1))
     #     self.zero_field_splitting_text_field.setText("{:.10f}".format(self.zero_field_splitting))
-    #     self.ple_Ex_text_field.setText("{:.10f}".format(self.ple_Ex))
+    #     self.ple_A2_text_field.setText("{:.10f}".format(self.ple_A2))
     #     self.ple_A1_text_field.setText("{:.10f}".format(self.ple_A1))
     #     # self.ple_repump_text_field.setText("{:.10f}".format(self.ple_A1))
     #

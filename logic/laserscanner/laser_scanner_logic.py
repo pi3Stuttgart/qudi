@@ -67,6 +67,9 @@ class LaserScannerLogic(GenericLogic, ple_default):
     _MW1_Power = StatusVar('MW1_Power', -21)
     MW2_Power = StatusVar('MW2_Power', -21)
     MW3_Power = StatusVar('MW3_Power', -21)
+    enable_MW1 = StatusVar('enable_MW1', True)
+    enable_MW2 = StatusVar('enable_MW2', True)
+    enable_MW3 = StatusVar('enable_MW3', False)
 
 
 
@@ -118,6 +121,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self._scanning_device = self.confocalscanner1()
         self._save_logic = self.savelogic()
         self._awg = self.mcas_holder()
+        self.ps=self._awg.mcas_dict.awgs["ps"]
         self._fit_logic = self.fitlogic()
         # Reads in the maximal scanning range. The unit of that scan range is
         # micrometer!
@@ -320,12 +324,11 @@ class LaserScannerLogic(GenericLogic, ple_default):
         # Create AWG Sequence which turns on repump during retrace
         print("Start PLE scan...")
         self._awg.mcas_dict.stop_awgs()
-        self.retrace_seq()
         print("passed time 1", time.time()-self.currenttime)
         self.trace_seq()
         print("passed time 2", time.time()-self.currenttime)
         if self.enable_PulsedRepump:
-            self._awg.mcas_dict["PLE_retrace"].run()
+            self.ps.stream(seq=[[int(self.RepumpDuration*1e3),["repump"],0,0],[int(self.RepumpDecay*1e3),[],0,0]],n_runs=1) #self.RepumpDuration is in µs
         
         self.current_position = self._scanning_device.get_scanner_position()
 
@@ -447,9 +450,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         else: #retrace
             self.sigUpdatePlots.emit()
             if self.enable_PulsedRepump:
-                self._awg.mcas_dict["PLE_retrace"].run()
-            else:
-                self._awg.mcas_dict["PLE_retrace_noRepump"].run()
+                self.ps.stream(seq=[[int(self.RepumpDuration*1e3),["repump"],0,0],[int(self.RepumpDecay*1e3),[],0,0]],n_runs=1) #self.RepumpDuration is in µs
             counts = self._scan_line(self._downwards_ramp)
             counts = np.ones(self.scan_matrix2[self._scan_counter_down].shape[0])
             self.scan_matrix2[self._scan_counter_down] = counts
@@ -469,36 +470,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
             print("Ionized")
             self.SigIonized.emit()
 
-
-    def retrace_seq(self):
-
-        ##TODO - if the sequence is already in the memory, and it was not changed - do not rewrite: get the seq hash and compare them. see minsik's ODMR
-
-        seq = self._awg.mcas(name="PLE_retrace", ch_dict={"2g": [1, 2], "ps": [1]})
-        seq.start_new_segment("sequence")
-        seq.asc(name="without MW",
-                repump=True,
-                length_mus=self.RepumpDuration
-                )
-        seq.asc(name="Decay",
-                repump=False,
-                length_mus=self.RepumpDecay
-                )
-        self._awg.mcas_dict["PLE_retrace"] = seq
-
-
-        seq = self._awg.mcas(name="PLE_retrace_noRepump", ch_dict={"2g": [1, 2], "ps": [1]})
-        seq.start_new_segment("sequence")
-        seq.asc(name="without MW",
-                repump=False,
-                length_mus=self.RepumpDuration
-                )
-        seq.asc(name="Decay",
-                repump=False,
-                length_mus=self.RepumpDecay
-                )
-        self._awg.mcas_dict["PLE_retrace_noRepump"] = seq
-        return
     
     @property
     def MW1_Power(self):
@@ -509,6 +480,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self._MW1_Power=val
 
     def trace_seq(self):
+        t1=time.time()
         self.power = []
         print("MW  POWER IN PLE")
         print(self.MW1_Power)
@@ -546,8 +518,9 @@ class LaserScannerLogic(GenericLogic, ple_default):
                     repump=self.enable_Repump,
                     length_mus=50
                     )
-
+        print("time seq:", t1-time.time())
         self._awg.mcas_dict["PLE_trace"] = seq
+        print("time write:", t1-time.time())
         self._awg.mcas_dict.print_info()
         return
         

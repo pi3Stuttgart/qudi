@@ -186,10 +186,10 @@ class Base(Root):
 
     def ret_list(self, l, row=0, prefix=''):
         # return ("{}{:<6}{:<18}{:<10.6f}" + (len(l) - 2) * "{:<8}").format(prefix, row, *l)
-        print(prefix)
-        print (row)
-        print (*l) 
-        return ("{}{:<6} {:<18} {:<10.6f}" + (len(l) - 2) * " {:<8}").format(prefix, row, *l)
+        #print(prefix)
+        #print (row)
+        #print (*l) 
+        return ("{}{:<6} {:<18} {:<10.6f}" + (len(l) - 2) * " {}").format(prefix, row, *l)
 
 
     def print_list(self, *args, **kwargs):

@@ -113,19 +113,20 @@ class GatedCounter(GenericLogic):
         self._n_values = val
 
     def set_n_values(self, mcas, analyze_sequence=None):
-
         # print('gated counter readout_duration set_n_values', self.readout_duration)
         analyze_sequence = self.trace.analyze_sequence if analyze_sequence is None else analyze_sequence
-        # print('analyze sequence: ',analyze_sequence)
+        #print('analyze sequence in gated counter logic: ',analyze_sequence)
+        for step in analyze_sequence:
+            print(step)
         self.n_values = int(self.readout_duration / mcas.length_mus * sum([step[3] for step in analyze_sequence]))
-        # print('self.n_values ',self.n_values)
+        #print('self.n_values in gated_counter_logic:',self.n_values)
 
     def read_trace(self):
         import time
         t0 = time.time()
-        self.gated_counter_data = self._fast_counter_device.gated_counter_countbetweenmarkers.getData()
-
-        print('1 tt:',time.time()-t0)
+        self.gated_counter_data = self._fast_counter_device.gated_counter_countbetweenmarkers.getData() #If readout takes too long, ask Javid for optimized Readout sequence
+        #print("get Data in gated_counter_logic:", len(self.gated_counter_data))
+        print('get trace from TT:',time.time()-t0)
         if self.ZPL_counter:
             print("ZPL_counter in gated_counter_logic")
             if self.raw_clicks_processing:
@@ -184,20 +185,23 @@ class GatedCounter(GenericLogic):
                             setattr(self, trace_name,zpl_counter_data)
 
                         # print('22 tt:',time.time()-t0)
-        print('tt3:',time.time()-t0)
+        #print('tt3:',time.time()-t0)
 
         self.set_progress()
-        print('tt4:',time.time()-t0)
+        #print('tt4:',time.time()-t0)
+        #print("number sm in gatedcounterlogic: ", self.trace.number_of_simultaneous_measurements)
+
+        t1 = time.time()
         if self.analyze_trace_during_experiment:
             self.trace_rep = Analysis.TraceRep(trace=self.gated_counter_data[:self.progress],
                                                analyze_sequence=self.trace.analyze_sequence,
                                                number_of_simultaneous_measurements=self.trace.number_of_simultaneous_measurements)
             self.trace.trace = np.array(self.trace_rep.df.groupby(['run', 'sm', 'step', 'memory']).agg({'n': np.sum}).reset_index().n)
             self.update_plot_data()
+        print("Analyze Trace: ", time.time()-t1)
         # print('clear TT start')
         # self.clear_timetaggers()
         # print('clear TT finished')
-        t1 = time.time()
         # print('tt5:',t1-t0)
 
     def clear_timetaggers(self):
@@ -283,7 +287,6 @@ class GatedCounter(GenericLogic):
     def count(self, abort, ch_dict, turn_off_awgs=True,
               start_trigger_delay_ps_list = None,window_ps_list=None,
               raw_clicks_processing=False, two_zpl_apd = False,raw_clicks_processing_channels = [0,1,2,3,4,5,6,7]):
-
         # self.start_timetaggers()
         self.start_trigger_delay_ps_list = start_trigger_delay_ps_list
         self.window_ps_list = window_ps_list
@@ -304,15 +307,22 @@ class GatedCounter(GenericLogic):
             while True:
                 if abort.is_set():
                     break
-                print('Gated counter is falling asleep for ',int(self.readout_duration / 1e6))
-                time.sleep(int(self.readout_duration / 1e6))
-                break
-                # ready = self._fast_counter_device.gated_counter_countbetweenmarkers.ready()
-                # if ready:
-                #     break
-                # else:
-                #     # time.sleep(self.readout_interval / 1e6)
-                #     time.sleep(1)
+                t0=time.time()
+                # for i in range(10):
+                #     print('Gated counter is falling asleep for ',self.readout_duration / 1e6)
+                #     time.sleep(self.readout_duration / 1e6/10)
+                #     print("time: ", time.time()-t0)
+                #     print(np.sum(self._fast_counter_device.gated_counter_countbetweenmarkers.getData())/len(self._fast_counter_device.gated_counter_countbetweenmarkers.getData()))
+                #     print(len(self._fast_counter_device.gated_counter_countbetweenmarkers.getData()))
+                # break
+                ready = self._fast_counter_device.gated_counter_countbetweenmarkers.ready()
+                if ready:
+                    break
+                else:
+                    # time.sleep(self.readout_interval / 1e6)
+                    time.sleep(0.1)
+                    #print(self._fast_counter_device.gated_counter_countbetweenmarkers.getBinWidths())
+                    #print(len(self._fast_counter_device.gated_counter_countbetweenmarkers.getBinWidths()))
 
             self.read_trace()
             self.update_plot()
@@ -391,7 +401,7 @@ class GatedCounter(GenericLogic):
             #
             #                 self.ZPL_counter = True
 
-        for i in range(2):
+        for i in range(1): #was 2 before
             t = threading.Thread(target=f)
             t.start()
             t.join(5)

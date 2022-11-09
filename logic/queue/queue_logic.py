@@ -124,6 +124,9 @@ class queue_logic(GenericLogic):
     confocal = Connector('ConfocalLogic')
     # Gated counter.
     gated_counter = Connector('GatedCounter') # Should be name of the class.
+    optimizer= Connector('OptimizerLogic')
+    PLE_logic= Connector("LaserScannerLogic")
+
     update_selected_user_script_combo_box_signal = pyqtSignal(collections.OrderedDict)
     user_script_list = misc.ret_property_array_like_typ('user_script_list', str)
     guis = []  #stores names of all open guis (later on used to dump them periodically)
@@ -148,10 +151,14 @@ class queue_logic(GenericLogic):
         self._awg = self.mcas_holder()  #self._mcas_dict = self.mcas_holder()#float(9)#self.mcas_holder()  # mcas_dict()
         self._transition_tracker = self.transition_tracker() #float(10)#self.transition_tracker()
         self._gated_counter = self.gated_counter() # connection to the GC.
+        self._optimizer = self.optimizer()
+        self._PLE_logic = self.PLE_logic()
+        
         self.init_run() #
         self.write_standard_awg_sequences()
         # TODO we are adding confocal later.
         self._confocal = self.confocal()
+        #self._confocal_optimizer=self._confocal._op
         self.tt = self._transition_tracker
     def on_deactivate(self):
         pass

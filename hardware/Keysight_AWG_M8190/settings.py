@@ -49,8 +49,8 @@ marker_alias = {
                 'green': ['ps',1,'green','3'],
                 #ch4 is clock to AWG
                 'A1':['ps',1,'A1','5'],
-                'gate': ['ps',1,'tt_sync','7'],
-                'memory': ['ps',1,'tt_trigger','6'],
+                'gate': ['ps',1,'gate','7'],
+                'memory': ['ps',1,'memory','6'],
                 'tt_sync': ['ps',1,'tt_sync','6'],
                 'tt_trigger': ['ps',1,'tt_trigger','7']
                 }
@@ -64,8 +64,8 @@ amplifier_power = {'2g': {1: 5., 2: 5.}}
 ####################################################################################################################################
 # internal settings
 ####################################################################################################################################
-trigger_delay_length_mus = 27 * __BLM__ # the awg has a fixed trigger delay (sample clock dependent) of ~< 1mus
-trigger_length_mus = 27 * __BLM__ # duration of trigger sent to the slave awgs. Must not be longer __TRIGGER_DELAY_LENGTH_MUS__
-slave_trigger_safety_length_mus = 32 * __BLM__ # after __MASTER_AWG__ finishes its sequence, it waits this time until it starts over and sends a new trigger
-slave_start_delay = trigger_length_mus *1000 - 54 # delay for the PulseStreamer slave to be synchronized with a master
+trigger_delay_length_mus =  27 * __BLM__ # the awg has a fixed trigger delay (sample clock dependent) of ~< 1mus ##right now 864ns 
+trigger_length_mus = 27 * __BLM__ # duration of trigger sent to the slave awgs. Must not be longer __TRIGGER_DELAY_LENGTH_MUS__ ##right now 864ns 
+slave_trigger_safety_length_mus = 32 * __BLM__  # after __MASTER_AWG__ finishes its sequence, it waits this time until it starts over and sends a new trigger  ##right now 1024ns 
+slave_start_delay = trigger_length_mus *1000 - 69 # delay for the PulseStreamer slave to be synchronized with a master ##right now 795.0#ns 
 

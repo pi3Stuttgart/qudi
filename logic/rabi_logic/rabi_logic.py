@@ -61,6 +61,7 @@ class RabiLogic(GenericLogic,rabi_default):
     starting_time=0
 
     def on_activate(self):
+        #super().__init__() #maybe this will make it possible to reload the default val and widget functions
         self._time_tagger=self.counter_device()
         self._time_tagger.setup_TT()
         self._save_logic = self.savelogic()
