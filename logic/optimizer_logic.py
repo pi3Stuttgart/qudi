@@ -229,6 +229,7 @@ class OptimizerLogic(GenericLogic):
 
         scanner_status = self.start_scanner()
         if scanner_status < 0:
+            print("optimizer logic position: ",self.optim_pos_x, self.optim_pos_y, self.optim_pos_z)
             self.sigRefocusFinished.emit(
                 self._caller_tag,
                 [self.optim_pos_x, self.optim_pos_y, self.optim_pos_z, self.scanner_pos[3]])
@@ -518,10 +519,10 @@ class OptimizerLogic(GenericLogic):
 
         # Signal that the optimization has finished, and "return" the optimal position along with
         # caller_tag
-        self.refocus_finished = True
         self.sigRefocusFinished.emit(
             self._caller_tag,
             [self.optim_pos_x, self.optim_pos_y, self.optim_pos_z, self.scanner_pos[3]])
+        self.refocus_finished = True
 
     def _scan_z_line(self):
         """Scans the z line for refocus."""

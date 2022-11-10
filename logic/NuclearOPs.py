@@ -74,7 +74,8 @@ class NuclearOPs(DataGeneration):
         self.do_ple_refocusA1 = False
         self.do_ple_refocus = False
         self.do_confocal_repump_refocus = False
-        self.do_confocal_zpl_refocus = False
+        self.do_confocal_A1A2_refocus = False
+        self.do_confocal_A2MW_refocus = False
         #
         self.do_odmr_refocus = False
         #
@@ -84,13 +85,13 @@ class NuclearOPs(DataGeneration):
         self.yellow_repump_compensation = False
         #
         self.last_red_confocal_refocus = - 10000
-        self.confocal_repump_refocus_interval = 0
+        self.confocal_refocus_interval = 0
         self.last_ple_refocus = - 10000
         self.ple_refocus_interval = 0
         self.last_interferometer_refocus = - 10000
         self.interferometer_refocus_interval = 0
         #
-        self.save_smartly = True
+        self.save_smartly = False
         self.delay_ps_list = []
         self.window_ps_list = []
         #
@@ -327,16 +328,14 @@ class NuclearOPs(DataGeneration):
                         #pass
                         self.do_refocus_repump()
 
-                    if self.do_confocal_zpl_refocus:
-                        pass
+                    if self.do_confocal_A1A2_refocus or self.do_confocal_A2MW_refocus:
                         self.do_refocus_zpl()
 
-                    if self.do_ple_refocus or self.do_ple_refocusA1 or self.do_ple_refocusA2:
+                    if self.do_ple_refocusA2 or self.do_ple_refocus or self.do_ple_refocusA1:
                         # if 'delta_ple_A2' in self.current_iterator_df.keys():
                         #     self.queue.ple_A2.delta_ple = self.current_iterator_df['delta_ple_A2'].unique()[0]
                         #     logging.getLogger().info(
                         #         'I set delta_ple_A2: {}'.format(self.current_iterator_df['delta_ple_A2'].unique()[0]))
-                        pass #TODO here uncommment
                         self.do_refocus_ple(abort)
 
                     if self.do_odmr_refocus:
@@ -428,7 +427,7 @@ class NuclearOPs(DataGeneration):
                         self.data.set_observations([OrderedDict(ple_A1=self.queue._transition_tracker.ple_A1)]*self.number_of_simultaneous_measurements)
                         self.data.set_observations([OrderedDict(local_oscillator_freq=self.queue._transition_tracker.current_local_oscillator_freq)]*self.number_of_simultaneous_measurements)
                         self.data.set_observations(pd.concat([self.df_refocus_pos.iloc[-1:, :]]*self.number_of_simultaneous_measurements).reset_index(drop=True))
-                    
+                        
                     print("t 5=", time.time()-t0)
                     t0 = time.time()
                     self.data.set_observations([OrderedDict(start_time=datetime.datetime.now())]*self.number_of_simultaneous_measurements)
@@ -547,7 +546,7 @@ class NuclearOPs(DataGeneration):
                     if self.do_confocal_repump_refocus:
                         self.do_refocus_repump()
                     
-                    if self.do_confocal_zpl_refocus:
+                    if self.do_confocal_A1A2_refocus or self.do_confocal_A2MW_refocus:
                         self.do_refocus_zpl()
                     
                     
@@ -693,7 +692,7 @@ class NuclearOPs(DataGeneration):
         #if self.wavemeter_lock and self.queue.wavemeter.wm_id!=0:
         #    self.queue.wavemeter.unlock_frequency()
         #    time.sleep(0.1)
-
+        
         self.queue._PLE_logic.Lock_laser=True
         self.queue._PLE_logic.start_scanning()
         while not self.queue._PLE_logic.stopped:
@@ -725,18 +724,17 @@ class NuclearOPs(DataGeneration):
 
 
     def do_refocus_repump(self):
-
         delta_t = time.time() - self.last_red_confocal_refocus
 
-        if (delta_t >= self.confocal_repump_refocus_interval):
+        if (delta_t >= self.confocal_refocus_interval):
 
             self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,["repump"],0,0))
 
             self.queue._optimizer.start_refocus(initial_pos = np.array(self.df_refocus_pos.iloc[0]))
             while not self.queue._optimizer.refocus_finished:
-                time.sleep(0.5)
+                time.sleep(0.25)
             self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[self.queue._optimizer.optim_pos_x], confocal_y=[self.queue._optimizer.optim_pos_y], confocal_z=[self.queue._optimizer.optim_pos_z]))
-            self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,[],0,0))
+            
             
             #TODO connect to optimized and return when done
             # self.queue.optimizer.syncFlag=False
@@ -755,27 +753,66 @@ class NuclearOPs(DataGeneration):
 
 
     def do_refocus_zpl(self):
-
         delta_t = time.time() - self.last_red_confocal_refocus
 
-        if (delta_t >= self.confocal_repump_refocus_interval):
+        if (delta_t >= self.confocal_refocus_interval):
 
-            self.queue.confocal.syncFlag=False
-            self.queue.confocal.state = 'refocus_zpl'
+            sequence_name="A2MW_confocal_refocus"
+            if self.do_confocal_A1A2_refocus:
+                self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,["A1", "A2", "repump"],0,0)) # last 2 digits are analog output: these are set in the awg_hardware. These parameters are not used
 
-            while self.queue.confocal.syncFlag == False:
-                time.sleep(0.1)
 
-            time.sleep(0.5)
+            elif self.do_confocal_A2MW_refocus:
+                MW1_freq = 33.6
+                MW2_freq = 173.6
+                MW3_freq = 173.6
+                enable_MW1 = True
+                enable_MW2 = True
+                enable_MW3 = False
+
+                enable_Repump =True
+
+                self.power = [0.25,0.25,0.25]
+                # if self.enable_MW1:
+                #     self.power += [self.MW1_power]
+                # if self.enable_MW2:
+                #     self.power += [self.MW2_power]
+                # if self.enable_MW3:
+                #     self.power += [self.MW3_power]
+
+                #self.power = np.asarray(self.power)
+                #self.power=self.power_to_amp(self.power)
+
+                if not sequence_name in self.queue._awg.mcas_dict:
+
+                    seq = self.queue._awg.mcas(name=sequence_name, ch_dict={"2g": [1, 2], "ps": [1]})
+                    frequencies = np.array([MW1_freq, MW2_freq, MW3_freq])[[enable_MW1, enable_MW2, enable_MW3]]
+                    seq.start_new_segment("Microwaves"+str(frequencies), loop_count=200)
+                    seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": frequencies, "amplitudes": self.power},
+                            A2=True,
+                            repump=enable_Repump,
+                            length_mus=50
+                            )
+
+                    self.queue._awg.mcas_dict[sequence_name] = seq
+
+                    while self.mcas=='':
+                        #process_events() #TODO gui process events.
+                        time.sleep(0.01)
+            
+
+            self.queue._awg.mcas_dict[sequence_name].run()
+        
+            self.queue._optimizer.start_refocus(initial_pos = self.queue._confocal.get_position(), caller_tag = 'NuclearOps')
+            while not self.queue._optimizer.refocus_finished:
+                time.sleep(0.25)
+
             self.last_red_confocal_refocus = time.time()
 
-
-            self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[self.queue.confocal.x], confocal_y=[self.queue.confocal.y], confocal_z=[self.queue.confocal.z]))
-
-
-
-
-
+            self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[self.queue._optimizer.optim_pos_x], confocal_y=[self.queue._optimizer.optim_pos_y], confocal_z=[self.queue._optimizer.optim_pos_z]))
+            time.sleep(0.5)
+            
+        
     def check_eom(self):
 
         logging.getLogger().info('checking the eom')
@@ -962,8 +999,10 @@ class NuclearOPs(DataGeneration):
     
             self.queue._awg.mcas_dict[sequence_name] = self.mcas
             #mcas.sequence_name = sequence_name #FIXME
-            
-        # pi3d.mcas_dict[sequence_name].initialize()
+        elif self.mcas==None :
+            self.mcas = self.queue._awg.mcas_dict[sequence_name]
+
+         #pi3d.mcas_dict[sequence_name].initialize()
         # pi3d.mcas_dict[sequence_name].start_awgs()
 
     def analyze(self, data=None, ana_trace=None, start_idx=None):

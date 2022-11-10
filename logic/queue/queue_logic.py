@@ -480,7 +480,8 @@ class queue_logic(GenericLogic):
                                                  ".idea",
                                                  ".hg",
                                                  'UserScripts',
-                                                 'log'
+                                                 'log',
+                                                 'notebooks' #FIXME - include logic, explode heavy stuff.
                                                  ]
                              ]
                             )

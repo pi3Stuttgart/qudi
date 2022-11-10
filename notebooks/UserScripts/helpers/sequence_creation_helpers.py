@@ -15,6 +15,7 @@ import os
 import collections
 from logic.qudip_enhanced import data_handling
 import datetime
+from importlib import reload as reload
 
 # def full_wavelength(flf, target_length_mus):
 #     """
@@ -127,6 +128,7 @@ def file_notes_frequencies():
     return out[:-1]
 
 def create_nuclear(script_path):
+    reload(logic.NuclearOPs)
     if not os.path.isfile(script_path):
         raise Exception('Error: ', script_path)
     nuclear = logic.NuclearOPs.NuclearOPs()#TODO fill config here

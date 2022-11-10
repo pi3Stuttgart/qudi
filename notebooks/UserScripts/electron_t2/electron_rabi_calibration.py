@@ -73,14 +73,16 @@ def ret_ret_mcas(pdc):
 def settings(pdc={}):
     ana_seq=[
         ['result', '>', 1, 1, 0, 1],
+        # ['init', '>', 1, 1, 0, 1],
+        # ['init', '>', 5, 1, 0, 1],
     ]
         #what does each entry do?
-        # ana_seq[0]: ?
-        # ana_seq[1]: ?
+        # ana_seq[0]: ? 'result' or 'init', init - for postselection
+        # ana_seq[1]: ? > or <
         # ana_seq[2]: "threshold"
-        # ana_seq[3]: "nlp_per_point". What is "nlp"?
-        # ana_seq[4]: set to 100 --> no counts measured; set to 7 --> counts can be measured; --> ?
-        # ana_seq[5]: "number of results" -->?
+        # ana_seq[3]: "nlp_per_point", number of laser pulses per point. N of repetitions. 
+        # ana_seq[4]: set to 100 --> no counts measured; set to 7 --> counts can be measured; --> delta - exclusion zone. n > threshold +delta, or n< threhold - delta. 
+        # ana_seq[5]: "number of results" --> ssr = cnot1 + laser1 + cnot2 + laser2, -> n=2, etc.. laser2-laser1,  histograms are centered around 0, 
     sch.settings(
         nuclear=nuclear,
         ret_mcas=ret_ret_mcas(pdc),
@@ -94,13 +96,15 @@ def settings(pdc={}):
     #nuclear.analyze_type = 'standard'
 
     nuclear.do_ple_refocusA2 = True
-    nuclear.do_ple_refocusA1 = False
-    nuclear.do_ple_refocus = True
+    nuclear.do_ple_refocusA1 = False #not used 
+    nuclear.do_ple_refocus = False # not useful
     nuclear.do_odmr_refocus = False
-    nuclear.do_confocal_repump_refocus = True
+    nuclear.do_confocal_repump_refocus = False
+    nuclear.do_confocal_A1A2_refocus = False
+    nuclear.do_confocal_A2MW_refocus = True
 
-    nuclear.ple_refocus_interval = 1000
-    nuclear.confocal_repump_refocus_interval = 10  # seconds
+    nuclear.ple_refocus_interval = 300
+    nuclear.confocal_refocus_interval = 300  # seconds
 
     #rabi refocus ?
 
@@ -110,7 +114,7 @@ def settings(pdc={}):
     nuclear.parameters = OrderedDict( # WHAT DOES ALL THIS MEAN ??? WHICH UNITS ??
         (
             #('mw_duration', E.round_length_mus_full_sample(np.linspace(0.0, 0.3, 31))), 
-            ('sweeps', range(30)),
+            ('sweeps', range(300)),
             #('rabi_period', [0.087]),
             ('resonant', [True]),
             ('ms', [-1]),
@@ -128,7 +132,7 @@ def settings(pdc={}):
             ('readout', ['A2','A1']),
         )
     )
-    nuclear.number_of_simultaneous_measurements =  2*len(nuclear.parameters['mw_duration'])#len(nuclear.parameters['phase_pi2_2'])
+    nuclear.number_of_simultaneous_measurements =  2#*#len(nuclear.parameters['mw_duration'])#len(nuclear.parameters['phase_pi2_2'])
 
 def run_fun(abort, **kwargs):
     print(1,' Nuclear started!!!')

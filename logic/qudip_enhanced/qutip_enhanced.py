@@ -21,7 +21,7 @@ np.set_printoptions(suppress=True, linewidth=100000)
 
 def save_qutip_enhanced(destination_dir):
     src = os.path.dirname(os.path.dirname(__file__))
-    f = '{}/qutip_enhanced.zip'.format(destination_dir)
+    f = '{}/qudip_enhanced.zip'.format(destination_dir)
     if not os.path.isfile(f):
         zf = zipfile.ZipFile(f, 'a')
         for root, dirs, files in os.walk(src):
