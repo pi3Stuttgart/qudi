@@ -735,7 +735,7 @@ class SSR(object):
                 elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_Ex': #UNFUG
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
                     self.mcas.asc(A2=True, length_mus=self.dur_step[alt_step][5], name = 'ple_Ex_readout')
-                    self.mcas.asc(length_mus=1.0,name = 'wait')
+                    #self.mcas.asc(length_mus=1.0,name = 'wait')
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
 
                 elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_A1':

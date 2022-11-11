@@ -191,7 +191,7 @@ class DataGeneration:
         while True:
             t0 = time.time()
             self.process_remeasure_items()
-            print("T1=", time.time()-t0)
+            print("qudip_enhanced.data_generationT1=", time.time()-t0)
             t0 = time.time()
             self.iterator_df_done = self.data.df.loc[:, self.data.parameter_names]  # self.iterator_df_done.append(self.current_iterator_df)
             print("T2=", time.time()-t0)

@@ -421,11 +421,12 @@ class LaserScannerLogic(GenericLogic, ple_default):
         if ((self.stopRequested and self.slice_number==0) or self._scan_counter_down >= self.number_of_repeats or self.AbortRequested):
             self._goto_during_scan(self._static_v)
             self._close_scanner()
-            self.stopped=True
             self.sigScanFinished.emit()
             self.local_counts=[]
             self.slice_number=0
+            self.ps.Night() # just for safety
             self._awg.mcas_dict.stop_awgs()
+            self.stopped=True
             
             return
 

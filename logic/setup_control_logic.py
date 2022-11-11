@@ -7,6 +7,7 @@ import sys
 import logging; logger = logging.getLogger(__name__)
 from core.pi3_utils import delay
 import time
+from core.statusvariable import StatusVar
 
 sys.path.append('C:\src\qudi\hardware\Keysight_AWG_M8190\pyarbtools_master') #quickfix to proceed, should be improved
 
@@ -26,21 +27,24 @@ class SetupControlLogic(GenericLogic):
     #automizedmeasurementlogic = Connector(interface = 'Automatedmeasurement')
     savelogic = Connector(interface = 'SaveLogic')
 
-    MW1_power:float=-21
-    MW3_freq:float=210
-    MW3_power:float=-21
-    MW2_power:float=-21
-    MW2_freq:float=140
-    MW1_freq:float=70
     _AOM_volt:float=1
     read_power:str='-'
-    enable_MW1:bool=False
-    enable_MW2:bool=False
-    enable_MW3:bool=False
-    enable_A1:bool=False
-    enable_A2:bool=False
-    enable_Repump:bool=False
-    enable_Green:bool=False
+
+    MW1_freq = StatusVar('MW1_freq', 70)
+    MW2_freq = StatusVar('MW2_freq', 140)
+    MW3_freq = StatusVar('MW3_freq', 210)
+    MW1_power = StatusVar('MW1_Power', -21)
+    MW2_power = StatusVar('MW2_Power', -21)
+    MW3_power = StatusVar('MW3_Power', -21)
+    enable_MW1: bool = False
+    enable_MW2: bool = False
+    enable_MW3: bool = False
+
+    enable_A1: bool = False
+    enable_A2: bool = False
+    enable_Repump: bool = False
+    enable_Green: bool = False
+
     active_chanels=[] # used to talk to the pulsestreamer directly
     flip_mirror=False
 

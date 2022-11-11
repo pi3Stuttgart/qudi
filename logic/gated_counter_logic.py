@@ -115,10 +115,15 @@ class GatedCounter(GenericLogic):
     def set_n_values(self, mcas, analyze_sequence=None):
         # print('gated counter readout_duration set_n_values', self.readout_duration)
         analyze_sequence = self.trace.analyze_sequence if analyze_sequence is None else analyze_sequence
-        #print('analyze sequence in gated counter logic: ',analyze_sequence)
+        # print('analyze sequence in gated counter logic: ',analyze_sequence)
         for step in analyze_sequence:
             print(step)
         self.n_values = int(self.readout_duration / mcas.length_mus * sum([step[3] for step in analyze_sequence]))
+        print("__________________________________________________________")
+        print("set_n_values in gated counter logic")
+        print("n values: ", self.n_values)
+        print("readout duration: ", self.readout_duration)
+        print("length mus: ", mcas.length_mus)
         #print('self.n_values in gated_counter_logic:',self.n_values)
 
     def read_trace(self):
@@ -299,7 +304,6 @@ class GatedCounter(GenericLogic):
             self.clear_plot_signal.emit(number_of_subtraces)
         try:
             self.set_counter()
-
             if not self._mcas_dict.mcas_dict.debug_mode:
                 start_awgs(self._mcas_dict.mcas_dict.awgs, ch_dict=ch_dict)
 
@@ -307,23 +311,21 @@ class GatedCounter(GenericLogic):
             while True:
                 if abort.is_set():
                     break
-                t0=time.time()
-                # for i in range(10):
-                #     print('Gated counter is falling asleep for ',self.readout_duration / 1e6)
-                #     time.sleep(self.readout_duration / 1e6/10)
-                #     print("time: ", time.time()-t0)
-                #     print(np.sum(self._fast_counter_device.gated_counter_countbetweenmarkers.getData())/len(self._fast_counter_device.gated_counter_countbetweenmarkers.getData()))
-                #     print(len(self._fast_counter_device.gated_counter_countbetweenmarkers.getData()))
+                # print('Gated counter is falling asleep for ',self.readout_duration / 1e6)
+                # time.sleep(self.readout_duration / 1e6)
                 # break
                 ready = self._fast_counter_device.gated_counter_countbetweenmarkers.ready()
+                print("-----------------------------------------------------\n",np.sum(self._fast_counter_device.gated_counter_countbetweenmarkers.getData()))
                 if ready:
                     break
                 else:
                     # time.sleep(self.readout_interval / 1e6)
                     time.sleep(0.1)
+                    
                     #print(self._fast_counter_device.gated_counter_countbetweenmarkers.getBinWidths())
                     #print(len(self._fast_counter_device.gated_counter_countbetweenmarkers.getBinWidths()))
 
+            
             self.read_trace()
             self.update_plot()
 
