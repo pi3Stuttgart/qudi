@@ -21,7 +21,6 @@ class ple_default_values_and_widget_functions:
 
         Filename:str = ''
         PeriodicSaving:bool = False
-        PerformFit:bool = False
         NumberOfPeaks:int = 2
         Stoptime:float = 3600
         Interval:float = 180

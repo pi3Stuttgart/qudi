@@ -291,12 +291,14 @@ class FitLogic(GenericLogic):
             #logger.info(x0)
 
             # set the initial guesses arguments at their calculated position
-            filtered=0
             if len(peak_pos_arguments)>0:
-                y=signal.savgol_filter(y_data,int(0.1*len(y_data)/2)*2+1,3) # for better peak finding we smooth the data. The window size (2nd argumant) must be odd, the filter window is 10% of the data length
-                y_peaks=signal.find_peaks(y,**self.analyse_kwargs)
+                try:
+                    y=signal.savgol_filter(y_data,int(0.1*len(y_data)/2)*2+1,3) # for better peak finding we smooth the data. The window size (2nd argumant) must be odd, the filter window is 10% of the data length
+                    y_peaks=signal.find_peaks(y,**self.analyse_kwargs)
+                except:
+                    y_peaks=signal.find_peaks(y_data,**self.analyse_kwargs)
+                    
                 Peaks=self.sort_by_prominence(y_peaks)
-                filtered=1
 
                 if len(Peaks)>len(peak_pos_arguments):
                     for i,peak_pos in enumerate(peak_pos_arguments):
@@ -306,9 +308,12 @@ class FitLogic(GenericLogic):
                         x0[peak_pos_arguments[i]]=self.x_data[peak]
 
             if len(dip_pos_arguments)>0:
-                if not filtered:
-                    y=signal.savgol_filter(y_data,int(0.1*len(y_data)/2)*2+1,3)
-                y_dips=signal.find_peaks(y,**self.analyse_kwargs)
+                try:
+                    y=signal.savgol_filter(-y_data,int(0.1*len(y_data)/2)*2+1,3)
+                    y_dips=signal.find_peaks(y,**self.analyse_kwargs)
+                except:
+                    y_dips=signal.find_peaks(-y_data,**self.analyse_kwargs)
+
                 Dips=self.sort_by_prominence(y_dips)
 
                 if len(Dips)>len(dip_pos_arguments):
@@ -320,8 +325,11 @@ class FitLogic(GenericLogic):
 
             if len(sine_freq_arguments)>0:
                 FT_x=abs(rfft(y_data)) # we are only interested in the frequencies
-                FT_x=signal.savgol_filter(FT_x,int(0.01*len(y_data)/2)*2+1,3) # the window size is 1% as peaks are expected to be sharp
-                freqs=signal.find_peaks(FT_x,**self.analyse_kwargs)
+                try:
+                    FT_x=signal.savgol_filter(FT_x,int(0.01*len(y_data)/2)*2+1,3) # the window size is 1% as peaks are expected to be sharp
+                    freqs=signal.find_peaks(FT_x,**self.analyse_kwargs)
+                except:
+                    freqs=signal.find_peaks(FT_x,**self.analyse_kwargs)
 
                 Freqs=self.sort_by_prominence(freqs)
 
@@ -401,12 +409,21 @@ class FitLogic(GenericLogic):
         print("curve fit not implemented")
     
     def analyse_data(self,x,**kwargs): #kwars: height=None, threshold=None, distance=None, prominence=None, width=None, wlen=None, rel_height=0.5, plateau_size=None
-        x=signal.savgol_filter(x,int(0.1*len(x)/2)*2+1,3) # for better peak finding we smooth the data. The window size (2nd argumant) must be odd, the filter window is 10% of the data length
-        x_peaks=signal.find_peaks(x,**kwargs)
-        x_dips=signal.find_peaks(-x,**kwargs)
-        FT_x=abs(rfft(x)) # we are only interested in the frequencies
-        FT_x=signal.savgol_filter(FT_x,int(0.01*len(x)/2)*2+1,3) # the window size is 1% as peaks are expected to be sharp
-        FT_peaks=signal.find_peaks(FT_x,**kwargs)
+        try:
+            x=signal.savgol_filter(x,np.clip(int(0.1*len(x)/2)*2+1,5,np.inf),3) # for better peak finding we smooth the data. The window size (2nd argumant) must be odd, the filter window is 10% of the data length
+            x_peaks=signal.find_peaks(x,**kwargs)
+            x_dips=signal.find_peaks(-x,**kwargs)
+            FT_x=abs(rfft(x)) # we are only interested in the frequencies
+            FT_x=signal.savgol_filter(FT_x,np.clip(int(0.1*len(x)/2)*2+1,5,np.inf),3) # the window size is 1% as peaks are expected to be sharp
+            FT_peaks=signal.find_peaks(FT_x,**kwargs)
+        except:
+            #x=signal.savgol_filter(x,np.clip(int(0.1*len(x)/2)*2+1,5,np.inf),3) # for better peak finding we smooth the data. The window size (2nd argumant) must be odd, the filter window is 10% of the data length
+            x_peaks=signal.find_peaks(x,**kwargs)
+            x_dips=signal.find_peaks(-x,**kwargs)
+            FT_x=abs(rfft(x)) # we are only interested in the frequencies
+            #FT_x=signal.savgol_filter(FT_x,np.clip(int(0.1*len(x)/2)*2+1,5,np.inf),3) # the window size is 1% as peaks are expected to be sharp
+            FT_peaks=signal.find_peaks(FT_x,**kwargs)
+
         return x_peaks,x_dips,FT_peaks
 
     ############ basic functions

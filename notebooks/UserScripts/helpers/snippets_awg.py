@@ -24,7 +24,7 @@ __CURRENT_POL_RED__ = 76
 __T_POL_RED__ = 0.2
 __RED_LASER__DELAY__ = 0.1
 __SSR_REPETITIONS__ = {'14n+1': 1500, '14n-1': 1500, '14n': 1500, '14n0': 1200, '13c414': 1500, '13c90': 2000,
-                       'charge_state':1,'charge_state_A1_aom_Ex':1,'charge_state_ExMW':1, 'ple_Ex': 1,'ple_A1': 1,'Ex_pi_readout':1,'Ex_pi_readout_6ns':1,
+                       'charge_state':1,'charge_state_A1_aom_Ex':1,'charge_state_ExMW':1, 'ple_A2': 1,'ple_A1': 1,'Ex_pi_readout':1,'Ex_pi_readout_6ns':1,
                        'Ex_ampl_sweep_SSR' : 1,
                        'opt_mw_delays_calibration':1,
                        'opt_mw_delays_calibration2': 1,
@@ -37,7 +37,7 @@ __SSR_REPETITIONS__ = {'14n+1': 1500, '14n-1': 1500, '14n': 1500, '14n0': 1200, 
                        'Ex_ampl_sweep_SSR_6ns' :10,
                        'Ex_pi_readout_10ns':10}
 __LASER_DUR_DICT__ = {'14n+1': .175, '14n-1': .175, '14n': .175, '14n0': .9, '13c414': .9, '13c90': .21,
-                      'single_state': .9, 'charge_state': 2000.0,'charge_state_ExMW': 2000.0,'charge_state_A1_aom_Ex':2000.0, 'ple_Ex': 50.0,'ple_A1': 50.,
+                      'single_state': .9, 'charge_state': 2000.0,'charge_state_ExMW': 2000.0,'charge_state_A1_aom_Ex':2000.0, 'ple_A2': 50.0,'ple_A1': 50.,
                       'Ex_pi_readout_6ns' : 481*3/12.0e3, # (Len in samples / sampling rate)
                       'Ex_ampl_sweep_SSR' : 481*1/12e3,
                       'opt_mw_delays_calibration': 481*1/12e3,
@@ -53,11 +53,11 @@ __LASER_DUR_DICT__ = {'14n+1': .175, '14n-1': .175, '14n': .175, '14n0': .9, '13
                         'Ex_pi_readout' : 481/12.0e3 # (Len in samples / sampling rate)
                       } # us
 __PERIODS__ = {'14n+1': 1.6, '14n-1': 1.6, '14n': 1.6, '14n0': 1.6, '13c414': 6.0, '13c90': 20., 'charge_state': 0.0,'charge_state_A1_aom_Ex': 0.0,
-               'charge_state_ExMW': 0.0,'ple_Ex': 0.0,'ple_A1': 0.0,'Ex_pi_readout':0.0,'Ex_pi_readout_6ns':0.0,'Ex_ampl_sweep_SSR' :0.0,
+               'charge_state_ExMW': 0.0,'ple_A2': 0.0,'ple_A1': 0.0,'Ex_pi_readout':0.0,'Ex_pi_readout_6ns':0.0,'Ex_ampl_sweep_SSR' :0.0,
                'Ex_ampl_sweep_SSR_6ns' :0.0, 'Ex_pi_readout_10ns':0.0,'opt_mw_delays_calibration':0.0,
                'opt_mw_delays_calibration2':0.0,'2_opt_mw_delays_calibration':0.0,'Ex_RO':0.0,
                '2opt_withMW_pi':0.0,'entanglement':0.0,'entanglement_for_tests':0.0,'HOM':0.0}
-__WAVE_FILE_SCALING_FACTOR_DICT__ = {'14n+1': 2.5, '14n-1': 2.5, '14n': 2.5, '14n0': 2.5, '13c414': 1.0,'charge_state_A1_aom_Ex':1.0, 'charge_state': 1.0,'ple_Ex': 1.0,'ple_A1': 0.0}
+__WAVE_FILE_SCALING_FACTOR_DICT__ = {'14n+1': 2.5, '14n-1': 2.5, '14n': 2.5, '14n0': 2.5, '13c414': 1.0,'charge_state_A1_aom_Ex':1.0, 'charge_state': 1.0,'ple_A2': 1.0,'ple_A1': 0.0}
 __STANDARD_WAVEFILE__ = 'D:\data\Robust_Pulses\single_pulse_ON03_OFF05_Rabi10_02.dat'
 __STANDARD_WAVEFILES__ = {'14n+1': r"D:\data\NuclearOPs\Robust\test_pi_three_nitrogen\20171204-h18m52s32CnROTe-gateFN3.08e-01_selective_to_all\MW.dat"}
 
@@ -619,7 +619,6 @@ class SSR(object):
                         'charge_state',
                         'ple_A2',
                         'ple_A1',
-                        'ple_Ex', #UNFUG
                         # 'Ex_pi_readout_6ns',
                         # 'Ex_ampl_sweep_SSR',
                         # 'opt_mw_delays_calibration',
@@ -723,7 +722,7 @@ class SSR(object):
                         #            amplitudes=[ampl],
                         #            phase_offset_type='absolute',
                         #            phase=[0]),
-                        A2=True, length_mus=self.dur_step[alt_step][5], name = 'ple_Ex_readout')
+                        A2=True, length_mus=self.dur_step[alt_step][5], name = 'ple_A2_readout')
 
                     self.mcas.asc(length_mus=2.0,name = 'wait')
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
@@ -732,11 +731,11 @@ class SSR(object):
                     # delta+=self.dur_step[alt_step][5]
 
 
-                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_Ex': #UNFUG
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-                    self.mcas.asc(A2=True, length_mus=self.dur_step[alt_step][5], name = 'ple_Ex_readout')
-                    #self.mcas.asc(length_mus=1.0,name = 'wait')
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
+                # elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_Ex': #UNFUG
+                #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                #     self.mcas.asc(A2=True, length_mus=self.dur_step[alt_step][5], name = 'ple_Ex_readout')
+                #     #self.mcas.asc(length_mus=1.0,name = 'wait')
+                #     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
 
                 elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_A1':
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter

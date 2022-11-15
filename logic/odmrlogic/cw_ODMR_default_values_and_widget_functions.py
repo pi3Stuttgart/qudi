@@ -7,17 +7,17 @@ class cw_ODMR_default_values_and_widget_functions:
         T=True
         cw_Filename:str="filename"
         cw_MW1:bool=T
-        cw_MW2:bool=F
+        cw_MW2:bool=T
         cw_MW3:bool=F
 
         cw_MW1_Power:float=-20 #dBm
         cw_MW2_Power:float=-20 #dBm
         cw_MW3_Power:float= -20 #dBm
 
-        cw_StartFreq:float=50 #MHz
-        cw_StopFreq:float=90 #MHz
-        cw_Stepsize:float=10 #MHz
-        cw_MW2_Freq:float=140 #MHz
+        cw_StartFreq:float=20 #MHz
+        cw_StopFreq:float=40 #MHz
+        cw_Stepsize:float=1 #MHz
+        cw_MW2_Freq:float=173 #MHz
         cw_MW3_Freq:float=140 #MHz
 
         cw_A1:bool=F
@@ -148,8 +148,10 @@ class cw_ODMR_default_values_and_widget_functions:
                 binwidth=int(self.cw_SecondsPerPoint*1e12),
                 n_bins=1
                 )
+                #self.holder.SigCheckReady_Beacon.connect(self.data_readout)
                 self.time_differences.start()
                 self.measurement_running=True
+                
 
 
         def cw_A2_CheckBox_StateChanged(self,on):
@@ -177,10 +179,13 @@ class cw_ODMR_default_values_and_widget_functions:
                 self.cw_PeriodicSaving=on==2
 
         def cw_Stop_Button_Clicked(self,on):
+                #self.holder.SigCheckReady_Beacon.disconnect()
                 self.holder.stop_awg()
                 self.stoping_time=time.time()
-                self.measurement_running=False
                 self.time_differences.stop()
+                self.measurement_running=False
+                self.cw_odmr_refocus_running=False
+                print("stopping")
 
         def cw_StopFreq_LineEdit_textEdited(self,text):
                 try:
@@ -195,17 +200,23 @@ class cw_ODMR_default_values_and_widget_functions:
                         pass
 
         def cw_Run_Button_Clicked(self,on):
+                print("cwrun button clicked")
+                self.cw_odmr_refocus_running=True
                 self.holder.Contrast_Fit = ''
                 self.holder.Frequencies_Fit = ''
                 self.holder.Linewidth_Fit = ''
+                print("settuing up cw seq")
                 self.setup_seq()
+                print("setting up cw seq done")
                 self.scanmatrix=np.zeros((int(self.cw_NumberOfLines),self.number_of_points_per_line))
                 self.ancient_data=np.array(self.time_differences.getData(),dtype=object)
                 self.data=0
-                self.starting_time=time.time()
+                #self.holder.SigCheckReady_Beacon.connect(self.data_readout)
                 self.time_differences.clear()
                 self.time_differences.start()
+                self.starting_time=time.time()
                 self.measurement_running=True
+                print("starting")
 
         def cw_PerformFit_CheckBox_StateChanged(self,on):
                 self.cw_PerformFit=on==2
@@ -219,12 +230,55 @@ class cw_ODMR_default_values_and_widget_functions:
                         pass
 
         def cw_SelectGaussianFit_RadioButton_clicked(self):
-                self.cw_SelectGaussianFit=True
-                self.cw_SelectLorentzianFit=False
+                self.holder.SelectGaussianFit=True
+                self.holder.SelectLorentzianFit=False
                 
         def cw_SelectLorentzianFit_RadioButton_clicked(self):
-                self.cw_SelectGaussianFit=False
-                self.cw_SelectLorentzianFit=True
+                self.holder.SelectGaussianFit=False
+                self.holder.SelectLorentzianFit=True
 
 
+        # F=False
+        # T=True
+        # cw_Filename=StatusVar("cw_Filename","filename")
+        # cw_MW1=StatusVar("cw_MW1",F)
+        # cw_MW2=StatusVar("cw_MW2",F)
+        # cw_MW3=StatusVar("cw_MW3",F)
 
+        # cw_MW1_Power=StatusVar("cw_MW1_Power",-20) #dBm
+        # cw_MW2_Power=StatusVar("cw_MW2_Power",-20) #dBm
+        # cw_MW3_Power=StatusVar("cw_MW3_Power",-20)
+        
+        # cw_StartFreq=StatusVar("cw_StartFreq",10) #MHz
+        # cw_StopFreq=StatusVar("cw_StopFreq",90) #MHz
+        # cw_Stepsize=StatusVar("cw_MW2_Freq",10) #MHz
+        # cw_MW2_Freq=StatusVar("cw_MW2_Freq",140)
+        # cw_MW3_Freq=StatusVar("cw_MW3_Freq",210)
+        
+        # cw_A1=StatusVar("cw_A1",T)
+        # cw_A2=StatusVar("cw_A2",T)
+        # cw_PulsedRepump=StatusVar("cw_RepumpDuration",F) #µs
+        # cw_RepumpDuration=StatusVar("cw_RepumpDuration",3)
+        # cw_RepumpDecay=StatusVar("cw_RepumpDecay",1) #µs
+        # cw_CWRepump=StatusVar("cw_CWRepump",F)
+        # cw_Stoptime=StatusVar("cw_Stoptime",0) #µs
+        # cw_PeriodicSaving=StatusVar("cw_PeriodicSaving",F)
+        # cw_Interval=StatusVar("cw_Interval",0)
+        
+        # cw_PerformFit=StatusVar("cw_PerformFit",F)
+        # cw_SelectLorentzianFit=StatusVar("cw_SelectLorentzianFit",T)
+        # cw_SelectGaussianFit=StatusVar("cw_SelectGaussianFit",F)
+        
+        # cw_SecondsPerPoint=StatusVar("cw_SecondsPerPoint",0.02)
+        
+        # cw_Runtime=StatusVar("cw_Runtime",0)
+        
+        # cw_segment_length=StatusVar("cw_segment_length",50)
+        
+        # cw_odmr_cb_max=StatusVar("cw_odmr_cb_max",100)
+        # cw_odmr_cb_high_percentile=StatusVar("cw_odmr_cb_high_percentile",100)
+        # cw_odmr_cb_low_percentile=StatusVar("cw_odmr_cb_low_percentile",0)
+        # cw_odmr_cb_min=StatusVar("cw_odmr_cb_min",0)
+        # cw_NumberOfLines=StatusVar("cw_NumberOfLines",20)
+        
+        # cw_update_after_stop=StatusVar("cw_update_after_stop",F)

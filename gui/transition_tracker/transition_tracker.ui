@@ -144,7 +144,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>mw_mixing_frequency</string>
+    <string>mw_mixing_frequency (MHz)</string>
    </property>
   </widget>
   <widget class="QLabel" name="current_local_oscillator_freq_label_4">
@@ -272,7 +272,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>zero_field_splitting</string>
+    <string>zero_field_splitting (MHz)</string>
    </property>
   </widget>
   <widget class="QTextBrowser" name="zero_field_splitting_text_field">
@@ -291,7 +291,7 @@
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="QTextBrowser" name="ple_Ex_text_field">
+  <widget class="QTextBrowser" name="ple_A2_text_field">
    <property name="enabled">
     <bool>true</bool>
    </property>
@@ -323,7 +323,7 @@
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="QLabel" name="ple_Ex_label">
+  <widget class="QLabel" name="ple_A2_label">
    <property name="enabled">
     <bool>true</bool>
    </property>
@@ -336,7 +336,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>PLE Ex</string>
+    <string>PLE A2 (V)</string>
    </property>
   </widget>
   <widget class="QLabel" name="ple_A1_label">
@@ -352,7 +352,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>PLE A1</string>
+    <string>PLE A1 (V)</string>
    </property>
   </widget>
  </widget>

@@ -323,7 +323,7 @@ class ODMRGUI(GUIBase):
             if self._odmr_logic.ODMRLogic.cw_PerformFit:
                 self._mw.cw_odmr_PlotWidget.addItem(self.cw_odmr_image_fit)
 
-                self._odmr_logic.ODMRLogic.x_fit,self._odmr_logic.ODMRLogic.y_fit,self._odmr_logic.ODMRLogic.fit_result=self._odmr_logic.do_gaussian_fit(self._odmr_logic.ODMRLogic.mw1_freq*1e6,self._odmr_logic.ODMRLogic.data)
+                self._odmr_logic.ODMRLogic.x_fit,self._odmr_logic.ODMRLogic.y_fit,self._odmr_logic.ODMRLogic.fit_result=self._odmr_logic.do_fit(self._odmr_logic.ODMRLogic.mw1_freq*1e6,self._odmr_logic.ODMRLogic.data)
 
                 self.cw_odmr_image_fit.setData(self._odmr_logic.ODMRLogic.x_fit, self._odmr_logic.ODMRLogic.y_fit)
                 self._mw.cw_Contrast_Fit_Label.setText(str(self._odmr_logic.Contrast_Fit))
@@ -361,9 +361,9 @@ class ODMRGUI(GUIBase):
             if self._odmr_logic.pulsedODMRLogic.pulsed_PerformFit: #TODO Only when checkbox
                 self._mw.pulsed_odmr_data_PlotWidget.addItem(self.pulsed_odmr_data_image_fit)
 
-                self._odmr_logic.pulsedODMRLogic.x_fit,self._odmr_logic.pulsedODMRLogic.y_fit,self._odmr_logic.pulsedODMRLogic.fit_result=self._odmr_logic.do_gaussian_fit(self._odmr_logic.pulsedODMRLogic.mw1_freq*1e6,self._odmr_logic.pulsedODMRLogic.data)
+                self._odmr_logic.pulsedODMRLogic.x_fit,self._odmr_logic.pulsedODMRLogic.y_fit,self._odmr_logic.pulsedODMRLogic.fit_result=self._odmr_logic.do_fit(self._odmr_logic.pulsedODMRLogic.mw1_freq,self._odmr_logic.pulsedODMRLogic.data)
 
-                self.pulsed_odmr_data_image_fit.setData(self._odmr_logic.pulsedODMRLogic.x_fit, self._odmr_logic.pulsedODMRLogic.y_fit)
+                self.pulsed_odmr_data_image_fit.setData(self._odmr_logic.pulsedODMRLogic.x_fit*1e6, self._odmr_logic.pulsedODMRLogic.y_fit)
                 self._mw.pulsed_Contrast_Fit_Label.setText(str(self._odmr_logic.Contrast_Fit))
                 self._mw.pulsed_Linewidths_Fit_Label.setText(str(self._odmr_logic.Linewidths_Fit))
                 self._mw.pulsed_Frequencies_Fit_Label.setText(str(self._odmr_logic.Frequencies_Fit))

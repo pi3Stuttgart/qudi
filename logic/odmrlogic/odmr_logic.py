@@ -56,6 +56,9 @@ class ODMRLogic_holder(GenericLogic):
     SigCheckReady_Beacon = QtCore.Signal()
     sigFitPerformed =  QtCore.Signal(str)
 
+    SelectLorentzianFit:bool=False
+    SelectGaussianFit:bool=True
+
     def on_activate(self):
         """
         Initialisation performed during activation of the module.
@@ -81,9 +84,13 @@ class ODMRLogic_holder(GenericLogic):
         self.Linewidths_Fit:str = ''
         self.NumberOfPeaks:int=1
 
+        
+
         self.x_fit = np.arange(20)
         self.y_fit = np.arange(20)
+
         return 
+
 
     def on_deactivate(self):
         """
@@ -542,72 +549,83 @@ class ODMRLogic_holder(GenericLogic):
 ##############################################################
 # Stuff for Fitting
 #         
-    def do_gaussian_fit(self,x_data, y_data):
-        
-        x_data=x_data.astype(np.float)
-        y_data=y_data.astype(np.float)
-        if self.NumberOfPeaks==1:
-            model,params=self._fit_logic.make_gaussian_model()
-
-            result = self._fit_logic.make_gaussian_fit(
-                                x_axis=x_data,
-                                data=y_data,
-                                units='Hz',
-                                estimator=self._fit_logic.estimate_gaussian_peak
-                                )
-
-        elif self.NumberOfPeaks==2:
-            model,params=self._fit_logic.make_gaussiandouble_model()
-
-            result = self._fit_logic.make_gaussiandouble_fit(
-                                x_axis=x_data,
-                                data=y_data,
-                                units='Hz',
-                                estimator=self._fit_logic.estimate_gaussiandouble_peak
-                                )
-                                
-        elif self.NumberOfPeaks==3:
-            model,params=self._fit_logic.make_gaussiantriple_model()
-
-            result = self._fit_logic.make_gaussiantriple_fit(
-                                x_axis=x_data,
-                                data=y_data,
-                                units='Hz',
-                                estimator=self._fit_logic.estimate_gaussiantriple_peak
-                                )
-
-
-            logger.warning("function 3 gaussian peaks not implemeted")
-
-
-        #print(x_data.min(),x_data.max(),len(x_data)*10)
+    def do_fit(self,x_data, y_data):
         self.interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*5)
+        if self.SelectGaussianFit:
+            self.fit_func=self._fit_logic.make_n_gauss_function_with_offset(self.NumberOfPeaks)
+        elif self.SelectLorentzianFit:
+            self.fit_func=self._fit_logic.make_n_lorentz_function_with_offset(self.NumberOfPeaks)
+        # x_data=x_data.astype(np.float)
+        # y_data=y_data.astype(np.float)
+        # if self.NumberOfPeaks==1:
+        #     model,params=self._fit_logic.make_gaussian_model()
 
-        #using own fitlogic
-        # fit_func=self._fit_logic.make_n_gauss_function(self.NumberOfPeaks)
-        # result=fit_func.fit(x_data,y_data)
-        # self.fit_data=fit_func(interplolated_x_data,*result["result"].x)
-    
-        self.fit_data = model.eval(x=self.interplolated_x_data, params=result.params)
+        #     result = self._fit_logic.make_gaussian_fit(
+        #                         x_axis=x_data,
+        #                         data=y_data,
+        #                         units='Hz',
+        #                         estimator=self._fit_logic.estimate_gaussian_peak
+        #                         )
 
+        # elif self.NumberOfPeaks==2:
+        #     model,params=self._fit_logic.make_gaussiandouble_model()
+
+        #     result = self._fit_logic.make_gaussiandouble_fit(
+        #                         x_axis=x_data,
+        #                         data=y_data,
+        #                         units='Hz',
+        #                         estimator=self._fit_logic.estimate_gaussiandouble_peak
+        #                         )
+                                
+        # elif self.NumberOfPeaks==3:
+        #     model,params=self._fit_logic.make_gaussiantriple_model()
+
+        #     result = self._fit_logic.make_gaussiantriple_fit(
+        #                         x_axis=x_data,
+        #                         data=y_data,
+        #                         units='Hz',
+        #                         estimator=self._fit_logic.estimate_gaussiantriple_peak
+        #                         )
+
+
+        #     logger.warning("function 3 gaussian peaks not implemeted")
+
+
+        # #print(x_data.min(),x_data.max(),len(x_data)*10)
+            
+            # self.fit_data = model.eval(x=self.interplolated_x_data, params=result.params)
+
+
+            #using own fitlogic
+            
+        self.fit_result=self.fit_func.fit(x_data,y_data)
+        self.fit_data=self.fit_func(self.interplolated_x_data,*self.fit_result["result"].x)
+        
         self.Contrast_Fit:str=''
         self.Frequencies_Fit:str=''
         self.Linewidths_Fit:str=''
 
+        # for i in range(self.NumberOfPeaks):
+        #     try:
+        #         self.Contrast_Fit=self.Contrast_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"amplitude"].value,2))+"; " # because 1 peak and 2 peak gaussian fit dont give the same result keywords, we add the 'gi_' part (missing in the 1 peak case) by multiplying the string by 1 if paeks!=1 and remove it if peaks=1.
+        #         self.Frequencies_Fit=self.Frequencies_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"center"].value/1e6,2))+"; "
+        #         self.Linewidths_Fit=self.Linewidths_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"fwhm"].value/1e3,2))+"; " #TODO convert linewidth from V to MHz
+        #     except Exception as e:
+        #         print("an error occured:\n", e)
+
         for i in range(self.NumberOfPeaks):
             try:
-                self.Contrast_Fit=self.Contrast_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"amplitude"].value,2))+"; " # because 1 peak and 2 peak gaussian fit dont give the same result keywords, we add the 'gi_' part (missing in the 1 peak case) by multiplying the string by 1 if paeks!=1 and remove it if peaks=1.
-                self.Frequencies_Fit=self.Frequencies_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"center"].value/1e6,2))+"; "
-                self.Linewidths_Fit=self.Linewidths_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"fwhm"].value/1e3,2))+"; " #TODO convert linewidth from V to MHz
+                self.Contrast_Fit=self.Contrast_Fit+str(round(self.fit_result[("ampl_"+str(i))],2))+"; " # because 1 peak and 2 peak gaussian fit dont give the same self.fit_result keywords, we add the 'gi_' part (missing in the 1 peak case) by multiplying the string by 1 if paeks!=1 and remove it if peaks=1.
+                self.Frequencies_Fit=self.Frequencies_Fit+str(round(self.fit_result[("mu_"+str(i))],2))+"; "
+                self.Linewidths_Fit=self.Linewidths_Fit+str(round(self.fit_result[("gam_"+str(i))],2))+"; " 
             except Exception as e:
                 print("an error occured:\n", e)
 
         self.sigFitPerformed.emit(self.Frequencies_Fit)
-        return self.interplolated_x_data,self.fit_data,result
+        return self.interplolated_x_data,self.fit_data,self.fit_result
   
 
 class ODMRLogic(cw_default):
-
     def __init__(self,holder):
         self.measurement_running=False
         self.holder=holder
@@ -616,9 +634,10 @@ class ODMRLogic(cw_default):
         self.number_of_points_per_line=self.holder._time_tagger._time_diff["n_histograms"]
         self.scanmatrix=np.zeros((self.cw_NumberOfLines,self.number_of_points_per_line))
         self.data=0
-        self.holder.SigCheckReady_Beacon.connect(self.data_readout)
+        self.holder.SigCheckReady_Beacon.connect(self.data_readout,type=QtCore.Qt.QueuedConnection)
         self.ancient_data=np.array(self.time_differences.getData(),dtype=object)
         self.syncing=False
+        self.cw_odmr_refocus_running=False
 
         self.continuing=False
 
@@ -628,9 +647,8 @@ class ODMRLogic(cw_default):
         self.starting_time=0
 
     def data_readout(self):
-        if time.time()-self.starting_time>self.cw_Stoptime and self.cw_Stoptime!=0:
+        if (time.time()-self.starting_time>self.cw_Stoptime and self.cw_Stoptime!=0) and self.measurement_running:
             self.cw_Stop_Button_Clicked(True)
-
         #print("checkready:",self.measurement_running)
         if not(self.measurement_running or self.syncing):
             #if not(self.syncing):
@@ -696,6 +714,7 @@ class ODMRLogic(cw_default):
         cw_SecondsPerPoint=None,
         cw_segment_length = None
         ):
+        print("ODMR CW SETUP SEQ STARTED")
 
         sig=inspect.signature(self.setup_seq)
         for parameter in sig.parameters.keys():
@@ -784,7 +803,7 @@ class ODMRLogic(cw_default):
         #self.holder._awg.mcas.status = 1
         self.holder._awg.mcas_dict.stop_awgs()
         self.holder._awg.mcas_dict['cwODMR'] = seq
-        self.holder._awg.mcas_dict.print_info()
+        #self.holder._awg.mcas_dict.print_info()
         self.holder._awg.mcas_dict['cwODMR'].run()        
         print("running sequence cwODMR")
 
@@ -798,9 +817,9 @@ class pulsedODMRLogic(pulsed_default):
         self.time_differences = self.holder._time_tagger.time_differences()
         self.number_of_points_per_line=self.holder._time_tagger._time_diff["n_histograms"]
         self.scanmatrix=np.zeros((self.pulsed_NumberOfLines,self.number_of_points_per_line))
+        self.holder.SigCheckReady_Beacon.connect(self.data_readout, type=QtCore.Qt.QueuedConnection)
         self.data=0
         self.data_detect=0
-        self.holder.SigCheckReady_Beacon.connect(self.data_readout)
         self.ancient_data=np.array(self.time_differences.getData(),dtype=object)
         self.syncing=False
 
@@ -809,14 +828,17 @@ class pulsedODMRLogic(pulsed_default):
         self.c1=0
         self.ancient_index=0
         self.continuing=False # variable to discard first getdata after pressing continue.
+        self.pulsed_odmr_refocus_running=False
+
 
         self.x_fit = np.arange(20)
         self.y_fit = np.arange(20)
         self.starting_time=0
 
 
+
     def data_readout(self):
-        if time.time()-self.starting_time>self.pulsed_Stoptime and self.pulsed_Stoptime!=0:
+        if (time.time()-self.starting_time>self.pulsed_Stoptime and self.pulsed_Stoptime!=0) and self.measurement_running:
             self.pulsed_Stop_Button_Clicked(True)
         #print("checkready:",self.measurement_running)
         if not(self.measurement_running or self.syncing):

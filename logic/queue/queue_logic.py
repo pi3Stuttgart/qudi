@@ -126,6 +126,7 @@ class queue_logic(GenericLogic):
     gated_counter = Connector('GatedCounter') # Should be name of the class.
     optimizer= Connector('OptimizerLogic')
     PLE_logic= Connector("LaserScannerLogic")
+    odmr_logic= Connector("ODMRLogic_holder")
 
     update_selected_user_script_combo_box_signal = pyqtSignal(collections.OrderedDict)
     user_script_list = misc.ret_property_array_like_typ('user_script_list', str)
@@ -153,7 +154,8 @@ class queue_logic(GenericLogic):
         self._gated_counter = self.gated_counter() # connection to the GC.
         self._optimizer = self.optimizer()
         self._PLE_logic = self.PLE_logic()
-        
+        self._ODMR_logic = self.odmr_logic()
+
         self.init_run() #
         self.write_standard_awg_sequences()
         # TODO we are adding confocal later.

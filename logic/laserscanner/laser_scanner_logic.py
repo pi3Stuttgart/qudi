@@ -484,10 +484,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
     def trace_seq(self):
         t1=time.time()
         self.power = []
-        print("MW  POWER IN PLE")
-        print(self.MW1_Power)
-        print(self.MW2_Power)
-        print(self.MW3_Power)
         if self.enable_MW1:
             self.power += [self.MW1_Power]
         if self.enable_MW2:
@@ -520,9 +516,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
                     repump=self.enable_Repump,
                     length_mus=50
                     )
-        print("time seq:", t1-time.time())
         self._awg.mcas_dict["PLE_trace"] = seq
-        print("time write:", t1-time.time())
         self._awg.mcas_dict.print_info()
         return
         
@@ -645,21 +639,18 @@ class LaserScannerLogic(GenericLogic, ple_default):
         return 0
 
     def goto_fitted_peak(self):
-        print(self.stopped,self.Lock_laser)
         if self.stopped and self.Lock_laser:
-            print("going to fitted peak")
+            print("PLE going to fitted peak")
             freqs=np.array(self.Frequencies_Fit.split(";")[:-1]).astype(float)
-            print(freqs)
             peak_volt=max(freqs)
-            print(peak_volt)
             if peak_volt<self.scan_range[1] and peak_volt>self.scan_range[0]:
                 self.goto_voltage(peak_volt)
 
                 # follow the defect PLE line by applying a voltage to the laser chamber
                 #Range=self.scan_range[1]-self.scan_range[0]
-                Range=0.9
+                Range=0.75
 
-                self.scan_range[0],self.scan_range[1]=peak_volt-0.65*Range,peak_volt+0.35*Range
+                self.scan_range[0],self.scan_range[1]=peak_volt-0.7*Range,peak_volt+0.3*Range
             else: 
                 # emit an error?
                 #retry with bigger scan range:

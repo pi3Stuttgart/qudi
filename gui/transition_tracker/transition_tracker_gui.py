@@ -175,7 +175,7 @@ class TransitionTrackerGui(GUIBase):
         self._mw.mw_transition_frequency_text_field.setText("{:.10f}".format(self._transition_tracker.mw_transition_frequency))
         self._mw.mw_transition_frequency_p1_text_field.setText("{:.10f}".format(self._transition_tracker.mw_transition_frequency_p1))
         self._mw.zero_field_splitting_text_field.setText("{:.10f}".format(self._transition_tracker.zero_field_splitting))
-        self._mw.ple_Ex_text_field.setText("{:.10f}".format(self._transition_tracker.ple_Ex))
+        self._mw.ple_A2_text_field.setText("{:.10f}".format(self._transition_tracker.ple_A2))
         self._mw.ple_A1_text_field.setText("{:.10f}".format(self._transition_tracker.ple_A1))
         # self.ple_repump_text_field.setText("{:.10f}".format(self.ple_A1))
 
@@ -184,7 +184,7 @@ class TransitionTrackerGui(GUIBase):
 
     def update_gui_nuclear(self):
         column_names = ['name', 'current_frequency', 'ms_state', 'spin_type', 'start_level', 'end_level']
-        print('E im aher')
+        print('update gui nulcear Transition Tracker')
         self._mw.script_queue_table.setColumnCount(len(column_names))
         self._mw.script_queue_table.clearSelection()
         self._mw.script_queue_table.clear()
@@ -208,7 +208,7 @@ class TransitionTrackerGui(GUIBase):
         self.current_local_oscillator_freq_label_5.setText(_translate("window", "mw_transition_frequency"))
         self.current_local_oscillator_freq_label_6.setText(_translate("window", "mw_transition_frequency_p1"))
         self.current_local_oscillator_freq_label_7.setText(_translate("window", "zero_field_splitting"))
-        self.ple_Ex_label.setText(_translate("window", "PLE Ex"))
+        self.ple_A2_label.setText(_translate("window", "PLE A2"))
         self.ple_A1_label.setText(_translate("window", "PLE A1"))
 
 

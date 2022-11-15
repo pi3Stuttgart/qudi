@@ -77,7 +77,8 @@ class NuclearOPs(DataGeneration):
         self.do_confocal_A1A2_refocus = False
         self.do_confocal_A2MW_refocus = False
         #
-        self.do_odmr_refocus = False
+        self.refocus_cw_odmr =False
+        self.refocus_pulsed_odmr =False
         #
         self.do_interferometerPhase_locking = False
         self.wavemeter_lock = False
@@ -85,9 +86,11 @@ class NuclearOPs(DataGeneration):
         self.yellow_repump_compensation = False
         #
         self.last_red_confocal_refocus = - 10000
-        self.confocal_refocus_interval = 0
+        self.last_odmr_refocus = -10000
         self.last_ple_refocus = - 10000
+        self.confocal_refocus_interval = 0
         self.ple_refocus_interval = 0
+        self.odmr_refocus_interval=0
         self.last_interferometer_refocus = - 10000
         self.interferometer_refocus_interval = 0
         #
@@ -98,6 +101,8 @@ class NuclearOPs(DataGeneration):
         self.two_zpl_apd = False
         self.raw_clicks_processing = False
         self.raw_clicks_processing_channels = [0,1,2,3,4,5,6,7]
+
+        self.performedRefocus = False
 
 
         #self._confocal = self.confocal()
@@ -336,7 +341,7 @@ class NuclearOPs(DataGeneration):
                         #     logging.getLogger().info(
                         #         'I set delta_ple_A2: {}'.format(self.current_iterator_df['delta_ple_A2'].unique()[0]))
 
-                    if self.do_odmr_refocus:
+                    if self.refocus_cw_odmr or self.refocus_pulsed_odmr:
                          self.do_refocusodmr(abort, check_odmr_frequency_drift_ok=False, initial_odmr=False)
 
                     #if self.set_laser_power:
@@ -404,9 +409,9 @@ class NuclearOPs(DataGeneration):
                             #self.queue.ple_repump.desired_freq = yellow_desired_freq
 
                         #self.queue.ple_repump.compensate_drift()
-
+                    
                     self.setup_rf(self.current_iterator_df, hashed = self.hashed) #MCAS is ready
-
+                    
                     if abort.is_set(): break
                     
                     if self.raw_clicks_processing:
@@ -545,7 +550,8 @@ class NuclearOPs(DataGeneration):
                             self.do_refocus_ple(abort)
 
                     t0 = time.time()
-                    if self.do_odmr_refocus:
+                    if self.refocus_cw_odmr or self.refocus_pulsed_odmr:
+                        self.do_refocusodmr(abort=abort)
                         odmr_frequency_drift_ok = self.do_refocusodmr(abort=abort)
                     else:
                         odmr_frequency_drift_ok = True
@@ -554,6 +560,7 @@ class NuclearOPs(DataGeneration):
                         print('repeat_measurement ')
                     if odmr_frequency_drift_ok and not repeat_measurement:
                         break
+
                     print("t_6=", time.time()-t0)
                     t0 = time.time()
                     # end of while
@@ -678,6 +685,7 @@ class NuclearOPs(DataGeneration):
 
             self.last_ple_refocus = time.time()
             time.sleep(1)
+            self.performedRefocus = True
 
 
     def do_refocus_pleA2(self, abort): #CHANGED! commented what belonged to wavemeter
@@ -689,7 +697,6 @@ class NuclearOPs(DataGeneration):
         self.queue._PLE_logic.start_scanning()
         while not self.queue._PLE_logic.stopped:
             time.sleep(0.5)
-
 
         # self.queue.ple_A2.syncFlag = False
         # self.queue.ple_A2.state = 'refocus PLE'
@@ -711,8 +718,7 @@ class NuclearOPs(DataGeneration):
 
         while(self.queue.ple_A1.syncFlag == False):
             time.sleep(0.1)
-        time.sleep(1.1)
-
+        time.sleep(1.0)
 
 
     def do_refocus_repump(self):
@@ -741,13 +747,16 @@ class NuclearOPs(DataGeneration):
 
             # self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[self.queue.confocal.x], confocal_y=[self.queue.confocal.y], confocal_z=[self.queue.confocal.z]))
 
+            self.performedRefocus = True
 
 
 
     def do_refocus_zpl(self):
+        
         delta_t = time.time() - self.last_red_confocal_refocus
-        print("doing refocus zpl")
+
         if (delta_t >= self.confocal_refocus_interval):
+            print("doing confocal refocus with resonant laser")
 
             sequence_name="A2MW_confocal_refocus"
             if self.do_confocal_A1A2_refocus:
@@ -802,10 +811,9 @@ class NuclearOPs(DataGeneration):
             self.last_red_confocal_refocus = time.time()
 
             self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[self.queue._optimizer.optim_pos_x], confocal_y=[self.queue._optimizer.optim_pos_y], confocal_z=[self.queue._optimizer.optim_pos_z]))
-            time.sleep(1)
             self.queue._awg.mcas_dict.stop_awgs()
-            
-        
+            time.sleep(1)
+            self.performedRefocus = True
     def check_eom(self):
 
         logging.getLogger().info('checking the eom')
@@ -878,46 +886,74 @@ class NuclearOPs(DataGeneration):
 
     def add_odmr_script_to_queue(self, abort, pd):
         pass
-        #sys.modules[self.queue.init_task(name='refocus_confocal_odmr', folder='D:/Python/self.queueiamond/UserScripts/')].run_fun(abort=abort, **pd)
+        #sys.modules[self.queue.init_task(name='refocus_confocal_odmr', folder='D:/Python/diamond/UserScripts/')].run_fun(abort=abort, **pd)
 
     def do_refocusodmr(self, abort=None, check_odmr_frequency_drift_ok=True, initial_odmr=False):
         if abort.is_set():
             pass
             #logging.getLogger().info('do_refocusodmr stopped here0')
 
-        self.queue.odmr.file_name = self.file_name
-        delta_t = time.time() - self.last_odmr
-        if self.odmr_interval != 0 and (delta_t >= self.odmr_interval) or len(self.data.df) == 0 or initial_odmr:
-            if check_odmr_frequency_drift_ok and hasattr(self, 'maximum_odmr_drift'):
-                self.add_odmr_script_to_queue(abort, self.odmr_pd)
-                current_drift = np.abs(self.queue.tt.current_local_oscillator_freq - self.data.df.iloc[-1, :].local_oscillator_freq)
-                if current_drift > self.maximum_odmr_drift:
-                    #logging.getLogger().info("Too much drift ({} > {}), trying again!".format(current_drift, self.maximum_odmr_drift))
-                    print("Too much drift ({} > {}), trying again!".format(current_drift, self.maximum_odmr_drift))
-                    odmr_frequency_drift_ok = False
-                else:
-                    #logging.getLogger().info("Drift is ok  ({} < {})".format(current_drift, self.maximum_odmr_drift))
-                    print("Drift is ok  ({} < {})".format(current_drift, self.maximum_odmr_drift))
-                    odmr_frequency_drift_ok = True
-                if self.refocus_interval != 0 and self.odmr_count % self.refocus_interval == 0:
-                    self.add_odmr_script_to_queue(abort, self.odmr_pd_refocus)
-            else:
-                if self.refocus_interval != 0 and self.odmr_count % self.refocus_interval == 0:
-                    self.add_odmr_script_to_queue(abort, self.odmr_pd_refocus)
-                else:
-                    self.add_odmr_script_to_queue(abort, self.odmr_pd)
-                odmr_frequency_drift_ok = True
-            self.odmr_count += 1
-            self.last_odmr = time.time()
-            if abort.is_set():
-                #logging.getLogger().info('do_refocusodmr stopped here1')
-                print('do_refocusodmr stopped here1')
-            return odmr_frequency_drift_ok
-        elif check_odmr_frequency_drift_ok:
-            if abort.is_set():
-                #logging.getLogger().info('do_refocusodmr stopped here2')
-                print('do_refocusodmr stopped here2')
-            return True
+        #Range of ODMR?
+
+
+        delta_t = time.time() - self.last_odmr_refocus
+        if (delta_t >= self.odmr_refocus_interval):
+            print("starting ODMR refocus")
+            if self.refocus_cw_odmr:
+                self.queue._ODMR_logic.ODMRLogic.cw_PerformFit=True
+                self.queue._ODMR_logic.ODMRLogic.cw_Stoptime=15 #sec
+                self.queue._ODMR_logic.ODMRLogic.cw_Run_Button_Clicked(True)
+
+                while self.queue._ODMR_logic.ODMRLogic.cw_odmr_refocus_running:
+                    time.sleep(0.5)
+
+            elif self.refocus_pulsed_odmr:
+                self.queue._ODMR_logic.pulsedODMRLogic.pulsed_PerformFit=True
+                self.queue._ODMR_logic.pulsedODMRLogic.pulsed_Stoptime=15 #sec
+                self.queue._ODMR_logic.pulsedODMRLogic.pulsed_Run_Button_Clicked(True)
+
+                while self.queue._ODMR_logic.pulsedODMRLogic.pulsed_odmr_refocus_running:
+                    time.sleep(0.5)
+            self.performedRefocus = True
+        #self.queue._awg.mcas_dict.stop_awgs()
+        self.last_odmr_refocus=time.time()
+        self.queue._gated_counter.set_counter()
+
+        self.odmr_frequency_drift_ok = True # just to test, if sequence is running
+        return self.odmr_frequency_drift_ok # just to test, if sequence is running
+        # self.queue.odmr.file_name = self.file_name
+        # delta_t = time.time() - self.last_odmr
+        # if self.odmr_interval != 0 and (delta_t >= self.odmr_interval) or len(self.data.df) == 0 or initial_odmr:
+        #     if check_odmr_frequency_drift_ok and hasattr(self, 'maximum_odmr_drift'):
+        #         self.add_odmr_script_to_queue(abort, self.odmr_pd)
+        #         current_drift = np.abs(self.queue.tt.current_local_oscillator_freq - self.data.df.iloc[-1, :].local_oscillator_freq)
+        #         if current_drift > self.maximum_odmr_drift:
+        #             #logging.getLogger().info("Too much drift ({} > {}), trying again!".format(current_drift, self.maximum_odmr_drift))
+        #             print("Too much drift ({} > {}), trying again!".format(current_drift, self.maximum_odmr_drift))
+        #             odmr_frequency_drift_ok = False
+        #         else:
+        #             #logging.getLogger().info("Drift is ok  ({} < {})".format(current_drift, self.maximum_odmr_drift))
+        #             print("Drift is ok  ({} < {})".format(current_drift, self.maximum_odmr_drift))
+        #             odmr_frequency_drift_ok = True
+        #         if self.refocus_interval != 0 and self.odmr_count % self.refocus_interval == 0:
+        #             self.add_odmr_script_to_queue(abort, self.odmr_pd_refocus)
+        #     else:
+        #         if self.refocus_interval != 0 and self.odmr_count % self.refocus_interval == 0:
+        #             self.add_odmr_script_to_queue(abort, self.odmr_pd_refocus)
+        #         else:
+        #             self.add_odmr_script_to_queue(abort, self.odmr_pd)
+        #         odmr_frequency_drift_ok = True
+        #     self.odmr_count += 1
+        #     self.last_odmr = time.time()
+        #     if abort.is_set():
+        #         #logging.getLogger().info('do_refocusodmr stopped here1')
+        #         print('do_refocusodmr stopped here1')
+        #     return odmr_frequency_drift_ok
+        # elif check_odmr_frequency_drift_ok:
+        #     if abort.is_set():
+        #         #logging.getLogger().info('do_refocusodmr stopped here2')
+        #         print('do_refocusodmr stopped here2')
+        #     return True
 
     # def odmr_frequency_drift_ok(self):
     #     if not hasattr(self, 'maximum_odmr_drift'):
@@ -947,8 +983,7 @@ class NuclearOPs(DataGeneration):
             t1 = time.time()
             self.mcas.initialize()
             print("time needed for init: ", time.time() - t1)
-            print("after init mcas")
-
+           
         self.queue._gated_counter.count(abort,
                                  ch_dict=self.mcas.ch_dict,
                                  start_trigger_delay_ps_list = delay_ps_list,
@@ -979,47 +1014,51 @@ class NuclearOPs(DataGeneration):
             current_iterator_df = current_iterator_df.drop(["sweeps"], axis=1)
 
         hash = base64.b64encode(hashlib.sha1((str(current_iterator_df)+"\n"+str(self.queue._gated_counter.readout_duration)).encode()).digest()) ##REmove the sweep from the current_iterator_df.
-        #Added self.queue._gated_counter.readout_duration such that the hash recognizes a change in readout duration and will update n_values in the sequence accordingly.
+        #Added self.queue._gated_counter.readout_duration such that the hash recognizes a change in readout duration and will update n_values in the sequence accordingly
         sequence_name = "nuclear_op_hash_{}".format(hash)
-        if hashed and not sequence_name in self.queue._awg.mcas_dict:
-            t1 = time.time()
+        if hashed and not sequence_name in self.queue._awg.mcas_dict or self.performedRefocus:
+            self.queue._awg.mcas_dict.stop_awgs()
             self.mcas = ''
             
             self.mcas = self.ret_mcas(self,current_iterator_df, sequence_name)
-            print("t 1", time.time()-t1)
             while self.mcas=='':
-                #process_events() #TODO gui process events.
                 time.sleep(0.01)
     
             self.queue._awg.mcas_dict[sequence_name] = self.mcas
-            #mcas.sequence_name = sequence_name #FIXME
+   
         elif hashed and self.mcas==None and sequence_name in self.queue._awg.mcas_dict:
             self.mcas = self.queue._awg.mcas_dict[sequence_name]
+   
+        elif hashed and self.mcas.name != sequence_name:
+            self.queue._awg.mcas_dict.stop_awgs()
+            self.mcas = self.queue._awg.mcas_dict[sequence_name]
+   
         elif hashed == False: 
             self.queue._awg.mcas_dict.stop_awgs()
-            t1 = time.time()
             self.mcas = ''
             self.mcas = self.ret_mcas(self,current_iterator_df)
-            print("t 1", time.time()-t1)
             while self.mcas=='':
                 #process_events() #TODO gui process events.
                 time.sleep(0.01)
             sequence_name = self.mcas.name
-            print("Sequence Name in NucOPs: ", sequence_name)
             self.queue._awg.mcas_dict[sequence_name] = self.mcas
-
-
+        else:
+            print("Dont need to set up new RF.")
+        self.performedRefocus = False
+            
          #pi3d.mcas_dict[sequence_name].initialize()
         # pi3d.mcas_dict[sequence_name].start_awgs()
 
-    def analyze(self, data=None, ana_trace=None, start_idx=None):
+    def analyze(self, data=None, ana_trace=None, start_idx=None, ):
         if ana_trace is None:
             ana_trace = self.ana_trace
             if self.analyze_type != ana_trace.analyze_type:
                 raise Exception('This was supposed to be a sanity check. The programmer made shit.')
         data = self.data if data is None else data
         if ana_trace.analyze_type is not None:
+            t_ana_t0 = time.time()
             df = ana_trace.analyze().df
+            print('t_analyze0 = ', time.time() - t_ana_t0)
             # print("df in NucOps: ", df.at)
             # print("df in NucOps: ", df.at[0, 'events'])
             if (df.events == 0).any() and not self.analyze_type == 'consecutive' and df.at[0, 'events'] != 0:

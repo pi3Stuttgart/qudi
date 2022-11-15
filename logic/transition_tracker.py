@@ -612,16 +612,22 @@ class TransitionTracker(GenericLogic):
         pass
 
     def update_ple(self,freqs=""):
-        self.ple_A2 = float(freqs.split(';')[1]) # take the second peak as it is the highest
+        print("Updating PLE freq in TT...")
+        print(freqs)
+        self.ple_A2 = float(freqs.split(';')[1])
         self.ple_A1 = float(freqs.split(';')[0])
         # to set the constant voltage, thus lock the frequency, on the peak
         #self._ple_logic._change_voltage(self.ple_A2)
 
     def update_ODMR(self,freqs=""):
+        print("Updating MW freqs in TT...")
+        print(freqs)
         self.mw_mixing_frequency=float(freqs.split(';')[0])
-
+        print(self.mw_mixing_frequency)
     def update_rabi(self,pi_dur):
         # pi_dur is already a float
+        print("Updating Rabi pi pulse in TT...")
+        print(pi_dur)
         self.current_local_oscillator_freq=pi_dur
 
     def connect_signals(self):
@@ -837,7 +843,7 @@ class TransitionTracker(GenericLogic):
     def update_stuff(self):
         for attr_name in ['_current_local_oscillator_freq', '_mw_mixing_frequency',
                           '_zero_field_splitting','mw_mixing_frequency_p1','_ple_A2','_ple_A1','_ple_repump',
-                          'ple_A2_fit_params','ple_A1_fit_params','interferometer_fit_params','interferometer_history']:
+                          'ple_A2_fit_params','ple_A1_fit_params','interferometer_fit_params','interferometer_history']: #needs "ple_Ex", but where is this "ple_Ex" called?
             if not hasattr(self, attr_name):
                 return
         self.update_tt_electron_gui.emit() #connect to the gui
@@ -1094,7 +1100,7 @@ class TransitionTracker(GenericLogic):
                                               transition_list=[name],
                                               test_mode=test_mode)
         if test_mode and len(fd14n) >=2 :
-            print(result.eval(x=range(len(fd14n)), params=result.params))
+            print("test_mode in TT:", result.eval(x=range(len(fd14n)), params=result.params))
         for t, target_frequency in fdc.items():
             previous_frequency = cfd[t]
             current_frequency = self.t(t).current_frequency

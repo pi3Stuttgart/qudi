@@ -9,14 +9,14 @@ class pulsed_ODMR_default_values_and_widget_functions:
         pulsed_MW2:bool=F
         pulsed_MW3:bool=F
 
-        pulsed_MW1_Power:float=-20 #dBm
+        pulsed_MW1_Power:float=-41 #dBm
         pulsed_MW2_Power:float=-20 #dBm
         pulsed_MW3_Power:float=-20 #dBm
 
-        pulsed_StartFreq:float=50 #MHz
-        pulsed_StopFreq:float=90 #MHz
-        pulsed_Stepsize:float=10 #MHz
-        pulsed_MW2_Freq:float=140 #MHz
+        pulsed_StartFreq:float=30 #MHz
+        pulsed_StopFreq:float=38 #MHz
+        pulsed_Stepsize:float=0.2 #MHz
+        pulsed_MW2_Freq:float=173 #MHz
         pulsed_MW3_Freq:float=140 #MHz
 
         pulsed_A1:bool=F
@@ -29,21 +29,19 @@ class pulsed_ODMR_default_values_and_widget_functions:
         pulsed_CWRepump:bool=F
 
         pulsed_PiDecay:float =500#ns
-        pulsed_piPulseDuration:float= 1000#ns
+        pulsed_piPulseDuration:float= 1088#ns
 
         pulsed_Stoptime:float=0
         pulsed_PeriodicSaving:bool=F
         pulsed_Interval:float=0
 
         pulsed_AOMDelay:float=450#ns
-        pulsed_InitTime:float=30 #µs
+        pulsed_InitTime:float=10 #µs
         pulsed_DecayInit:float= 1 #µs
-        pulsed_ReadoutTime:float= 4 #µs
-        pulsed_ReadoutDecay:float= 1 #µs
+        pulsed_ReadoutTime:float= 2 #µs
+        pulsed_ReadoutDecay:float= 0.5 #µs
 
         pulsed_PerformFit:bool=F
-        pulsed_SelectLorentzianFit:bool=F
-        pulsed_SelectGaussianFit:bool=T
         
         pulsed_SecondsPerPoint:float=0.02
 
@@ -144,11 +142,13 @@ class pulsed_ODMR_default_values_and_widget_functions:
 
         def pulsed_Stop_Button_Clicked(self,on):
                 #print('done something with pulsed_Stop_Button')
+                #self.holder.SigCheckReady_Beacon.disconnect()
                 self.holder.stop_awg()
                 #self.holder.awg.mcas.status = 0
                 self.stoping_time=time.time()
-                self.measurement_running=False
                 self.time_differences.stop()
+                self.measurement_running=False
+                self.pulsed_odmr_refocus_running=False
                 
 
         def pulsed_MW2_CheckBox_StateChanged(self,on):
@@ -251,17 +251,19 @@ class pulsed_ODMR_default_values_and_widget_functions:
                 self.holder.save_pulsed_odmr_data(tag=self.pulsed_Filename)
 
         def pulsed_Run_Button_Clicked(self,on):
+                self.pulsed_odmr_refocus_running=True
                 self.holder.Contrast_Fit = ''
                 self.holder.Frequencies_Fit = ''
                 self.holder.Linewidth_Fit = ''
                 self.setup_seq()
-                self.scanmatrix=np.zeros((self.pulsed_NumberOfLines,self.number_of_points_per_line))
-                self.ancient_data=np.array(self.time_differences.getData(),dtype=object)
                 self.data_detect=0
                 self.data=0
-                self.starting_time=time.time()
+                #self.holder.SigCheckReady_Beacon.connect(self.data_readout)
                 self.time_differences.clear()
                 self.time_differences.start()
+                self.scanmatrix=np.zeros((self.pulsed_NumberOfLines,self.number_of_points_per_line))
+                self.ancient_data=np.array(self.time_differences.getData(),dtype=object)
+                self.starting_time=time.time()
                 self.measurement_running=True
 
         def pulsed_RepumpDecay_LineEdit_textEdited(self,text):
@@ -338,13 +340,67 @@ class pulsed_ODMR_default_values_and_widget_functions:
                         self.pulsed_Binning=float(text.replace(",","."))
                 except:
                         pass
+
         def pulsed_SelectGaussianFit_RadioButton_clicked(self):
-                self.pulsed_SelectGaussianFit=True
-                self.pulsed_SelectLorentzianFit=False
+                self.holder.SelectGaussianFit=True
+                self.holder.SelectLorentzianFit=False
                 
         def pulsed_SelectLorentzianFit_RadioButton_clicked(self):
-                self.pulsed_SelectGaussianFit=False
-                self.pulsed_SelectLorentzianFit=True
+                self.holder.SelectGaussianFit=False
+                self.holder.SelectLorentzianFit=True
 
+        # F=False
+        # T=True
+        # pulsed_Filename=StatusVar("pulsed_Filename","filename")
+        # pulsed_MW1=StatusVar("pulsed_MW1",T)
+        # pulsed_MW2=StatusVar("pulsed_MW2",F)
+        # pulsed_MW3=StatusVar("pulsed_MW3", F)
 
-
+        # pulsed_MW1_Power=StatusVar("pulsed_MW1_Power",-20 )#dBm
+        # pulsed_MW2_Power=StatusVar("pulsed_MW2_Power",-20 )#dBm
+        # pulsed_MW3_Power=StatusVar("pulsed_MW3_Power",-20)
+        
+        # pulsed_StartFreq=StatusVar("pulsed_StartFreq",10) #MHz
+        # pulsed_StopFreq=StatusVar("pulsed_StopFreq",50) #MHz
+        # pulsed_Stepsize=StatusVar("pulsed_Stepsize",10) #MHz
+        # pulsed_MW2_Freq=StatusVar("pulsed_MW2_Freq",140) #MHz
+        # pulsed_MW3_Freq=StatusVar("pulsed_MW3_Freq", 100)
+        
+        # pulsed_A1=StatusVar("pulsed_A1",T)
+        # pulsed_A2=StatusVar("pulsed_A2",F)
+        # pulsed_A1Readout=StatusVar("pulsed_A1Readout",F)
+        # pulsed_A2Readout=StatusVar("pulsed_A2Readout",T)
+        # pulsed_PulsedRepump=StatusVar("pulsed_PulsedRepump",T)
+        # pulsed_RepumpDuration=StatusVar("pulsed_RepumpDuration",3)
+        # pulsed_RepumpDecay=StatusVar("pulsed_RepumpDecay",1) #µs
+        # pulsed_CWRepump=StatusVar("pulsed_CWRepump",F) 
+        
+        # pulsed_PiDecay=StatusVar("pulsed_PiDecay", 1000) #ns
+        # pulsed_piPulseDuration=StatusVar("pulsed_piPulseDuration", 68)
+        
+        # pulsed_Stoptime=StatusVar("pulsed_Stoptime",0)
+        # pulsed_PeriodicSaving=StatusVar("pulsed_PeriodicSaving",F)
+        # pulsed_Interval=StatusVar("pulsed_Interval",0) 
+        
+        # pulsed_AOMDelay=StatusVar("pulsed_AOMDelay",450) #µs
+        # pulsed_InitTime=StatusVar("pulsed_InitTime", 10) #µs
+        # pulsed_DecayInit=StatusVar("pulsed_DecayInit", 500) #µs
+        # pulsed_ReadoutTime=StatusVar("pulsed_ReadoutTime", 3) #µs
+        # pulsed_ReadoutDecay=StatusVar("pulsed_ReadoutDecay", 1) #µs
+        
+        # pulsed_PerformFit=StatusVar("pulsed_PerformFit",F)
+        # pulsed_SelectLorentzianFit=StatusVar("pulsed_SelectLorentzianFit",T)
+        # pulsed_SelectGaussianFit=StatusVar("pulsed_SelectGaussianFit",F)
+        
+        # pulsed_SecondsPerPoint=StatusVar("pulsed_SecondsPerPoint", 0.02)
+        
+        # pulsed_Runtime=StatusVar("pulsed_Runtime",0)
+        # pulsed_Binning=StatusVar("pulsed_Binning", 100)
+        
+        # pulsed_odmr_cb_max=StatusVar("pulsed_odmr_cb_max",100)
+        # pulsed_odmr_cb_high_percentile=StatusVar("pulsed_odmr_cb_high_percentile",100)
+        # pulsed_odmr_cb_low_percentile=StatusVar("pulsed_odmr_cb_low_percentile",0)
+        # pulsed_odmr_cb_min=StatusVar("pulsed_odmr_cb_min", 0)
+        
+        # pulsed_NumberOfLines=StatusVar("pulsed_NumberOfLines",20)
+        # pulsed_update_after_stop=StatusVar("pulsed_update_after_stop",F)

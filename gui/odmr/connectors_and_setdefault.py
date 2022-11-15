@@ -25,8 +25,9 @@ def initialize_connections_and_defaultvalues(self):
         self._mw.cw_Stepsize_LineEdit.setText(str(self._odmr_logic.ODMRLogic.cw_Stepsize))
         self._mw.cw_NumberOfLines_LineEdit.setText(str(self._odmr_logic.ODMRLogic.cw_NumberOfLines))
         self._mw.cw_PerformFit_CheckBox.setChecked(self._odmr_logic.ODMRLogic.cw_PerformFit)
-        self._mw.cw_SelectGaussianFit_RadioButton.setChecked(self._odmr_logic.ODMRLogic.cw_SelectGaussianFit)
-        self._mw.cw_SelectLorentzianFit_RadioButton.setChecked(self._odmr_logic.ODMRLogic.cw_SelectLorentzianFit)
+
+        self._mw.cw_SelectGaussianFit_RadioButton.setChecked(self._odmr_logic.SelectGaussianFit)
+        self._mw.cw_SelectLorentzianFit_RadioButton.setChecked(self._odmr_logic.SelectLorentzianFit)
 
         self._mw.cw_Contrast_Fit_Label.setText(str(self._odmr_logic.Contrast_Fit))
         self._mw.cw_Linewidths_Fit_Label.setText(str(self._odmr_logic.Linewidths_Fit))
@@ -73,8 +74,8 @@ def initialize_connections_and_defaultvalues(self):
         self._mw.pulsed_Binning_LineEdit.setText(str(self._odmr_logic.pulsedODMRLogic.pulsed_Binning))
         self._mw.pulsed_NumberOfLines_LineEdit.setText(str(self._odmr_logic.pulsedODMRLogic.pulsed_NumberOfLines))
         
-        self._mw.pulsed_SelectGaussianFit_RadioButton.setChecked(self._odmr_logic.pulsedODMRLogic.pulsed_SelectGaussianFit)
-        self._mw.pulsed_SelectLorentzianFit_RadioButton.setChecked(self._odmr_logic.pulsedODMRLogic.pulsed_SelectLorentzianFit)
+        self._mw.pulsed_SelectGaussianFit_RadioButton.setChecked(self._odmr_logic.SelectGaussianFit)
+        self._mw.pulsed_SelectLorentzianFit_RadioButton.setChecked(self._odmr_logic.SelectLorentzianFit)
         
         self._mw.pulsed_Contrast_Fit_Label.setText(str(self._odmr_logic.Contrast_Fit))
         self._mw.pulsed_Linewidths_Fit_Label.setText(str(self._odmr_logic.Linewidths_Fit))
@@ -112,6 +113,7 @@ def initialize_connections_and_defaultvalues(self):
         self._mw.cw_PerformFit_CheckBox.stateChanged.connect(self._odmr_logic.ODMRLogic.cw_PerformFit_CheckBox_StateChanged)
         self._mw.cw_Stepsize_LineEdit.textEdited.connect(self._odmr_logic.ODMRLogic.cw_Stepsize_LineEdit_textEdited)
         self._mw.cw_NumberOfLines_LineEdit.textEdited.connect(self._odmr_logic.ODMRLogic.cw_NumberOfLines_LineEdit_textEdited)
+
         self._mw.cw_SelectGaussianFit_RadioButton.clicked.connect(self._odmr_logic.ODMRLogic.cw_SelectGaussianFit_RadioButton_clicked)
         self._mw.cw_SelectLorentzianFit_RadioButton.clicked.connect(self._odmr_logic.ODMRLogic.cw_SelectLorentzianFit_RadioButton_clicked)
         #self._mw.cw_Run_Button.setCheckable(True)
@@ -160,6 +162,7 @@ def initialize_connections_and_defaultvalues(self):
         self._mw.pulsed_Binning_LineEdit.textEdited.connect(self._odmr_logic.pulsedODMRLogic.pulsed_Binning_LineEdit_textEdited)
         self._mw.pulsed_piPulseDuration_lineEdit.textEdited.connect(self._odmr_logic.pulsedODMRLogic.pulsed_piPulseDuration_lineEdit_textEdited)
         self._mw.pulsed_NumberOfLines_LineEdit.textEdited.connect(self._odmr_logic.pulsedODMRLogic.pulsed_NumberOfLines_LineEdit_textEdited)
+
         self._mw.pulsed_SelectGaussianFit_RadioButton.clicked.connect(self._odmr_logic.pulsedODMRLogic.pulsed_SelectGaussianFit_RadioButton_clicked)
         self._mw.pulsed_SelectLorentzianFit_RadioButton.clicked.connect(self._odmr_logic.pulsedODMRLogic.pulsed_SelectLorentzianFit_RadioButton_clicked)
         
