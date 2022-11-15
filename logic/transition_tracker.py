@@ -62,7 +62,7 @@ log_tmp = '{}/log/temp/'.format(app_dir)
 __TIME_FORMAT_STR__ = '%Y%m%d-h%Hm%Ms%S'
 
 
-def nowstr(self):
+def nowstr():
     return datetime.datetime.now().strftime('%Y%m%d-h%Hm%Ms%S')
 ###################################################################
 
@@ -277,7 +277,7 @@ class RabiParametersStatic:
         date = datetime.datetime.fromtimestamp(os.path.getmtime(self.filepath)).strftime('%Y%m%dh%Hm%Ms%S')
         if not os.path.isdir(fil):
             os.mkdir(fil)
-        shutil.copy(self.filepath, r'C:\src\qudi\log\transition_tracker_log\rabi_parameters_archive\{}\{}-{}_{}.dat'.format(filename, date, nowstr, filename))
+        shutil.copy(self.filepath, r'C:\src\qudi\log\transition_tracker_log\rabi_parameters_archive\{}\{}-{}_{}.dat'.format(filename, date, nowstr(), filename))
 
     def file_header(self, tnf):
         return ["amp{}".format(i) for i in range(tnf)] + ['transition', 'omega', 'date']

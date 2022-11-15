@@ -4,31 +4,39 @@ Created on Thu Nov 21 11:40:25 2013
 
 @author: yy3
 """
-from pi3diamond import pi3d
+# from pi3diamond import pi3d
 import datetime
 import time
-from qutip_enhanced import *
-reload(lmfit_models)
+import importlib
+# from qutip_enhanced import *
+from logic.qudip_enhanced import *
+importlib.reload(lmfit_models)
 import collections
-import UserScripts.helpers.snippets_awg as sna; reload(sna)
+import notebooks.UserScripts.helpers.snippets_awg as sna; importlib.reload(sna)
+import notebooks.UserScripts.helpers.shared as shared; importlib.reload(shared)
+import notebooks.UserScripts.helpers.sequence_creation_helpers as sch; importlib.reload(sch)
 
-def run_fun(abort,
+def run_fun(self,
+            abort,
             freq=None,
-            zfs=2870.3,
+            zfs=70,
             repeat=False,
             repeat_refocus_interval=60.,
             repeat_smallest_only=True,
             wait_repeat=0.0,
             final_transition='both',
             n=1, **kwargs):
-
+    
+    _tt = self.queue._transition_tracker
+    _pODMR = self.queue._ODMR_logic.pulsedODMRLogic
+    _awg = self.queue._awg
     # which setting to use from the following list of parameters.
     # 0th- means first, '01' - means first and subsequenty second
     size = kwargs.pop('size', {'left': '2', 'right': '2'})
 
     # center frequency 0
-    #pi3d.tt.mw_mixing_frequency = 2729.0
-    #pi3d.tt.mw_mixing_frequency_p1 = 3023.0
+    #_tt.mw_mixing_frequency = 2729.0
+    #_tt.mw_mixing_frequency_p1 = 3023.0
 
     track_file = kwargs.pop('track_file', {'left': 'mw_mixing_frequency', 'right': 'zfs'})
 
@@ -37,7 +45,7 @@ def run_fun(abort,
 
     # AWG amplitde. If None then its adjusted to be a pi pulse for pi pulse duration.
     amplitudes = kwargs.pop('amplitudes', [0.5] + [None] + [None] + [0.5]*2)  # Don't touch!
-    readout  = kwargs.pop('readout', ['green']*5)
+    readout  = kwargs.pop('readout', ['A2']*5)
 
     # Pi pulse for pulsed or Readout duration for CW
     pi_duration = kwargs.pop('pi_duration', [0.3, 0.3] + [1.0] + [0.3] * 2)
@@ -68,32 +76,35 @@ def run_fun(abort,
     # fit function for ODMR...
     refocus_model = kwargs.pop('refocus_model',
                                [lmfit_models.SincModel(rabi_frequency=10.)] * 2 +
-                               [lmfit_models.TripLorentzModel(pi3d.tt.get_f('14n_hf'))]*3
+                               [lmfit_models.TripLorentzModel(_tt.get_f('14n_hf'))]*3
 
     )
 
-    pi3d.odmr.power = refocus_power
-    confocal_pos, date = pi3d.get_last_values_from_file('confocal_pos', flg_out_date=True)
-    pi3d.confocal.x = confocal_pos[0]
-    pi3d.confocal.y = confocal_pos[1]
-    pi3d.confocal.z = confocal_pos[2]
-    if (datetime.datetime.now() - date).seconds > 3600.*24:
-        raise Exception('Last refocus was too long ago, do by hand first.')
-    for _ in range(n):
-        if abort.is_set(): break
-        pi3d.confocal.run_refocus()
+    #pi3d.odmr.power = refocus_power
+    _pODMR.pulsed_MW1_Power = -41 # refocus_power #FIXME translate power into dBm
+    
+    # Skipping confocal refocus for now since this is done already via nuclear ops. TODO Add confocal refocus such that this file can be a standalone
+    # confocal_pos, date = pi3d.get_last_values_from_file('confocal_pos', flg_out_date=True)
+    # pi3d.confocal.x = confocal_pos[0] #why needed? But can be taken from TT
+    # pi3d.confocal.y = confocal_pos[1]
+    # pi3d.confocal.z = confocal_pos[2]
+    # if (datetime.datetime.now() - date).seconds > 3600.*24:
+    #     raise Exception('Last refocus was too long ago, do by hand first.')
+    # for _ in range(n):
+    #     if abort.is_set(): break
+    #     pi3d.confocal.run_refocus()
     if freq is not None:
-        pi3d.tt.current_local_oscillator_freq = freq
+        _tt.current_local_oscillator_freq = freq
     if zfs is not None:
-        pi3d.tt.zero_field_splitting = zfs
+        _tt.zero_field_splitting = zfs
     while True:
         for s in sorted(size):
             if abort.is_set(): break
             for j, char in enumerate(size[s]):
                 if abort.is_set(): break
                 i = int(char)
-                if 'ODMR' in pi3d.mcas_dict:
-                    del pi3d.mcas_dict['ODMR']
+                if 'ODMR' in _awg.mcas_dict:
+                    del _awg.mcas_dict['ODMR']
                 pi3d.odmr.odmr_runs = odmr_runs[i]
                 pi3d.odmr.readout_interval = 0.004
                 # pi3d.odmr.readout_interval = 1.0

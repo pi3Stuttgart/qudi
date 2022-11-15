@@ -36,9 +36,9 @@ class pulsed_ODMR_default_values_and_widget_functions:
         pulsed_Interval:float=0
 
         pulsed_AOMDelay:float=450#ns
-        pulsed_InitTime:float=10 #µs
+        pulsed_InitTime:float=5 #µs
         pulsed_DecayInit:float= 1 #µs
-        pulsed_ReadoutTime:float= 2 #µs
+        pulsed_ReadoutTime:float= 1.3 #µs
         pulsed_ReadoutDecay:float= 0.5 #µs
 
         pulsed_PerformFit:bool=F

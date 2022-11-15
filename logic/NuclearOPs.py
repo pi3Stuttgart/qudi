@@ -57,18 +57,18 @@ class NuclearOPs(DataGeneration):
         super().__init__()
         ## TODO give all the handles for the interfaces from queue here...
         # TODO for future ODMR refocus parameters.
-        # self.odmr_pd = dict(
-        #     n=0,
-        #     freq=None,
-        #     size={'left': '1', 'right': ''},
-        #     repeat=False,
-        # )
-        # self.odmr_pd_refocus = dict(
-        #     n=1,
-        #     freq=None,
-        #     size={'left': '1', 'right': ''},
-        #     repeat=False,
-        # )
+        self.odmr_pd = dict(
+            n=0,
+            freq=None,
+            size={'left': '1', 'right': ''},
+            repeat=False,
+        )
+        self.odmr_pd_refocus = dict(
+            n=1,
+            freq=None,
+            size={'left': '1', 'right': ''},
+            repeat=False,
+        )
         self.hashed = False
         self.do_ple_refocusA2 = False
         self.do_ple_refocusA1 = False
@@ -416,8 +416,8 @@ class NuclearOPs(DataGeneration):
                     
                     if self.raw_clicks_processing:
                         self.data.set_observations(pd.concat([self.df_refocus_pos.iloc[-1:, :]]*self.number_of_simultaneous_measurements).reset_index(drop=True))
-                        self.data.set_observations([OrderedDict(ple_A1=self.queue._tt.ple_A1)]*self.number_of_simultaneous_measurements)
-                        self.data.set_observations([OrderedDict(ple_A2=self.queue._tt.ple_A2)]*self.number_of_simultaneous_measurements)
+                        self.data.set_observations([OrderedDict(ple_A1=self.queue._transition_tracker.ple_A1)]*self.number_of_simultaneous_measurements)
+                        self.data.set_observations([OrderedDict(ple_A2=self.queue._transition_tracker.ple_A2)]*self.number_of_simultaneous_measurements)
 
                     elif not self.save_smartly:
                         self.data.set_observations([OrderedDict(mw_mixing_frequency=self.queue._transition_tracker.mw_mixing_frequency)]*self.number_of_simultaneous_measurements)
@@ -885,8 +885,7 @@ class NuclearOPs(DataGeneration):
         #     logging.getLogger().info("Refocus ma_deviation [nm]: {}, {}, {}".format(*[(getattr(self.queue.confocal, axis) - self.df_refocus_pos.iloc[-1, :]['confocal_{}'.format(axis)])*1000 for axis in ['x', 'y', 'z']]))
 
     def add_odmr_script_to_queue(self, abort, pd):
-        pass
-        #sys.modules[self.queue.init_task(name='refocus_confocal_odmr', folder='D:/Python/diamond/UserScripts/')].run_fun(abort=abort, **pd)
+        sys.modules[self.queue.init_task(name='refocus_confocal_odmr', folder='C:/src/qudi/notebooks')].run_fun(self, abort=abort, **pd)
 
     def do_refocusodmr(self, abort=None, check_odmr_frequency_drift_ok=True, initial_odmr=False):
         if abort.is_set():
@@ -1103,6 +1102,7 @@ class NuclearOPs(DataGeneration):
             Thread1= threading.Thread(target= super(NuclearOPs, self).save, kwargs={"notify":False})
             Thread1.start()
             #super(NuclearOPs, self).save(notify=False) #### IMPORTANT
+            Thread1.join()
             print("t1=", time.time()-t0)
             t0 = time.time()
             self.save_sequence_file()
