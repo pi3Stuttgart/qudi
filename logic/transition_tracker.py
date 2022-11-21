@@ -1159,7 +1159,7 @@ class TransitionTracker(GenericLogic):
         # Javid added this to make sure we don't use wrong transition with old scripts
         # Or another bad case - one used old calibration sript, so that everything ws saved in wrong file
         if name =='e_rabi_ou350deg-90':
-            warnings.warn('Specify if you want riht or left transition \n-R or -L should be in file name'
+            warnings.warn('Specify if you want right or left transition \n-R or -L should be in file name'
                           '\nBy default left transition will be used')
         if '_left' in name:
             tni = [0]

@@ -33,15 +33,14 @@ def ret_ret_mcas(pdc):
         
         #freq = [30.42]#np.array([self.queue.tt.mw_mixing_frequency])
         amp = self.queue.tt.rp('e_rabi_ou350deg-90-L', omega=2.0).amp #2 MHz
-        #pi_2_dur = self.queue.tt.rp('e_rabi_ou350deg-90-L', amp=amp).pi2
         pi_dur = self.queue.tt.rp('e_rabi_ou350deg-90-L', amp=amp).pi
-        
+        amp = amp/2 #FIXME just quickfix because rabi is not well calibrated
         # Sequence starts
         mcas = MultiChSeq(name=sequence_name, ch_dict={'2g': [1, 2], 'ps': [1]})
         mcas.start_new_segment('start_sequence')
         mcas.asc(length_mus=3.0, repump=True, name='Repump')
-        mcas.asc(length_mus=0.5)  # Starting... 
-        mcas.asc(A1=True, length_mus=100., name='A2_init')  # Longer init for nuclear polarization
+        mcas.asc(length_mus=1.0)  # Starting... 
+        mcas.asc(A1=True, length_mus=100., name='A1_init')  # Longer init for nuclear polarization
         mcas.asc(length_mus=1.0)  # Starting... 
 
         for idx, _I_ in current_iterator_df.iterrows():
@@ -54,12 +53,13 @@ def ret_ret_mcas(pdc):
                 mixer_deg=[-90]
             )
             mcas.asc(length_mus=0.5)
+            freq = [30]
             if _I_['readout'] == 'A2':
-                sna.ssr(mcas = mcas, queue=self.queue, frequencies=[_I_['freqs']], wait_dur=0.0, robust=False,
-                    nuc='ple_A2', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=float(0.5))
-            # elif _I_['readout'] == 'A1':
-            #    sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
-            #        nuc='ple_A1', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=2.)
+                sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
+                    nuc='ple_A2', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=0.5)
+            elif _I_['readout'] == 'A1':
+               sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
+                   nuc='ple_A1', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=0.5)
             mcas.asc(length_mus=0.5, name='sequence wait 2')
 
         self.queue._gated_counter.set_n_values(mcas, self.number_of_simultaneous_measurements) #how to get here the queue? readout duration/sequence length.
@@ -88,7 +88,7 @@ def settings(pdc={}):
         meas_code=meas_code
     )
 
-    nuclear.x_axis_title = 'tau [mus]'
+    nuclear.x_axis_title = 'Index'
     #nuclear.analyze_type = 'consecutive'
     #nuclear.analyze_type = 'standard'
 
@@ -118,19 +118,19 @@ def settings(pdc={}):
         (
             #('mw_duration', E.round_length_mus_full_sample(np.linspace(0.0, 0.3, 31))), 
             #('rabi_period', [0.087]),
-            ('resonant', [True]),
-            ('ms', [-1]),
-            ('state_check', [False]),
-            ('nucl_init', [False]),
-            ('additional_estate_check', [False]),
+            # ('resonant', [True]),
+            # ('ms', [-1]),
+            # ('state_check', [False]),
+            # ('nucl_init', [False]),
+            # ('additional_estate_check', [False]),
             #('ddt', ['fid', 'hahn', 'xy4', 'xy16', 'kdd','kdd4', 'kdd16']),
             #('ddt', ['xy4']),
             #('n_rep_dd', range(1,4)),
-            ('delay_ps',[0.45]), #11110 # actually which delay ?
+            # ('delay_ps',[0.45]), #11110 # actually which delay ?
             #('amp', np.array([0.25])),
+            # ('phase_pi2_2', [0]),
             ('sweeps', range(60)),
-            ('phase_pi2_2', [0]),
-            ('readout', ['A2']),
+            ('readout', ['A1','A2']),
             ('freqs', [30.42,38.44]),
             ('index', range(20)), 
         )

@@ -354,6 +354,9 @@ class Trace(BaseTrace):
             df.loc[df['step'] == idx, 'reliable'] = np.abs(diff).reshape(-1) > df.loc[df['step'] == idx, 'thr_diff'] #more or less than value by threshold difference
 
     def append_valid_measurement(self, df):
+
+        #
+
         if self.analyze_type == 'consecutive':
             df = self.df_consecutive(df)
             nstep = 2
@@ -373,6 +376,8 @@ class Trace(BaseTrace):
 
 
     def append_valid_inits(self, df):
+        
+        ## valid init is when the init condition is good from the threshold.
         if self.analyze_type == 'consecutive':
             df = self.df_consecutive(df)
             nstep = 2
@@ -397,6 +402,48 @@ class Trace(BaseTrace):
         df = self.append_valid_measurement(df)
         df = self.append_valid_inits(df)
         return df
+
+    def analyze_fast(self):
+
+        df = self.df_complete()
+        data_result = dh.Data(parameter_names=['sm', 'step', 'result_num'], observation_names=['result', 'events', 'thresholds','average_counts'],
+                              dtypes=collections.OrderedDict([('result', 'float'), ('events', 'int'), ('thresholds', 'int'),('average_counts', 'float')]))
+        data_result.init()
+        n_sm = self.number_of_simultaneous_measurements
+        
+        #FIXME It could be different for different steps, e.g. first init could be NMem=1, but ssr of nuclear spin is n_mem2,
+        # N.B. use n mem 1 for now.
+        #result_numbers = self.consecutive_valid_result_numbers if self.analyze_type == 'consecutive' else range(df_step.n_mem)
+        n_steps = len(self.analyze_sequence)
+        data_result.append([collections.OrderedDict([('sm', sm), ('step', st), ('result_num', rn)]) for 
+                      (rn, sm, st) in itertools.product(range(1), range(n_sm+1), range(n_steps))])
+        ths = [seq[2] for seq in self.analyze_sequence]
+        data_result.set_observations([collections.OrderedDict([('thresholds', th)]) for th in ths]*n_sm)
+        if self.analyze_type == 'standard':
+            #TODO debug.
+            df_sub = df.loc[(df['vm'] == True) & (df['st'] == 'result')]
+            if df_sub.run.nunique() > 0:
+                #print(df_sub)
+                nevents_by_sm = df_sub.groupby('sm').agg({'run':pd.Series.nunique})
+                #print(nevents_by_sm)
+                #data_result.df.events = 
+                df1 = data_result.df
+                df2 = nevents_by_sm.reset_index().rename(columns={'sm':'sm', 'run':'events'})
+                df_nev = pd.merge(df1, df2, how = 'left', on = 'sm') 
+                df3_nev = df_nev.fillna(0)
+                #print(df3.keys())
+                df3_nev = df3_nev.drop('events_x', axis=  1)
+                #print(df3.keys())
+                bins = np.arange(-.5, df_sub.n_mem.iloc[0] + .5)
+                df_result = df_sub.groupby(['sm', 'step']).agg({'digital': lambda x: x.value_counts(**{'normalize':True, 'bins' :bins, 'sort':False})}).reset_index()
+                data_result.set_observations([collections.OrderedDict(result=n_av) for n_av in df_av.average_counts.values]) #TODO
+        
+        df_sub1 = df.loc[(df['valid_inits'] == True) & (df['st'] == 'result')]
+        #     data_result.set_observations([collections.OrderedDict([('average_counts', np.mean(df_sub1[0]))])])
+        df_av =  df_sub1.groupby(['sm']).agg({0:np.mean}).reset_index()
+        df_av = df_av.rename({'sm':'sm','step':'step', 0:'average_counts'}, axis = 1)
+        data_result.set_observations([collections.OrderedDict(average_counts=n_av) for n_av in df_av.average_counts.values]) 
+        return data_result
 
     def analyze(self):
         df = self.df_complete()
@@ -438,7 +485,8 @@ class Trace(BaseTrace):
                         # df_sub1 = df[(df['sm'] == sm)]
 
                         df_sub1 = df.loc[(df['valid_inits'] == True) & (df['sm'] == sm) & (df['st'] == 'result')]
-                        data_result.set_observations([collections.OrderedDict([('average_counts', np.mean(df_sub1[0]))])])
+                        data_result.set_observations([collections.OrderedDict([('average_counts', np.mean(df_sub1[0]))])
+                        ])
 
         if self.average_results:
             data_result.eliminate_parameter(parameter_name='result_num', observation_names=['result', 'events', 'thresholds'],

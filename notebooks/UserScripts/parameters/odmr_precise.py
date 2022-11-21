@@ -32,33 +32,38 @@ def ret_ret_mcas(pdc):
         #print(self, current_iterator_df)
         mcas = MultiChSeq(name=sequence_name, ch_dict={'2g': [1, 2], 'ps': [1]})
         mcas.start_new_segment('start_sequence')
-        mcas.asc(length_mus=3.0, repump=True, name='Repump')
-        mcas.asc(length_mus=0.5)  # Starting... histogram 0
-        freq = [30]#np.array([self.queue.tt.mw_mixing_frequency])
-        
+        # mcas.asc(length_mus=5.0, repump=True, name='Repump')
+        # mcas.asc(length_mus=3.0)  # Starting... histogram 0
+        # freq = [33.6]#np.array([self.queue.tt.mw_mixing_frequency])
+        # pi_2_dur = self.queue.tt.rp('e_rabi_ou350deg-90-L', amp=1.0).pi2
+        # mcas.asc(A2=True, length_mus=5., name='A2_init')  # Longer init after repump was on.
         for idx, _I_ in current_iterator_df.iterrows():
-            mcas.asc(A1=(_I_['readout'] == 'A1'),A2=(_I_['readout'] == 'A2'), length_mus=15., name='init')
-            mcas.asc(length_mus=0.5, name='sequence wait 1')
-
+            mcas.asc(length_mus=50.0, repump=True, name='Repump')
+            mcas.asc(length_mus=30.0)  # Starting... histogram 0
+            mcas.start_new_segment('next mw')
+            pi_dur = self.queue.tt.rp('e_rabi_ou350deg-90-L', omega=_I_['omega']).pi
+            amp = self.queue.tt.rp('e_rabi_ou350deg-90-L', omega=_I_['omega']).amp
+            mcas.asc(A1=_I_['readout']=='A1',A2 =_I_['readout']=='A2', length_mus=5., name='A2_init')  # Init system with A2 laser
+            mcas.asc(length_mus=1.0, name='sequence wait 1')
             sna.electron_rabi(
                 mcas,
                 new_segment=False,
-                length_mus=_I_['mw_duration'],
-                amplitudes=[_I_['amp']],
-                frequencies=[_I_['freq']],
+                length_mus= pi_dur,
+                amplitudes=[amp],
+                frequencies=[_I_['mw_freq']],
                 mixer_deg=[-90]
             )
 
             mcas.asc(length_mus=0.5)
-
+            freq = [30.0]
             # sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
-            #         nuc='ple_A2', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=3.0)
+            #         nuc='ple_A2', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=1.3)
             if _I_['readout'] == 'A2':
                 sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
-                    nuc='ple_A2', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=3.)
+                    nuc='ple_A2', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=1.3)
             elif _I_['readout'] == 'A1':
-               sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
-                   nuc='ple_A1', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=2.)
+                sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
+                    nuc='ple_A1', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=1.3)
             mcas.asc(length_mus=0.5, name='sequence wait 2')
 
         self.queue._gated_counter.set_n_values(mcas, self.number_of_simultaneous_measurements) #how to get here the queue? readout duration/sequence length.
@@ -113,35 +118,48 @@ def settings(pdc={}):
     nuclear.queue._gated_counter.trace.consecutive_valid_result_numbers = [0]
     nuclear.queue._gated_counter.trace.average_results = False
 
-    nuclear.parameters = OrderedDict( # WHAT DOES ALL THIS MEAN ??? WHICH UNITS ??
+    nuclear.parameters = OrderedDict(
         (
+            #('mw_duration', E.round_length_mus_full_sample(np.linspace(0.0, 0.3, 31))), 
+            #('rabi_period', [0.087]),
+            #('resonant', [True]),
+            #('ms', [-1]),
+            #('state_check', [False]),
+            #('nucl_init', [False]),
+            #('additional_estate_check', [False]),
+            #('ddt', ['fid', 'hahn', 'xy4', 'xy16', 'kdd','kdd4', 'kdd16']),
+            #('ddt', ['xy4']),
+            #('n_rep_dd', range(1,4)),
+            #('delay_ps',[0.45]), #11110 # actually which delay ?
             #('amp', np.array([0.25])),
-            ('freq', [30.33]),
-            ('sweeps', range(10)),
-            ('readout', ['A1']),
-            ('amp', np.linspace(0.1,0.4,3)),
-            ('mw_duration', E.round_length_mus_full_sample(np.linspace(0.0, 0.4, 81))), 
+            #('amp', np.linspace(0.1,1,10)),
+            ('sweeps', range(30)),
+            #('phase_pi2_2', [0]),  
+            ('omega', [0.5]),  
+            ('mw_freq', np.linspace(27, 42.0,61)), 
+            ('readout', ['A2']),
+            ('init', ['A2']),
         )
     )
-    nuclear.number_of_simultaneous_measurements =  1*len(nuclear.parameters['mw_duration'])#len(nuclear.parameters['phase_pi2_2'])
+    nuclear.number_of_simultaneous_measurements =  2*len(nuclear.parameters['mw_freq'])
 
 def run_fun(abort, **kwargs):
     print(1,' Nuclear started!!!')
     nuclear.queue = kwargs['queue']
-    nuclear.queue._gated_counter.readout_duration = 5*1e6#1.4e4 #6e5 #10*1e6
+    nuclear.queue._gated_counter.readout_duration = 5*1e6 # --> nvalues.
     nuclear.hashed = False
     nuclear.debug_mode = False
     settings()
     print('run_fun started')
     nuclear.run(abort)
-
+    #nuclear.thread.join() #experimental...
     # # ------------------------------------------------------
-    # df = nuclear.data.df
-    # # pld = nuclear.pld.data_fit_results.df
-    # df = df[['sweeps', 'average_counts', 'amp0', 'mw_duration']]
+    #df = nuclear.data.df
+    # pld = nuclear.pld.data_fit_results.df
+    #df = df[['sweeps', 'average_counts', 'amp', 'mw_duration']]
     
-    # # temp_df = pd.DataFrame(columns=['amp0', 'omega', 'average_counts', 'mw_duration'])
-    # temp_df = pd.DataFrame(columns=['amp0', 'omega', 'transition','date'])
+    # temp_df = pd.DataFrame(columns=['amp0', 'omega', 'average_counts', 'mw_duration'])
+    #temp_df = pd.DataFrame(columns=['amp', 'omega', 'transition','date'])
     # for amp in df['amp0'].unique():
     #     print('Ampl ', amp)
     #     sub_df = df[(df['amp0'] == amp)]
@@ -195,3 +213,38 @@ def run_fun(abort, **kwargs):
     # print('y: ')
     # print(y)
     # print('-----------')
+
+        # df = nuclear.data.df
+    # pld = nuclear.pld.data_fit_results.df
+    #df = df[['sweeps', 'average_counts', 'amp', 'mw_duration']]
+
+    # temp_df = pd.DataFrame(columns=['amp0', 'omega', 'average_counts', 'mw_duration'])
+    #temp_df = pd.DataFrame(columns=['amp', 'omega', 'transition','date'])
+    #for amp in df['amp'].unique():
+    #    print('Ampl ', amp)
+    #    sub_df = df[(df['amp'] == amp)]
+    #    # sub_pld = pld[(pld['amp0'] == amp)]
+    #    x = sub_df['mw_duration'].unique()
+     #   y = sub_df.groupby(by=['mw_duration']).agg({'average_counts': np.mean}).values.ravel()
+    #    m = lmfit_models.CosineModel()
+    #    p = m.guess(data=y, x=x)
+     #   r = m.fit(data=y, params=p, x=x)
+    #    temp_df = pd.concat([temp_df, pd.DataFrame({
+    #        'amp0': [amp],
+            # 'omega': 1.0 / sub_pld['T'].mean(),
+     #       'transition': [0],
+     #       'omega': [1.0 / r.params['T'].value],
+            # 'average_counts': [y],
+            # 'mw_duration': [x],
+    #        'date': [str(datetime.datetime.now())]
+    #    })])
+
+    #f = 'e_rabi_ou350deg-90'
+    #temp_df = temp_df[['amp0', 'transition', 'omega', 'date']]
+
+    #print(temp_df)
+    #nuclear.queue.tt.rabi_parameters[f].update_file(temp_df)
+    #------------------------------------------------------
+
+    #x = df['mw_duration'].unique()
+    #y = df.groupby(by = ['mw_duration']).agg({'average_counts': np.mean}).values

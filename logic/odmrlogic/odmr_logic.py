@@ -143,6 +143,7 @@ class ODMRLogic_holder(GenericLogic):
         data_matrix['Frequency (MHz) + Scanline'] = self.ODMRLogic.scanmatrix
         
         parameters = OrderedDict()
+        parameters['runtime (s)'] = self.ODMRLogic.current_runtime
         parameters['Enable Microwave1 (bool)'] = self.ODMRLogic.cw_MW1
         parameters['Enable Microwave2 (bool)'] = self.ODMRLogic.cw_MW2
         parameters['Enable Microwave3 (bool)'] = self.ODMRLogic.cw_MW3
@@ -225,7 +226,7 @@ class ODMRLogic_holder(GenericLogic):
         data_matrix['Frequency (MHz) + Scanline'] = self.pulsedODMRLogic.scanmatrix
 
         parameters = OrderedDict()
-
+        parameters['runtime (s)'] = self.pulsedODMRLogic.current_runtime
         parameters['Enable Microwave1 (bool)'] = self.pulsedODMRLogic.pulsed_MW1
         parameters['Enable Microwave2 (bool)'] = self.pulsedODMRLogic.pulsed_MW2
         parameters['Enable Microwave3 (bool)'] = self.pulsedODMRLogic.pulsed_MW3
@@ -647,7 +648,8 @@ class ODMRLogic(cw_default):
         self.starting_time=0
 
     def data_readout(self):
-        if (time.time()-self.starting_time>self.cw_Stoptime and self.cw_Stoptime!=0) and self.measurement_running:
+        self.current_runtime = time.time()-self.starting_time
+        if (self.current_runtime>self.cw_Stoptime and self.cw_Stoptime!=0) and self.measurement_running:
             self.cw_Stop_Button_Clicked(True)
         #print("checkready:",self.measurement_running)
         if not(self.measurement_running or self.syncing):
@@ -838,7 +840,8 @@ class pulsedODMRLogic(pulsed_default):
 
 
     def data_readout(self):
-        if (time.time()-self.starting_time>self.pulsed_Stoptime and self.pulsed_Stoptime!=0) and self.measurement_running:
+        self.current_runtime = time.time()-self.starting_time
+        if (self.current_runtime>self.pulsed_Stoptime and self.pulsed_Stoptime!=0) and self.measurement_running:
             self.pulsed_Stop_Button_Clicked(True)
         #print("checkready:",self.measurement_running)
         if not(self.measurement_running or self.syncing):
@@ -959,12 +962,18 @@ class pulsedODMRLogic(pulsed_default):
         
         seq = self.holder._awg.mcas(name="pulsedODMR", ch_dict={"2g": [1,2],"ps": [1]})
         # generate segment of repump which starts at each repetition of the sequence.
+        # if self.pulsed_PulsedRepump:
+        #     seq.start_new_segment("Repump")
+        #     seq.asc(name='repump1', length_mus=self.pulsed_RepumpDuration, repump=True)
+        #     seq.asc(name='repump2', length_mus=self.pulsed_RepumpDecay, repump=False)
+
         if self.pulsed_PulsedRepump:
             seq.start_new_segment("Repump")
             seq.asc(name='repump1', length_mus=self.pulsed_RepumpDuration, repump=True)
             seq.asc(name='repump2', length_mus=self.pulsed_RepumpDecay, repump=False)
-
+        
         # short pulses to SYNC and TRIGGER the timedifferences module of TimeTagger.
+        seq.start_new_segment("SYNCING")
         seq.asc(name='tt_sync1', length_mus=0.01, tt_sync=True)        
         seq.asc(name='tt_sync2', length_mus=0.01, tt_trigger=True)
 

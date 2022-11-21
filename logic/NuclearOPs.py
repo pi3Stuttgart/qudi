@@ -32,7 +32,6 @@ from logic.qudip_enhanced.data_generation import DataGeneration
 from logic.qudip_enhanced.util import ret_property_list_element
 from logic.qudip_enhanced import save_qutip_enhanced
 import logic.qudip_enhanced.data_handling as data_handling
-
 import base64
 import hashlib
 
@@ -414,11 +413,12 @@ class NuclearOPs(DataGeneration):
                     
                     if abort.is_set(): break
                     
+                    print("Save Smartly in NucOps: ",self.save_smartly)
+                    start = time.time()
                     if self.raw_clicks_processing:
                         self.data.set_observations(pd.concat([self.df_refocus_pos.iloc[-1:, :]]*self.number_of_simultaneous_measurements).reset_index(drop=True))
                         self.data.set_observations([OrderedDict(ple_A1=self.queue._transition_tracker.ple_A1)]*self.number_of_simultaneous_measurements)
                         self.data.set_observations([OrderedDict(ple_A2=self.queue._transition_tracker.ple_A2)]*self.number_of_simultaneous_measurements)
-
                     elif not self.save_smartly:
                         self.data.set_observations([OrderedDict(mw_mixing_frequency=self.queue._transition_tracker.mw_mixing_frequency)]*self.number_of_simultaneous_measurements)
                         self.data.set_observations([OrderedDict(local_oscillator_freq=self.queue._transition_tracker.current_local_oscillator_freq)]*self.number_of_simultaneous_measurements)
@@ -427,6 +427,7 @@ class NuclearOPs(DataGeneration):
                         self.data.set_observations(pd.concat([self.df_refocus_pos.iloc[-1:, :]]*self.number_of_simultaneous_measurements).reset_index(drop=True))#already inlcuded in raw_clicks_processing
                         
                     self.data.set_observations([OrderedDict(start_time=datetime.datetime.now())]*self.number_of_simultaneous_measurements)
+                    print("Time for Saving 1:", time.time()-start)
                     # TODO
                     #Measure powers and record them!!!!
                     ##
@@ -461,10 +462,11 @@ class NuclearOPs(DataGeneration):
                     self.get_trace(abort,delay_ps_list = self.delay_ps_list ,window_ps_list = self.window_ps_list) #Start AWGs...
                     # print(time.time()-t1,'after get trace')
                     if abort.is_set(): break
-                    t0 = time.time()
+                    
                     self.data.set_observations([OrderedDict(end_time=datetime.datetime.now())]*self.number_of_simultaneous_measurements)
 
                     if self.save_smartly:
+                        t0 = time.time()
                         #pass
                         # TEMP SOLUTION FIXME LATER, Only for HOM , just uncomment this code
                         dd = self.ana_trace.trace
@@ -473,9 +475,9 @@ class NuclearOPs(DataGeneration):
                         self.data.set_observations([
                                                        OrderedDict({'trace': (idx, ddd)})
                                                    ] * self.number_of_simultaneous_measurements)
-                    print("t_2=", time.time()-t0)
-                    t0 = time.time()
-                    if self.raw_clicks_processing:
+                        print("t_2=", time.time()-t0)
+                        t0 = time.time()
+                    elif self.raw_clicks_processing:
                         pass
                     else:
                         self.data.set_observations([OrderedDict(trace=self.ana_trace.trace)]*self.number_of_simultaneous_measurements)
@@ -483,8 +485,8 @@ class NuclearOPs(DataGeneration):
                     # # print('self.ana_trace.trace.dtype ', self.ana_trace.trace.dtype)
 
                     # TEMP SOLUTION FIXME LATER, Only for HOM , just uncomment this code
-                    self.data.set_observations([OrderedDict(delays_ps=self.delay_ps_list)]*self.number_of_simultaneous_measurements)
-                    self.data.set_observations([OrderedDict(windows_ps=self.window_ps_list)]*self.number_of_simultaneous_measurements)
+                    #self.data.set_observations([OrderedDict(delays_ps=self.delay_ps_list)]*self.number_of_simultaneous_measurements)
+                    #self.data.set_observations([OrderedDict(windows_ps=self.window_ps_list)]*self.number_of_simultaneous_measurements)
                     print("t_3=", time.time()-t0)
                     t0 = time.time()
 
@@ -534,7 +536,7 @@ class NuclearOPs(DataGeneration):
                     print("t_4=", time.time()-t0)
                     t0 = time.time()
                     if abort.is_set(): break
-                    repeat_measurement = self.analyze()
+                    repeat_measurement = self.analyze() ##TODO here we make only non zeros., and do the average. 
                     if abort.is_set(): break
                     print("t_5=", time.time()-t0)
 
@@ -571,8 +573,9 @@ class NuclearOPs(DataGeneration):
                 if abort.is_set(): break
                 print("t_7=", time.time()-t0)
                 t0 = time.time()
+                print("START SAVING:")
                 self.save()
-                print("t_8=", time.time()-t0)
+                print("SAVING COMPLETED.", time.time()-t0)
                 #end of for
                 # print("end of for")
                 
@@ -1056,7 +1059,7 @@ class NuclearOPs(DataGeneration):
         data = self.data if data is None else data
         if ana_trace.analyze_type is not None:
             t_ana_t0 = time.time()
-            df = ana_trace.analyze().df
+            df = ana_trace.analyze_fast().df
             print('t_analyze0 = ', time.time() - t_ana_t0)
             # print("df in NucOps: ", df.at)
             # print("df in NucOps: ", df.at[0, 'events'])
@@ -1069,7 +1072,7 @@ class NuclearOPs(DataGeneration):
                 obs_r = df.rename(columns={'result': 'result_0'}).drop(columns=['step', 'events', 'sm'])
             if not self.save_smartly and not self.raw_clicks_processing:
                 data.set_observations(obs_r, start_idx=start_idx)
-                data.set_observations(df.groupby(['sm']).agg({'thresholds': lambda x: [i for i in x]}), start_idx=start_idx)
+                #data.set_observations(df.groupby(['sm']).agg({'thresholds': lambda x: [i for i in x]}), start_idx=start_idx)
 
             data.set_observations(df.groupby(['sm']).agg({'events': np.sum}), start_idx=start_idx)
             data.set_observations(df.groupby(['sm']).agg({'average_counts': np.mean}), start_idx=start_idx)
@@ -1078,22 +1081,22 @@ class NuclearOPs(DataGeneration):
             #logging.getLogger().info(ana_trace.analyze_type)
             return False
 
-    # def reanalyze(self, do_while_run=False, **kwargs):
-    #     if self.state == 'run' and not do_while_run:
-    #         print('Measurement is running.\nReanalyzation will write to data.df and may interfere with the running measurement doing the same.\nIf you want to reanalyze anyway, pass argument do_while_run=True')
-    #         return
-    #     import Analysis
-    #     ana_trace = Analysis.Trace()
-    #     for key in ['analyze_type', 'number_of_simultaneous_measurements', 'analyze_sequence', 'binning_factor', 'average_results', 'consecutive_valid_result_numbers']:
-    #         setattr(ana_trace, key, kwargs.get(key, getattr(self.ana_trace, key)))
-    #     for idx, _I_ in self.data.df.iterrows():
-    #         if (idx-1)%ana_trace.number_of_simultaneous_measurements:
-    #             continue ## What is it for? (seems that it doing nothings.
-    #         if type(_I_['trace']) != np.ndarray:
-    #             print('Interrupted reanalyzation at dataframe index {}, as trace is not a numpy array.\nMaybe, this is trace has just not been measured yet?\nTotal length of dataframe is {}'.format(idx, len(self.data.df)))
-    #             break
-    #         ana_trace.trace = _I_['trace']
-    #         self.analyze(ana_trace=ana_trace, start_idx=idx)
+    def reanalyze(self, do_while_run=False, **kwargs):
+        if self.state == 'run' and not do_while_run:
+            print('Measurement is running.\nReanalyzation will write to data.df and may interfere with the running measurement doing the same.\nIf you want to reanalyze anyway, pass argument do_while_run=True')
+            return
+        import Analysis
+        ana_trace = Analysis.Trace()
+        for key in ['analyze_type', 'number_of_simultaneous_measurements', 'analyze_sequence', 'binning_factor', 'average_results', 'consecutive_valid_result_numbers']:
+            setattr(ana_trace, key, kwargs.get(key, getattr(self.ana_trace, key)))
+        for idx, _I_ in self.data.df.iterrows():
+            if (idx-1)%ana_trace.number_of_simultaneous_measurements:
+                continue ## What is it for? (seems that it doing nothings.
+            if type(_I_['trace']) != np.ndarray:
+                print('Interrupted reanalyzation at dataframe index {}, as trace is not a numpy array.\nMaybe, this is trace has just not been measured yet?\nTotal length of dataframe is {}'.format(idx, len(self.data.df)))
+                break
+            ana_trace.trace = _I_['trace']
+            self.analyze(ana_trace=ana_trace, start_idx=idx)
 
     def save(self):
         pass
@@ -1103,7 +1106,7 @@ class NuclearOPs(DataGeneration):
             Thread1.start()
             #super(NuclearOPs, self).save(notify=False) #### IMPORTANT
             Thread1.join()
-            print("t1=", time.time()-t0)
+            print("Waiting to join threads=", time.time()-t0)
             t0 = time.time()
             self.save_sequence_file()
             print("t2=", time.time()-t0)
