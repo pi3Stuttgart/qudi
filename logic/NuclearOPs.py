@@ -75,6 +75,7 @@ class NuclearOPs(DataGeneration):
         self.do_confocal_repump_refocus = False
         self.do_confocal_A1A2_refocus = False
         self.do_confocal_A2MW_refocus = False
+        self.checkA1LaserPower = False
         #
         self.refocus_cw_odmr =False
         self.refocus_pulsed_odmr =False
@@ -1088,8 +1089,8 @@ class NuclearOPs(DataGeneration):
         data = self.data if data is None else data
         if ana_trace.analyze_type is not None:
             t_ana_t0 = time.time()
-            #df = ana_trace.analyze_fast().df
-            df = ana_trace.analyze().df
+            df = ana_trace.analyze_fast().df
+            #df = ana_trace.analyze().df
             print('time of Analysis.ana_trace.analyze_fast = ', time.time() - t_ana_t0)
             # print("df in NucOps: ", df.at)
             # print("df in NucOps: ", df.at[0, 'events'])

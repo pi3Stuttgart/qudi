@@ -512,14 +512,14 @@ class LaserScannerLogic(GenericLogic, ple_default):
                     A1=self.enable_A1,
                     A2=self.enable_A2,
                     repump=self.enable_Repump,
-                    length_mus=50
+                    length_mus=1.0
                     )
         else:
             seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": frequencies, "amplitudes": self.power},
                     A1=self.enable_A1,
                     A2=self.enable_A2,
                     repump=self.enable_Repump,
-                    length_mus=50
+                    length_mus=1.0
                     )
         self._awg.mcas_dict["PLE_trace"] = seq
         self._awg.mcas_dict.print_info()
