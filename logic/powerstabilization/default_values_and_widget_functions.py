@@ -2,7 +2,7 @@ import threading
 from PyQt5 import QtCore
 class powerstabilization_default():
 
-        TargetPower: float = 0
+        TargetPower: float = 3
         TargetVoltage: float = 1
         A1Voltage: float = 0
         A2Voltage: float = 0

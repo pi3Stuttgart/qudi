@@ -282,7 +282,7 @@ class FitResultTable(DataTable):
     def selected_indices_default(self, selected_indices=None):
         return collections.OrderedDict()
 
-from logic.qudip_enhanced import qtgui
+from logic.qudip_enhanced import qtgui #fixme - is it used?
 
 class PlotData(qudip_enhanced.qtgui.gui_helpers.WithQt):
 

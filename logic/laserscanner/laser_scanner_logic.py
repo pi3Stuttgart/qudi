@@ -315,12 +315,17 @@ class LaserScannerLogic(GenericLogic, ple_default):
         return 0
 
     def start_scanning(self, v_min=None, v_max=None):
-        self.currenttime = time.time()
-        print("recieved start signal")
         """Setting up the scanner device and starts the scanning procedure
 
         @return int: error code (0:OK, -1:error)
         """
+        print("recieved start signal")
+        # print(self._scanning_device.module_state()) #self._scanning_device.module_state() is not the same as _optimizer_logic.module_state.current! So _s_d.module_state is "idle" even when confocal refocus runs.
+        # if self._scanning_device.module_state() == 'locked':
+        #     logger.error('Nicard is in module state "locked".')
+        #     raise Exception    
+
+        self.currenttime = time.time()
         # Create AWG Sequence which turns on repump during retrace
         print("Start PLE scan...")
         self._awg.mcas_dict.stop_awgs()

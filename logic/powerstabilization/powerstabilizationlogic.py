@@ -148,12 +148,12 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
             self.actual_time_list.append(time.time())
             self.time=self.time+1
 
-            self.SigUpdatePlots.emit()
             self.SigPidProc.emit()
 
         else:
             pass
             #self.stop_control()
+        self.SigUpdatePlots.emit()
 
 
 

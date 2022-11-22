@@ -551,6 +551,7 @@ class NuclearOPs(DataGeneration):
                     if self.do_ple_refocus or self.do_ple_refocusA1 or self.do_ple_refocusA2:
                             self.do_refocus_ple(abort)
 
+
                     t0 = time.time()
                     if self.refocus_cw_odmr or self.refocus_pulsed_odmr:
                         self.do_refocusodmr(abort=abort)
@@ -690,6 +691,34 @@ class NuclearOPs(DataGeneration):
             time.sleep(1)
             self.performedRefocus = True
 
+            if self.checkA1LaserPower:
+                self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,["A1"],0,0))
+                self.queue._powerstabilization_logic.controlA1 = True
+                self.queue._powerstabilization_logic.controlA2 = False
+                self.queue._powerstabilization_logic.TargetPower = self.A1LaserPower
+                self.queue._powerstabilization_logic.start_control
+                start_time = time.time()
+                while self.queue._powerstabilization_logic.stabilize:
+                    time.sleep(0.1)
+                    if start_time - time.time() > 30:
+                        logging.getLogger().info('Could not reach desired A1-laserpower in reasonable time. Set analog voltage to 0.5V.')
+                        self.queue._powerstabilization_logic.A1Voltage = 0.5
+                        self.queue._powerstabilization_logic.set_fix_voltage(tag="A1")
+                self.queue._awg.mcas_dict.awgs["ps"].Night()
+            if self.checkA2LaserPower:
+                self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,["A2"],0,0))
+                self.queue._powerstabilization_logic.controlA2 = True
+                self.queue._powerstabilization_logic.controlA1 = False
+                self.queue._powerstabilization_logic.TargetPower = self.A2LaserPower
+                self.queue._powerstabilization_logic.start_control
+                start_time = time.time()
+                while self.queue._powerstabilization_logic.stabilize:
+                    time.sleep(0.1)
+                    if start_time - time.time() > 30:
+                        logging.getLogger().info('Could not reach desired A2-laserpower in reasonable time. Set analog voltage to 0.5V.')
+                        self.queue._powerstabilization_logic.A2Voltage = 0.5
+                        self.queue._powerstabilization_logic.set_fix_voltage(tag="A2")                
+                self.queue._awg.mcas_dict.awgs["ps"].Night()
 
     def do_refocus_pleA2(self, abort): #CHANGED! commented what belonged to wavemeter
         #if self.wavemeter_lock and self.queue.wavemeter.wm_id!=0:
@@ -1059,13 +1088,14 @@ class NuclearOPs(DataGeneration):
         data = self.data if data is None else data
         if ana_trace.analyze_type is not None:
             t_ana_t0 = time.time()
-            df = ana_trace.analyze_fast().df
-            print('t_analyze0 = ', time.time() - t_ana_t0)
+            #df = ana_trace.analyze_fast().df
+            df = ana_trace.analyze().df
+            print('time of Analysis.ana_trace.analyze_fast = ', time.time() - t_ana_t0)
             # print("df in NucOps: ", df.at)
             # print("df in NucOps: ", df.at[0, 'events'])
             if (df.events == 0).any() and not self.analyze_type == 'consecutive' and df.at[0, 'events'] != 0:
-                return True #Means that data is good?
-            if 'result_num' in df.columns: #if results are not averaged
+                return True #Means that data is good? 
+            if 'result_num' in df.columns: #if there are multiple readouts of type "result", here step index is important
                 obs_r = df.pivot_table(values='result', columns='result_num', index='sm').rename(
                     columns=collections.OrderedDict([(i, 'result_{}'.format(i)) for i in df.result_num.unique()]))
             else:
