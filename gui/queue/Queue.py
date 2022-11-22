@@ -175,6 +175,7 @@ class queue_gui(GUIBase):
         self._mw.user_script_folder_pushButton.clicked.connect(self.open_user_script_folder_file_dialog)
         #self.show()
         self._queue_logic.update_selected_user_script_combo_box_signal.connect(self.update_selected_user_script_combo_box)
+        self._queue_logic.update_queue_list.connect(self.update_script_queue_table_data)
 
     def on_activate(self):
         self._mw = window()

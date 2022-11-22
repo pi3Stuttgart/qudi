@@ -506,20 +506,20 @@ class LaserScannerLogic(GenericLogic, ple_default):
         # either by the stop button, the runtime, or number of sequence repetitions.
         seq = self._awg.mcas(name="PLE_trace", ch_dict={"2g": [1, 2], "ps": [1]})
         frequencies = np.array([self.MW1_Freq, self.MW2_Freq, self.MW3_Freq])[[self.enable_MW1, self.enable_MW2, self.enable_MW3]]
-        seq.start_new_segment("Microwaves"+str(frequencies), loop_count=100)
+        seq.start_new_segment("Microwaves"+str(frequencies), loop_count=1000)
         if len(self.power) == 0:
             seq.asc(name="without MW",
                     A1=self.enable_A1,
                     A2=self.enable_A2,
                     repump=self.enable_Repump,
-                    length_mus=1.0
+                    length_us=1.0
                     )
         else:
             seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": frequencies, "amplitudes": self.power},
                     A1=self.enable_A1,
                     A2=self.enable_A2,
                     repump=self.enable_Repump,
-                    length_mus=1.0
+                    length_us=1.0
                     )
         self._awg.mcas_dict["PLE_trace"] = seq
         self._awg.mcas_dict.print_info()

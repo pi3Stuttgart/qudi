@@ -110,7 +110,7 @@ def settings(pdc={}):
 
     #PLE refocus
     nuclear.do_ple_refocusA1 = False #not used 
-    nuclear.do_ple_refocusA2 = True#
+    nuclear.do_ple_refocusA2 = False#
 
     # ODMR refocus
     nuclear.refocus_cw_odmr = False
@@ -119,10 +119,10 @@ def settings(pdc={}):
     #confocal refocus
     nuclear.do_confocal_repump_refocus = False
     nuclear.do_confocal_A1A2_refocus = False
-    nuclear.do_confocal_A2MW_refocus = True
+    nuclear.do_confocal_A2MW_refocus = False
 
     # Set Laser Power; Is always done after PLE refocus
-    nuclear.checkA2LaserPower = True 
+    nuclear.checkA2LaserPower = False 
     nuclear.A2LaserPower = 3 #nW
 
     nuclear.checkA1LaserPower = False #To be implemented
@@ -149,7 +149,7 @@ def settings(pdc={}):
             ('sweeps', range(200)),
             # ('mw_freq', [28,30.4,32,34,36,38.4,40,42]), 
             #('init_time', np.linspace(0.0, 100.0, 11) ),
-            ('mw_freq', np.linspace(26.5, 43.0,121)), 
+            ('mw_freq', np.linspace(26.5, 43.0,20)), 
         )
     )
     nuclear.number_of_simultaneous_measurements =  1*len(nuclear.parameters['mw_freq'])

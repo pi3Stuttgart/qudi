@@ -16,7 +16,8 @@ import PyQt5.uic
 import PyQt5.QtWidgets
 from logic.qudip_enhanced import *
 # FIXME
-
+from PyQt5.QtCore import QTimer
+from PyQt5 import QtTest
 # import multi_channel_awg_seq as MCAS; reload(MCAS)
 import logic.misc as misc
 import datetime
@@ -130,6 +131,7 @@ class queue_logic(GenericLogic):
     powerstabilization_logic = Connector("PowerStabilizationLogic")
 
     update_selected_user_script_combo_box_signal = pyqtSignal(collections.OrderedDict)
+    update_queue_list = pyqtSignal(collections.OrderedDict)
     user_script_list = misc.ret_property_array_like_typ('user_script_list', str)
     guis = []  #stores names of all open guis (later on used to dump them periodically)
     _StopTimeout = 60.
@@ -312,8 +314,9 @@ class queue_logic(GenericLogic):
             for cidx, attr_name in enumerate(['name', 'pd']):
                 out[attr_name].append(getattr(i, attr_name))
         self._script_queue_table_data = out
-        if hasattr(self, '_gui'):
+        if hasattr(self, '_gui'): # this is the problem.
             self.gui.update_script_queue_table_data(self.script_queue_table_data)
+        self.update_queue_list.emit(self.script_queue_table_data)
 
     ####################################################################################################################
     # script queue
@@ -344,7 +347,11 @@ class queue_logic(GenericLogic):
                    self.thread.stop_request.is_set()))
                 sys.modules[self.current_script['module_name']].run_fun(
                     self.thread.stop_request, queue = self, **self.current_script['pd']) ## Creates a nuclear and runs it.!!!
-
+                print('entering waiting loop in queue...')
+                while self.cun.state == 'run':
+                    QtTest.QTest.qSleep(1)  #This is Qt version for time.sleep to prevent freezinng.
+                    
+                    
                 self.script_history.append(self.current_script)
                 self.script_queue.pop(0)
                 self.log.info("Userscript {} has finished...".format(self.current_script['module_name'][10:]))
