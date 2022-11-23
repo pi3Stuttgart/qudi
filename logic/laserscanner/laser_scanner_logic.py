@@ -512,17 +512,17 @@ class LaserScannerLogic(GenericLogic, ple_default):
                     A1=self.enable_A1,
                     A2=self.enable_A2,
                     repump=self.enable_Repump,
-                    length_us=1.0
+                    length_mus=5
                     )
         else:
             seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": frequencies, "amplitudes": self.power},
                     A1=self.enable_A1,
                     A2=self.enable_A2,
                     repump=self.enable_Repump,
-                    length_us=1.0
+                    length_mus=5
                     )
         self._awg.mcas_dict["PLE_trace"] = seq
-        self._awg.mcas_dict.print_info()
+        #self._awg.mcas_dict.print_info()
         return
         
     def power_to_amp(self, power_dBm, impedance=50):
@@ -653,7 +653,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
                 # follow the defect PLE line by applying a voltage to the laser chamber
                 #Range=self.scan_range[1]-self.scan_range[0]
-                Range=0.75
+                Range=0.7
 
                 self.scan_range[0],self.scan_range[1]=peak_volt-0.7*Range,peak_volt+0.3*Range
             else: 

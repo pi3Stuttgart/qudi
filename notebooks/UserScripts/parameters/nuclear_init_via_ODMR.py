@@ -103,14 +103,14 @@ def settings(pdc={}):
 
     nuclear.x_axis_title = 'Index'
     #nuclear.analyze_type = 'consecutive'
-    #nuclear.analyze_type = 'standard'
-    nuclear.analyze_type = 'average'
+    nuclear.analyze_type = 'standard'
+    nuclear.analyze_type = 'average' #experimental feature for the fast 
     #nuclear.analyze_type = None
     nuclear.save_smartly = False
 
     #PLE refocus
     nuclear.do_ple_refocusA1 = False #not used 
-    nuclear.do_ple_refocusA2 = False#
+    nuclear.do_ple_refocusA2 = True#
 
     # ODMR refocus
     nuclear.refocus_cw_odmr = False
@@ -119,19 +119,17 @@ def settings(pdc={}):
     #confocal refocus
     nuclear.do_confocal_repump_refocus = False
     nuclear.do_confocal_A1A2_refocus = False
-    nuclear.do_confocal_A2MW_refocus = False
+    nuclear.do_confocal_A2MW_refocus = True
 
-    # Set Laser Power; Is always done after PLE refocus
-    nuclear.checkA2LaserPower = False 
+    # Resonant Laser power
+    nuclear.checkA1LaserPower = False # Not yet implemented in powerstablogic
+    nuclear.checkA2LaserPower = False
+    nuclear.A1LaserPower = 1 #nW
     nuclear.A2LaserPower = 3 #nW
 
-    nuclear.checkA1LaserPower = False #To be implemented
-    nuclear.A1LaserPower = 3 #nW ; To be implemented
-    nuclear.checkRepumpPower = False #To be implemented
-
-    nuclear.ple_refocus_interval = 600
-    nuclear.confocal_refocus_interval = 600  # seconds
-    nuclear.odmr_refocus_interval= 600
+    nuclear.ple_refocus_interval = 1200
+    nuclear.confocal_refocus_interval = 1200  # seconds
+    nuclear.odmr_refocus_interval= 1200
 
     #rabi refocus ?
 
@@ -146,13 +144,13 @@ def settings(pdc={}):
             ('init', ['A2']),
             ('init_time', [100,75,50,30,20,10,5]),
             #('init_time', [5]),
-            ('sweeps', range(200)),
+            ('sweeps', range(150)),
             # ('mw_freq', [28,30.4,32,34,36,38.4,40,42]), 
             #('init_time', np.linspace(0.0, 100.0, 11) ),
-            ('mw_freq', np.linspace(26.5, 43.0,20)), 
+            ('mw_freq', np.linspace(25, 43.0,81)), 
         )
     )
-    nuclear.number_of_simultaneous_measurements =  1*len(nuclear.parameters['mw_freq'])
+    nuclear.number_of_simultaneous_measurements =  int(1*len(nuclear.parameters['mw_freq']))
 
 def run_fun(abort, **kwargs):
     print(1,' Nuclear started!!!')

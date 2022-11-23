@@ -416,7 +416,7 @@ class Trace(BaseTrace):
         #result_numbers = self.consecutive_valid_result_numbers if self.analyze_type == 'consecutive' else range(df_step.n_mem)
         n_steps = len(self.analyze_sequence)
         data_result.append([collections.OrderedDict([('sm', sm), ('step', st), ('result_num', rn)]) for 
-                      (rn, sm, st) in itertools.product(range(1), range(n_sm+1), range(n_steps))])
+                      (rn, sm, st) in itertools.product(range(1), range(n_sm), range(n_steps))])
         ths = [seq[2] for seq in self.analyze_sequence]
         data_result.set_observations([collections.OrderedDict([('thresholds', th)]) for th in ths]*n_sm)
         if self.analyze_type == 'standard':

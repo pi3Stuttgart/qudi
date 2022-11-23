@@ -14,11 +14,12 @@
 *.#*
 .*.swp
 .DS_store
+*.dat
 
 # Local config directories
 /config/qo-config
 /config/local
-
+/notebooks/UserScripts
 # Simulated Subversion default ignores end here
 # The contents of the svn:ignore property on the branch root.
 /crash.log

@@ -77,6 +77,8 @@ class NuclearOPs(DataGeneration):
         self.do_confocal_A2MW_refocus = False
         self.checkA1LaserPower = False
         self.checkA2LaserPower = False
+        self.A1LaserPower = 1 #nW
+        self.A2LaserPower = 1 #nW
         #
         self.refocus_cw_odmr =False
         self.refocus_pulsed_odmr =False
@@ -589,6 +591,7 @@ class NuclearOPs(DataGeneration):
             traceback.print_exception(exc_type, exc_value, exc_tb)
         finally:
             t0 = time.time()
+            self.state = 'idle'
             self.data._df = data_handling.df_take_duplicate_rows(self.data.df, self.iterator_df_done) #drops unfinished measurements,
             print("t_9=", time.time()-t0)
             t0 = time.time()
@@ -596,7 +599,7 @@ class NuclearOPs(DataGeneration):
             print("t_10=", time.time()-t0)
             t0 = time.time()
             #self.queue.multi_channel_awg_sequence.stop_awgs(self.queue.awgs)
-            self.state = 'idle'
+            
             self.update_current_str()
 
             print("t_11=", time.time()-t0)
@@ -694,6 +697,7 @@ class NuclearOPs(DataGeneration):
             self.performedRefocus = True
 
             if self.checkA1LaserPower:
+                #somewhere the output voltage is set to 1 at beginning of stabilization
                 self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,["A1"],0,0))
                 self.queue._powerstabilization_logic.controlA1 = True
                 self.queue._powerstabilization_logic.controlA2 = False
@@ -1082,7 +1086,7 @@ class NuclearOPs(DataGeneration):
          #pi3d.mcas_dict[sequence_name].initialize()
         # pi3d.mcas_dict[sequence_name].start_awgs()
 
-    def analyze(self, data=None, ana_trace=None, start_idx=None, ):
+    def analyze(self, data=None, ana_trace=None, start_idx=None):
         if ana_trace is None:
             ana_trace = self.ana_trace
             if self.analyze_type != ana_trace.analyze_type:
@@ -1090,14 +1094,15 @@ class NuclearOPs(DataGeneration):
         data = self.data if data is None else data
         if ana_trace.analyze_type is not None:
             t_ana_t0 = time.time()
-            #df = ana_trace.analyze_fast().df # experimental still
-            df = ana_trace.analyze().df
+            df = ana_trace.analyze_fast().df # experimental still, but looks ok.
+            #df = ana_trace.analyze().df
             print('time of Analysis.ana_trace.analyze_fast = ', time.time() - t_ana_t0)
             # print("df in NucOps: ", df.at)
             # print("df in NucOps: ", df.at[0, 'events'])
             if (df.events == 0).any() and not self.analyze_type == 'consecutive' and df.at[0, 'events'] != 0:
-                return True #Means that data is good? 
+                return True #Means that runn was not succesfull, 0 events, ==> repeat measurements.
             if 'result_num' in df.columns: #if there are multiple readouts of type "result", here step index is important
+                #Why we are going here, because we have only 1 readout anyway, 
                 obs_r = df.pivot_table(values='result', columns='result_num', index='sm').rename(
                     columns=collections.OrderedDict([(i, 'result_{}'.format(i)) for i in df.result_num.unique()]))
             else:
