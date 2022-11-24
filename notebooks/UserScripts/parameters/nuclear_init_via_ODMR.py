@@ -36,7 +36,7 @@ def ret_ret_mcas(pdc):
         
         for idx, _I_ in current_iterator_df.iterrows():
             mcas.asc(length_mus=50.0, repump=True, name='Repump')
-            mcas.asc(length_mus=30.0)  # Starting... histogram 0
+            mcas.asc(length_mus=100.0)  # Starting... histogram 0
         
             pi_dur = self.queue.tt.rp('e_rabi_ou350deg-90-L', omega=_I_['omega']).pi
             amp = self.queue.tt.rp('e_rabi_ou350deg-90-L', omega=_I_['omega']).amp
@@ -123,13 +123,13 @@ def settings(pdc={}):
 
     # Resonant Laser power
     nuclear.checkA1LaserPower = False # Not yet implemented in powerstablogic
-    nuclear.checkA2LaserPower = False
+    nuclear.checkA2LaserPower = True
     nuclear.A1LaserPower = 1 #nW
     nuclear.A2LaserPower = 3 #nW
 
-    nuclear.ple_refocus_interval = 1200
-    nuclear.confocal_refocus_interval = 1200  # seconds
-    nuclear.odmr_refocus_interval= 1200
+    nuclear.ple_refocus_interval = 600
+    nuclear.confocal_refocus_interval = 600  # seconds
+    nuclear.odmr_refocus_interval= 600
 
     #rabi refocus ?
 
@@ -147,7 +147,7 @@ def settings(pdc={}):
             ('sweeps', range(150)),
             # ('mw_freq', [28,30.4,32,34,36,38.4,40,42]), 
             #('init_time', np.linspace(0.0, 100.0, 11) ),
-            ('mw_freq', np.linspace(25, 43.0,81)), 
+            ('mw_freq', np.linspace(26, 43.0,111)), 
         )
     )
     nuclear.number_of_simultaneous_measurements =  int(1*len(nuclear.parameters['mw_freq']))
@@ -155,7 +155,7 @@ def settings(pdc={}):
 def run_fun(abort, **kwargs):
     print(1,' Nuclear started!!!')
     nuclear.queue = kwargs['queue']
-    nuclear.queue._gated_counter.readout_duration = 5*1e6 # --> nvalues.
+    nuclear.queue._gated_counter.readout_duration = 10*1e6 # --> nvalues.
     nuclear.hashed = True
     nuclear.debug_mode = False
     settings()
