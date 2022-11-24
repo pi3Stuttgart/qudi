@@ -521,7 +521,9 @@ class LaserScannerLogic(GenericLogic, ple_default):
                     repump=self.enable_Repump,
                     length_mus=5
                     )
-        self._awg.mcas_dict["PLE_trace"] = seq
+        
+        if not "PLE_treace" in self._awg.mcas_dict.keys():
+            self._awg.mcas_dict["PLE_trace"] = seq
         #self._awg.mcas_dict.print_info()
         return
         
