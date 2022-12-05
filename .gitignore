@@ -34,3 +34,12 @@
 *.log
 *.log.*
 *.dat
+*.dat
+log/single_values/interferometer_fit_params/202211interferometer_fit_params.dat
+log/single_values/interferometer_history/202211interferometer_history.dat
+log/single_values/mw_mixing_frequency/202211mw_mixing_frequency.dat
+log/single_values/mw_mixing_frequency_p1/202211mw_mixing_frequency_p1.dat
+log/single_values/ple_A1/202211ple_A1.dat
+log/single_values/ple_A1_fit_params/202211ple_A1_fit_params.dat
+log/single_values/ple_A2/202211ple_A2.dat
+log/single_values/ple_A2_fit_params/202211ple_A2_fit_params.dat

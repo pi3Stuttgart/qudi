@@ -990,6 +990,14 @@ class ConfocalGui(GUIBase):
                 z=optimal_pos[2],
                 a=0.0
             )
+        if caller_tag.startswith('NuclearOps_'): #Is this needed?
+            self._scanning_logic.set_position(
+                'optimizer',
+                x=optimal_pos[0],
+                y=optimal_pos[1],
+                z=optimal_pos[2],
+                a=0.0
+            )
         self.enable_scan_actions()
 
     def set_history_actions(self, enable):

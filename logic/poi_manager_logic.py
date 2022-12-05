@@ -273,6 +273,18 @@ class RegionOfInterest:
             self._pos_history.append(np.zeros(4, dtype=float))
         return
 
+
+    def restart_history(self, x,y,z):
+        """
+        Delete an entry in the ROI position history. Deletes the last position by default.
+
+        @param int|slice history_index: List index of history entry to delete
+        """
+        self._pos_history = list() #cleans the history.
+        self.creation_time = False # makes cration time now.
+        self._pos_history.append(np.array([0, x,y,z])) # starts with 0
+        return
+
     def to_dict(self):
         return {'name': self.name,
                 'poi_nametag': self.poi_nametag,
@@ -794,6 +806,11 @@ class PoiManagerLogic(GenericLogic):
         else:
             self.sigRoiUpdated.emit({'history': self.roi_pos_history})
         return
+    
+    @QtCore.Slot()
+    def restart_history(self):
+        x,y,z = self.scanner_position
+        self._roi.restart_history(x,y,z)
 
     @QtCore.Slot()
     def go_to_poi(self, name=None):
@@ -993,7 +1010,9 @@ class PoiManagerLogic(GenericLogic):
         @param optimal_pos:
         """
         # If the refocus was initiated by poimanager, update POI and ROI position
-        if caller_tag.startswith('poimanager_') or caller_tag.startswith('poimanagermoveroi_'):
+        print("caller_tag in poi manager logic:")
+        print(caller_tag)
+        if caller_tag.startswith('poimanager_') or caller_tag.startswith('poimanagermoveroi_') or caller_tag.startswith('NuclearOps'):
             shift_roi = caller_tag.startswith('poimanagermoveroi_')
             poi_name = caller_tag.split('_', 1)[1]
             if poi_name in self.poi_names:

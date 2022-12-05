@@ -37,6 +37,8 @@ from logic.generic_logic import GenericLogic
 from qtpy import QtCore
 import logging; logger = logging.getLogger(__name__)
 
+import base64
+import hashlib
 
 from logic.laserscanner.ple_default_values_and_widget_functions import ple_default_values_and_widget_functions as ple_default
 
@@ -319,19 +321,15 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         @return int: error code (0:OK, -1:error)
         """
-        print("recieved start signal")
         # print(self._scanning_device.module_state()) #self._scanning_device.module_state() is not the same as _optimizer_logic.module_state.current! So _s_d.module_state is "idle" even when confocal refocus runs.
         # if self._scanning_device.module_state() == 'locked':
         #     logger.error('Nicard is in module state "locked".')
         #     raise Exception    
 
+        #print("Start PLE scan...")
         self.currenttime = time.time()
-        # Create AWG Sequence which turns on repump during retrace
-        print("Start PLE scan...")
         self._awg.mcas_dict.stop_awgs()
-        print("passed time 1", time.time()-self.currenttime)
-        self.trace_seq()
-        print("passed time 2", time.time()-self.currenttime)
+        self.trace_seq(hashed = False)
         if self.enable_PulsedRepump:
             self.ps.stream(seq=[[int(self.RepumpDuration*1e3),["repump"],0,0],[int(self.RepumpDecay*1e3),[],0,0]],n_runs=1) #self.RepumpDuration is in µs
         
@@ -354,7 +352,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         
         self._upwards_ramp = self._generate_ramp(v_min, v_max, self._scan_speed)
         self._downwards_ramp = self._generate_ramp(v_max, v_min, 0.75)
-        print("passed time 3", time.time()-self.currenttime)
+        #print("passed time 3", time.time()-self.currenttime)
         
         #this part is used to be able to abort the scanning process more rapidly
         if self.resolution/self.slices<3: #avoid getting empty scan lines
@@ -365,7 +363,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.local_counts = []
 
         self._initialise_data_matrix(len(self._upwards_ramp[3]))
-        print("passed time 4", time.time()-self.currenttime)
+        #print("passed time 4", time.time()-self.currenttime)
         
         # Lock and set up scanner
         returnvalue = self._initialise_scanner()
@@ -378,7 +376,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         self.sigScanNextLine.emit()
         self.sigScanStarted.emit()
-        print("passed time 5", time.time()-self.currenttime)        
+        #print("passed time 5", time.time()-self.currenttime)        
         return 0
 
     def slice_array(self,x):
@@ -393,7 +391,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         @return int: error code (0:OK, -1:error)
         """
-        print("Stopping...")
+        #print("Stopping...")
         with self.threadlock:
             if self.module_state() == 'locked':
                 self._close_scanner() # hope this will not destroy something
@@ -403,7 +401,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         return 0
 
     def abort_scanning(self):
-        print("Aborting...")
+        #print("Aborting...")
         with self.threadlock:
             if self.module_state() == 'locked':
                 self.AbortRequested = True
@@ -429,9 +427,9 @@ class LaserScannerLogic(GenericLogic, ple_default):
             self.sigScanFinished.emit()
             self.local_counts=[]
             self.slice_number=0
-            self.ps.Night() # just for safety
+            self.ps.constant(pulse=(0,[],0,0)) # just for safety
             self._awg.mcas_dict.stop_awgs()
-            self.stopped=True
+            # self.stopped=True # I put the stopped = True into "goto_fitted_peak", since that is the last called method after scanning
             
             return
 
@@ -440,7 +438,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
             self._goto_during_scan(self.scan_range[0])
 
         if self.upwards_scan:
-            self._awg.mcas_dict["PLE_trace"].run()
+            # print("running seq: ", self.curr_sequence_name) # Does it affect the sequence if it is started repeatedly?
+            self._awg.mcas_dict[self.curr_sequence_name].run()
             counts = self._scan_line(self._upwards_ramp_slices[self.slice_number])
             self.local_counts=self.local_counts+list(counts)
             self.slice_number+=1
@@ -486,8 +485,27 @@ class LaserScannerLogic(GenericLogic, ple_default):
     def MW1_Power(self,val):
         self._MW1_Power=val
 
-    def trace_seq(self):
-        t1=time.time()
+    def trace_seq(self, hashed):
+        hash = base64.b64encode(hashlib.sha1(self.convert_seq_params_to_string().encode()).digest())
+        #Added self.queue._gated_counter.readout_duration such that the hash recognizes a change in readout duration and will update n_values in the sequence accordingly
+        self.curr_sequence_name = "ple_trace_hash_{}".format(hash)
+        if hashed and not self.curr_sequence_name in self._awg.mcas_dict:
+            print("hash in PLE: ", self.curr_sequence_name)
+            self._awg.mcas_dict.stop_awgs()
+            
+            self.setup_seq(sequence_name=self.curr_sequence_name)
+
+        elif hashed == False: 
+            self._awg.mcas_dict.stop_awgs()
+            
+            self.curr_sequence_name = "ple_trace"
+            
+            self.setup_seq(sequence_name=self.curr_sequence_name)
+        #else:
+            #print("Dont need to set up new RF.")
+        return
+        
+    def setup_seq(self, sequence_name):
         self.power = []
         if self.enable_MW1:
             self.power += [self.MW1_Power]
@@ -504,7 +522,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
             
         # generate a single MW sequence with the needed mw frequencies and play is continuously until the measurement is stopped,
         # either by the stop button, the runtime, or number of sequence repetitions.
-        seq = self._awg.mcas(name="PLE_trace", ch_dict={"2g": [1, 2], "ps": [1]})
+        seq = self._awg.mcas(name=sequence_name, ch_dict={"2g": [1, 2], "ps": [1]})
         frequencies = np.array([self.MW1_Freq, self.MW2_Freq, self.MW3_Freq])[[self.enable_MW1, self.enable_MW2, self.enable_MW3]]
         seq.start_new_segment("Microwaves"+str(frequencies), loop_count=1000)
         if len(self.power) == 0:
@@ -522,8 +540,10 @@ class LaserScannerLogic(GenericLogic, ple_default):
                     length_mus=5
                     )
         
-        if not "PLE_treace" in self._awg.mcas_dict.keys():
-            self._awg.mcas_dict["PLE_trace"] = seq
+        # if not "PLE_treace" in self._awg.mcas_dict.keys():
+        self._awg.mcas_dict.stop_awgs()
+        time.sleep(0.2)
+        self._awg.mcas_dict[sequence_name] = seq
         #self._awg.mcas_dict.print_info()
         return
         
@@ -646,12 +666,13 @@ class LaserScannerLogic(GenericLogic, ple_default):
         return 0
 
     def goto_fitted_peak(self):
-        if self.stopped and self.Lock_laser:
-            print("PLE going to fitted peak")
+        if self.Lock_laser:
+            #print("PLE going to fitted peak")
             freqs=np.array(self.Frequencies_Fit.split(";")[:-1]).astype(float)
             peak_volt=max(freqs)
             if peak_volt<self.scan_range[1] and peak_volt>self.scan_range[0]:
-                self.goto_voltage(peak_volt)
+                self._static_v = peak_volt
+                self.goto_voltage(self._static_v)
 
                 # follow the defect PLE line by applying a voltage to the laser chamber
                 #Range=self.scan_range[1]-self.scan_range[0]
@@ -668,13 +689,9 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 self.scan_range[0],self.scan_range[1]=self.scan_range[0]-1,self.scan_range[1]+1
                 self.scan_range=list(np.clip(self.scan_range,-3,3))
                 self.start_scanning()
+        self.stopped=True
+        return
 
-
-                
-
-                
-
-            
 
     def save_data(self, tag=None, colorscale_range=None, percentile_range=None):
         """ Save the counter trace data and writes it to a file.
@@ -877,7 +894,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         return fig
     
     def do_gaussian_fit(self):
-        print("doing gaussian fit")
+        #print("doing gaussian fit")
         x_data=self.plot_x.astype(np.float)
         y_data=self.plot_y.astype(np.float)
         if self.NumberOfPeaks==1:
@@ -935,3 +952,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         self.sigFitPerformed.emit(self.Frequencies_Fit)
         return self.interplolated_x_data,self.fit_data,result
+    
+    def convert_seq_params_to_string(self):
+        return str(self.MW1_Power)+str(self.MW2_Power)+str(self.MW3_Power)+str(self.MW1_Freq)+str(self.MW2_Freq)+str(self.MW3_Freq)+str(self.enable_MW1)+str(self.enable_MW2)+str(self.enable_MW3)+str(self.enable_A1)+str(self.enable_A2)+str(self.enable_Repump)+str(self.enable_PulsedRepump)+str(self.Lock_laser)+str(self.RepumpDuration)+str(self.RepumpDecay)

@@ -10,6 +10,7 @@ import notebooks.UserScripts.helpers.snippets_awg as sna
 importlib.reload(sna)
 importlib.reload(shared)
 #importlib.reload(MultiChSeq)
+from PyQt5 import QtTest
 import notebooks.UserScripts.helpers.shared as ush;importlib.reload(ush)
 from logic.qudip_enhanced import *
 import hardware.Keysight_AWG_M8190.elements as E
@@ -34,7 +35,7 @@ def ret_ret_mcas(pdc):
         mcas.start_new_segment('start_sequence')
         mcas.asc(length_mus=3.0, repump=True, name='Repump')
         mcas.asc(length_mus=0.5)  # Starting... histogram 0
-        freq = [30]#np.array([self.queue.tt.mw_mixing_frequency])
+        freq = [30]#freq = []#np.array([self.queue.tt.mw_mixing_frequency])
         
         for idx, _I_ in current_iterator_df.iterrows():
             mcas.asc(A1=(_I_['readout'] == 'A1'),A2=(_I_['readout'] == 'A2'), length_mus=15., name='init')
@@ -68,7 +69,7 @@ def ret_ret_mcas(pdc):
 
 def settings(pdc={}):
     ana_seq=[
-        ['result', '>', 1, 1, 0, 1],
+        ['result', '>', 0, 1, 0, 1],
         # ['init', '>', 1, 1, 0, 1],
         # ['init', '>', 5, 1, 0, 1],
     ]
@@ -90,6 +91,7 @@ def settings(pdc={}):
     nuclear.x_axis_title = 'tau [mus]'
     #nuclear.analyze_type = 'consecutive'
     #nuclear.analyze_type = 'standard'
+    nuclear.analyze_type = 'average'
 
     #PLE refocus
     nuclear.do_ple_refocusA1 = False #not used 
@@ -104,9 +106,9 @@ def settings(pdc={}):
     nuclear.do_confocal_A1A2_refocus = False
     nuclear.do_confocal_A2MW_refocus = True
 
-    nuclear.ple_refocus_interval = 1200
-    nuclear.confocal_refocus_interval = 1200  # seconds
-    nuclear.odmr_refocus_interval= 1200
+    nuclear.ple_refocus_interval = 600
+    nuclear.confocal_refocus_interval = 600  # seconds
+    nuclear.odmr_refocus_interval= 600
 
     #rabi refocus ?
 
@@ -116,11 +118,12 @@ def settings(pdc={}):
     nuclear.parameters = OrderedDict( # WHAT DOES ALL THIS MEAN ??? WHICH UNITS ??
         (
             #('amp', np.array([0.25])),
-            ('freq', [30.33]),
+           #  ('defect_ids', ['V_Si2', 'V_Si1']),
+            ('freq', [177.74]),
+            ('amp',[0.3,0.5,0.7,0.9,1.0]),
             ('sweeps', range(10)),
-            ('readout', ['A1']),
-            ('amp', np.linspace(0.1,0.4,3)),
-            ('mw_duration', E.round_length_mus_full_sample(np.linspace(0.0, 0.4, 81))), 
+            ('readout', ['A2']),
+            ('mw_duration', E.round_length_mus_full_sample(np.linspace(0.0, 0.2, 81))), 
         )
     )
     nuclear.number_of_simultaneous_measurements =  1*len(nuclear.parameters['mw_duration'])#len(nuclear.parameters['phase_pi2_2'])
@@ -129,12 +132,16 @@ def run_fun(abort, **kwargs):
     print(1,' Nuclear started!!!')
     nuclear.queue = kwargs['queue']
     nuclear.queue._gated_counter.readout_duration = 5*1e6#1.4e4 #6e5 #10*1e6
-    nuclear.hashed = False
+    nuclear.hashed = True
     nuclear.debug_mode = False
     settings()
     print('run_fun started')
     nuclear.run(abort)
 
+    #FOr waiting till it finishes...
+    # while nuclear.state == 'run':
+    #     QtTest.QTest.qSleep(1) 
+    
     # # ------------------------------------------------------
     # df = nuclear.data.df
     # # pld = nuclear.pld.data_fit_results.df
@@ -195,3 +202,46 @@ def run_fun(abort, **kwargs):
     # print('y: ')
     # print(y)
     # print('-----------')
+    
+    ##########==================================================
+    ##########==================================================
+
+    # df = df[['sweeps', 'average_counts', 'amp', 'mw_duration', 'defect_ids']]
+
+    # # temp_df = pd.DataFrame(columns=['amp0', 'omega', 'average_counts', 'mw_duration'])
+    # temp_df = pd.DataFrame(columns=['amp', 'omega', 'transition','date'])
+    # for amp in df['amp'].unique():
+    #     print('Ampl ', amp)
+    #     sub_df = df[(df['amp'] == amp)]
+    #     # sub_pld = pld[(pld['amp0'] == amp)]
+    #     x = sub_df['mw_duration'].unique()
+    #     y = sub_df.groupby(by=['mw_duration']).agg({'average_counts': np.mean}).values.ravel()
+
+    #     m = models.CosineModel()
+    #     p = m.guess(data=y, x=x)
+    #     r = m.fit(data=y, params=p, x=x)
+    #     #plt.figure()
+    #     #plt.plot(x,y)
+    #     #plt.plot(x, r.best_fit)
+    #     temp_df = pd.concat([temp_df, pd.DataFrame({
+    #         'amp0': [amp],
+    #         # 'omega': 1.0 / sub_pld['T'].mean(),
+    #         'transition': [0],
+
+    #         'omega': [1.0 / r.params['T'].value],
+    #         # 'average_counts': [y],
+    #         # 'mw_duration': [x],
+
+    #         'date': [str(datetime.datetime.now())]
+    #     })])
+
+    # for defect_id in defect_ids.unique():
+    #     f = defect_id + '_e_rabi_ou350deg-90'
+    #     temp_df = temp_df[['amp0', 'transition', 'omega', 'date']]
+
+    #     print(temp_df)
+    #     nuclear.queue.tt.rabi_parameters[f].update_file(temp_df)
+    # #------------------------------------------------------
+
+    #x = df['mw_duration'].unique()
+    #y = df.groupby(by = ['mw_duration']).agg({'average_counts': np.mean}).values

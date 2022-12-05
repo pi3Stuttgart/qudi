@@ -35,16 +35,19 @@ def ret_ret_mcas(pdc):
         # Sequence starts
         mcas = MultiChSeq(name=sequence_name, ch_dict={'2g': [1, 2], 'ps': [1]})
         mcas.start_new_segment('start_sequence')
+        mcas.asc(length_mus=5.0, repump=True, name='Repump')
+        mcas.asc(length_mus=30.0)  # Starting... 
         for idx, _I_ in current_iterator_df.iterrows():
-            mcas.asc(length_mus=5.0, repump=True, name='Repump')
-            mcas.asc(length_mus=3.0)  # Starting... 
-            mcas.asc(A1=_I_['init']=='A1',A2=_I_['init']=='A2', length_mus=50., name='init')  # Longer init for nuclear polarization
+            pi_dur = self.queue.tt.rp('e_rabi_ou350deg-90-L', omega=_I_['omega']).pi
+            amp = self.queue.tt.rp('e_rabi_ou350deg-90-L', omega=_I_['omega']).amp
+            
+            mcas.asc(A1=_I_['init']=='A1',A2=_I_['init']=='A2', length_mus=100., name='init')  # Longer init for nuclear polarization
             mcas.asc(length_mus=1.0)  # Starting... 
             sna.electron_rabi(
                 mcas,
                 new_segment=False,
-                length_mus=1,
-                amplitudes=[0.016],
+                length_mus= pi_dur,
+                amplitudes=[amp],
                 frequencies=[_I_['freqs']],
                 mixer_deg=[-90]
             )
@@ -86,7 +89,10 @@ def settings(pdc={}):
 
     nuclear.x_axis_title = 'Index'
     #nuclear.analyze_type = 'consecutive'
-    #nuclear.analyze_type = 'standard'
+    nuclear.analyze_type = 'standard'
+    nuclear.analyze_type = 'average' #experimental feature for the fast 
+    #nuclear.analyze_type = None
+    nuclear.save_smartly = False
 
     #PLE refocus
     nuclear.do_ple_refocusA1 = False #not used 
@@ -101,8 +107,14 @@ def settings(pdc={}):
     nuclear.do_confocal_A1A2_refocus = False
     nuclear.do_confocal_A2MW_refocus = True
 
-    nuclear.ple_refocus_interval = 600
-    nuclear.confocal_refocus_interval = 600  # seconds
+    # Resonant Laser power
+    nuclear.checkA1LaserPower = False # Not yet implemented in powerstablogic
+    nuclear.checkA2LaserPower = False
+    nuclear.A1LaserPower = 1 #nW
+    nuclear.A2LaserPower = 3 #nW
+
+    nuclear.ple_refocus_interval = 100
+    nuclear.confocal_refocus_interval = 100  # seconds
     nuclear.odmr_refocus_interval= 600
 
     #rabi refocus ?
@@ -125,11 +137,12 @@ def settings(pdc={}):
             # ('delay_ps',[0.45]), #11110 # actually which delay ?
             #('amp', np.array([0.25])),
             # ('phase_pi2_2', [0]),
+            ('omega', [1]),  
             ('sweeps', range(150)),
-            ('readout', ['A1','A2']),
-            ('init', ['A1','A2']),
+            ('readout', ['A2']),
+            ('init', ['A2']),
             ('freqs', [30.42,38.44]),
-            ('evolution_time', np.linspace(0.0, 2.0,51)), 
+            ('evolution_time', np.linspace(0.0, 15.0,151)), 
         )
     )
     nuclear.number_of_simultaneous_measurements =  1*len(nuclear.parameters['evolution_time'])

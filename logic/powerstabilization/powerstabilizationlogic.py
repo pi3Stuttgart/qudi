@@ -48,7 +48,7 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
         self.time_list=[]
         self.actual_time_list=[]
 
-        self.power_list_length=100
+        self.power_list_length=100 #not yet implemented
 
         self.current_output_voltage=self._setupcontrol_logic.AOM_volt
         self.running=False

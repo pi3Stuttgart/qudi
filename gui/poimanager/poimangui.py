@@ -470,6 +470,8 @@ class PoiManagerGui(GUIBase):
             self.poimanagerlogic().add_poi, QtCore.Qt.QueuedConnection)
         self._mw.delete_last_pos_Button.clicked.connect(
             self.poimanagerlogic().delete_history_entry, QtCore.Qt.QueuedConnection)
+        self._mw.delete_history_Button.clicked.connect(
+            self.poimanagerlogic().restart_history, QtCore.Qt.QueuedConnection)
         self._mw.manual_update_poi_PushButton.clicked.connect(
             self.poimanagerlogic().move_roi_from_poi_position, QtCore.Qt.QueuedConnection)
         self._mw.move_poi_PushButton.clicked.connect(
@@ -505,6 +507,7 @@ class PoiManagerGui(GUIBase):
         self._mw.get_confocal_image_PushButton.clicked.disconnect()
         self._mw.set_poi_PushButton.clicked.disconnect()
         self._mw.delete_last_pos_Button.clicked.disconnect()
+        self._mw.delete_history_Button.clicked.disconnect()
         self._mw.manual_update_poi_PushButton.clicked.disconnect()
         self._mw.move_poi_PushButton.clicked.disconnect()
         self._mw.delete_poi_PushButton.clicked.disconnect()
