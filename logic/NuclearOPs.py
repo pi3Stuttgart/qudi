@@ -709,7 +709,8 @@ class NuclearOPs(DataGeneration):
             if self.checkA1LaserPower:
                 print("A1 POWER STAB = TRUE")
                 #somewhere the output voltage is set to 1 at beginning of stabilization
-                self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,["A1"],0,0))
+                #self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,["A1"],0,0))
+                self.queue._awg.mcas_dict['A1'].run()
                 self.queue._powerstabilization_logic.controlA1 = True
                 self.queue._powerstabilization_logic.controlA2 = False
                 self.queue._powerstabilization_logic.TargetPower = self.A1LaserPower
@@ -721,9 +722,9 @@ class NuclearOPs(DataGeneration):
                         logging.getLogger().info('Could not reach desired A1-laserpower in reasonable time. Set analog voltage to 0.5V.')
                         self.queue._powerstabilization_logic.A1Voltage = 0.5
                         self.queue._powerstabilization_logic.set_fix_voltage(tag="A1")               
-                self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,[],0,0))
+                self.queue._awg.stop_awgs()
             if self.checkA2LaserPower:
-                self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,["A2"],0,0))
+                self.queue._awg.mcas_dict['A2'].run()
                 self.queue._powerstabilization_logic.controlA2 = True
                 self.queue._powerstabilization_logic.controlA1 = False
                 self.queue._powerstabilization_logic.TargetPower = self.A2LaserPower
@@ -737,8 +738,8 @@ class NuclearOPs(DataGeneration):
                         logging.getLogger().info('Could not reach desired A2-laserpower in reasonable time. Set analog voltage to 0.5V.')
                         self.queue._powerstabilization_logic.A2Voltage = 0.5
                         self.queue._powerstabilization_logic.set_fix_voltage(tag="A2")
-                print("Done stabilizing. Turnin laser off now...")                
-                self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,[],0,0))
+                print("Done stabilizing. Turnin laser off now...")             
+                self.queue._awg.stop_awgs()
         return
 
     def do_refocus_pleA2(self, abort): #CHANGED! commented what belonged to wavemeter
@@ -779,14 +780,15 @@ class NuclearOPs(DataGeneration):
         print("doing_refocus_repump")
         if (delta_t >= self.confocal_refocus_interval):
 
-            self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,["repump"],0,0))
+            #self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,["repump"],0,0))
+            self.queue._awg.mcas_dict['repump'].run()
 
             self.queue._optimizer.start_refocus(initial_pos = np.array(self.df_refocus_pos.iloc[0]),caller_tag = 'NuclearOps')
             while not self.queue._optimizer.refocus_finished:
                 QtTest.QTest.qSleep(0.25)
             self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[self.queue._optimizer.optim_pos_x], confocal_y=[self.queue._optimizer.optim_pos_y], confocal_z=[self.queue._optimizer.optim_pos_z]))
             
-            
+            self.queue._awg.mcas_dict.stop_awgs()
             #TODO connect to optimized and return when done
             # self.queue.optimizer.syncFlag=False
             # self.queue.optimizer.state = 'refocus_red'
@@ -811,12 +813,13 @@ class NuclearOPs(DataGeneration):
         if (delta_t >= self.confocal_refocus_interval):
             print("doing confocal refocus with resonant laser")
 
-            sequence_name="A2MW_confocal_refocus"
             if self.do_confocal_A1A2_refocus:
-                self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,["A1", "A2", "repump"],0,0)) # last 2 digits are analog output: these are set in the awg_hardware. These parameters are not used
-
-
+                print("NuclearOPs: Turn on repump +a1+a2 for confocal refocus")
+                # self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,["A1", "A2", "repump"],0,0)) # last 2 digits are analog output: these are set in the awg_hardware. These parameters are not used
+                self.queue._awg.mcas_dict['RepumpAndA1AndA2'].run()
+                time.sleep(0.25)
             elif self.do_confocal_A2MW_refocus:
+                sequence_name="A2MW_confocal_refocus"
                 MW1_freq = 33.6
                 MW2_freq = 173.6
                 MW3_freq = 173.6
@@ -853,9 +856,8 @@ class NuclearOPs(DataGeneration):
                     while self.mcas=='':
                         #process_events() #TODO gui process events.
                         time.sleep(0.01)
+                    self.queue._awg.mcas_dict[sequence_name].run()
             
-
-            self.queue._awg.mcas_dict[sequence_name].run()
             try: #Add current defect name name to callertag
                 caller_tag = 'NuclearOps_' + str(self.current_iterator_df.defect_ids.at[0])
             except: 
@@ -1081,12 +1083,16 @@ class NuclearOPs(DataGeneration):
    
         elif hashed and self.mcas==None and sequence_name in self.queue._awg.mcas_dict:
             self.mcas = self.queue._awg.mcas_dict[sequence_name]
+
+            # This means that this is a new cun? so better to reassemble the sequence, isn't?
    
         elif hashed and self.mcas.name != sequence_name:
+            # What is this case? - maybe if we changed the sequence on the go? Can you comment when you see error if this is commented?
             self.queue._awg.mcas_dict.stop_awgs()
             self.mcas = self.queue._awg.mcas_dict[sequence_name]
    
         elif hashed == False: 
+            # This is usual.
             self.queue._awg.mcas_dict.stop_awgs()
             self.mcas = ''
             self.mcas = self.ret_mcas(self,current_iterator_df)

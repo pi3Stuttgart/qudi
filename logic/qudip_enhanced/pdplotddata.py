@@ -7,7 +7,7 @@ import traceback
 from PyQt5.QtWidgets import QListWidgetItem
 import PyQt5.QtWidgets
 from PyQt5.QtCore import Qt, pyqtSignal
-
+#TODO add pyqtgraph.
 from .util import printexception
 from . import pddata
 try:

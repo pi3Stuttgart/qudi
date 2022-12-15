@@ -123,7 +123,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self._scanning_device = self.confocalscanner1()
         self._save_logic = self.savelogic()
         self._awg = self.mcas_holder()
-        self.ps=self._awg.mcas_dict.awgs["ps"]
+        #self.ps=self._awg.mcas_dict.awgs["ps"]
         self._fit_logic = self.fitlogic()
         # Reads in the maximal scanning range. The unit of that scan range is
         # micrometer!
@@ -331,8 +331,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self._awg.mcas_dict.stop_awgs()
         self.trace_seq(hashed = False)
         if self.enable_PulsedRepump:
-            self.ps.stream(seq=[[int(self.RepumpDuration*1e3),["repump"],0,0],[int(self.RepumpDecay*1e3),[],0,0]],n_runs=1) #self.RepumpDuration is in µs
-        
+            #self.ps.stream(seq=[[int(self.RepumpDuration*1e3),["repump"],0,0],[int(self.RepumpDecay*1e3),[],0,0]],n_runs=1) #self.RepumpDuration is in µs
+            self._awg.mcas_dict['repump'].run()
         self.current_position = self._scanning_device.get_scanner_position()
 
         if v_min is not None:
@@ -427,7 +427,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
             self.sigScanFinished.emit()
             self.local_counts=[]
             self.slice_number=0
-            self.ps.constant(pulse=(0,[],0,0)) # just for safety
+            # self.ps.constant(pulse=(0,[],0,0)) # just for safety
             self._awg.mcas_dict.stop_awgs()
             # self.stopped=True # I put the stopped = True into "goto_fitted_peak", since that is the last called method after scanning
             
@@ -439,6 +439,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         if self.upwards_scan:
             # print("running seq: ", self.curr_sequence_name) # Does it affect the sequence if it is started repeatedly?
+            self._awg.mcas_dict.stop_awgs()
             self._awg.mcas_dict[self.curr_sequence_name].run()
             counts = self._scan_line(self._upwards_ramp_slices[self.slice_number])
             self.local_counts=self.local_counts+list(counts)
@@ -456,7 +457,9 @@ class LaserScannerLogic(GenericLogic, ple_default):
         else: #retrace
             self.sigUpdatePlots.emit()
             if self.enable_PulsedRepump:
-                self.ps.stream(seq=[[int(self.RepumpDuration*1e3),["repump"],0,0],[int(self.RepumpDecay*1e3),[],0,0]],n_runs=1) #self.RepumpDuration is in µs
+                # self.ps.stream(seq=[[int(self.RepumpDuration*1e3),["repump"],0,0],[int(self.RepumpDecay*1e3),[],0,0]],n_runs=1) #self.RepumpDuration is in µs
+                self._awg.mcas_dict.stop_awgs()
+                self._awg.mcas_dict['repump'].run()
             counts = self._scan_line(self._downwards_ramp)
             counts = np.ones(self.scan_matrix2[self._scan_counter_down].shape[0])
             self.scan_matrix2[self._scan_counter_down] = counts

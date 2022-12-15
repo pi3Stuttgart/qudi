@@ -31,7 +31,7 @@ def ret_ret_mcas(pdc):
         if sequence_name is None:
             sequence_name = 'Electron_test'
         
-        mcas = MultiChSeq(name=sequence_name, ch_dict={'2g': [1], 'ps': [1]})
+        mcas = MultiChSeq(name=sequence_name, ch_dict={'2g': [1,2], 'ps': [1]})
 
         mcas.start_new_segment('start_sequence')
         mcas.asc(length_mus=0.1)  # Starting... histogram 0
@@ -48,7 +48,7 @@ def ret_ret_mcas(pdc):
         for idx, _I_ in current_iterator_df.iterrows():
             mcas.asc(A2=True, length_mus=10.,
                      name='A2_init')  # Init NV with A1 laser (about 1-3 µs). This step can be skipped for the very first tests #as the green laser will also intialise somehow.
-            mcas.asc(length_mus=0.5)
+            mcas.asc(length_mus=10.0)
 
             sna.electron_rabi(
                 mcas,
@@ -105,7 +105,7 @@ def ret_ret_mcas(pdc):
                 sna.ssr(mcas = mcas, no_new_segment=True, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
                     nuc='ple_A2', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=3.)
             mcas.asc(length_mus=0.5, name='sequence wait 2')
-            mcas.asc(length_mus=_I_['n_pulses']*(20-_I_['tau_2'])*4, name='sequence wait 2')
+            #mcas.asc(length_mus=_I_['n_pulses']*(20-_I_['tau_2'])*4, name='sequence wait 2')
 
         self.queue._gated_counter.set_n_values(mcas,
         self.number_of_simultaneous_measurements) #how to get here the queue? readout duration/sequence length) #how to get here the queue?
@@ -144,8 +144,8 @@ def settings(pdc={}):
 
     #confocal refocus
     nuclear.do_confocal_repump_refocus = False
-    nuclear.do_confocal_A1A2_refocus = False
-    nuclear.do_confocal_A2MW_refocus = True
+    nuclear.do_confocal_A1A2_refocus = True
+    nuclear.do_confocal_A2MW_refocus = False
 
     # Resonant Laser power
     nuclear.checkA1LaserPower = False # Not yet implemented in powerstablogic
@@ -164,32 +164,19 @@ def settings(pdc={}):
 
     nuclear.parameters = OrderedDict(
         (
-            ('seq', ['he']),
-            #('rabi_period', [0.07]),
-            #('resonant', [True]),
-            #('ms', [-1]),
-            #('state_check', [False]),
-            #('nucl_init', [False]),
-            #('additional_estate_check', [False]),
-            #('ddt', ['fid', 'hahn', 'xy4', 'xy16', 'kdd','kdd4', 'kdd16']),
-            #('ddt', ['xy4']),
-            #('n_rep_dd', range(1,10)),
-            #('delay_ps',[0]), #11110
-            ('n_pulses', [20]),
-            # ('n_pulses', np.append([1],np.arange(4,20,4))),
+            ('n_pulses', [11]),
             ('sweeps', range(50)),
-            # ('tau', E.round_length_mus_full_sample(np.logspace(0.1, 400, 200))),
-            ('tau_2', E.round_length_mus_full_sample(np.linspace(0.0,0.05, 50))),
-            ('phase_pi2_2', [0,180]),
-            ('readout',['A2'])
+            ('readout',['A2']),
+            ('tau_2', E.round_length_mus_full_sample(np.linspace(0.0,0.05, 600))),
+            ('phase_pi2_2', [0,180])
         )
     )
-    nuclear.number_of_simultaneous_measurements =1#len(nuclear.parameters['tau_2'])
+    nuclear.number_of_simultaneous_measurements =2*len(nuclear.parameters['tau_2'])
 
 def run_fun(abort, **kwargs):
     print(1,' Nuclear started!!!')
     nuclear.queue = kwargs['queue']
-    nuclear.queue._gated_counter.readout_duration = 5e6
+    nuclear.queue._gated_counter.readout_duration = 50e6 #For long measurement
     nuclear.debug_mode = False
     nuclear.hashed = False
     settings()

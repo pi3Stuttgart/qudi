@@ -181,19 +181,21 @@ class SetupControlLogic(GenericLogic):
         self._awg.mcas_dict["setupcontrol"].run()
     
     def write_to_pulsestreamer(self):
-        self.active_chanels=list(filter(("").__ne__, ["A1"*self.enable_A1,"A2"*self.enable_A2,"green"*self.enable_Green,"repump"*self.enable_Repump,'FlipMirror'*self.flip_mirror]))
+        #self.active_chanels=list(filter(("").__ne__, ["A1"*self.enable_A1,"A2"*self.enable_A2,"green"*self.enable_Green,"repump"*self.enable_Repump,'FlipMirror'*self.flip_mirror]))
+        self.active_chanels=list(filter(("").__ne__, []))
         self.ps.constant(pulse=(0,self.active_chanels,self.AOM_volt,0)) #Ok this is actually not the power we set but the analog input on the A2 AOM
 
     def MW_on(self):
         return self.enable_MW1 or self.enable_MW2 or self.enable_MW3
 
     def run(self):
-        if self.MW_on():
-            self.setup_seq()
-        else:
-            self._awg.mcas_dict.stop_awgs()
-            self.write_to_pulsestreamer()
-
+        # if self.MW_on():
+        #     self.setup_seq()
+        # else:
+        #     self._awg.mcas_dict.stop_awgs()
+        #     self.write_to_pulsestreamer()
+        self.setup_seq()
+        
     def A1_Button_Clicked(self,on):
         #print('done something with A1_Button')
         self.enable_A1=on

@@ -798,8 +798,11 @@ class Channel:
     @property
     def sample_frequency(self):
         if self.sample_clock_source == 'EXT':
+            print("externalsample clock source in awg_hardware:", self.awg.external_sample_frequency)
             return self.awg.external_sample_frequency
         elif self.sample_clock_source == 'INT':
+            
+            print("internal sample clock source in awg_hardware:", self.awg.internal_sample_frequency)
             return self.awg.internal_sample_frequency
 
     @sample_frequency.setter

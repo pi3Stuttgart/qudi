@@ -20,11 +20,27 @@ def ret_awg_seq(name, pd={}, **kwargs):
         mcas.asc(name='green', length_mus=12e4/12e3, green=True, gate=True)
         mcas.asc(name='green', length_mus=12e2/12e3, green=True, gate=False) #Tried to increase here the duty cycle of the
         #gating interval.
-
+    
+    if name == 'RepumpAndA1AndA2':
+        mcas = MCAS.MultiChSeq(name=name, ch_dict={'2g': [1, 2], 'ps': [1]})
+        mcas.start_new_segment('RepumpAndA1AndA2', loop_count=200)
+        mcas.asc(name='RepumpAndA1AndA2', length_mus=50, repump=True, A1=True, A2=True)
+    
     if name == 'red':
         mcas = MCAS.MultiChSeq(name=name, ch_dict={'2g': [1]})
         mcas.start_new_segment('red')
         mcas.asc(name='red', length_mus=320/12e3, green=True)
+    
+    if name == 'A1':
+        mcas = MCAS.MultiChSeq(name=name, ch_dict={'2g': [1]})
+        mcas.start_new_segment('A1')
+        mcas.asc(name='A1', length_mus=320/12e3, A2=True)
+    
+    if name == 'A2':
+        mcas = MCAS.MultiChSeq(name=name, ch_dict={'2g': [1]})
+        mcas.start_new_segment('A2')
+        mcas.asc(name='A2', length_mus=320/12e3, A2=True)
+    
     if name == 'repump':
         mcas = MCAS.MultiChSeq(name=name, ch_dict={'2g': [1, 2],'ps':[1]})
         mcas.start_new_segment('repump')
@@ -192,7 +208,10 @@ def write_awg_seq(queue,**kwargs):
 
 def write_awg_standards(queue):
     write_awg_seq(queue, name='green')
+    write_awg_seq(queue, name='RepumpAndA1AndA2')
     write_awg_seq(queue,name='repump')
+    write_awg_seq(queue,name='A1')
+    write_awg_seq(queue,name='A2')
     write_awg_seq(queue,name='red_Ex')
     write_awg_seq(queue,name='red_A1')
     write_awg_seq(queue,name='Ex_RO')

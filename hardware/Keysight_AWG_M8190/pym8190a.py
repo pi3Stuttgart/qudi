@@ -328,7 +328,6 @@ class MultiChSeq:
         # print('self.ch_dict ',self.ch_dict)
         if self.status != 0:
             raise Exception('Error: MCAS {} has already been finalized'.format(self.name))
-        t0 = time.time()
         self.fix_avg_rf_power(ignore_max_avg_power=ignore_max_avg_power)
         # print('finalize 2')
         if settings.master_awg is not None and settings.master_awg in self.ch_dict and len(self.ch_dict) > 1:

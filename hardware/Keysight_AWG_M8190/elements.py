@@ -30,8 +30,6 @@ __MIN_SEGMENT_LENGTH_MUS__ = 320 / __SAMPLE_FREQUENCY__
 def round_length_mus_full_sample(length_mus):
     return np.around(np.array(length_mus) * __SAMPLE_FREQUENCY__) / __SAMPLE_FREQUENCY__
 
-
-
 def round_length_mus_to_64_multiple(length_mus):
     def r(lm):
         return np.around(np.array(lm) * __SAMPLE_FREQUENCY__ / 64.) / __SAMPLE_FREQUENCY__ * 64.
