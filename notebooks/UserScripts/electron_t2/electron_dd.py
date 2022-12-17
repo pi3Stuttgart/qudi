@@ -136,7 +136,7 @@ def settings(pdc={}):
 
     #PLE refocus
     nuclear.do_ple_refocusA1 = False #not used 
-    nuclear.do_ple_refocusA2 = True
+    nuclear.do_ple_refocusA2 = False
 
     # ODMR refocus
     nuclear.refocus_cw_odmr = False
@@ -144,7 +144,7 @@ def settings(pdc={}):
 
     #confocal refocus
     nuclear.do_confocal_repump_refocus = False
-    nuclear.do_confocal_A1A2_refocus = True
+    nuclear.do_confocal_A1A2_refocus = False
     nuclear.do_confocal_A2MW_refocus = False
 
     # Resonant Laser power
@@ -176,9 +176,9 @@ def settings(pdc={}):
 def run_fun(abort, **kwargs):
     print(1,' Nuclear started!!!')
     nuclear.queue = kwargs['queue']
-    nuclear.queue._gated_counter.readout_duration = 50e6 #For long measurement
+    nuclear.queue._gated_counter.readout_duration = 5e6 #For long measurement
     nuclear.debug_mode = False
-    nuclear.hashed = False
+    nuclear.hashed = True
     settings()
     print('run_fun started')
     nuclear.run(abort)

@@ -349,8 +349,11 @@ class queue_logic(GenericLogic):
                 sys.modules[self.current_script['module_name']].run_fun(
                     self.thread.stop_request, queue = self, **self.current_script['pd']) ## Creates a nuclear and runs it.!!!
                 print('entering waiting loop in queue...')
-                while self.cun.state == 'run':
-                    QtTest.QTest.qSleep(1)  #This is Qt version for time.sleep to prevent freezinng.
+                if hasattr(self, 'cun'):
+                    while self.cun.state == 'run':
+                        QtTest.QTest.qSleep(1)  #This is Qt version for time.sleep to prevent freezinng.
+                else:
+                    pass
                     
                     
                 self.script_history.append(self.current_script)

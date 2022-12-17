@@ -1071,27 +1071,38 @@ class NuclearOPs(DataGeneration):
         hash = base64.b64encode(hashlib.sha1((str(current_iterator_df)+"\n"+str(self.queue._gated_counter.readout_duration)).encode()).digest()) ##REmove the sweep from the current_iterator_df.
         #Added self.queue._gated_counter.readout_duration such that the hash recognizes a change in readout duration and will update n_values in the sequence accordingly
         sequence_name = "nuclear_op_hash_{}".format(hash)
-        if hashed and not sequence_name in self.queue._awg.mcas_dict:
-            self.queue._awg.mcas_dict.stop_awgs()
-            self.mcas = ''
-            
-            self.mcas = self.ret_mcas(self,current_iterator_df, sequence_name)
-            while self.mcas=='':
-                time.sleep(0.01)
-    
-            self.queue._awg.mcas_dict[sequence_name] = self.mcas
+        if hashed:
+            if not sequence_name in self.queue._awg.mcas_dict:
+                self.queue._awg.mcas_dict.stop_awgs()
+                self.mcas = ''
+                
+                self.mcas = self.ret_mcas(self,current_iterator_df, sequence_name)
+                while self.mcas=='':
+                    time.sleep(0.01)
+        
+                self.queue._awg.mcas_dict[sequence_name] = self.mcas
    
-        elif hashed and self.mcas==None and sequence_name in self.queue._awg.mcas_dict:
-            self.mcas = self.queue._awg.mcas_dict[sequence_name]
+            elif sequence_name in self.queue._awg.mcas_dict and self.mcas==None: #and sequence_name in self.queue._awg.mcas_dict:
+                self.queue._awg.mcas_dict.stop_awgs()
+                self.mcas = ''
+                
+                self.mcas = self.ret_mcas(self,current_iterator_df, sequence_name)
+                while self.mcas=='':
+                    time.sleep(0.01)
+        
+                self.queue._awg.mcas_dict[sequence_name] = self.mcas
 
+            #self.mcas = self.queue._awg.mcas_dict[sequence_name]
             # This means that this is a new cun? so better to reassemble the sequence, isn't?
    
-        elif hashed and self.mcas.name != sequence_name:
-            # What is this case? - maybe if we changed the sequence on the go? Can you comment when you see error if this is commented?
-            self.queue._awg.mcas_dict.stop_awgs()
-            self.mcas = self.queue._awg.mcas_dict[sequence_name]
-   
-        elif hashed == False: 
+            elif self.mcas.name != sequence_name:
+                # What is this case? - maybe if we changed the sequence on the go? Can you comment when you see error if this is commented?
+                self.queue._awg.mcas_dict.stop_awgs()
+                self.mcas = self.queue._awg.mcas_dict[sequence_name]
+            else:
+                print("Dont need to set up new RF.")
+
+        else: 
             # This is usual.
             self.queue._awg.mcas_dict.stop_awgs()
             self.mcas = ''
@@ -1101,8 +1112,8 @@ class NuclearOPs(DataGeneration):
                 time.sleep(0.01)
             sequence_name = self.mcas.name
             self.queue._awg.mcas_dict[sequence_name] = self.mcas
-        else:
-            print("Dont need to set up new RF.")
+        
+            
         self.performedRefocus = False
             
          #pi3d.mcas_dict[sequence_name].initialize()

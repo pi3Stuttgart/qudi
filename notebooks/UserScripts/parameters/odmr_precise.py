@@ -35,18 +35,18 @@ def ret_ret_mcas(pdc):
         mcas.start_new_segment('start_sequence')
         
         for idx, _I_ in current_iterator_df.iterrows():
-            mcas.asc(length_mus=100.0, repump=True, name='Repump')
+            mcas.asc(length_mus=5.0, repump=True, name='Repump')
             mcas.asc(length_mus=20.0)  # Starting... histogram 0
         
-            pi_dur = self.queue.tt.rp('e_rabi_ou350deg-90-L', omega=_I_['omega']).pi
-            amp = self.queue.tt.rp('e_rabi_ou350deg-90-L', omega=_I_['omega']).amp
+            #pi_dur = self.queue.tt.rp('e_rabi_ou350deg-90-L', omega=_I_['omega']).pi
+            #amp = self.queue.tt.rp('e_rabi_ou350deg-90-L', omega=_I_['omega']).amp
             mcas.asc(A1=_I_['init']=='A1',A2 =_I_['init']=='A2', length_mus=_I_['init_time'], name='resonant_init')  # Init system with A2 laser
             mcas.asc(length_mus=0.5, name='sequence wait 1')
             sna.electron_rabi(
                 mcas,
                 new_segment=False,
-                length_mus= pi_dur,
-                amplitudes=[amp],
+                length_mus= 0.48,
+                amplitudes=[0.18],
                 frequencies=[_I_['mw_freq']],
                 mixer_deg=[-90]
             )
@@ -54,10 +54,10 @@ def ret_ret_mcas(pdc):
             freq = [30.0]
             if _I_['init'] == 'A2':
                 sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
-                    nuc='ple_A2', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=1.3)
+                    nuc='ple_A2', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=30.0)
             elif _I_['init'] == 'A1':
                 sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
-                    nuc='ple_A1', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=1.3)
+                    nuc='ple_A1', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=30.0)
             mcas.asc(length_mus=0.5, name='sequence wait 2')
 
             # if _I_['readout'] == 'A2':
@@ -110,7 +110,7 @@ def settings(pdc={}):
 
     #PLE refocus
     nuclear.do_ple_refocusA1 = False #not used 
-    nuclear.do_ple_refocusA2 = True
+    nuclear.do_ple_refocusA2 = False
 
     # ODMR refocus
     nuclear.refocus_cw_odmr = False
@@ -118,7 +118,7 @@ def settings(pdc={}):
 
     #confocal refocus
     nuclear.do_confocal_repump_refocus = False
-    nuclear.do_confocal_A1A2_refocus = True
+    nuclear.do_confocal_A1A2_refocus = False
     nuclear.do_confocal_A2MW_refocus = False
 
     # Resonant Laser power
@@ -139,20 +139,20 @@ def settings(pdc={}):
     nuclear.parameters = OrderedDict( # WHAT DOES ALL THIS MEAN ??? WHICH UNITS ??
         (
             ('omega', [0.5]),  
-            ('readout', ['A2']),
-            ('init_time', [100,150,200]),
+            ('readout', ['A1']),
+            ('init_time', [50]),
             ('sweeps', range(10)),
-            ('mw_freq', np.linspace(25, 43,81)), 
-            ('init', ['A2','A1']),
+            ('mw_freq', np.linspace(12,17,100)), 
+            ('init', ['A1']),
         )
     )
-    nuclear.number_of_simultaneous_measurements =  2*len(nuclear.parameters['mw_freq'])
+    nuclear.number_of_simultaneous_measurements =  1*len(nuclear.parameters['mw_freq'])
 
 def run_fun(abort, **kwargs):
     print(1,' Nuclear started!!!')
     nuclear.queue = kwargs['queue']
     nuclear.queue._gated_counter.readout_duration = 75*1e6 # --> nvalues.
-    nuclear.hashed = False
+    nuclear.hashed = True
     nuclear.debug_mode = False
     settings()
     print('run_fun started')

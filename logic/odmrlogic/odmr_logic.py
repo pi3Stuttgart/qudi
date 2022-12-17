@@ -774,9 +774,9 @@ class ODMRLogic(cw_default):
             seq.asc(name='repump2', length_mus=self.cw_RepumpDecay, repump=False)
 
         # short pulses to SYNC and TRIGGER the timedifferences module of TimeTagger.
-        seq.asc(name='tt_sync1', length_mus=0.01, tt_sync=True)        
-        seq.asc(name='tt_sync2', length_mus=0.01, tt_trigger=True)        
-        seq.asc(name='tt_sync3', length_mus=0.01, tt_trigger=False) 
+        seq.asc(name='tt_sync1', length_mus=0.01, memory=True)        
+        seq.asc(name='tt_sync2', length_mus=0.01, gate=True)        
+        seq.asc(name='tt_sync3', length_mus=0.01, gate=False) 
 
 
         # generate multiple segments, each containing one of the microwave frequencies. Length of each segment is determined by the loop-count.      
@@ -788,7 +788,7 @@ class ODMRLogic(cw_default):
                 A2=self.cw_A2,
                 repump=self.cw_CWRepump,
                 green=enable_green,
-                tt_trigger = True,
+                gate = True,
                 length_mus=self.cw_segment_length
                 )
             #turn off tt_trigger to increment the histogram-index of TimeTagger
@@ -798,7 +798,7 @@ class ODMRLogic(cw_default):
                 A2=self.cw_A2,
                 repump=self.cw_CWRepump,
                 green=enable_green,
-                tt_trigger = False,
+                gate = False,
                 length_mus=0.01
                 )
 
@@ -974,8 +974,8 @@ class pulsedODMRLogic(pulsed_default):
         
         # short pulses to SYNC and TRIGGER the timedifferences module of TimeTagger.
         seq.start_new_segment("SYNCING")
-        seq.asc(name='tt_sync1', length_mus=0.01, tt_sync=True)        
-        seq.asc(name='tt_sync2', length_mus=0.01, tt_trigger=True)
+        seq.asc(name='tt_sync1', length_mus=0.01, memory=True)        
+        seq.asc(name='tt_sync2', length_mus=0.01, gate=True)
 
         freq_init = np.array([self.pulsed_MW2_Freq, self.pulsed_MW3_Freq])[self.pulsed_MW2, self.pulsed_MW3]
         power_init = self.power_to_amp(np.array([self.pulsed_MW2_Power, self.pulsed_MW3_Power])[self.pulsed_MW2, self.pulsed_MW3])
@@ -1004,8 +1004,8 @@ class pulsedODMRLogic(pulsed_default):
             seq.asc(name='pi_pulse_decay'+str(freq), length_mus=self.pulsed_PiDecay/1000, A1=False, A2=False) #self.pulsed_PiDecay is divided by 1000 to be in µs
 
             seq.start_new_segment("Readout")
-            seq.asc(name='readout'+str(freq), length_mus=self.pulsed_ReadoutTime, A1=self.pulsed_A1Readout, A2=self.pulsed_A2Readout, tt_trigger=True)
-            seq.asc(name='readout_decay'+str(freq), length_mus=self.pulsed_ReadoutDecay, A1=False, A2=False, tt_trigger=True)
+            seq.asc(name='readout'+str(freq), length_mus=self.pulsed_ReadoutTime, A1=self.pulsed_A1Readout, A2=self.pulsed_A2Readout, gate=True)
+            seq.asc(name='readout_decay'+str(freq), length_mus=self.pulsed_ReadoutDecay, A1=False, A2=False, gate=True)
 
         #self.holder.awg.mcas.status = 1
         self.holder._awg.mcas_dict.stop_awgs()

@@ -27,17 +27,17 @@ def ret_awg_seq(name, pd={}, **kwargs):
         mcas.asc(name='RepumpAndA1AndA2', length_mus=50, repump=True, A1=True, A2=True)
     
     if name == 'red':
-        mcas = MCAS.MultiChSeq(name=name, ch_dict={'2g': [1]})
+        mcas = MCAS.MultiChSeq(name=name, ch_dict={'2g': [1,2]})
         mcas.start_new_segment('red')
         mcas.asc(name='red', length_mus=320/12e3, green=True)
     
     if name == 'A1':
-        mcas = MCAS.MultiChSeq(name=name, ch_dict={'2g': [1]})
+        mcas = MCAS.MultiChSeq(name=name, ch_dict={'2g': [1,2], 'ps': [1]})
         mcas.start_new_segment('A1')
         mcas.asc(name='A1', length_mus=320/12e3, A2=True)
     
     if name == 'A2':
-        mcas = MCAS.MultiChSeq(name=name, ch_dict={'2g': [1]})
+        mcas = MCAS.MultiChSeq(name=name, ch_dict={'2g': [1,2]})
         mcas.start_new_segment('A2')
         mcas.asc(name='A2', length_mus=320/12e3, A2=True)
     

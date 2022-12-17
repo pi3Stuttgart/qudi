@@ -36,13 +36,23 @@ __SSR_REPETITIONS__ = {'14n+1': 1500, '14n-1': 1500, '14n': 1500, '14n0': 1200, 
                         'entanglement':1,
                        'Ex_ampl_sweep_SSR_6ns' :10,
                        'Ex_pi_readout_10ns':10}
-__LASER_DUR_DICT__ = {'14n+1': .175, '14n-1': .175, '14n': .175, '14n0': .9, '13c414': .9, '13c90': .21,
-                      'single_state': .9, 'charge_state': 2000.0,'charge_state_ExMW': 2000.0,'charge_state_A1_aom_Ex':2000.0, 'ple_A2': 50.0,'ple_A1': 50.,
+__LASER_DUR_DICT__ = {'14n+1': .175, 
+                     '14n-1': .175, '14n': .175, 
+                     '14n0': .9, 
+                     '13c414': .9, 
+                     '13c90': .21,
+                     '29Si8_A2': 5.,
+                    'single_state': .9, 
+                      'charge_state': 2000.0,
+                      'charge_state_ExMW': 2000.0,
+                      'charge_state_A1_aom_Ex':2000.0, 
+                      'ple_A2': 50.0,
+                      'ple_A1': 50.,
                       'Ex_pi_readout_6ns' : 481*3/12.0e3, # (Len in samples / sampling rate)
                       'Ex_ampl_sweep_SSR' : 481*1/12e3,
                       'opt_mw_delays_calibration': 481*1/12e3,
                       'opt_mw_delays_calibration2': 481 * 1 / 12e3,
-                    '2_opt_mw_delays_calibration': 481 * 1 / 12e3,
+                      '2_opt_mw_delays_calibration': 481 * 1 / 12e3,
                       'Ex_RO': 5.0,
                       '2opt_withMW_pi':481*1/12e3,
                       'entanglement_for_tests':481*1/12e3,
@@ -52,7 +62,9 @@ __LASER_DUR_DICT__ = {'14n+1': .175, '14n-1': .175, '14n': .175, '14n0': .9, '13
                       'Ex_pi_readout_10ns' : 481*5/12.0e3,
                         'Ex_pi_readout' : 481/12.0e3 # (Len in samples / sampling rate)
                       } # us
-__PERIODS__ = {'14n+1': 1.6, '14n-1': 1.6, '14n': 1.6, '14n0': 1.6, '13c414': 6.0, '13c90': 20., 'charge_state': 0.0,'charge_state_A1_aom_Ex': 0.0,
+__PERIODS__ = {'14n+1': 1.6, '14n-1': 1.6, '29Si8_A2':1.0,
+'14n': 1.6,
+ '14n0': 1.6, '13c414': 6.0, '13c90': 20., 'charge_state': 0.0,'charge_state_A1_aom_Ex': 0.0,
                'charge_state_ExMW': 0.0,'ple_A2': 0.0,'ple_A1': 0.0,'Ex_pi_readout':0.0,'Ex_pi_readout_6ns':0.0,'Ex_ampl_sweep_SSR' :0.0,
                'Ex_ampl_sweep_SSR_6ns' :0.0, 'Ex_pi_readout_10ns':0.0,'opt_mw_delays_calibration':0.0,
                'opt_mw_delays_calibration2':0.0,'2_opt_mw_delays_calibration':0.0,'Ex_RO':0.0,
@@ -400,7 +412,7 @@ class SSR(object):
         super(SSR, self).__init__()
 
         if 'nuc' in kwargs and kwargs['nuc'] is not None:
-            kwargs['nuc'] = kwargs['nuc'].replace('14N', '14n').replace('13C', '13c')
+            kwargs['nuc'] = kwargs['nuc'].replace('29Si', '29si').replace('13C', '13c')
         self.queue = queue
         self.mcas = mcas
         self.frequencies = frequencies
@@ -555,6 +567,7 @@ class SSR(object):
         if not self.robust:
             if 'amplitudes' in kwargs:
                 self.amplitudes = [[kwargs['amplitudes']] for i in self.length_mus_mw]
+                print(self.amplitudes,'SSR MW amps', self.length_mus_mw)
 
             else:# 'amplitudes' not in kwargs or None in np.array(self.amplitudes).flatten():
                 if any(np.array(self.length_mus_mw) == 0): # Implemented here in order to charge state control
@@ -594,7 +607,7 @@ class SSR(object):
             raise Exception('Not enough frequencies given.')
 
         pd2g_dict = {1: {}, 2: {}}
-        for ch in [1, 2]:
+        for ch in [1]:
             # for i in [2, 3, 4]:
             for i in [2]:
                 pd2g_dict[ch][i] = {}
@@ -650,27 +663,27 @@ class SSR(object):
                 raise Warning('most probably something is wrong with PulseStreamer - AWG syncronization')
             for alt_step in range(self.number_of_alternating_steps):
                 d = self.pd2g_dict(alt_step)
-                if 'cw_mw' in self.kwargs.keys():
-                    laser = self.kwargs['cw_mw']
-                else:
-                    laser = False
+                #if 'cw_mw' in self.kwargs.keys():
+                #    laser = self.kwargs['cw_mw']
+                #else:
+                #   laser = False
 
-                if self.gate_or_trigger == 'trigger':
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name = 'triggerTrue_gate') # Gated counter
-                else:
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name = 'triggerFalse_memory') # ODMR... ORABI
-                    self.mcas.asc(length_mus=2.1, name = 'wait_after_memory')
+                #if self.gate_or_trigger == 'trigger':
+                self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name = 'triggerTrue_gate') # Gated counter
+                #else:
+                    #self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name = 'triggerFalse_memory') # ODMR... ORABI
+                    #self.mcas.asc(length_mus=2.1, name = 'wait_after_memory')
 
-                self.mcas.asc(pd2g1=d[1][2], pd2g2=d[2][2], name='MW', green=laser, **aa)
+                self.mcas.asc(pd2g1=d[1][2], pd2g2=d[2][2], name='MW', **aa) # CNOT(s)
                 ### ===============================
                 ### Conventional repetitive readout
                 ### ===============================
-                self.mcas.asc(length_mus=self.dur_step[alt_step][5], green=True, name='Laser', **aa)
+                self.mcas.asc(length_mus=self.dur_step[alt_step][5], A2=True, name='Laser A2', **aa)
                 self.mcas.asc(length_mus=self.dur_step[alt_step][6], name='Count', **aa)
-                if self.gate_or_trigger == 'trigger':
-                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'triggerTrue2_memory')
-                if 'buffer_time' in self.kwargs.keys():
-                    self.mcas.asc(length_mus=self.kwargs['buffer_time'], name = 'Buffer')
+                #if self.gate_or_trigger == 'trigger':
+                self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'triggerTrue2_memory')
+                #if 'buffer_time' in self.kwargs.keys():
+                #   self.mcas.asc(length_mus=self.kwargs['buffer_time'], name = 'Buffer')
 
         # print('compileMW finished')
 
