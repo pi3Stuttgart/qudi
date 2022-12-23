@@ -142,7 +142,7 @@ def settings(pdc={}):
             ('readout', ['A1']),
             ('init_time', [50]),
             ('sweeps', range(10)),
-            ('mw_freq', np.linspace(12,17,100)), 
+            ('mw_freq', np.linspace(90,110,100)), 
             ('init', ['A1']),
         )
     )

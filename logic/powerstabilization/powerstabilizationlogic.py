@@ -3,9 +3,9 @@ from . import PID
 from core.connector import Connector
 from logic.generic_logic import GenericLogic
 from PyQt5 import QtCore
-
+from PyQt5 import QtTest
 import numpy as np
-
+from scipy.ndimage.interpolation import shift
 from logic.powerstabilization.default_values_and_widget_functions import powerstabilization_default as powerstabilization_default
 
 
@@ -78,7 +78,7 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
         if self.running!=True:
             try:  
                 self.voltage_list=[]
-                self.power_list=[]
+                self.power_list=np.zeros(500)
                 self.pid1_out_list=[]
                 self.setpoint1_list=[]
                 self.time_list=[]
@@ -117,7 +117,7 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
                 self._setupcontrol_logic.AOM_volt=self.current_output_voltage
                 self.SigUpdatePulseStreamer.emit()
 
-            time.sleep(self.sleep_time) # UNFUG! DONT USE LONG SLEEPS IN QUDI LATER
+            QtTest.QTest.qSleep(1000*self.sleep_time) # UNFUG! DONT USE LONG SLEEPS IN QUDI LATER
             self.feedback_voltage=sum(self._streaming_device.buffer_in[0])/len(self._streaming_device.buffer_in[0]) # average of all measured values
             self.current_power = self.voltage_to_power(self.feedback_voltage)#*1e9 #nW
             
@@ -126,9 +126,10 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
             self.current_output_voltage = self.pid1.output
 
             self.voltage_list.append(self.feedback_voltage)
-            self.power_list.append(self.current_power)
+            #self.power_list.append(self.current_power)
+            self.power_list = shift(self.power_list,-1, cval=self.current_power)
 
-            last_points=5
+            last_points=10
             tolerance=0.03
 
             power_stability_list=np.asarray(self.power_list[-last_points:])

@@ -274,7 +274,7 @@ class FitResultTable(DataTable):
         if not hasattr(self.parent, '_data_fit_results') or len(self.parent.data_fit_results.df) == 0:
             out = collections.OrderedDict()
         else:
-            header = self.parent.data_fit_results.parameter_names + self.parent.data_fit_results.df.fit_result[0].params.keys()
+            header = list(self.parent.data_fit_results.parameter_names) + list(self.parent.data_fit_results.df.fit_result[0].params.keys())
             out = self.parent.data_fit_results.df[header].to_dict('list', into=collections.OrderedDict)
         return out
 
@@ -436,7 +436,14 @@ class PlotData(qudip_enhanced.qtgui.gui_helpers.WithQt):
                                                        observation_names=['fit_result'],
                                                        dtypes={'fit_result': 'object'})
                         data_fit_results.init()
-                    data_fit_results.append(collections.OrderedDict([(key, val) for key, val in zip(d.keys() + ['observation_name'], d.values() + [obs])]))
+                    data_fit_results.append(
+                        collections.OrderedDict([
+                        (key, val) for key, val in zip(
+                            list(d.keys()) + ['observation_name'], 
+                            list(d.values()) + [obs]
+                                                    )
+                    ])
+                    )
                     data_fit_results.set_observations(collections.OrderedDict([('fit_result', mod.fit(y, params, x=x))]))
             self._data_fit_results = data_fit_results
             self.extend_data_fit_results_by_parameters()
@@ -450,7 +457,7 @@ class PlotData(qudip_enhanced.qtgui.gui_helpers.WithQt):
     def extend_data_fit_results_by_parameters(self):
         new_observation_names = self._data_fit_results.df.loc[0, 'fit_result'].params.keys()
         values_dict = collections.OrderedDict([(key, np.nan) for key in new_observation_names])
-        observation_names = self._data_fit_results.observation_names[:-1] + new_observation_names + [self._data_fit_results.observation_names[-1]]
+        observation_names = list(self._data_fit_results.observation_names[:-1]) + list(new_observation_names) + [str(self._data_fit_results.observation_names[-1])]
         self._data_fit_results.append_columns(values_dict=values_dict, observation_names=observation_names)
         for idx, _I_ in self._data_fit_results.df.iterrows():
             for pn, pv in _I_['fit_result'].params.items():
@@ -589,10 +596,10 @@ class PlotData(qudip_enhanced.qtgui.gui_helpers.WithQt):
                     [l.get_label() for l in axes[0].lines],
                     borderaxespad=0.1,  # Small spacing around legend box
                     loc='upper left',
-                    fontsize=60 / len(axes[0].lines),
+                    fontsize=25 / len(axes[0].lines),
                 )
             else:
-                axes[0].legend(fontsize=60 / len(axes[0].lines), )
+                axes[0].legend(fontsize=25 / len(axes[0].lines), )
         fig.tight_layout()
         return axes
 

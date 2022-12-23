@@ -13,9 +13,9 @@ class powerstabilization_default():
         voltage_offset: float = 0.0000
         voltage_to_power_ratio: float = 0.1402 #V/nW
         running: bool = False
-        P1_var: float = 0.1
-        I1_var: float = 0.5
-        D1_var: float = 0.00
+        P1_var: float = 0.05
+        I1_var: float = 0.1
+        D1_var: float = 0.0001
         datapoints : int = 500
                 
         @QtCore.pyqtSlot(str)

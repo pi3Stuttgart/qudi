@@ -566,7 +566,11 @@ class SSR(object):
     def set_amplitudes(self, kwargs):
         if not self.robust:
             if 'amplitudes' in kwargs:
-                self.amplitudes = [[kwargs['amplitudes']] for i in self.length_mus_mw]
+                amps = kwargs['amplitudes']
+                if isinstance(amps,list):
+                    self.amplitudes = [kwargs['amplitudes'] for i in self.length_mus_mw] # basically for eawch length mus there will be an iteration?
+                else:
+                    self.amplitudes = [[kwargs['amplitudes']] for i in self.length_mus_mw] # basically for eawch length mus there will be an iteration?
                 print(self.amplitudes,'SSR MW amps', self.length_mus_mw)
 
             else:# 'amplitudes' not in kwargs or None in np.array(self.amplitudes).flatten():
@@ -591,7 +595,8 @@ class SSR(object):
     def set_dur_step(self):
         self.dur_step = [
             {
-             2: self.length_mus_mw[n],
+             2: self.length_mus_mw[n], # CNOT 38
+             #3: self.length_mus_mw[n], # CNOT 177
              5: self.laser_dur,
              6: self.wait_dur} for n in range(self.number_of_alternating_steps)]
 
@@ -613,7 +618,7 @@ class SSR(object):
                 pd2g_dict[ch][i] = {}
                 if ch == 2 and not self.iq_mixer:
                     continue
-                pd2g_dict[ch][i]['frequencies'] = self.frequencies[n]
+                pd2g_dict[ch][i]['frequencies'] = self.frequencies[n] # should be [38.5,177.7]
                 if self.robust:
                     pd2g_dict[ch][i].update(dict(type='robust', wave_file=WaveFile(part=self.part_step(n)[i], **self.wave_file_kwargs[n])))
                 else:
@@ -730,7 +735,8 @@ class SSR(object):
                     self.mcas.asc(A2=True, length_mus=self.dur_step[alt_step][5], name = 'ple_A2_readout')
                     self.mcas.asc(length_mus=1.0,name = 'wait')
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
-
+                
+                
                 elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_A1':
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
                     self.mcas.asc(A1=True, length_mus=self.dur_step[alt_step][5], name = 'ple_A1_readout')

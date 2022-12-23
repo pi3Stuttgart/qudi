@@ -261,10 +261,10 @@ class Data:
         od = {'parameter_names': 'observation_names', 'observation_names': 'parameter_names'}
         if type(values_dict) != collections.OrderedDict:
             raise Exception("Error: {}".format(values_dict))
-        is_in_other = [cn for cn in kwargs.values()[0] if cn in getattr(self, od[kwargs.keys()[0]])]
+        is_in_other = [cn for cn in list(kwargs.values())[0] if cn in getattr(self, od[list(kwargs.keys())[0]])] #python 3 wrong??
         if len(is_in_other) > 0:
             raise Exception("Error: {} is in od[kwargs.keys()[0]]".format(is_in_other))
-        not_in = [cn for cn in kwargs.values()[0] if cn not in getattr(self, kwargs.keys()[0])]
+        not_in = [cn for cn in list(kwargs.values())[0] if cn not in getattr(self, list(kwargs.keys())[0])] #python 3 wrong??
         if len(not_in) == 0:
             if no_new_columns_warning:
                 raise Exception("Error: No new columns given. {}".format(kwargs))
@@ -275,10 +275,10 @@ class Data:
         not_in_values_dict = [not_in_i for not_in_i in not_in if not_in_i not in values_dict.keys()]
         if len(not_in_values_dict) > 0:
             raise Exception('Error: {}'.format(not_in_values_dict))
-        setattr(self, kwargs.keys()[0], kwargs.values()[0])
+        setattr(self, list(kwargs.keys())[0], list(kwargs.values())[0]) # python 3 wrong??
         for column, value in values_dict.items():
-            loc = getattr(self, kwargs.keys()[0]).index(column)
-            if kwargs.keys()[0] == 'observation_names':
+            loc = getattr(self, list(kwargs.keys())[0]).index(column) #python 3 wrong??
+            if list(kwargs.keys())[0] == 'observation_names': #python 3 wrong ??
                 loc += len(self.parameter_names)
             self.df.insert(loc, column, value, allow_duplicates=False)
         self.reinstate_integrity()

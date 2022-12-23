@@ -322,7 +322,7 @@ class NuclearOPs(DataGeneration):
         start_minute = self.recycling_start_hour*60+self.recycling_duration*60+10 # Start measurement 10 min after recycling stopped
         idx = 0
         while minute_of_day >= stop_minute and minute_of_day <= start_minute:
-            time.sleep(10)
+            QtTest.QTest.qSleep(10000)
             if idx == 0:
                 print("Stopped measurement because recycling starts soon.")
             idx+=1
@@ -378,7 +378,7 @@ class NuclearOPs(DataGeneration):
                         self.do_refocus_zpl()
 
                     if self.do_ple_refocusA2 or self.do_ple_refocusA1:
-                        self.do_refocus_ple(abort)
+                        self.do_refocus_ple(abort, self.current_iterator_df['A2_power'])
                         # if 'delta_ple_A2' in self.current_iterator_df.keys():
                         #     self.queue.ple_A2.delta_ple = self.current_iterator_df['delta_ple_A2'].unique()[0]
                         #     logging.getLogger().info(
@@ -578,7 +578,7 @@ class NuclearOPs(DataGeneration):
                     
                     
                     if self.do_ple_refocus or self.do_ple_refocusA1 or self.do_ple_refocusA2:
-                            self.do_refocus_ple(abort)
+                            self.do_refocus_ple(abort, self.current_iterator_df['A2_power'])
 
 
                     if self.refocus_cw_odmr or self.refocus_pulsed_odmr:
@@ -669,7 +669,7 @@ class NuclearOPs(DataGeneration):
                 os.rmdir(self.save_dir)
 
     def dowork(self,):
-        time.sleep(1)
+        QtTest.QTest.qSleep(1000)
 
     def confocal_pos_moving_average(self, n):
         #FIXME ?
@@ -688,7 +688,7 @@ class NuclearOPs(DataGeneration):
         return self.parameters['sweeps']
 
 
-    def do_refocus_ple(self,abort):
+    def do_refocus_ple(self,abort, a2power):
         delta_t = time.time() - self.last_ple_refocus
 
         if (delta_t>= self.ple_refocus_interval):
@@ -696,16 +696,16 @@ class NuclearOPs(DataGeneration):
 
             if self.do_ple_refocusA1:
                 self.do_refocus_pleA1(abort)
+                self.performedRefocus = True
 
             if self.do_ple_refocusA2:
                 self.do_refocus_pleA2(abort)
+                self.performedRefocus = True
 
             self.last_ple_refocus = time.time()
-            time.sleep(1)
-            self.performedRefocus = True
             self.queue._awg.mcas_dict.stop_awgs()
-            time.sleep(1)
-
+            QtTest.QTest.qSleep(1000)
+            
             if self.checkA1LaserPower:
                 print("A1 POWER STAB = TRUE")
                 #somewhere the output voltage is set to 1 at beginning of stabilization
@@ -717,29 +717,32 @@ class NuclearOPs(DataGeneration):
                 self.queue._powerstabilization_logic.start_control
                 start_time = time.time()
                 while self.queue._powerstabilization_logic.stabilize:
-                    time.sleep(0.1)
+                    QtTest.QTest.qSleep(100)
+                    if abort.is_set(): break
                     if start_time - time.time() > 30:
                         logging.getLogger().info('Could not reach desired A1-laserpower in reasonable time. Set analog voltage to 0.5V.')
                         self.queue._powerstabilization_logic.A1Voltage = 0.5
                         self.queue._powerstabilization_logic.set_fix_voltage(tag="A1")               
-                self.queue._awg.stop_awgs()
+                self.queue._awg.mcas_dict.stop_awgs()
             if self.checkA2LaserPower:
                 self.queue._awg.mcas_dict['A2'].run()
                 self.queue._powerstabilization_logic.controlA2 = True
                 self.queue._powerstabilization_logic.controlA1 = False
-                self.queue._powerstabilization_logic.TargetPower = self.A2LaserPower
+                self.queue._powerstabilization_logic.TargetPower = a2power#self.A2LaserPower
                 self.queue._powerstabilization_logic.start_control
                 start_time = time.time()
                 while self.queue._powerstabilization_logic.stabilize:
-                    time.sleep(0.5)
+                    QtTest.QTest.qSleep(500)
                     print("abort: ", abort.is_set())
                     if abort.is_set(): break
-                    if start_time - time.time() > 30:
+                    elif start_time - time.time() > 30:
                         logging.getLogger().info('Could not reach desired A2-laserpower in reasonable time. Set analog voltage to 0.5V.')
                         self.queue._powerstabilization_logic.A2Voltage = 0.5
                         self.queue._powerstabilization_logic.set_fix_voltage(tag="A2")
-                print("Done stabilizing. Turnin laser off now...")             
-                self.queue._awg.stop_awgs()
+                print("Done stabilizing. Turning laser off now...")             
+                self.queue._awg.mcas_dict.stop_awgs()
+        
+            
         return
 
     def do_refocus_pleA2(self, abort): #CHANGED! commented what belonged to wavemeter
@@ -750,7 +753,7 @@ class NuclearOPs(DataGeneration):
         self.queue._PLE_logic.Lock_laser=True
         self.queue._PLE_logic.start_scanning()
         while not self.queue._PLE_logic.stopped:
-            time.sleep(0.5)
+            QtTest.QTest.qSleep(500)
 
         # self.queue.ple_A2.syncFlag = False
         # self.queue.ple_A2.state = 'refocus PLE'
@@ -771,8 +774,8 @@ class NuclearOPs(DataGeneration):
         self.queue.ple_A1.state = 'refocus PLE'
 
         while(self.queue.ple_A1.syncFlag == False):
-            time.sleep(0.1)
-        time.sleep(1.0)
+            QtTest.QTest.qSleep(100)
+        QtTest.QTest.qSleep(1000)
 
 
     def do_refocus_repump(self):
@@ -785,7 +788,7 @@ class NuclearOPs(DataGeneration):
 
             self.queue._optimizer.start_refocus(initial_pos = np.array(self.df_refocus_pos.iloc[0]),caller_tag = 'NuclearOps')
             while not self.queue._optimizer.refocus_finished:
-                QtTest.QTest.qSleep(0.25)
+                QtTest.QTest.qSleep(250)
             self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[self.queue._optimizer.optim_pos_x], confocal_y=[self.queue._optimizer.optim_pos_y], confocal_z=[self.queue._optimizer.optim_pos_z]))
             
             self.queue._awg.mcas_dict.stop_awgs()
@@ -817,7 +820,7 @@ class NuclearOPs(DataGeneration):
                 print("NuclearOPs: Turn on repump +a1+a2 for confocal refocus")
                 # self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,["A1", "A2", "repump"],0,0)) # last 2 digits are analog output: these are set in the awg_hardware. These parameters are not used
                 self.queue._awg.mcas_dict['RepumpAndA1AndA2'].run()
-                time.sleep(0.25)
+                QtTest.QTest.qSleep(250)
             elif self.do_confocal_A2MW_refocus:
                 sequence_name="A2MW_confocal_refocus"
                 MW1_freq = 33.6
@@ -855,7 +858,7 @@ class NuclearOPs(DataGeneration):
 
                     while self.mcas=='':
                         #process_events() #TODO gui process events.
-                        time.sleep(0.01)
+                        QtTest.QTest.qSleep(10)
                     self.queue._awg.mcas_dict[sequence_name].run()
             
             try: #Add current defect name name to callertag
@@ -865,12 +868,12 @@ class NuclearOPs(DataGeneration):
             print("caller tag in NUCOPS: ", caller_tag)
             self.queue._optimizer.start_refocus(initial_pos = self.queue._confocal.get_position(), caller_tag = caller_tag)
             while not self.queue._optimizer.refocus_finished:
-                time.sleep(0.25)
+                QtTest.QTest.qSleep(250)
             self.last_red_confocal_refocus = time.time()
             self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[self.queue._optimizer.optim_pos_x], confocal_y=[self.queue._optimizer.optim_pos_y], confocal_z=[self.queue._optimizer.optim_pos_z]))
             self.queue._awg.mcas_dict.stop_awgs()
             #(pulse=(0,[],0,0))
-            time.sleep(3)
+            QtTest.QTest.qSleep(3000)
             self.performedRefocus = True
     def check_eom(self):
 
@@ -962,7 +965,7 @@ class NuclearOPs(DataGeneration):
                 self.queue._ODMR_logic.ODMRLogic.cw_Run_Button_Clicked(True)
 
                 while self.queue._ODMR_logic.ODMRLogic.cw_odmr_refocus_running:
-                    time.sleep(0.5)
+                    QtTest.QTest.qSleep(500)
 
             elif self.refocus_pulsed_odmr:
                 self.queue._ODMR_logic.pulsedODMRLogic.pulsed_PerformFit=True
@@ -970,7 +973,7 @@ class NuclearOPs(DataGeneration):
                 self.queue._ODMR_logic.pulsedODMRLogic.pulsed_Run_Button_Clicked(True)
 
                 while self.queue._ODMR_logic.pulsedODMRLogic.pulsed_odmr_refocus_running:
-                    time.sleep(0.5)
+                    QtTest.QTest.qSleep(500)
             self.performedRefocus = True
         #self.queue._awg.mcas_dict.stop_awgs()
         self.last_odmr_refocus=time.time()
@@ -1078,7 +1081,7 @@ class NuclearOPs(DataGeneration):
                 
                 self.mcas = self.ret_mcas(self,current_iterator_df, sequence_name)
                 while self.mcas=='':
-                    time.sleep(0.01)
+                    QtTest.QTest.qSleep(10)
         
                 self.queue._awg.mcas_dict[sequence_name] = self.mcas
    
@@ -1088,7 +1091,7 @@ class NuclearOPs(DataGeneration):
                 
                 self.mcas = self.ret_mcas(self,current_iterator_df, sequence_name)
                 while self.mcas=='':
-                    time.sleep(0.01)
+                    QtTest.QTest.qSleep(10)
         
                 self.queue._awg.mcas_dict[sequence_name] = self.mcas
 
@@ -1109,7 +1112,7 @@ class NuclearOPs(DataGeneration):
             self.mcas = self.ret_mcas(self,current_iterator_df)
             while self.mcas=='':
                 #process_events() #TODO gui process events.
-                time.sleep(0.01)
+                QtTest.QTest.qSleep(10)
             sequence_name = self.mcas.name
             self.queue._awg.mcas_dict[sequence_name] = self.mcas
         
