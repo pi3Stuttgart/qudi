@@ -70,6 +70,7 @@ class NuclearOPs(DataGeneration):
             repeat=False,
         )
         self.hashed = False
+        self.pause_time = [3.00, 6.00] ## The minutes are in % of an hour.
         self.do_ple_refocusA2 = False
         self.do_ple_refocusA1 = False
         self.do_ple_refocus = False
@@ -329,12 +330,33 @@ class NuclearOPs(DataGeneration):
         if idx > 0:
             print("Continue measurement because recycling stopped.")
         
-    def run_measurement(self, abort, **kwargs):
-        self.check_time() # Stops measurement during detector cycling
-                
-        print('NuclearOps run_measurement')
+    def checktime(self, abort):
+        
+        start_pause_time = self.pause_time[0]
+        end_pause_time = self.pause_time[1]
+        sph = int(start_pause_time)
+        eph = int(end_pause_time)
+        epm = int(60*(end_pause_time-int(end_pause_time)))
+        spm = int(60*(start_pause_time-int(start_pause_time)))
+        idx = 0
+        t=datetime.datetime.now()
+        #print('we are in check time', sph,eph,spm, epm)
+        while t.hour <= eph and t.hour >= sph and t.minute < epm and t.minute >= spm:
+            if abort.is_set(): break
+            QtTest.QTest.qSleep(100)
+            if idx==0:
+                print('3 am pause')
+                idx +=1
+            t = datetime.datetime.now()
+        if idx > 0:
+            print('Continue')
 
+
+    def run_measurement(self, abort, **kwargs):
+        print('NuclearOps run_measurement')
+        
         self.init_run(**kwargs)
+        
         #logging.info('passed the init')
         #When the confocal connected #TODO 1
         confocal = self.queue._confocal
@@ -356,6 +378,7 @@ class NuclearOPs(DataGeneration):
             #iterator_list=list(self.iterator()) # seems to laag imensely
             for idx, _ in enumerate(self.iterator()):#range(len(iterator_list)):
                 if abort.is_set(): break
+                self.checktime(abort) # Stops measurement during detector cycling # doesnt work yet.
                 while True:
                     if abort.is_set(): break
                     # Uncomment when on the setup #TODO
@@ -752,7 +775,7 @@ class NuclearOPs(DataGeneration):
         
         self.queue._PLE_logic.Lock_laser=True
         self.queue._PLE_logic.start_scanning()
-        while not self.queue._PLE_logic.stopped:
+        while not self.queue._PLE_logic.stopped: #TODO - make here prone to PLE crashed
             QtTest.QTest.qSleep(500)
 
         # self.queue.ple_A2.syncFlag = False

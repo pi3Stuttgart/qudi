@@ -395,39 +395,42 @@ class OptimizerLogic(GenericLogic):
 
     def _set_optimized_xy_from_fit(self):
         """Fit the completed xy optimizer scan and set the optimized xy position."""
-        fit_x, fit_y = np.meshgrid(self._X_values, self._Y_values)
-        xy_fit_data = self.xy_refocus_image[:, :, 3+self.opt_channel].ravel()
-        axes = np.empty((len(self._X_values) * len(self._Y_values), 2))
-        axes = (fit_x.flatten(), fit_y.flatten())
-        result_2D_gaus = self._fit_logic.make_twoDgaussian_fit(
-            xy_axes=axes,
-            data=xy_fit_data,
-            estimator=self._fit_logic.estimate_twoDgaussian_MLE
-        )
-        # print(result_2D_gaus.fit_report())
+        
+        try: 
+            fit_x, fit_y = np.meshgrid(self._X_values, self._Y_values)
+            xy_fit_data = self.xy_refocus_image[:, :, 3+self.opt_channel].ravel()
+            axes = np.empty((len(self._X_values) * len(self._Y_values), 2))
+            axes = (fit_x.flatten(), fit_y.flatten())
+            result_2D_gaus = self._fit_logic.make_twoDgaussian_fit(
+                xy_axes=axes,
+                data=xy_fit_data,
+                estimator=self._fit_logic.estimate_twoDgaussian_MLE
+            )
+            # print(result_2D_gaus.fit_report())
 
-        if result_2D_gaus.success is False:
-            self.log.error('Error: 2D Gaussian Fit was not successfull!.')
-            print('2D gaussian fit not successfull')
-            self.optim_pos_x = self._initial_pos_x
-            self.optim_pos_y = self._initial_pos_y
-            self.optim_sigma_x = 0.
-            self.optim_sigma_y = 0.
-        else:
-            #                @reviewer: Do we need this. With constraints not one of these cases will be possible....
-            if abs(self._initial_pos_x - result_2D_gaus.best_values['center_x']) < self._max_offset and abs(self._initial_pos_x - result_2D_gaus.best_values['center_x']) < self._max_offset:
-                if self.x_range[0] <= result_2D_gaus.best_values['center_x'] <= self.x_range[1]:
-                    if self.y_range[0] <= result_2D_gaus.best_values['center_y'] <= self.y_range[1]:
-                        self.optim_pos_x = result_2D_gaus.best_values['center_x']
-                        self.optim_pos_y = result_2D_gaus.best_values['center_y']
-                        self.optim_sigma_x = result_2D_gaus.best_values['sigma_x']
-                        self.optim_sigma_y = result_2D_gaus.best_values['sigma_y']
-            else:
+            if result_2D_gaus.success is False:
+                self.log.error('Error: 2D Gaussian Fit was not successfull!.')
+                print('2D gaussian fit not successfull')
                 self.optim_pos_x = self._initial_pos_x
                 self.optim_pos_y = self._initial_pos_y
                 self.optim_sigma_x = 0.
                 self.optim_sigma_y = 0.
-
+            else:
+                #                @reviewer: Do we need this. With constraints not one of these cases will be possible....
+                if abs(self._initial_pos_x - result_2D_gaus.best_values['center_x']) < self._max_offset and abs(self._initial_pos_x - result_2D_gaus.best_values['center_x']) < self._max_offset:
+                    if self.x_range[0] <= result_2D_gaus.best_values['center_x'] <= self.x_range[1]:
+                        if self.y_range[0] <= result_2D_gaus.best_values['center_y'] <= self.y_range[1]:
+                            self.optim_pos_x = result_2D_gaus.best_values['center_x']
+                            self.optim_pos_y = result_2D_gaus.best_values['center_y']
+                            self.optim_sigma_x = result_2D_gaus.best_values['sigma_x']
+                            self.optim_sigma_y = result_2D_gaus.best_values['sigma_y']
+                else:
+                    self.optim_pos_x = self._initial_pos_x
+                    self.optim_pos_y = self._initial_pos_y
+                    self.optim_sigma_x = 0.
+                    self.optim_sigma_y = 0.
+        except Exception as e:
+            self.log.error('Error: 2D Gaussian Fit was not successfull!. Error is'+e)
         # emit image updated signal so crosshair can be updated from this fit
         self.sigImageUpdated.emit()
         self._sigDoNextOptimizationStep.emit()
@@ -437,69 +440,69 @@ class OptimizerLogic(GenericLogic):
         """ Do the z axis optimization."""
         # z scaning
         self._scan_z_line()
-
-        # z-fit
-        # If subtracting surface, then data can go negative and the gaussian fit offset constraints need to be adjusted
-        if self.do_surface_subtraction:
-            adjusted_param = {'offset': {
-                'value': 1e-12,
-                'min': -self.z_refocus_line[:, self.opt_channel].max(),
-                'max': self.z_refocus_line[:, self.opt_channel].max()
-            }}
-            result = self._fit_logic.make_gausspeaklinearoffset_fit(
-                x_axis=self._zimage_Z_values,
-                data=self.z_refocus_line[:, self.opt_channel],
-                add_params=adjusted_param)
-        else:
-            if any(self.use_custom_params.values()):
+        try:
+            # z-fit
+            # If subtracting surface, then data can go negative and the gaussian fit offset constraints need to be adjusted
+            if self.do_surface_subtraction:
+                adjusted_param = {'offset': {
+                    'value': 1e-12,
+                    'min': -self.z_refocus_line[:, self.opt_channel].max(),
+                    'max': self.z_refocus_line[:, self.opt_channel].max()
+                }}
                 result = self._fit_logic.make_gausspeaklinearoffset_fit(
                     x_axis=self._zimage_Z_values,
                     data=self.z_refocus_line[:, self.opt_channel],
-                    # Todo: It is required that the changed parameters are given as a dictionary or parameter object
-                    add_params=None)
+                    add_params=adjusted_param)
             else:
-                result = self._fit_logic.make_gaussianlinearoffset_fit(
-                    x_axis=self._zimage_Z_values,
-                    data=self.z_refocus_line[:, self.opt_channel],
-                    units='m',
-                    estimator=self._fit_logic.estimate_gaussianlinearoffset_peak
-                    )
-        self.z_params = result.params
+                if any(self.use_custom_params.values()):
+                    result = self._fit_logic.make_gausspeaklinearoffset_fit(
+                        x_axis=self._zimage_Z_values,
+                        data=self.z_refocus_line[:, self.opt_channel],
+                        # Todo: It is required that the changed parameters are given as a dictionary or parameter object
+                        add_params=None)
+                else:
+                    result = self._fit_logic.make_gaussianlinearoffset_fit(
+                        x_axis=self._zimage_Z_values,
+                        data=self.z_refocus_line[:, self.opt_channel],
+                        units='m',
+                        estimator=self._fit_logic.estimate_gaussianlinearoffset_peak
+                        )
+            self.z_params = result.params
 
-        if result.success is False:
-            self.log.error('error in 1D Gaussian Fit.')
-            self.optim_pos_z = self._initial_pos_z
-            self.optim_sigma_z = 0.
-            # interrupt here?
-        else:  # move to new position
-            #                @reviewer: Do we need this. With constraints not one of these cases will be possible....
-            # checks if new pos is too far away
-            if abs(self._initial_pos_z - result.best_values['center']) < self._max_offset:
-                # checks if new pos is within the scanner range
-                if self.z_range[0] <= result.best_values['center'] <= self.z_range[1]:
-                    self.optim_pos_z = result.best_values['center']
-                    self.optim_sigma_z = result.best_values['sigma']
-                    gauss, params = self._fit_logic.make_gaussianlinearoffset_model()
-                    self.z_fit_data = gauss.eval(
-                        x=self._fit_zimage_Z_values, params=result.params)
-                else:  # new pos is too far away
-                    # checks if new pos is too high
-                    self.optim_sigma_z = 0.
-                    if result.best_values['center'] > self._initial_pos_z:
-                        if self._initial_pos_z + 0.5 * self.refocus_Z_size <= self.z_range[1]:
-                            # moves to higher edge of scan range
-                            self.optim_pos_z = self._initial_pos_z + 0.5 * self.refocus_Z_size
+            if result.success is False:
+                self.log.error('error in 1D Gaussian Fit.')
+                self.optim_pos_z = self._initial_pos_z
+                self.optim_sigma_z = 0.
+                # interrupt here?
+            else:  # move to new position
+                #                @reviewer: Do we need this. With constraints not one of these cases will be possible....
+                # checks if new pos is too far away
+                if abs(self._initial_pos_z - result.best_values['center']) < self._max_offset:
+                    # checks if new pos is within the scanner range
+                    if self.z_range[0] <= result.best_values['center'] <= self.z_range[1]:
+                        self.optim_pos_z = result.best_values['center']
+                        self.optim_sigma_z = result.best_values['sigma']
+                        gauss, params = self._fit_logic.make_gaussianlinearoffset_model()
+                        self.z_fit_data = gauss.eval(
+                            x=self._fit_zimage_Z_values, params=result.params)
+                    else:  # new pos is too far away
+                        # checks if new pos is too high
+                        self.optim_sigma_z = 0.
+                        if result.best_values['center'] > self._initial_pos_z:
+                            if self._initial_pos_z + 0.5 * self.refocus_Z_size <= self.z_range[1]:
+                                # moves to higher edge of scan range
+                                self.optim_pos_z = self._initial_pos_z + 0.5 * self.refocus_Z_size
+                            else:
+                                self.optim_pos_z = self.z_range[1]  # moves to highest possible value
                         else:
-                            self.optim_pos_z = self.z_range[1]  # moves to highest possible value
-                    else:
-                        if self._initial_pos_z + 0.5 * self.refocus_Z_size >= self.z_range[0]:
-                            # moves to lower edge of scan range
-                            self.optim_pos_z = self._initial_pos_z + 0.5 * self.refocus_Z_size
-                        else:
-                            self.optim_pos_z = self.z_range[0]  # moves to lowest possible value
-
+                            if self._initial_pos_z + 0.5 * self.refocus_Z_size >= self.z_range[0]:
+                                # moves to lower edge of scan range
+                                self.optim_pos_z = self._initial_pos_z + 0.5 * self.refocus_Z_size
+                            else:
+                                self.optim_pos_z = self.z_range[0]  # moves to lowest possible value
+        except Exception as e:
+            self.log.error('Error: 2D Gaussian Fit was not successfull!. Error is'+e)
         
-
         self.sigImageUpdated.emit()
         self._sigDoNextOptimizationStep.emit()
 
