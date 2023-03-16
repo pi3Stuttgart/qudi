@@ -31,6 +31,8 @@ from logic.generic_logic import GenericLogic
 from interface.slow_counter_interface import CountingMode
 from core.util.mutex import Mutex
 
+from PyQt5 import QtTest
+
 
 class CounterLogic(GenericLogic):
     """ This logic module gathers data from a hardware counting device.
@@ -652,7 +654,8 @@ class CounterLogic(GenericLogic):
         self.stopCount()
         start_time = time.time()
         while self.module_state() == 'locked':
-            time.sleep(0.1)
+            QtTest.QTest.qSleep(100)
+            #time.sleep(0.1)
             if time.time() - start_time >= timeout:
                 self.log.error('Stopping the counter timed out after {0}s'.format(timeout))
                 return -1

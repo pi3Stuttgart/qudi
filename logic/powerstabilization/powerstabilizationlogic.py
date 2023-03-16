@@ -52,7 +52,7 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
 
         self.current_output_voltage=self._setupcontrol_logic.AOM_volt
         self.running=False
-        self.sleep_time = 0.5 #FIXME do we really need a sleep? Does this affect performance?
+        self.sleep_time = 0.01#5 #FIXME do we really need a sleep? Does this affect performance?
 
     def on_deactivate(self):
         if self.running:
@@ -74,7 +74,7 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
     @QtCore.pyqtSlot()
     def start_control(self):
         self.pid1 = PID.PID(float(self.P1_var), float(self.I1_var), float(self.D1_var))
-        self.pid1.setSampleTime(0.5)
+        self.pid1.setSampleTime(0.01)
         if self.running!=True:
             try:  
                 self.voltage_list=[]

@@ -292,21 +292,25 @@ class GatedCounter(GenericLogic):
               start_trigger_delay_ps_list = None,window_ps_list=None,
               raw_clicks_processing=False, two_zpl_apd = False,raw_clicks_processing_channels = [0,1,2,3,4,5,6,7]):
         # self.start_timetaggers()
+        t0=time.time()
         self.start_trigger_delay_ps_list = start_trigger_delay_ps_list
         self.window_ps_list = window_ps_list
         self.two_zpl_apd = two_zpl_apd
         self.raw_clicks_processing = raw_clicks_processing
         self.raw_clicks_processing_channels = raw_clicks_processing_channels
         number_of_subtraces = 1 #fixme, later put a len of analyze sequence
+        print("time passed 1",t0-time.time());t0=time.time()
 
         if hasattr(self, '_gui'):
             self.clear_plot_signal.emit(number_of_subtraces)
         try:
+            print("time passed 2",t0-time.time());t0=time.time()
             self.set_counter()
             if not self._mcas_dict.mcas_dict.debug_mode:
                 start_awgs(self._mcas_dict.mcas_dict.awgs, ch_dict=ch_dict)
-
+            print("time passed 3",t0-time.time());t0=time.time()
             self.progress = 0
+            i=0
             while True:
                 if abort.is_set():
                     break
@@ -314,15 +318,21 @@ class GatedCounter(GenericLogic):
                 # time.sleep(self.readout_duration / 1e6)
                 # break
                 ready = self._fast_counter_device.gated_counter_countbetweenmarkers.ready()
-                # print("-----------------------------------------------------\n",np.sum(self._fast_counter_device.gated_counter_countbetweenmarkers.getData()))
+                
+                if i%100==0:
+                    dat=self._fast_counter_device.gated_counter_countbetweenmarkers.getData()
+                    print("-----------------------------------------------------\n",np.sum(dat),len(dat))
+                i+=1
                 if ready:
                     # print(self._fast_counter_device.gated_counter_countbetweenmarkers.getData())
                     break
                 else:
                     time.sleep(0.1)
-                                
+            print("time passed 4",t0-time.time());t0=time.time()                    
             self.read_trace()
+            print("time passed 5",t0-time.time());t0=time.time()
             self.update_plot()
+            print("time passed 6",t0-time.time());t0=time.time()
 
         except Exception as e:
             print(e)

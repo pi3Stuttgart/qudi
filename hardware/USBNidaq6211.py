@@ -9,6 +9,8 @@ import nidaqmx
 from nidaqmx.stream_readers import AnalogMultiChannelReader
 from nidaqmx import constants
 
+from PyQt5 import QtTest
+
 from interface.stream_usb_nidaq_interface import StreamUSBNidaqInterface
 
 class streamUSBnidaq(Base, StreamUSBNidaqInterface): #Hardware file
@@ -32,7 +34,7 @@ class streamUSBnidaq(Base, StreamUSBNidaqInterface): #Hardware file
         self.buffer_in_size = 10
         self.bufsize_callback = self.buffer_in_size
         self.buffer_in_size_cfg = round(self.buffer_in_size * 1)  # clock configuration
-        self.crop = 10  # number of seconds to drop at acquisition start before saving
+        self.crop = 10  # number of seconds to drop at acquisition start before saving #What does this do?
         self.my_filename = 'test_3_opms'  # with full path if target folder different from current folder (do not leave trailing /)
         
         # Initialize data placeholders
@@ -98,7 +100,7 @@ class streamUSBnidaq(Base, StreamUSBNidaqInterface): #Hardware file
         else:
             print("Setting Outputvoltage to", V, "V.")
             self.task_out.write(V)
-            time.sleep(0.001) #UNFUG
+            QtTest.QTest.qSleep(1) # needed at all?
             self.current_voltage = V
     
     def MultiplegoToVoltage(self, V):
@@ -108,7 +110,7 @@ class streamUSBnidaq(Base, StreamUSBNidaqInterface): #Hardware file
             else:
                 print("Setting Outputvoltage to", V, "V.")
                 self.task_out.write(V)
-                time.sleep(0.001) #UNFUG
+                QtTest.QTest.qSleep(1) # needed at all?
                 self.current_voltage = V
         elif len(V) == self.numberOfUsedChannels and len(V) == 1: #check if there is only voltage input when only one output channel is used.
             if V[0] > self.voltagerange[-1] or V[0] < self.voltagerange[0]:
@@ -116,7 +118,7 @@ class streamUSBnidaq(Base, StreamUSBNidaqInterface): #Hardware file
             else:
                 print("Setting Outputvoltage to", V, "V.")
                 self.task_out.write(V)
-                time.sleep(0.001) #UNFUG
+                QtTest.QTest.qSleep(1) # needed at all?
                 self.current_voltage = V
         
         elif len(V) != self.numberOfUsedChannels:

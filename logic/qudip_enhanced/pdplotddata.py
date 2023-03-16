@@ -1,6 +1,6 @@
 # coding=utf-8
 from __future__ import print_function, absolute_import, division
-
+import pyqtgraph as pg
 __metaclass__ = type
 
 import traceback
@@ -931,6 +931,13 @@ class PlotDataQt(qudip_enhanced.qtgui.gui_helpers.QtGuiClass):
         self.canvas.draw()
         self.plot_layout.addWidget(self.canvas, 1, 1, 20, 20)
         self.toolbar_layout.addWidget(self.toolbar, 21, 1, 1, 20)
+
+        if False:## PyQTGRaph addon....
+            self.pg_layout = pg.GraphicsLayoutWidget()
+            x = np.random.normal(size=1000)
+            y = np.random.normal(size=1000)
+            self.pg_layout.addPlot(x=x, y=y, pen=None, symbol='x', row=0, col=0, title="Plot @ row 1, column 1")
+            self.plot_layout.addWidget(self.pg_layout)
 
         # Figure fit
         self.fig_fit = Figure()

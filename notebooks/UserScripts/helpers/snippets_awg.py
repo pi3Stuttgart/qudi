@@ -24,7 +24,7 @@ __CURRENT_POL_RED__ = 76
 __T_POL_RED__ = 0.2
 __RED_LASER__DELAY__ = 0.1
 __SSR_REPETITIONS__ = {'14n+1': 1500, '14n-1': 1500, '14n': 1500, '14n0': 1200, '13c414': 1500, '13c90': 2000,
-                       'charge_state':1,'charge_state_A1_aom_Ex':1,'charge_state_ExMW':1, 'ple_A2': 1,'ple_A1': 1,'Ex_pi_readout':1,'Ex_pi_readout_6ns':1,
+                       'charge_state':1,'charge_state_A1_aom_Ex':1,'charge_state_ExMW':1, 'ple_A2': 1,'ple_A1': 1, 'ple_A2_delay': 1,'ple_A1_delay': 1,'Ex_pi_readout':1,'Ex_pi_readout_6ns':1,
                        'Ex_ampl_sweep_SSR' : 1,
                        'opt_mw_delays_calibration':1,
                        'opt_mw_delays_calibration2': 1,
@@ -65,7 +65,7 @@ __LASER_DUR_DICT__ = {'14n+1': .175,
 __PERIODS__ = {'14n+1': 1.6, '14n-1': 1.6, '29Si8_A2':1.0,
 '14n': 1.6,
  '14n0': 1.6, '13c414': 6.0, '13c90': 20., 'charge_state': 0.0,'charge_state_A1_aom_Ex': 0.0,
-               'charge_state_ExMW': 0.0,'ple_A2': 0.0,'ple_A1': 0.0,'Ex_pi_readout':0.0,'Ex_pi_readout_6ns':0.0,'Ex_ampl_sweep_SSR' :0.0,
+               'charge_state_ExMW': 0.0,'ple_A2': 0.0,'ple_A1': 0.0,'ple_A2_delay': 0.0,'ple_A1_delay': 0.0,'Ex_pi_readout':0.0,'Ex_pi_readout_6ns':0.0,'Ex_ampl_sweep_SSR' :0.0,
                'Ex_ampl_sweep_SSR_6ns' :0.0, 'Ex_pi_readout_10ns':0.0,'opt_mw_delays_calibration':0.0,
                'opt_mw_delays_calibration2':0.0,'2_opt_mw_delays_calibration':0.0,'Ex_RO':0.0,
                '2opt_withMW_pi':0.0,'entanglement':0.0,'entanglement_for_tests':0.0,'HOM':0.0}
@@ -75,7 +75,7 @@ __STANDARD_WAVEFILES__ = {'14n+1': r"D:\data\NuclearOPs\Robust\test_pi_three_nit
 
 __WAIT_SWITCH__ = 0.0
 __IQ_MIXER__ = False
-__TT_TRIGGER_LENGTH__ = 10*192/12e3
+__TT_TRIGGER_LENGTH__ = 0.01#10*192/12e3
 __SAMPLE_FREQUENCY__ = 12e3
 def nuclear_rabi(mcas, new_segment=False, **kwargs):
     type = 'robust' if 'wave_file' in kwargs else 'sine'
@@ -571,7 +571,7 @@ class SSR(object):
                     self.amplitudes = [kwargs['amplitudes'] for i in self.length_mus_mw] # basically for eawch length mus there will be an iteration?
                 else:
                     self.amplitudes = [[kwargs['amplitudes']] for i in self.length_mus_mw] # basically for eawch length mus there will be an iteration?
-                print(self.amplitudes,'SSR MW amps', self.length_mus_mw)
+                #print('SSR MW amps: ', self.amplitudes,'SSR MW dur: ', self.length_mus_mw)
 
             else:# 'amplitudes' not in kwargs or None in np.array(self.amplitudes).flatten():
                 if any(np.array(self.length_mus_mw) == 0): # Implemented here in order to charge state control
@@ -733,16 +733,53 @@ class SSR(object):
                 elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_A2':
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
                     self.mcas.asc(A2=True, length_mus=self.dur_step[alt_step][5], name = 'ple_A2_readout')
-                    self.mcas.asc(length_mus=1.0,name = 'wait')
+                    self.mcas.asc(length_mus=0.5,name = 'wait')
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
                 
                 
                 elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_A1':
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                    self.mcas.asc(A1=False, length_mus=self.dur_step[alt_step][6], name = 'initial wait') # Delete me again
                     self.mcas.asc(A1=True, length_mus=self.dur_step[alt_step][5], name = 'ple_A1_readout')
-                    self.mcas.asc(length_mus=1.0,name = 'wait')
+                    self.mcas.asc(length_mus=0.5,name = 'wait')
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
 
+                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_A2_delay':
+                    aom_A2_delay = 0.45 # delay is 450ns
+                    aom_A2_delay = self.wait_dur
+                    print("Using ple_A2_delay")
+                    print("Delay: ", aom_A2_delay)
+
+                    self.mcas.asc(A2=True, length_mus=self.dur_step[alt_step][5], name = 'ple_A2_readout')
+
+                    if self.dur_step[alt_step][5] < aom_A2_delay:
+                        self.mcas.asc(length_mus=aom_A2_delay-self.dur_step[alt_step][5], name = 'wait')
+                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                    else:
+                        self.mcas.asc(A2=True, length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                        self.mcas.asc(A2=True, length_mus=self.dur_step[alt_step][5]-(aom_A2_delay+__TT_TRIGGER_LENGTH__), name = 'ple_A2_readout')
+                        self.mcas.asc(length_mus=aom_A2_delay,name = 'wait')
+                    self.mcas.asc(length_mus=0.1,name = 'wait')
+                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
+                
+                elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_A1_delay':
+                    aom_A1_delay = 0.37 # delay is 370ns
+                    aom_A1_delay = self.wait_dur
+                    print("Using ple_A1_delay")
+                    print("Delay: ", aom_A1_delay)
+
+                    self.mcas.asc(A1=True, length_mus=self.dur_step[alt_step][5], name = 'ple_A1_readout')
+
+                    if self.dur_step[alt_step][5] < aom_A1_delay:
+                        self.mcas.asc(length_mus=aom_A1_delay-self.dur_step[alt_step][5], name = 'wait')
+                        self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                    else:
+                        self.mcas.asc(A1=True, length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                        self.mcas.asc(A1=True, length_mus=self.dur_step[alt_step][5]-(aom_A1_delay+__TT_TRIGGER_LENGTH__), name = 'ple_A1_readout')
+                        self.mcas.asc(length_mus=aom_A1_delay,name = 'wait')
+                    self.mcas.asc(length_mus=0.1,name = 'wait')
+                    self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
+                
                     # delta+=self.dur_step[alt_step][5]
                 #
                 # elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'Ex_pi_readout_6ns':

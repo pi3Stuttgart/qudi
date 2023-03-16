@@ -31,60 +31,33 @@ def ret_ret_mcas(pdc):
         sequence_name = 'Electron_rabi_test' if sequence_name is None else sequence_name
         #print(self, current_iterator_df)
         
-        mcas = MultiChSeq(name=sequence_name, ch_dict={'2g': [1,2], 'ps': [1]}) #Only use one channel - it is faster...
+        mcas = MultiChSeq(name=sequence_name, ch_dict={'2g': [1, 2], 'ps': [1]})
         mcas.start_new_segment('start_sequence')
         
         for idx, _I_ in current_iterator_df.iterrows():
-            mcas.asc(length_mus=5.0, repump=True, name='Repump')
-            mcas.asc(length_mus=10.0)  # Starting... histogram 0
+            mcas.asc(length_mus=50.0, repump=True, name='Repump')
+            mcas.asc(length_mus=30.0)  # Starting... histogram 0
         
-            pi_durR = self.queue.tt.rp('e_rabi_ou350deg-90-R', omega=1).pi
+            pi_dur = self.queue.tt.rp('e_rabi_ou350deg-90-L', omega=_I_['omega']).pi
             amp = self.queue.tt.rp('e_rabi_ou350deg-90-L', omega=_I_['omega']).amp
-            ampR = self.queue.tt.rp('e_rabi_ou350deg-90-R', omega=1).amp
-            mcas.asc(
-                A1=_I_['init']=='A1',
-                A2 =_I_['init']=='A2', 
-                length_mus=_I_['init_time'], 
-                name='resonant_init',
-                pd2g1 = {
-                    'type':'sine',
-                    'phases':[0],
-                    'amplitudes':[_I_['mw_init32'],_I_['mw_init32'],_I_['mw_init12'],_I_['mw_init12'], ],#0.02
-                    #'frequencies':[30.5,38.5],
-                    'frequencies':[177.7,169.7,107,116]
-                }
-            )  # Init system with A2 laser
-            mcas.asc(length_mus=20.0, name='sequence wait 1')
-
-            if _I_['173pi']:
-                sna.electron_rabi(
-                    mcas,
-                    new_segment=False,
-                    length_mus= pi_durR,
-                    amplitudes=[ampR, ampR],
-                    frequencies=[169.5,177.5],
-                    mixer_deg=[-90,-90]
-                )
-
-            mcas.asc(length_mus=0.5, name='sequence wait 2')
-
+            mcas.asc(A1=_I_['init']=='A1',A2 =_I_['init']=='A2', length_mus=_I_['init_time'], name='resonant_init')  # Init system with A2 laser
+            mcas.asc(length_mus=0.5, name='sequence wait 1')
             sna.electron_rabi(
                 mcas,
                 new_segment=False,
-                length_mus= _I_['tau'],
+                length_mus= pi_dur,
                 amplitudes=[amp],
                 frequencies=[_I_['mw_freq']],
                 mixer_deg=[-90]
             )
             mcas.asc(length_mus=0.5, name='sequence wait 1')
             freq = [30.0]
-            
             if _I_['readout'] == 'A2':
                 sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
-                    nuc='ple_A2', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=_I_['t_read'])
+                    nuc='ple_A2', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=1.3)
             elif _I_['readout'] == 'A1':
                 sna.ssr(mcas = mcas, queue=self.queue, frequencies=freq, wait_dur=0.0, robust=False,
-                    nuc='ple_A1', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=_I_['t_read'])
+                    nuc='ple_A1', mixer_deg=-90, eom_ampl=0.0, step_idx=0, laser_dur=1.3)
             mcas.asc(length_mus=0.5, name='sequence wait 2')
 
             # if _I_['readout'] == 'A2':
@@ -130,10 +103,10 @@ def settings(pdc={}):
 
     nuclear.x_axis_title = 'Index'
     #nuclear.analyze_type = 'consecutive'
-    # nuclear.analyze_type = 'standard'
-    nuclear.analyze_type = 'average' #experimental feature for the fast 
+    #nuclear.analyze_type = 'standard'
+    nuclear.analyze_type = 'average'
     #nuclear.analyze_type = None
-    nuclear.save_smartly = True
+    nuclear.save_smartly = False
 
     #PLE refocus
     nuclear.do_ple_refocusA1 = False #not used 
@@ -145,18 +118,12 @@ def settings(pdc={}):
 
     #confocal refocus
     nuclear.do_confocal_repump_refocus = False
-    nuclear.do_confocal_A1A2_refocus = True
-    nuclear.do_confocal_A2MW_refocus = False
+    nuclear.do_confocal_A1A2_refocus = False
+    nuclear.do_confocal_A2MW_refocus = True
 
-    # Resonant Laser power
-    nuclear.checkA1LaserPower = False # Not yet implemented in powerstablogic
-    nuclear.checkA2LaserPower = False
-    nuclear.A1LaserPower = 1 #nW
-    nuclear.A2LaserPower = 3 #nW
-
-    nuclear.ple_refocus_interval = 1200
-    nuclear.confocal_refocus_interval = 1200  # seconds
-    nuclear.odmr_refocus_interval= 1200
+    nuclear.ple_refocus_interval = 600
+    nuclear.confocal_refocus_interval = 600  # seconds
+    nuclear.odmr_refocus_interval= 600
 
     #rabi refocus ?
 
@@ -166,25 +133,19 @@ def settings(pdc={}):
     nuclear.parameters = OrderedDict( # WHAT DOES ALL THIS MEAN ??? WHICH UNITS ??
         (
             #('phase_pi2_2', [0]),  
-            # ('defect_ids', ['V_Si1', 'V_Si2']),
-            ('sweeps', range(5)),
-            ('init_time', [100.0,150.0,50.0,10]),
-            ('mw_init12',[0]),#np.linspace(0,0.05,2)), 
-            ('mw_init32',np.linspace(0.04,0.08,2)), 
-            ('init', ['A1','A2']),
-            ('ms',['L','C','R']),
-            ('t_read',[1.0]),
-            ('A2_power',[5]),
-            ('173pi', [False]),
-            ('omega', [15]), 
-            ('mw_freq', [0.5*(38.52+30.52)]),#np.linspace(28.6, 40.5,35)),
-            ('tau', E.round_length_mus_full_sample(np.linspace(0,0.1,20))),
-            #('tau', E.round_length_mus_full_sample([0,0.27])),
-            ('readout', ['A2','A1']),
-            
+            ('A2_power', [5]),  
+            ('omega', [0.5]),  
+            ('readout', ['A2']),
+            ('init', ['A2']),
+            ('sweeps', range(150)),
+            ('init_time', [100,75,50,30,20,10,5]),
+            #('init_time', [5]),
+            # ('mw_freq', [28,30.4,32,34,36,38.4,40,42]), 
+            #('init_time', np.linspace(0.0, 100.0, 11) ),
+            ('mw_freq', np.linspace(25, 43.0,81)), 
         )
     )
-    nuclear.number_of_simultaneous_measurements =  2#int(4*len(nuclear.parameters['mw_freq']))
+    nuclear.number_of_simultaneous_measurements =  1#*len(nuclear.parameters['mw_freq'])
 
 def run_fun(abort, **kwargs):
     print(1,' Nuclear started!!!')
@@ -195,99 +156,3 @@ def run_fun(abort, **kwargs):
     settings()
     print('run_fun started')
     nuclear.run(abort)
-    #nuclear.thread.join() #experimental...
-    # # ------------------------------------------------------
-    #df = nuclear.data.df
-    # pld = nuclear.pld.data_fit_results.df
-    #df = df[['sweeps', 'average_counts', 'amp', 'mw_duration']]
-    
-    # temp_df = pd.DataFrame(columns=['amp0', 'omega', 'average_counts', 'mw_duration'])
-    #temp_df = pd.DataFrame(columns=['amp', 'omega', 'transition','date'])
-    # for amp in df['amp0'].unique():
-    #     print('Ampl ', amp)
-    #     sub_df = df[(df['amp0'] == amp)]
-    
-    
-    
-    #     # sub_pld = pld[(pld['amp0'] == amp)]
-    #     x = sub_df['mw_duration'].unique()
-    #     y = sub_df.groupby(by=['mw_duration']).agg({'average_counts': np.mean}).values.ravel()
-    
-    #     m = lmfit_models.CosineModel()
-    #     p = m.guess(data=y, x=x)
-    #     r = m.fit(data=y, params=p, x=x)
-    
-    
-    #     temp_df = pd.concat([temp_df, pd.DataFrame({
-    #         'amp0': [amp],
-    #         # 'omega': 1.0 / sub_pld['T'].mean(),
-    #         'transition': [0],
-    
-    #         'omega': [1.0 / r.params['T'].value],
-    #         # 'average_counts': [y],
-    #         # 'mw_duration': [x],
-    
-    #         'date': [str(datetime.datetime.now())]
-    #     })])
-    
-    # f = 'e_rabi_ou350deg-90'
-    # temp_df = temp_df[['amp0', 'transition', 'omega', 'date']]
-    
-    # print(temp_df)
-    # pi3d.tt.rabi_parameters[f].update_file(temp_df)
-    # ------------------------------------------------------
-
-    # x = nuclear.data.df['mw_duration'].unique()
-    # y = nuclear.data.df.groupby(by = ['mw_duration']).agg({'average_counts': np.mean}).values
-    
-    # T = nuclear.pld.fit_result_table.data['T'] #RabiPeriod
-    # pi3d.tt.rabi_parameters[f].update_file(sub)  ## where sub is dataframe
-    # nuclear.pld.data_fit_results.df
-    # data_dict={
-    #     'mw_durations' : x,
-    #     'average_counts':y,
-    #     'omega' : 1.0/T,
-    #     # amp0    transition    omega    date
-    
-    # }
-    # print('-----------')
-    # print('x: ')
-    # print(x)
-    # print('y: ')
-    # print(y)
-    # print('-----------')
-
-        # df = nuclear.data.df
-    # pld = nuclear.pld.data_fit_results.df
-    #df = df[['sweeps', 'average_counts', 'amp', 'mw_duration']]
-
-    # temp_df = pd.DataFrame(columns=['amp0', 'omega', 'average_counts', 'mw_duration'])
-    #temp_df = pd.DataFrame(columns=['amp', 'omega', 'transition','date'])
-    #for amp in df['amp'].unique():
-    #    print('Ampl ', amp)
-    #    sub_df = df[(df['amp'] == amp)]
-    #    # sub_pld = pld[(pld['amp0'] == amp)]
-    #    x = sub_df['mw_duration'].unique()
-     #   y = sub_df.groupby(by=['mw_duration']).agg({'average_counts': np.mean}).values.ravel()
-    #    m = lmfit_models.CosineModel()
-    #    p = m.guess(data=y, x=x)
-     #   r = m.fit(data=y, params=p, x=x)
-    #    temp_df = pd.concat([temp_df, pd.DataFrame({
-    #        'amp0': [amp],
-            # 'omega': 1.0 / sub_pld['T'].mean(),
-     #       'transition': [0],
-     #       'omega': [1.0 / r.params['T'].value],
-            # 'average_counts': [y],
-            # 'mw_duration': [x],
-    #        'date': [str(datetime.datetime.now())]
-    #    })])
-
-    #f = 'e_rabi_ou350deg-90'
-    #temp_df = temp_df[['amp0', 'transition', 'omega', 'date']]
-
-    #print(temp_df)
-    #nuclear.queue.tt.rabi_parameters[f].update_file(temp_df)
-    #------------------------------------------------------
-
-    #x = df['mw_duration'].unique()
-    #y = df.groupby(by = ['mw_duration']).agg({'average_counts': np.mean}).values

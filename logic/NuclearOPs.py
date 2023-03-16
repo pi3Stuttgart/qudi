@@ -70,7 +70,7 @@ class NuclearOPs(DataGeneration):
             repeat=False,
         )
         self.hashed = False
-        self.pause_time = [3.00, 6.00] ## The minutes are in % of an hour.
+        self.pause_time = [2.75, 6.5] ## The minutes are in % of an hour.
         self.do_ple_refocusA2 = False
         self.do_ple_refocusA1 = False
         self.do_ple_refocus = False
@@ -319,8 +319,8 @@ class NuclearOPs(DataGeneration):
     def check_time(self):
         hour, minute = int(time.strftime("%H", time.gmtime()))+1, int(time.strftime("%m", time.gmtime()))+6 # +1 and +6 to adjust for time-zone
         minute_of_day = hour*60+minute
-        stop_minute = self.recycling_start_hour*60-5 # Stop measurement 5 min before recycling starts
-        start_minute = self.recycling_start_hour*60+self.recycling_duration*60+10 # Start measurement 10 min after recycling stopped
+        stop_minute = self.recycling_start_hour*60-30 # Stop measurement 5 min before recycling starts
+        start_minute = self.recycling_start_hour*60+self.recycling_duration*60+30 # Start measurement 10 min after recycling stopped
         idx = 0
         while minute_of_day >= stop_minute and minute_of_day <= start_minute:
             QtTest.QTest.qSleep(10000)
@@ -331,7 +331,6 @@ class NuclearOPs(DataGeneration):
             print("Continue measurement because recycling stopped.")
         
     def checktime(self, abort):
-        
         start_pause_time = self.pause_time[0]
         end_pause_time = self.pause_time[1]
         sph = int(start_pause_time)
@@ -340,10 +339,10 @@ class NuclearOPs(DataGeneration):
         spm = int(60*(start_pause_time-int(start_pause_time)))
         idx = 0
         t=datetime.datetime.now()
-        #print('we are in check time', sph,eph,spm, epm)
         while t.hour <= eph and t.hour >= sph and t.minute < epm and t.minute >= spm:
             if abort.is_set(): break
             QtTest.QTest.qSleep(100)
+            #time.sleep(100) #FIXME #Does this help instead of qSleep?
             if idx==0:
                 print('3 am pause')
                 idx +=1
@@ -475,9 +474,10 @@ class NuclearOPs(DataGeneration):
                             #self.queue.ple_repump.desired_freq = yellow_desired_freq
 
                         #self.queue.ple_repump.compensate_drift()
-                    
+                    t0=time.time()
                     self.setup_rf(self.current_iterator_df, hashed = self.hashed) #MCAS is ready
-                    
+                    print("time pased 1", time.time()-t0); t0=time.time()
+
                     if abort.is_set(): break
                     
                     if self.raw_clicks_processing:
@@ -492,6 +492,8 @@ class NuclearOPs(DataGeneration):
                     self.data.set_observations(pd.concat([self.df_refocus_pos.iloc[-1:, :]]*self.number_of_simultaneous_measurements).reset_index(drop=True))#already inlcuded in raw_clicks_processing
                     
                     self.data.set_observations([OrderedDict(start_time=datetime.datetime.now())]*self.number_of_simultaneous_measurements)
+                    
+                    print("time pased 2", time.time()-t0); t0=time.time()
                     # TODO
                     #Measure powers and record them!!!!
                     ##
@@ -522,10 +524,14 @@ class NuclearOPs(DataGeneration):
                     # Thread1=threading.Thread(target=self.get_trace, args=(abort), kwargs={'delay_ps_list': self.delay_ps_list ,'window_ps_list' : self.window_ps_list})
                     # Thread1.start()
                     self.get_trace(abort,delay_ps_list = self.delay_ps_list ,window_ps_list = self.window_ps_list) #Start AWGs...
-                    if abort.is_set(): break
-                    
-                    self.data.set_observations([OrderedDict(end_time=datetime.datetime.now())]*self.number_of_simultaneous_measurements)
+                    print("time pased 3", time.time()-t0); t0=time.time()
 
+                    if abort.is_set(): break
+
+                    
+
+                    self.data.set_observations([OrderedDict(end_time=datetime.datetime.now())]*self.number_of_simultaneous_measurements)
+                    print("time pased 4", time.time()-t0); t0=time.time()
                     if self.save_smartly: #non zero to the data
                         #pass
                         # TEMP SOLUTION FIXME LATER, Only for HOM , just uncomment this code
@@ -539,6 +545,8 @@ class NuclearOPs(DataGeneration):
                         pass
                     else:
                         self.data.set_observations([OrderedDict(trace=self.ana_trace.trace)]*self.number_of_simultaneous_measurements)
+                    print("time pased 5", time.time()-t0); t0=time.time()
+
                     # # print('type(self.ana_trace.trace) ', type(self.ana_trace.trace))
                     # # print('self.ana_trace.trace.dtype ', self.ana_trace.trace.dtype)
 
@@ -616,11 +624,16 @@ class NuclearOPs(DataGeneration):
                         break
                     # end of while
                     # print("end of while")
+                print("time pased 6", time.time()-t0); t0=time.time()
 
                 if hasattr(self, '_pld'):
                     self.pld.new_data_arrived()
                 if abort.is_set(): break
+                print("time pased 7", time.time()-t0); t0=time.time()
+
                 self.save()
+                print("time pased 8", time.time()-t0); t0=time.time()
+
                 #end of for
                 # print("end of for")
                 
@@ -629,6 +642,7 @@ class NuclearOPs(DataGeneration):
             abort.set()
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb)
+            self.update_current_str()
         finally:
             self.state = 'idle'
             self.data._df = data_handling.df_take_duplicate_rows(self.data.df, self.iterator_df_done) #drops unfinished measurements,
@@ -898,6 +912,7 @@ class NuclearOPs(DataGeneration):
             #(pulse=(0,[],0,0))
             QtTest.QTest.qSleep(3000)
             self.performedRefocus = True
+
     def check_eom(self):
 
         logging.getLogger().info('checking the eom')
@@ -1064,7 +1079,8 @@ class NuclearOPs(DataGeneration):
         if not self._md.debug_mode:
             print("INITIALIZING")
             self.mcas.initialize()
-           
+            print("init fininished")
+        print("getting trace")
         self.queue._gated_counter.count(abort,
                                  ch_dict=self.mcas.ch_dict,
                                  start_trigger_delay_ps_list = delay_ps_list,
@@ -1072,7 +1088,7 @@ class NuclearOPs(DataGeneration):
                                  two_zpl_apd = self.two_zpl_apd,
                                  raw_clicks_processing = self.raw_clicks_processing,
                                  raw_clicks_processing_channels = self.raw_clicks_processing_channels)
-
+        print("measurement finished")
     # def setup_rf(self, current_iterator_df):
     #     t1 = time.time()
     #     #logging.info('setting up the rf')
@@ -1093,8 +1109,8 @@ class NuclearOPs(DataGeneration):
         #print("current_iterator_df ", current_iterator_df)
         if "sweeps" in current_iterator_df.columns:
             current_iterator_df = current_iterator_df.drop(["sweeps"], axis=1)
-
-        hash = base64.b64encode(hashlib.sha1((str(current_iterator_df)+"\n"+str(self.queue._gated_counter.readout_duration)).encode()).digest()) ##REmove the sweep from the current_iterator_df.
+        #print(current_iterator_df.keys())
+        hash = base64.b64encode(hashlib.sha1((str(current_iterator_df)+"\n"+str(self.queue._gated_counter.readout_duration)).encode()).digest()) 
         #Added self.queue._gated_counter.readout_duration such that the hash recognizes a change in readout duration and will update n_values in the sequence accordingly
         sequence_name = "nuclear_op_hash_{}".format(hash)
         if hashed:
@@ -1210,14 +1226,13 @@ class NuclearOPs(DataGeneration):
             for ch in [1,2]:
                 try:
                     
-                    seq_message.append(self._md[self.mcas.name].sequences[k][ch].ret_info()) ##TODO why is it also printing in the consolse??
-                    seq_message.append("\n") ##TODO why is it also printing in the consolse??
+                    seq_message.append(self._md[self.mcas.name].sequences[k][ch].ret_info())
+                    seq_message.append("\n") 
                 except:
                     
                     pass
-        #seq_message.append("\n") ##TODO why is it also printing in the consolse??
-        seq_message.append(str(self._md[self.mcas.name].sequences['ps'][1])) ##TODO why is it also printing in the consolse??
-        #seq_message.append("\n") ##TODO why is it also printing in the consolse??
+
+        seq_message.append(str(self._md[self.mcas.name].sequences['ps'][1]))
         awg_file_name = 'awg-file.txt'
         awg_fp = os.path.join(self.save_dir, awg_file_name)
 
@@ -1225,7 +1240,6 @@ class NuclearOPs(DataGeneration):
             with open(awg_fp, 'w') as fp:
                 for page in seq_message:
                     fp.write(page)
-                    #fp.write("\n") ##TODO why is it also printing in the consolse??
                     fp.write('\n-------------------------------------------------------------------\n')
 
     def reset_settings(self):

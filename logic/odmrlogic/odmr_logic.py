@@ -967,10 +967,6 @@ class pulsedODMRLogic(pulsed_default):
         #     seq.asc(name='repump1', length_mus=self.pulsed_RepumpDuration, repump=True)
         #     seq.asc(name='repump2', length_mus=self.pulsed_RepumpDecay, repump=False)
 
-        if self.pulsed_PulsedRepump:
-            seq.start_new_segment("Repump")
-            seq.asc(name='repump1', length_mus=self.pulsed_RepumpDuration, repump=True)
-            seq.asc(name='repump2', length_mus=self.pulsed_RepumpDecay, repump=False)
         
         # short pulses to SYNC and TRIGGER the timedifferences module of TimeTagger.
         seq.start_new_segment("SYNCING")
@@ -980,9 +976,33 @@ class pulsedODMRLogic(pulsed_default):
         freq_init = np.array([self.pulsed_MW2_Freq, self.pulsed_MW3_Freq])[self.pulsed_MW2, self.pulsed_MW3]
         power_init = self.power_to_amp(np.array([self.pulsed_MW2_Power, self.pulsed_MW3_Power])[self.pulsed_MW2, self.pulsed_MW3])
         for freq in self.mw1_freq:
+            if self.pulsed_PulsedRepump:
+                seq.start_new_segment("Repump")
+                seq.asc(name='repump1', length_mus=self.pulsed_RepumpDuration, repump=True)
+                seq.asc(name='repump2', length_mus=self.pulsed_RepumpDecay, repump=False)
+            
             seq.start_new_segment("Init")
-            if (self.pulsed_A1 or self.pulsed_A2) and (self.pulsed_MW2 or self.pulsed_MW3):
+            if self.pulsed_CWRepump and (self.pulsed_MW2 or self.pulsed_MW3) and not (self.pulsed_A1 or self.pulsed_A2):
                 seq.asc(name="init_sine"+str(freq),pd2g1 = {"type":"sine", "frequencies":freq_init, "amplitudes":power_init},
+                        repump = self.pulsed_CWRepump,
+                        A1=self.pulsed_A1,
+                        A2=self.pulsed_A2,
+                        length_mus=self.pulsed_InitTime
+                        )  
+                seq.asc(name='Init_decay'+str(freq), length_mus=self.pulsed_DecayInit, A1=False, A2=False)
+            
+            elif self.pulsed_CWRepump and not (self.pulsed_A1 or self.pulsed_A2):
+                seq.asc(name='init_no_sine',
+                        repump = self.pulsed_CWRepump,
+                        A1=self.pulsed_A1,
+                        A2=self.pulsed_A2,
+                        length_mus=self.pulsed_InitTime
+                        )  
+                seq.asc(name='Init_decay'+str(freq), length_mus=self.pulsed_DecayInit, A1=False, A2=False)
+            
+            elif (self.pulsed_A1 or self.pulsed_A2) and (self.pulsed_MW2 or self.pulsed_MW3):
+                seq.asc(name="init_sine"+str(freq),pd2g1 = {"type":"sine", "frequencies":freq_init, "amplitudes":power_init},
+                        repump = self.pulsed_CWRepump,
                         A1=self.pulsed_A1,
                         A2=self.pulsed_A2,
                         length_mus=self.pulsed_InitTime
@@ -990,6 +1010,7 @@ class pulsedODMRLogic(pulsed_default):
                 seq.asc(name='Init_decay'+str(freq), length_mus=self.pulsed_DecayInit, A1=False, A2=False)
             elif self.pulsed_A1 or self.pulsed_A2:
                 seq.asc(name='init_no_sine',
+                        repump = self.pulsed_CWRepump,
                         A1=self.pulsed_A1,
                         A2=self.pulsed_A2,
                         length_mus=self.pulsed_InitTime
@@ -1004,7 +1025,7 @@ class pulsedODMRLogic(pulsed_default):
             seq.asc(name='pi_pulse_decay'+str(freq), length_mus=self.pulsed_PiDecay/1000, A1=False, A2=False) #self.pulsed_PiDecay is divided by 1000 to be in µs
 
             seq.start_new_segment("Readout")
-            seq.asc(name='readout'+str(freq), length_mus=self.pulsed_ReadoutTime, A1=self.pulsed_A1Readout, A2=self.pulsed_A2Readout, gate=True)
+            seq.asc(name='readout'+str(freq), length_mus=self.pulsed_ReadoutTime, A1=self.pulsed_A1Readout, A2=self.pulsed_A2Readout, repump = self.pulsed_CWRepump, gate=True)
             seq.asc(name='readout_decay'+str(freq), length_mus=self.pulsed_ReadoutDecay, A1=False, A2=False, gate=True)
 
         #self.holder.awg.mcas.status = 1

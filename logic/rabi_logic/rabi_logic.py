@@ -467,7 +467,7 @@ class RabiLogic(GenericLogic,rabi_default):
             seq.asc(name="Tau_pulse"+str(duration),pd2g1 = {"type":"sine", "frequencies":[self.rabi_MW1_Freq], "amplitudes":self.power_to_amp(self.rabi_MW1_Power)},
                 length_mus = duration/1000) #self.rabi_piPulseDuration is divided by 1000 to be in µs
             seq.asc(name='Tau_pulse_decay'+str(duration), length_mus=self.rabi_Tau_Decay/1000, A1=False, A2=False) #self.rabi_Tau_Decay is divided by 1000 to be in µs
-
+            
             seq.start_new_segment("Readout")
             seq.asc(name='readout'+str(duration), length_mus=self.rabi_ReadoutTime/1000, A1=self.rabi_A1Readout, A2=self.rabi_A2Readout, gate=True)
             seq.asc(name='readout_decay'+str(duration), length_mus=self.rabi_ReadoutDecay/1000, A1=False, A2=False, gate=True)
