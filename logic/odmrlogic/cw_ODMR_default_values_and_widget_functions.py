@@ -34,7 +34,7 @@ class cw_ODMR_default_values_and_widget_functions:
         cw_SelectLorentzianFit:bool=F
         cw_SelectGaussianFit:bool=T
         
-        cw_SecondsPerPoint:float=0.02
+        cw_SecondsPerPoint:float=0.01
 
         cw_Runtime:float=0
 

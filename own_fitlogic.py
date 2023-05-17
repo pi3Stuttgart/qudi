@@ -27,26 +27,16 @@ from mimetypes import init
 from tkinter import X, Y
 
 from matplotlib.style import use
-import lmfit
-#from qtpy import QtCore
 import numpy as np
 import os
 import sys
 from collections import OrderedDict
 from distutils.version import LooseVersion
 
-from logic.generic_logic import GenericLogic
-from core.util.modules import get_main_dir
-from core.util.mutex import Mutex
-from core.config import load, save
-from core.configoption import ConfigOption
 from scipy import optimize
 from scipy import signal
 from scipy.fftpack import fft, ifft, rfft
 import time
-
-import logging
-logger = logging.getLogger(__name__)
 
 import inspect
 
@@ -55,7 +45,7 @@ class multifunction():
     def __init__(self,function=None):
         self.peak_pos=[]
         self.freq_pos=[]
-        #logger.info("hi")
+        #print("hi")
         if function==None:
             self.function_list=[]
             self.arg_length=0
@@ -63,27 +53,27 @@ class multifunction():
             self.function_list=[function]
             sig=self.inspect.signature(function).parameters
             #print(sig)
-            #logger.info(sig)
+            #print(sig)
             sub=0
             for i,param in enumerate(sig.keys()):
                 param=param.lower()
                 if param=="self": # take into account that the function may silently pass self to itself
                     sub=1
-                #logger.info(f"{param}, {i}")
+                #print(f"{param}, {i}")
 
-                if "mean" == param or "mu" == param or "x0" == param: #some parameter names may give hints on what is meant with this parameter
+                if "mean" == param or "mu" == param or "x0" == param:
                     self.peak_pos.append(i-1-sub)
                 elif "freq" == param or "omega" == param:
                     self.freq_pos.append(i-1-sub)
             #print("i=",i)
-            #logger.info(self.)
+            #print(self.)
             self.arg_length=i # len(args)-1 because x is assumed to part of the arguments
         
         
         
     def __call__(self,*args,**kwargs): # a possible speedup would be to vectorize with np the function evaluation
         if len(kwargs.keys())!=0:
-            logger.warning("kwargs are not taken into account in this function")
+            print("kwargs are not taken into account in this function")
         self.x=args[0] # will be passed to each function
         self.args=args[1:]
         return self.parse(self.function_list.copy())
@@ -145,7 +135,7 @@ class multifunction():
         return self._add(other,"/")
 
 
-class FitLogic(GenericLogic):
+class FitLogic():
     """
     This is the fitting class where fit functions are defined and methods are
     implemented to process the data.
@@ -181,7 +171,8 @@ class FitLogic(GenericLogic):
         setattr(self.quadratic,"fit",lambda *args, **kwargs: self.fit(self.quadratic,*args,**kwargs))
         setattr(self.stretched_exponential,"fit",lambda *args, **kwargs: self.fit(self.stretched_exponential,*args,**kwargs))
         
-
+        self.errors=np.array([np.inf])
+        self.dv=0.001 # used to calculate the fit incertainity
 
     def on_activate(self):
         """ Initialisation performed during activation of the module.
@@ -199,7 +190,7 @@ class FitLogic(GenericLogic):
         y_data=np.asarray(y_data)
         y_fit=np.asarray(y_fit)
         if len(y_fit)!=len(y_data):
-            logger.error("The two lists given to least square do not have the same length")
+            print("The two lists given to least square do not have the same length")
             return -1
         else:
             return np.sum((y_data-y_fit)**2)
@@ -218,9 +209,13 @@ class FitLogic(GenericLogic):
         sorted_peaks=peaks[0][indexes]
         return sorted_peaks
         
-    def fit(self,function,x_data,y_data,init_guess=None,peak_pos_arguments=[],dip_pos_arguments=[],sine_freq_arguments=[],use_multifunction_hints=False,speedup=None): # the peak_pos_arguments=[],dip_pos_arguments=[],sine_freq_arguments=[] give the position in the function argument array of peaks,dips and the sine frequencies
+    def fit(self,function,x_data,y_data,init_guess=None,peak_pos_arguments=[],dip_pos_arguments=[],sine_freq_arguments=[],use_multifunction_hints=False,speedup=None, bounds=None, silent=False, use_least_sqares=False): # the peak_pos_arguments=[],dip_pos_arguments=[],sine_freq_arguments=[] give the position in the function argument array of peaks,dips and the sine frequencies
         # to get faster fitting, one can also order the peak argument position so that the highest peaks correspond to the first peak arguments listed
+        x_data=np.array(x_data)
+        y_data=np.array(y_data)
+        
         fit_time=time.time()
+        y_data=y_data.real
         if speedup==None:
             speedup=self.speedup
 
@@ -249,7 +244,7 @@ class FitLogic(GenericLogic):
         elif type(function) == type(multifunction()):
             x0=np.array([1.3]*(function.arg_length))
         else:
-            logger.error("Fit function contains *args or **kwargs in its signature, the fit cannot be done!")
+            print("Fit function contains *args or **kwargs in its signature, the fit cannot be done!")
             return x_data*0
 
         
@@ -267,38 +262,35 @@ class FitLogic(GenericLogic):
 
             anylysis_time=time.time()
             peaks,dips,freqs=self.analyse_data(y_data,**self.analyse_kwargs)
-            #logger.info(f"annalysing data took {time.time()-anylysis_time} s")
-            #print(f"annalysing data took {time.time()-anylysis_time} s")
+            if not silent:
+                print(f"annalysing data took {time.time()-anylysis_time} s")
 
             Peaks=self.sort_by_prominence(peaks)
             Dips=self.sort_by_prominence(dips)
             Freqs=self.sort_by_prominence(freqs)
-
-            #logger.info(f"peaks:{len(Peaks)}, dips:{len(Dips)},freqs:{len(Freqs)}")
-            #print(f"peaks:{len(Peaks)}, dips:{len(Dips)},freqs:{len(Freqs)}")
+            if not silent:
+                print(f"peaks:{len(Peaks)}, dips:{len(Dips)},freqs:{len(Freqs)}")
 
             #the frequencies given by fft are symetric around the middle of the freqs list, we remove them
             #Freqs=Freqs[:int(len(Freqs)/2)]
 
 
-            #logger.info(peak_pos_arguments)
-            #logger.info(dip_pos_arguments)
-            #logger.info(sine_freq_arguments)
-            #logger.info(peaks)
-            #logger.info(dips)
-            #logger.info(freqs)
-            #logger.info(self.x_data)
-            #logger.info(x0)
+            #print(peak_pos_arguments)
+            #print(dip_pos_arguments)
+            #print(sine_freq_arguments)
+            #print(peaks)
+            #print(dips)
+            #print(freqs)
+            #print(self.x_data)
+            #print(x0)
 
             # set the initial guesses arguments at their calculated position
+            filtered=0
             if len(peak_pos_arguments)>0:
-                try:
-                    y=signal.savgol_filter(y_data,int(0.1*len(y_data)/2)*2+1,3) # for better peak finding we smooth the data. The window size (2nd argumant) must be odd, the filter window is 10% of the data length
-                    y_peaks=signal.find_peaks(y,**self.analyse_kwargs)
-                except:
-                    y_peaks=signal.find_peaks(y_data,**self.analyse_kwargs)
-                    
+                y=signal.savgol_filter(y_data,max(int(0.1*len(y_data)/2)*2+1,5),3) # for better peak finding we smooth the data. The window size (2nd argumant) must be odd, the filter window is 10% of the data length
+                y_peaks=signal.find_peaks(y,**self.analyse_kwargs)
                 Peaks=self.sort_by_prominence(y_peaks)
+                filtered=1
 
                 if len(Peaks)>len(peak_pos_arguments):
                     for i,peak_pos in enumerate(peak_pos_arguments):
@@ -308,12 +300,9 @@ class FitLogic(GenericLogic):
                         x0[peak_pos_arguments[i]]=self.x_data[peak]
 
             if len(dip_pos_arguments)>0:
-                try:
-                    y=signal.savgol_filter(-y_data,int(0.1*len(y_data)/2)*2+1,3)
-                    y_dips=signal.find_peaks(y,**self.analyse_kwargs)
-                except:
-                    y_dips=signal.find_peaks(-y_data,**self.analyse_kwargs)
-
+                if not filtered:
+                    y=signal.savgol_filter(y_data,max(int(0.1*len(y_data)/2)*2+1,5),3)
+                y_dips=signal.find_peaks(y,**self.analyse_kwargs)
                 Dips=self.sort_by_prominence(y_dips)
 
                 if len(Dips)>len(dip_pos_arguments):
@@ -325,11 +314,8 @@ class FitLogic(GenericLogic):
 
             if len(sine_freq_arguments)>0:
                 FT_x=abs(rfft(y_data)) # we are only interested in the frequencies
-                try:
-                    FT_x=signal.savgol_filter(FT_x,int(0.01*len(y_data)/2)*2+1,3) # the window size is 1% as peaks are expected to be sharp
-                    freqs=signal.find_peaks(FT_x,**self.analyse_kwargs)
-                except:
-                    freqs=signal.find_peaks(FT_x,**self.analyse_kwargs)
+                FT_x=signal.savgol_filter(FT_x,max(int(0.01*len(y_data)/2)*2+1,5),3) # the window size is 1% as peaks are expected to be sharp
+                freqs=signal.find_peaks(FT_x,**self.analyse_kwargs)
 
                 Freqs=self.sort_by_prominence(freqs)
 
@@ -354,76 +340,96 @@ class FitLogic(GenericLogic):
         if init_guess!= None: 
             init_guess=np.asarray(init_guess)
             x0[init_guess!=None]=init_guess[init_guess!=None]
+        if not silent:
+            print(f"x0={x0}")
 
-        #logger.info(f"x0={x0}")
-        # print(f"x0={x0}")
-
-        # logger.info(f"setting x0 took {time.time()-fit_time} s")
-        # print(f"setting x0 took {time.time()-fit_time} s")
+            print(f"setting x0 took {time.time()-fit_time} s")
         
-        opt_time=time.time()
-        mini=self.function_to_optimize(tuple(x0)) # as initial minimum value we take the function result for x0
-        methods=["Nelder-Mead","Powell","CG","BFGS","L-BFGS-B","TNC","COBYLA","SLSQP"]
-        holded_res=optimize.minimize(self.function_to_optimize,x0=x0)
-        if holded_res.fun>2*mini: # the fit did destroy something
-            holded_res.x=np.array(x0)
-            holded_res.fun=mini
-        x0=holded_res.x
-        if not speedup: # use the given time to get the best optimization 
-            start_time=time.time()
-            res_list=[]
+        if not use_least_sqares:
+            opt_time=time.time()
             mini=self.function_to_optimize(tuple(x0)) # as initial minimum value we take the function result for x0
-            for method in methods:
-                # logger.info("trying with "+method+" method.")
-                # print("trying with "+method+" method.")
+            methods=["Nelder-Mead","Powell","CG","BFGS","L-BFGS-B","TNC","COBYLA","SLSQP"]
+            holded_res=optimize.minimize(self.function_to_optimize,x0=x0,bounds=bounds)
+            if holded_res.fun>2*mini: # the fit did destroy something
+                holded_res.x=np.array(x0)
+                holded_res.fun=mini
+            x0=holded_res.x
+            if not speedup: # use the given time to get the best optimization 
+                start_time=time.time()
+                res_list=[]
+                mini=self.function_to_optimize(tuple(x0)) # as initial minimum value we take the function result for x0
+                retained_method="Nelder-Mead"
+                for method in methods:
+                    if not silent:
+                        print("trying with "+method+" method.")
+                    if time.time()-start_time>self.optimize_time: # do not exceed the given time
+                        break
+                    res=optimize.minimize(self.function_to_optimize,x0=x0,method=method)
+                    res_list.append(res)
+                    if res.fun!=np.nan:
+                        if np.min([mini,res.fun]) < mini:
+                            if res.fun/mini>0.9: # take the better result init params
+                                x0=res.x
+                            mini=res.fun
+                            holded_res=res
+                            retained_method=method
+
+                if not silent:
+                    print("retained_method: "+retained_method)
+
+            if not holded_res.success:
+                print("Fit was not successful, consider setting speedup to false")
+                    
+            self.next_init_guess=holded_res.x
+            self.res=holded_res
+            if not silent:
+                print(f"optimizing took {time.time()-opt_time} s")
+                print(f"total fit time was: {time.time()-fit_time}")
+            
+            #calculate the sigma
+            errors=[]
+
+            for i in range(len(self.res.x)):
+                test=self.res.x.copy()
+                test[i]=test[i]+self.dv
+                errors.append(np.sqrt(self.least_square(function(x_data,*test),function(x_data,*self.res.x)))/self.dv)
+
+
+            self.errors=np.array(errors)
+            self.res.incertainity=np.asarray(errors)
+
+            return self.res
+        else:
+            best_sol=1e300 #cost function value, ridiculously high to make sure we get a result from the fit.
+            retained_sol=0
+            for method in ["trf", "dogbox", "lm"]:
+                start_time=time.time()
                 if time.time()-start_time>self.optimize_time: # do not exceed the given time
-                    break
-                res=optimize.minimize(self.function_to_optimize,x0=x0,method=method)
-                res_list.append(res)
-                if res.fun!=np.nan:
-                    if np.min([mini,res.fun]) < mini:
-                        if res.fun/mini>0.9: # take the better result init params
-                            x0=res.x
-                        mini=res.fun
-                        holded_res=res
-                        retained_method=method
+                        break
 
-            #logger.info("retained_method: "+retained_method)
-            #print("retained_method: "+retained_method)
+                if not silent:
+                    print(f"trying with method {method}")
 
-        if not holded_res.success:
-            #logger.warning("Fit was not successful, consider setting speedup to False")
-            #print("Fit was not successful, consider setting speedup to False")
+                res=optimize.least_squares(self.function_to_optimize,x0=x0)
+                if res.cost<best_sol:
+                    retained_sol=res
+                    best_sol=res.cost
 
-            pass
-                
-        self.next_init_guess=holded_res.x
-        self.res=holded_res
-        #logger.info(f"optimizing took {time.time()-opt_time} s")
-        #logger.info(f"total fit time was: {time.time()-fit_time}")
-        #print(f"optimizing took {time.time()-opt_time} s")
-        #print(f"total fit time was: {time.time()-fit_time}")
-        return self.res
+            self.next_init_guess=retained_sol.x
+            self.res=retained_sol
+            return self.res
+
 
     def use_curve_fit(self):
         print("curve fit not implemented")
     
     def analyse_data(self,x,**kwargs): #kwars: height=None, threshold=None, distance=None, prominence=None, width=None, wlen=None, rel_height=0.5, plateau_size=None
-        try:
-            x=signal.savgol_filter(x,np.clip(int(0.1*len(x)/2)*2+1,5,np.inf),3) # for better peak finding we smooth the data. The window size (2nd argumant) must be odd, the filter window is 10% of the data length
-            x_peaks=signal.find_peaks(x,**kwargs)
-            x_dips=signal.find_peaks(-x,**kwargs)
-            FT_x=abs(rfft(x)) # we are only interested in the frequencies
-            FT_x=signal.savgol_filter(FT_x,np.clip(int(0.1*len(x)/2)*2+1,5,np.inf),3) # the window size is 1% as peaks are expected to be sharp
-            FT_peaks=signal.find_peaks(FT_x,**kwargs)
-        except:
-            #x=signal.savgol_filter(x,np.clip(int(0.1*len(x)/2)*2+1,5,np.inf),3) # for better peak finding we smooth the data. The window size (2nd argumant) must be odd, the filter window is 10% of the data length
-            x_peaks=signal.find_peaks(x,**kwargs)
-            x_dips=signal.find_peaks(-x,**kwargs)
-            FT_x=abs(rfft(x)) # we are only interested in the frequencies
-            #FT_x=signal.savgol_filter(FT_x,np.clip(int(0.1*len(x)/2)*2+1,5,np.inf),3) # the window size is 1% as peaks are expected to be sharp
-            FT_peaks=signal.find_peaks(FT_x,**kwargs)
-
+        x=signal.savgol_filter(x,max(int(0.1*len(x)/2)*2+1,5),3) # for better peak finding we smooth the data. The window size (2nd argumant) must be odd, the filter window is 10% of the data length
+        x_peaks=signal.find_peaks(x,**kwargs)
+        x_dips=signal.find_peaks(-x,**kwargs)
+        FT_x=abs(rfft(x)) # we are only interested in the frequencies
+        FT_x=signal.savgol_filter(FT_x,max(int(0.01*len(x)/2)*2+1,5),3) # the window size is 1% as peaks are expected to be sharp
+        FT_peaks=signal.find_peaks(FT_x,**kwargs)
         return x_peaks,x_dips,FT_peaks
 
     ############ basic functions
@@ -488,6 +494,11 @@ class FitLogic(GenericLogic):
         n_lorentz_function_with_liear_offset=self.make_n_lorentz_function(n_lorentz)+self.linear
         setattr(n_lorentz_function_with_liear_offset,"fit",lambda *args,**kwargs: self.make_n_lorentz_with_linear_offset_fit(n_lorentz,*args,func=n_lorentz_function_with_liear_offset,**kwargs))
         return  n_lorentz_function_with_liear_offset
+
+    def make_decay_with_offset(self):
+        exponential_decay_function=self.exp_decay+self.constant
+        setattr(exponential_decay_function,"fit",lambda *args,**kwargs: self.make_exponential_decay_with_offset_fit(*args,func=exponential_decay_function,**kwargs))
+        return exponential_decay_function
 
     def make_oscilating_exponential_decay_function(self):
         oscilating_exponential_decay_function=self.sine*self.exp_decay
@@ -601,6 +612,21 @@ class FitLogic(GenericLogic):
         res_dict["a"]=params[-2]
         res_dict["b"]=params[-1]
         return res_dict
+
+    def make_exponential_decay_with_offset_fit(self,x_data,y_data,init_guess=None,func=None): #TODO WORK on this
+        if func==None:
+            func=self.make_decay_with_offset()
+        res=self.fit(func,x_data,y_data,init_guess=init_guess)
+        params=res.x
+        res_dict={}
+        res_dict["result"]=res
+        res_dict["params"]=params
+        res_dict["amplitude"]=params[0]
+        res_dict["x0"]=params[1]
+        res_dict["decay"]=params[2]
+        res_dict["offset"]=params[3]
+        return res_dict
+
 
     def make_oscilating_exponential_decay_fit(self,x_data,y_data,init_guess=None,func=None):
         if func==None:

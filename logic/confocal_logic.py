@@ -28,6 +28,8 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
+from PyQt5 import QtTest
+
 from logic.generic_logic import GenericLogic
 from core.util.mutex import Mutex
 from core.connector import Connector
@@ -597,6 +599,13 @@ class ConfocalLogic(GenericLogic):
 
         @return int: error code (0:OK, -1:error)
         """
+        if not(self._scanning_device._scanning_device._scanner_counter_daq_tasks==[] or self._scanning_device._scanning_device._scanner_clock_daq_task==None):
+            print("another scanner is running. You need to wait. i will continue with current scanner task")
+            QtTest.QTest.qSleep(1000)
+            self.signal_stop_scanning.emit()
+            
+            return
+        
         self.module_state.lock()
 
         self._scanning_device.module_state.lock()

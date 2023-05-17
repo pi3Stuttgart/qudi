@@ -440,8 +440,9 @@ class RabiLogic(GenericLogic,rabi_default):
         seq.asc(name='tt_sync1', length_mus=0.01, memory=True) #Set histogram index to 0       
         seq.asc(name='tt_sync2', length_mus=0.01, gate=True) #increment histogram index
 
-        freq_init = np.array([self.rabi_MW2_Freq, self.rabi_MW3_Freq])[self.rabi_MW2, self.rabi_MW3]
-        power_init = self.power_to_amp(np.array([self.rabi_MW2_Power, self.rabi_MW3_Power])[self.rabi_MW2, self.rabi_MW3])
+        freq_init = np.array([self.rabi_MW2_Freq, self.rabi_MW3_Freq])[[self.rabi_MW2, self.rabi_MW3]]
+        power_init = self.power_to_amp(np.array([self.rabi_MW2_Power, self.rabi_MW3_Power])[[self.rabi_MW2, self.rabi_MW3]])
+
         for duration in self.tau_duration:
             seq.start_new_segment("Init")
             

@@ -218,11 +218,11 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         """
 
         if not scanner and self._clock_daq_task is not None:
-            self.log.error('Another counter clock is already running, close this one first.')
+            self.log.error('Another counter clock is already running, close this one first. "_clock_daq_task" ')
             return -1
 
         if scanner and self._scanner_clock_daq_task is not None:
-            self.log.error('Another scanner clock is already running, close this one first.')
+            self.log.error('Another scanner clock is already running, close this one first."_scanner_clock_daq_task"')
             return -1
 
         # Create handle for task, this task will generate pulse signal for
@@ -673,6 +673,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
 
     # ================ ConfocalScannerInterface Commands =======================
     def reset_hardware(self):
+        print("resetting device NIDAQ")
         """ Resets the NI hardware, so the connection is lost and other
             programs can access it.
 

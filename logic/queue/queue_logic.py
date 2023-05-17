@@ -130,6 +130,7 @@ class queue_logic(GenericLogic):
     odmr_logic= Connector("ODMRLogic_holder")
     poimanagerlogic = Connector('PoiManagerLogic')
     powerstabilization_logic = Connector("PowerStabilizationLogic")
+    counterlogic1=Connector("CounterLogic")
 
     update_selected_user_script_combo_box_signal = pyqtSignal(collections.OrderedDict)
     update_queue_list = pyqtSignal(collections.OrderedDict)
@@ -161,6 +162,7 @@ class queue_logic(GenericLogic):
         self._ODMR_logic = self.odmr_logic()
         self._powerstabilization_logic = self.powerstabilization_logic()
         self._poimanagerlogic = self.poimanagerlogic()
+        self._counter=self.counterlogic1()
         self.init_run() #
         self.write_standard_awg_sequences()
         # TODO we are adding confocal later.

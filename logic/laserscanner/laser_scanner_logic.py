@@ -326,10 +326,16 @@ class LaserScannerLogic(GenericLogic, ple_default):
         #     logger.error('Nicard is in module state "locked".')
         #     raise Exception    
 
-        #print("Start PLE scan...")
+        print("Start PLE scan...")
+        # check if nidaq is not already used
+        if not(self._scanning_device._scanner_counter_daq_tasks==[] or self._scanning_device._scanner_clock_daq_task==None):
+        #if not(self._scanning_device._scanner_counter_daq_tasks==[] or self._scanning_device._scanner_analog_daq_task==None or self._scanning_device._scanner_clock_daq_task==None or self._scanning_device._clock_daq_task==[] or self._scanning_device._counter_daq_tasks ==None):
+            print("another scanner is running. You need to wait. i will continue with current scanner task")
+            return
+
         self.currenttime = time.time()
         self._awg.mcas_dict.stop_awgs()
-        self.trace_seq(hashed = False)
+        self.trace_seq(hashed = True)
         if self.enable_PulsedRepump:
             #self.ps.stream(seq=[[int(self.RepumpDuration*1e3),["repump"],0,0],[int(self.RepumpDecay*1e3),[],0,0]],n_runs=1) #self.RepumpDuration is in µs
             self._awg.mcas_dict['repump'].run()

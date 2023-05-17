@@ -54,10 +54,11 @@ class ODMRLogic_holder(GenericLogic):
     sigOdmrPlotsUpdated = QtCore.Signal()
     SigClock= QtCore.Signal()
     SigCheckReady_Beacon = QtCore.Signal()
-    sigFitPerformed =  QtCore.Signal(str)
+    sigFitPerformed =  QtCore.Signal(str, str)
 
     SelectLorentzianFit:bool=False
     SelectGaussianFit:bool=True
+    align_mode=False # set to true if we want to align the B field
 
     def on_activate(self):
         """
@@ -79,12 +80,12 @@ class ODMRLogic_holder(GenericLogic):
         self.CheckReady_Beacon = RepeatedTimer(1, self.CheckReady)
         #self.CheckReady_Beacon.start()
 
-        self.Contrast_Fit:str = ''
-        self.Frequencies_Fit:str = ''
-        self.Linewidths_Fit:str = ''
-        self.NumberOfPeaks:int=1
+        self.Contrast_Fit: str = ''
+        self.Frequencies_Fit: str = ''
+        self.Linewidths_Fit: str = ''
+        self.NumberOfPeaks: int=1
 
-        
+        self.update_TT: bool = False
 
         self.x_fit = np.arange(20)
         self.y_fit = np.arange(20)
@@ -363,6 +364,8 @@ class ODMRLogic_holder(GenericLogic):
         # # Do not include fit curve if there is no fit calculated.
         if max(fit_count_vals) > 0:
             self.ax_mean.plot(fit_freq_vals, fit_count_vals, marker='None')
+            # self.ax_mean.plot(fit_freq_vals/10**(3*prefix_index), fit_count_vals, marker='None')
+            
     
         self.ax_mean.set_ylabel('Fluorescence (' + counts_prefix + 'counts)')
         self.ax_mean.set_xlim(np.min(freq_data), np.max(freq_data))
@@ -448,7 +451,7 @@ class ODMRLogic_holder(GenericLogic):
         # Rescale counts data with SI prefix
         while np.max(count_data) > 1000:
             count_data = count_data / 1000
-            #fit_count_vals = fit_count_vals / 1000
+            fit_count_vals = fit_count_vals / 1000
             prefix_index = prefix_index + 1
 
         counts_prefix = prefix[prefix_index]
@@ -483,6 +486,7 @@ class ODMRLogic_holder(GenericLogic):
 
         # Do not include fit curve if there is no fit calculated.
         if max(fit_count_vals) > 0:
+            #ax_mean.plot(fit_freq_vals/10**(3*prefix_index), fit_count_vals, marker='None')
             ax_mean.plot(fit_freq_vals, fit_count_vals, marker='None')
         ax_mean.set_ylabel('Fluorescence (' + counts_prefix + 'counts)')
         ax_mean.set_xlim(np.min(freq_data), np.max(freq_data))
@@ -552,6 +556,12 @@ class ODMRLogic_holder(GenericLogic):
 #         
     def do_fit(self,x_data, y_data):
         self.interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*5)
+
+        if self.pulsedODMRLogic.measurement_running and self.NumberOfPeaks > 2:
+            error_text=f"Too many peaks to fit. Wait until measurement has finished to fit more than two peaks."
+            logger.error(error_text)
+            self.NumberOfPeaks = 2
+            raise Warning(error_text)
         if self.SelectGaussianFit:
             self.fit_func=self._fit_logic.make_n_gauss_function_with_offset(self.NumberOfPeaks)
         elif self.SelectLorentzianFit:
@@ -602,9 +612,9 @@ class ODMRLogic_holder(GenericLogic):
         self.fit_result=self.fit_func.fit(x_data,y_data)
         self.fit_data=self.fit_func(self.interplolated_x_data,*self.fit_result["result"].x)
         
-        self.Contrast_Fit:str=''
-        self.Frequencies_Fit:str=''
-        self.Linewidths_Fit:str=''
+        self.Contrast_Fit: str=''
+        self.Frequencies_Fit: str=''
+        self.Linewidths_Fit: str=''
 
         # for i in range(self.NumberOfPeaks):
         #     try:
@@ -621,8 +631,10 @@ class ODMRLogic_holder(GenericLogic):
                 self.Linewidths_Fit=self.Linewidths_Fit+str(round(self.fit_result[("gam_"+str(i))],2))+"; " 
             except Exception as e:
                 print("an error occured:\n", e)
-
-        self.sigFitPerformed.emit(self.Frequencies_Fit)
+        print("Curren state: ", self.pulsedODMRLogic.measurement_running)
+        if self.update_TT:
+            print("emit to TT")
+            self.sigFitPerformed.emit(self.Frequencies_Fit, self.pulsedODMRLogic.CallerTag)
         return self.interplolated_x_data,self.fit_data,self.fit_result
   
 
@@ -759,6 +771,7 @@ class ODMRLogic(cw_default):
 
         self.power = np.asarray(self.power)
         self.power=self.power_to_amp(self.power)
+        print(self.power)
         if np.sum(self.power)>1:
             logger.error("Combined Microwavepower of all active channels too high! Need value below 1. Value of {} was given.", np.sum(self.power))
             raise Exception
@@ -782,6 +795,9 @@ class ODMRLogic(cw_default):
         # generate multiple segments, each containing one of the microwave frequencies. Length of each segment is determined by the loop-count.      
         for freq, self.cw_MW2_Frequency,self.cw_MW3_Frequency  in zip(self.mw1_freq, [self.cw_MW2_Freq]*len(self.mw1_freq), [self.cw_MW3_Freq]*len(self.mw1_freq)):
             frequencies=np.array([freq, self.cw_MW2_Frequency,self.cw_MW3_Frequency])[[self.cw_MW1,self.cw_MW2,self.cw_MW3]]
+            #print(frequencies)
+            #print([freq, self.cw_MW2_Frequency,self.cw_MW3_Frequency])
+            #print([self.cw_MW1,self.cw_MW2,self.cw_MW3])
             seq.start_new_segment("Microwaves"+str(frequencies),loop_count=self.loop_count)
             seq.asc(name="Microvaves"+str(frequencies),pd2g1 = {"type":"sine", "frequencies":frequencies, "amplitudes":self.power},
                 A1=self.cw_A1,
@@ -792,8 +808,8 @@ class ODMRLogic(cw_default):
                 length_mus=self.cw_segment_length
                 )
             #turn off tt_trigger to increment the histogram-index of TimeTagger
-            seq.start_new_segment("Microwave_readout"+str(frequencies))
-            seq.asc(name="Microvaves_readout"+str(frequencies),pd2g1 = {"type":"sine", "frequencies":frequencies, "amplitudes":self.power},
+            seq.start_new_segment("MW_readout"+str(frequencies))
+            seq.asc(name="MW_readout"+str(frequencies)[:32],pd2g1 = {"type":"sine", "frequencies":frequencies, "amplitudes":self.power},
                 A1=self.cw_A1,
                 A2=self.cw_A2,
                 repump=self.cw_CWRepump,
@@ -837,11 +853,11 @@ class pulsedODMRLogic(pulsed_default):
         self.y_fit = np.arange(20)
         self.starting_time=0
 
-
-
     def data_readout(self):
         self.current_runtime = time.time()-self.starting_time
         if (self.current_runtime>self.pulsed_Stoptime and self.pulsed_Stoptime!=0) and self.measurement_running:
+            self.holder.update_TT = True
+            self.holder.sigOdmrPlotsUpdated.emit()
             self.pulsed_Stop_Button_Clicked(True)
         #print("checkready:",self.measurement_running)
         if not(self.measurement_running or self.syncing):
@@ -875,8 +891,8 @@ class pulsedODMRLogic(pulsed_default):
             self.data=self.data+data
             self.data_detect=self.data_detect+data_detect
         
-                
-            self.holder.sigOdmrPlotsUpdated.emit()
+        self.holder.sigOdmrPlotsUpdated.emit()
+            
        
     def power_to_amp(self, power_dBm, impedance=50):
         power_dBm = np.atleast_1d(power_dBm)
@@ -973,8 +989,9 @@ class pulsedODMRLogic(pulsed_default):
         seq.asc(name='tt_sync1', length_mus=0.01, memory=True)        
         seq.asc(name='tt_sync2', length_mus=0.01, gate=True)
 
-        freq_init = np.array([self.pulsed_MW2_Freq, self.pulsed_MW3_Freq])[self.pulsed_MW2, self.pulsed_MW3]
-        power_init = self.power_to_amp(np.array([self.pulsed_MW2_Power, self.pulsed_MW3_Power])[self.pulsed_MW2, self.pulsed_MW3])
+        freq_init = np.array([self.pulsed_MW2_Freq, self.pulsed_MW3_Freq])[[self.pulsed_MW2, self.pulsed_MW3]]
+        power_init = self.power_to_amp(np.array([self.pulsed_MW2_Power, self.pulsed_MW3_Power])[[self.pulsed_MW2, self.pulsed_MW3]])
+        
         for freq in self.mw1_freq:
             if self.pulsed_PulsedRepump:
                 seq.start_new_segment("Repump")
@@ -1022,6 +1039,22 @@ class pulsedODMRLogic(pulsed_default):
             seq.asc(name="Pi_pulse"+str(freq),pd2g1 = {"type":"sine", "frequencies":[freq], "amplitudes":self.power_to_amp(self.pulsed_MW1_Power)},
                 length_mus = self.pulsed_piPulseDuration/1000, #self.pulsed_piPulseDuration is divided by 1000 to be in µs
                 )
+            
+            if self.pulsed_MW4 or self.pulsed_MW5:
+                freqs=np.asarray([self.pulsed_MW4_Freq,self.pulsed_MW5_Freq])[[self.pulsed_MW4 , self.pulsed_MW5]]
+                powers=self.power_to_amp([self.pulsed_MW4_Power,self.pulsed_MW5_Power])[[self.pulsed_MW4 , self.pulsed_MW5]]
+
+                seq.asc(name="flip",pd2g1 = {"type":"sine", "frequencies":freqs, "amplitudes":powers},
+                        length_mus=min(self.pulsed_MW4_piPulseDuration,self.pulsed_MW5_piPulseDuration)/1000
+                        )
+                if self.pulsed_MW4_piPulseDuration!=self.pulsed_MW5_piPulseDuration:
+                    freqs=np.asarray([self.pulsed_MW4_Freq,self.pulsed_MW5_Freq])[[self.pulsed_MW4 and self.pulsed_MW4_piPulseDuration>self.pulsed_MW5_piPulseDuration, self.pulsed_MW5 and self.pulsed_MW4_piPulseDuration<self.pulsed_MW5_piPulseDuration]]
+                    powers=self.power_to_amp([self.pulsed_MW4_Power,self.pulsed_MW5_Power])[[self.pulsed_MW4 and self.pulsed_MW4_piPulseDuration>self.pulsed_MW5_piPulseDuration, self.pulsed_MW5 and self.pulsed_MW4_piPulseDuration<self.pulsed_MW5_piPulseDuration]]
+
+                    seq.asc(name="flip",pd2g1 = {"type":"sine", "frequencies":freqs,"amplitudes":powers},
+                            length_mus=abs(self.pulsed_MW4_piPulseDuration-self.pulsed_MW5_piPulseDuration)/1000
+                            ) 
+                    
             seq.asc(name='pi_pulse_decay'+str(freq), length_mus=self.pulsed_PiDecay/1000, A1=False, A2=False) #self.pulsed_PiDecay is divided by 1000 to be in µs
 
             seq.start_new_segment("Readout")

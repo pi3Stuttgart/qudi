@@ -501,7 +501,7 @@ class OptimizerLogic(GenericLogic):
                             else:
                                 self.optim_pos_z = self.z_range[0]  # moves to lowest possible value
         except Exception as e:
-            self.log.error('Error: 2D Gaussian Fit was not successfull!. Error is'+e)
+            self.log.error('Error: 2D Gaussian Fit was not successfull!. Error is',e)
         
         self.sigImageUpdated.emit()
         self._sigDoNextOptimizationStep.emit()

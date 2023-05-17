@@ -345,7 +345,7 @@ class ODMRGUI(GUIBase):
             self.update_cw_colorbar()
 
 
-        elif self._odmr_logic.pulsedODMRLogic.measurement_running or self._odmr_logic.pulsedODMRLogic.pulsed_update_after_stop:
+        elif self._odmr_logic.pulsedODMRLogic.measurement_running or self._odmr_logic.pulsedODMRLogic.pulsed_PerformFit:# or self._odmr_logic.pulsedODMRLogic.pulsed_update_after_stop:
             odmr_data_x=self._odmr_logic.pulsedODMRLogic.mw1_freq*1e6
             odmr_data_y=self._odmr_logic.pulsedODMRLogic.data
             odmr_matrix=self._odmr_logic.pulsedODMRLogic.scanmatrix

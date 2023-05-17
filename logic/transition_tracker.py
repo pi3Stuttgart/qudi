@@ -578,15 +578,15 @@ class TransitionTracker(GenericLogic):
         # title = '' if title is None else title
         # self.setWindowTitle(title)
         self.reload_nuclear_parameters()
-        self.mw_mixing_frequency = get_last_value_from_file('mw_mixing_frequency')
-        self.mw_mixing_frequency_p1 = get_last_value_from_file('mw_mixing_frequency_p1')
+        self.mw_mixing_frequency_L = get_last_value_from_file('mw_mixing_frequency_L')
+        self.mw_mixing_frequency_R = get_last_value_from_file('mw_mixing_frequency_R')
         self.ple_A2 = get_last_value_from_file('ple_A2')
         self.ple_A2_fit_params = get_last_value_from_file('ple_A2_fit_params')
         self.interferometer_fit_params = get_last_value_from_file('interferometer_fit_params')
         self.interferometer_history = get_last_value_from_file('interferometer_history')
         self.ple_A1 = get_last_value_from_file('ple_A1')
         self.ple_A1_fit_params = get_last_value_from_file('ple_A1_fit_params')
-
+        
         self.ple_repump = get_last_value_from_file('ple_repump')
 
         # self.xyz = pi3d.get_last_values_from_file('xyz')
@@ -614,16 +614,32 @@ class TransitionTracker(GenericLogic):
     def update_ple(self,freqs=""):
         print("Updating PLE freq in TT...")
         print(freqs)
-        self.ple_A2 = float(freqs.split(';')[1])
-        self.ple_A1 = float(freqs.split(';')[0])
+        if len(freqs.split(';')) == 3: # when PLE data has two peaks
+            self.ple_A2 = float(freqs.split(';')[1])
+            self.ple_A1 = float(freqs.split(';')[0])
+        elif len(freqs.split(';')) < 3: # If only one peak is fitted to PLE data
+            #self.ple_A1 = float(freqs.split(';')[0])
+            self.ple_A2 = float(freqs.split(';')[0])
+        else:
+            print("Too many PLE peaks, dont know how to assign it in Transition Tracker.")
         # to set the constant voltage, thus lock the frequency, on the peak
         #self._ple_logic._change_voltage(self.ple_A2)
 
-    def update_ODMR(self,freqs=""):
+    def update_ODMR(self,freqs='', tag = ''):
         print("Updating MW freqs in TT...")
-        print(freqs)
-        self.mw_mixing_frequency=float(freqs.split(';')[0])
-        print(self.mw_mixing_frequency)
+        print(tag)
+        # print(freqs)
+        freq_list = []
+        for freq in freqs.split(';')[:-1]: # last entry in none
+            freq_list.append(float(freq))
+        #self.mw_mixing_frequency_L=float(freqs.split(';')[0])
+        if tag[-1] == 'L':
+            print("updating left trans",np.mean(freq_list))
+            self.mw_mixing_frequency_L=np.mean(freq_list)
+        elif tag[-1] == 'R':
+            print("updating right trans",np.mean(freq_list))
+            self.mw_mixing_frequency_R=np.mean(freq_list)
+
     def update_rabi(self,pi_dur):
         # pi_dur is already a float
         print("Updating Rabi pi pulse in TT...")
@@ -770,14 +786,16 @@ class TransitionTracker(GenericLogic):
         self.update_stuff()
 
     @property
-    def mw_mixing_frequency(self):
-        return self._mw_mixing_frequency
+    def mw_mixing_frequency_L(self):
+        return self._mw_mixing_frequency_L
 
-    @mw_mixing_frequency.setter
-    def mw_mixing_frequency(self, val):
-        self._mw_mixing_frequency = misc.check_type(val, '_mw_mixing_frequency', Number)
-        if getattr(self, '_mw_mixing_frequency', 0.0) != 0.0:
-            save_value_to_file(self.mw_mixing_frequency, 'mw_mixing_frequency')
+    @mw_mixing_frequency_L.setter
+    def mw_mixing_frequency_L(self, val):
+        print("TT:")
+        print(val)
+        self._mw_mixing_frequency_L = misc.check_type(val, '_mw_mixing_frequency_L', Number)
+        if getattr(self, '_mw_mixing_frequency_L', 0.0) != 0.0:
+            save_value_to_file(self.mw_mixing_frequency_L, 'mw_mixing_frequency_L')
         self.update_stuff()
 
     @property
@@ -791,19 +809,18 @@ class TransitionTracker(GenericLogic):
 
     @property
     def mw_transition_frequency(self):
-        return self.mw_mixing_frequency + self.current_local_oscillator_freq
+        return self.mw_mixing_frequency_L + self.current_local_oscillator_freq
 
 
     @property
-    def mw_mixing_frequency_p1(self):
-        return self._mw_mixing_frequency_p1
+    def mw_mixing_frequency_R(self):
+        return self._mw_mixing_frequency_R
 
-
-    @mw_mixing_frequency_p1.setter
-    def mw_mixing_frequency_p1(self, val):
-        self._mw_mixing_frequency_p1 = misc.check_type(val, '_mw_mixing_frequency_p1', Number)
-        if getattr(self, '_mw_mixing_frequency_p1', 0.0) != 0.0:
-            save_value_to_file(self.mw_mixing_frequency_p1, 'mw_mixing_frequency_p1')
+    @mw_mixing_frequency_R.setter
+    def mw_mixing_frequency_R(self, val):
+        self._mw_mixing_frequency_R = misc.check_type(val, '_mw_mixing_frequency_R', Number)
+        if getattr(self, '_mw_mixing_frequency_R', 0.0) != 0.0:
+            save_value_to_file(self.mw_mixing_frequency_R, 'mw_mixing_frequency_R')
         self.update_stuff()
         print('Field vector', self.current_magnetic_field_vector)
         angle = np.arctan(
@@ -815,7 +832,7 @@ class TransitionTracker(GenericLogic):
 
     @property
     def mw_transition_frequency_p1(self):
-        return self.current_local_oscillator_freq_p1 + self.mw_mixing_frequency_p1
+        return self.current_local_oscillator_freq_p1 + self.mw_mixing_frequency_R #TODO local oscillator_p1 to local oscillator_R
 
     @property
     def current_local_oscillator_freq_p1(self):
@@ -841,8 +858,8 @@ class TransitionTracker(GenericLogic):
 
 
     def update_stuff(self):
-        for attr_name in ['_current_local_oscillator_freq', '_mw_mixing_frequency',
-                          '_zero_field_splitting','mw_mixing_frequency_p1','_ple_A2','_ple_A1','_ple_repump',
+        for attr_name in ['_current_local_oscillator_freq', '_mw_mixing_frequency_L',
+                          '_zero_field_splitting','mw_mixing_frequency_R','_ple_A2','_ple_A1','_ple_repump',
                           'ple_A2_fit_params','ple_A1_fit_params','interferometer_fit_params','interferometer_history']: #needs "ple_Ex", but where is this "ple_Ex" called?
             if not hasattr(self, attr_name):
                 return
@@ -1152,7 +1169,7 @@ class TransitionTracker(GenericLogic):
         :param freq: float
             local oscillator frequency ms 0 -> +1 for mixing frequency mw_mixing_frequency
         """
-        self.zero_field_splitting = (freq - self.current_local_oscillator_freq) / 2.0 + self.mw_mixing_frequency
+        self.zero_field_splitting = (freq - self.current_local_oscillator_freq) / 2.0 + self.mw_mixing_frequency_L
 
     def get_rabi_parameter(self, name, **kwargs):
         name = self.correct_transition_name(name)
@@ -1187,13 +1204,13 @@ class TransitionTracker(GenericLogic):
 
     @property
     def current_magnetic_field(self): #z field
-        return -(self.current_local_oscillator_freq - self.mw_mixing_frequency + self.zero_field_splitting) / self.g_factors['e']
+        return -(self.current_local_oscillator_freq - self.mw_mixing_frequency_L + self.zero_field_splitting) / self.g_factors['e']
 
     @property
     def current_magnetic_field_vector(self):  # z and x field
         sx, sy, sz = jmat(1)
-        f1 = self.mw_mixing_frequency
-        f2 = self.mw_mixing_frequency_p1
+        f1 = self.mw_mixing_frequency_L
+        f2 = self.mw_mixing_frequency_R
         def H(B_z, B_x):
             D = 2878.0
             gamma_e = 2.8
@@ -1218,7 +1235,7 @@ class TransitionTracker(GenericLogic):
         elif '_hf' in typ:
             return self.hf_para_n[typ.split('_')[0].lower()]
 
-    def mfl(self, td, mw_mixing_frequency=None, ms_trans='-1'):
+    def mfl(self, td, mw_mixing_frequency_L=None, ms_trans='-1'): #TODO: update ms from NV to V2
         """
 
         :param td: dict
@@ -1228,7 +1245,7 @@ class TransitionTracker(GenericLogic):
             e.g. [17.6750, 19.8350]
 
         """
-        if mw_mixing_frequency is None: mwfm = self.mw_mixing_frequency
+        if mw_mixing_frequency_L is None: mwfm = self.mw_mixing_frequency_L
 
         if type(td) is str:
             td = td.replace('14n', '14N').replace('13c', '13C')
@@ -1273,6 +1290,6 @@ class TransitionTracker(GenericLogic):
         ff = list(product(*f))
         mfl = np.array(sorted([mwfm + sum(fff) for fff in ff if not np.size(fff) == 0]))
         if ms_trans in ['right', '+1']:
-            return mfl - self.mw_mixing_frequency + self.mw_mixing_frequency_p1
+            return mfl - self.mw_mixing_frequency_L + self.mw_mixing_frequency_R
         else:
             return mfl

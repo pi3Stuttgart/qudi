@@ -70,7 +70,7 @@ class NuclearOPs(DataGeneration):
             repeat=False,
         )
         self.hashed = False
-        self.pause_time = [2.75, 6.5] ## The minutes are in % of an hour.
+        self.pause_time = [1.0, 7.0] ## The minutes are in % of an hour.
         self.do_ple_refocusA2 = False
         self.do_ple_refocusA1 = False
         self.do_ple_refocus = False
@@ -109,8 +109,8 @@ class NuclearOPs(DataGeneration):
 
         self.performedRefocus = False
 
-        self.recycling_start_hour = 3 # h
-        self.recycling_duration = 3 # h
+        self.recycling_start_hour = 1 # h
+        self.recycling_duration = 1 # h
 
 
         #self._confocal = self.confocal()
@@ -344,11 +344,11 @@ class NuclearOPs(DataGeneration):
             QtTest.QTest.qSleep(100)
             #time.sleep(100) #FIXME #Does this help instead of qSleep?
             if idx==0:
-                print('3 am pause')
+                print('3 am pauseAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
                 idx +=1
             t = datetime.datetime.now()
         if idx > 0:
-            print('Continue')
+            print('ContinueAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
 
 
     def run_measurement(self, abort, **kwargs):
@@ -377,9 +377,9 @@ class NuclearOPs(DataGeneration):
             #iterator_list=list(self.iterator()) # seems to laag imensely
             for idx, _ in enumerate(self.iterator()):#range(len(iterator_list)):
                 if abort.is_set(): break
-                self.checktime(abort) # Stops measurement during detector cycling # doesnt work yet.
                 while True:
                     if abort.is_set(): break
+                    self.checktime(abort) # Stops measurement during detector cycling # doesnt work yet.
                     # Uncomment when on the setup #TODO
                     #if self.wavemeter_lock and self.queue.wavemeter.wm_id != 0:
                      #    freq = self.queue.wavemeter.get_current_frequency()
@@ -392,6 +392,9 @@ class NuclearOPs(DataGeneration):
                     #     #QtTest.QTest.qSleep(1) #safety.
                     #     time.sleep(0.1)
 
+                    while self.queue._counter.heating:
+                        print("Countrate too high. Assuming hearting of photon detector. Going to sleep for 1min.")
+                        QtTest.QTest.qSleep(60000)
 
                     if self.do_confocal_repump_refocus:
                         self.do_refocus_repump()
@@ -408,6 +411,7 @@ class NuclearOPs(DataGeneration):
 
                     if self.refocus_cw_odmr or self.refocus_pulsed_odmr:
                          self.do_refocusodmr(abort, check_odmr_frequency_drift_ok=False, initial_odmr=False)
+
 
                     #if self.set_laser_power:
                         # set laser power to wanted value
@@ -485,7 +489,8 @@ class NuclearOPs(DataGeneration):
                         self.data.set_observations([OrderedDict(ple_A1=self.queue._transition_tracker.ple_A1)]*self.number_of_simultaneous_measurements)
                         self.data.set_observations([OrderedDict(ple_A2=self.queue._transition_tracker.ple_A2)]*self.number_of_simultaneous_measurements)
                     #elif not self.save_smartly: # we anyway doint it.
-                    self.data.set_observations([OrderedDict(mw_mixing_frequency=self.queue._transition_tracker.mw_mixing_frequency)]*self.number_of_simultaneous_measurements)
+                    self.data.set_observations([OrderedDict(mw_mixing_frequency=self.queue._transition_tracker.mw_mixing_frequency_L)]*self.number_of_simultaneous_measurements)#TODO rename mw_freq
+                    self.data.set_observations([OrderedDict(mw_mixing_frequency=self.queue._transition_tracker.mw_mixing_frequency_R)]*self.number_of_simultaneous_measurements)
                     self.data.set_observations([OrderedDict(local_oscillator_freq=self.queue._transition_tracker.current_local_oscillator_freq)]*self.number_of_simultaneous_measurements)
                     self.data.set_observations([OrderedDict(ple_A2=self.queue._transition_tracker.ple_A2)]*self.number_of_simultaneous_measurements) # already inlcuded in raw_clicks_processing
                     self.data.set_observations([OrderedDict(ple_A1=self.queue._transition_tracker.ple_A1)]*self.number_of_simultaneous_measurements) # already inlcuded in raw_clicks_processing
@@ -987,34 +992,63 @@ class NuclearOPs(DataGeneration):
         sys.modules[self.queue.init_task(name='refocus_confocal_odmr', folder='C:/src/qudi/notebooks')].run_fun(self, abort=abort, **pd)
 
     def do_refocusodmr(self, abort=None, check_odmr_frequency_drift_ok=True, initial_odmr=False):
+        print("do ODMR refocus?")
         if abort.is_set():
             pass
             #logging.getLogger().info('do_refocusodmr stopped here0')
 
         #Range of ODMR?
 
-
         delta_t = time.time() - self.last_odmr_refocus
+        print(delta_t, self.last_odmr_refocus, time.time() - self.last_odmr_refocus)
         if (delta_t >= self.odmr_refocus_interval):
             print("starting ODMR refocus")
+            try: #Add current defect name name to callertag
+                caller_tag = 'NuclearOps_ODMR_' + str(self.current_iterator_df.defect_ids.at[0])
+            except: 
+                caller_tag = 'NuclearOps_ODMR_'
+                
+            self.queue._optimizer.start_refocus(initial_pos = self.queue._confocal.get_position(), caller_tag = caller_tag)
+            
             if self.refocus_cw_odmr:
                 self.queue._ODMR_logic.ODMRLogic.cw_PerformFit=True
-                self.queue._ODMR_logic.ODMRLogic.cw_Stoptime=15 #sec
+                self.queue._ODMR_logic.ODMRLogic.cw_Stoptime=60 #sec
                 self.queue._ODMR_logic.ODMRLogic.cw_Run_Button_Clicked(True)
 
                 while self.queue._ODMR_logic.ODMRLogic.cw_odmr_refocus_running:
                     QtTest.QTest.qSleep(500)
 
             elif self.refocus_pulsed_odmr:
+                self.queue._ODMR_logic.pulsedODMRLogic.pulsed_StartFreq_LineEdit_textEdited(str(self.queue._transition_tracker.mw_mixing_frequency_L-5))
+                self.queue._ODMR_logic.pulsedODMRLogic.pulsed_StopFreq_LineEdit_textEdited(str(self.queue._transition_tracker.mw_mixing_frequency_L+5))
+                self.queue._ODMR_logic.pulsedODMRLogic.pulsed_MW2_Freq_LineEdit_textEdited(str(self.queue._transition_tracker.mw_mixing_frequency_R))
+                # self.queue._ODMR_logic.pulsedODMRLogic.pulsed_StartFreq_LineEdit_textEdited(str(2394))
+                # self.queue._ODMR_logic.pulsedODMRLogic.pulsed_StopFreq_LineEdit_textEdited(str(2405))
+                # self.queue._ODMR_logic.pulsedODMRLogic.pulsed_MW2_Freq_LineEdit_textEdited(str(2539))
                 self.queue._ODMR_logic.pulsedODMRLogic.pulsed_PerformFit=True
-                self.queue._ODMR_logic.pulsedODMRLogic.pulsed_Stoptime=15 #sec
-                self.queue._ODMR_logic.pulsedODMRLogic.pulsed_Run_Button_Clicked(True)
+                self.queue._ODMR_logic.pulsedODMRLogic.pulsed_Stoptime=40 #sec
+                self.queue._ODMR_logic.pulsedODMRLogic.pulsed_Run_Button_Clicked(True, tag = caller_tag+"L")
+
+                while self.queue._ODMR_logic.pulsedODMRLogic.pulsed_odmr_refocus_running:
+                    QtTest.QTest.qSleep(500)
+                print("TRYING TO WRITE START FREQ")
+                self.queue._ODMR_logic.pulsedODMRLogic.pulsed_StartFreq_LineEdit_textEdited(str(self.queue._transition_tracker.mw_mixing_frequency_R-5))
+                self.queue._ODMR_logic.pulsedODMRLogic.pulsed_StopFreq_LineEdit_textEdited(str(self.queue._transition_tracker.mw_mixing_frequency_R+5))
+                self.queue._ODMR_logic.pulsedODMRLogic.pulsed_MW2_Freq_LineEdit_textEdited(str(self.queue._transition_tracker.mw_mixing_frequency_L))
+                # self.queue._ODMR_logic.pulsedODMRLogic.pulsed_StartFreq_LineEdit_textEdited(str(2534))
+                # self.queue._ODMR_logic.pulsedODMRLogic.pulsed_StopFreq_LineEdit_textEdited(str(2545))
+                # self.queue._ODMR_logic.pulsedODMRLogic.pulsed_MW2_Freq_LineEdit_textEdited(str(2400))
+                self.queue._ODMR_logic.pulsedODMRLogic.pulsed_PerformFit=True 
+                self.queue._ODMR_logic.pulsedODMRLogic.pulsed_Stoptime=40 #sec
+                self.queue._ODMR_logic.pulsedODMRLogic.pulsed_Run_Button_Clicked(True, tag = caller_tag+"R")
 
                 while self.queue._ODMR_logic.pulsedODMRLogic.pulsed_odmr_refocus_running:
                     QtTest.QTest.qSleep(500)
             self.performedRefocus = True
-        #self.queue._awg.mcas_dict.stop_awgs()
-        self.last_odmr_refocus=time.time()
+            self.queue._awg.mcas_dict.stop_awgs()
+            self.last_odmr_refocus=time.time()
+            
+        QtTest.QTest.qSleep(1000)
         self.queue._gated_counter.set_counter()
 
         self.odmr_frequency_drift_ok = True # just to test, if sequence is running
@@ -1078,7 +1112,10 @@ class NuclearOPs(DataGeneration):
         # print('get_trace NuclearOps window_ps', window_ps_list)
         if not self._md.debug_mode:
             print("INITIALIZING")
-            self.mcas.initialize()
+            #self.mcas.initialize()
+            print(self.queue._awg.mcas_dict.keys())
+            print(self.mcas.name)
+            self.queue._awg.mcas_dict[self.sequence_name].run()
             print("init fininished")
         print("getting trace")
         self.queue._gated_counter.count(abort,
@@ -1112,35 +1149,35 @@ class NuclearOPs(DataGeneration):
         #print(current_iterator_df.keys())
         hash = base64.b64encode(hashlib.sha1((str(current_iterator_df)+"\n"+str(self.queue._gated_counter.readout_duration)).encode()).digest()) 
         #Added self.queue._gated_counter.readout_duration such that the hash recognizes a change in readout duration and will update n_values in the sequence accordingly
-        sequence_name = "nuclear_op_hash_{}".format(hash)
+        self.sequence_name = "nuclear_op_hash_{}".format(hash)
         if hashed:
-            if not sequence_name in self.queue._awg.mcas_dict:
+            if not self.sequence_name in self.queue._awg.mcas_dict:
                 self.queue._awg.mcas_dict.stop_awgs()
                 self.mcas = ''
                 
-                self.mcas = self.ret_mcas(self,current_iterator_df, sequence_name)
+                self.mcas = self.ret_mcas(self,current_iterator_df, self.sequence_name)
                 while self.mcas=='':
                     QtTest.QTest.qSleep(10)
         
-                self.queue._awg.mcas_dict[sequence_name] = self.mcas
+                self.queue._awg.mcas_dict[self.sequence_name] = self.mcas
    
-            elif sequence_name in self.queue._awg.mcas_dict and self.mcas==None: #and sequence_name in self.queue._awg.mcas_dict:
+            elif self.sequence_name in self.queue._awg.mcas_dict and self.mcas==None: #and sequence_name in self.queue._awg.mcas_dict:
                 self.queue._awg.mcas_dict.stop_awgs()
                 self.mcas = ''
                 
-                self.mcas = self.ret_mcas(self,current_iterator_df, sequence_name)
+                self.mcas = self.ret_mcas(self,current_iterator_df, self.sequence_name)
                 while self.mcas=='':
                     QtTest.QTest.qSleep(10)
         
-                self.queue._awg.mcas_dict[sequence_name] = self.mcas
+                self.queue._awg.mcas_dict[self.sequence_name] = self.mcas
 
             #self.mcas = self.queue._awg.mcas_dict[sequence_name]
             # This means that this is a new cun? so better to reassemble the sequence, isn't?
    
-            elif self.mcas.name != sequence_name:
+            elif self.mcas.name != self.sequence_name:
                 # What is this case? - maybe if we changed the sequence on the go? Can you comment when you see error if this is commented?
                 self.queue._awg.mcas_dict.stop_awgs()
-                self.mcas = self.queue._awg.mcas_dict[sequence_name]
+                self.mcas = self.queue._awg.mcas_dict[self.sequence_name]
             else:
                 print("Dont need to set up new RF.")
 
@@ -1152,8 +1189,8 @@ class NuclearOPs(DataGeneration):
             while self.mcas=='':
                 #process_events() #TODO gui process events.
                 QtTest.QTest.qSleep(10)
-            sequence_name = self.mcas.name
-            self.queue._awg.mcas_dict[sequence_name] = self.mcas
+            self.sequence_name = self.mcas.name
+            self.queue._awg.mcas_dict[self.sequence_name] = self.mcas
         
             
         self.performedRefocus = False

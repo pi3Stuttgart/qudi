@@ -103,6 +103,7 @@ class CounterLogic(GenericLogic):
         """ Initialisation performed during activation of the module.
         """
         # Connect to hardware and save logic
+        
         self._counting_device = self.counter1()
         self._save_logic = self.savelogic()
 
@@ -120,6 +121,8 @@ class CounterLogic(GenericLogic):
         self._already_counted_samples = 0  # For gated counting
         self._data_to_save = []
         self.countdata_avg=0
+        self.threshold=50000
+        self.heating=False
 
         # Flag to stop the loop
         self.stopRequested = False
@@ -128,6 +131,7 @@ class CounterLogic(GenericLogic):
 
         # connect signals
         self.sigCountDataNext.connect(self.count_loop_body, QtCore.Qt.QueuedConnection)
+        self.start_saving()
         return
 
     def on_deactivate(self):
@@ -433,7 +437,7 @@ class CounterLogic(GenericLogic):
             self.countdata_smoothed = np.zeros([len(self.get_channels()), self._count_length])
             self._sampling_data = np.empty([len(self.get_channels()), self._counting_samples])
             self.countdata_avg=0
-
+            
             # the sample index for gated counting
             self._already_counted_samples = 0
 
@@ -562,6 +566,11 @@ class CounterLogic(GenericLogic):
             self.countdata[i, 0] = np.average(self.rawdata[i])
         # move the array to the left to make space for the new data
         self.countdata = np.roll(self.countdata, -1, axis=1)
+        if np.mean(self.countdata[0][-5:])>self.threshold:
+            self.heating=True
+        else:
+            self.heating=False
+
         # also move the smoothing array
         self.countdata_smoothed = np.roll(self.countdata_smoothed, -1, axis=1)
         # calculate the median and save it

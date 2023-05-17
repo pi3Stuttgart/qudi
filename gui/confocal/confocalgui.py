@@ -609,7 +609,7 @@ class ConfocalGui(GUIBase):
         self._scanning_logic.signal_depth_data_saved.connect(self.logic_finished_save)
         self._scanning_logic.signal_continue_scanning.connect(self.logic_continued_scanning)
         self._optimizer_logic.sigRefocusStarted.connect(self.logic_started_refocus)
-        # self._scanning_logic.signal_stop_scanning.connect()
+        self._scanning_logic.signal_stop_scanning.connect(self.enable_scan_actions)
 
         # Connect the tracker
         self.sigStartOptimizer.connect(self._optimizer_logic.start_refocus)
