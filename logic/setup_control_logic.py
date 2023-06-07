@@ -145,7 +145,7 @@ class SetupControlLogic(GenericLogic):
 
         
         if len(self.power)==0 and (self.enable_A1 == False and self.enable_A2 == False and self.enable_Repump == False and self.enable_Green == False):
-            print("Stoping awg")
+            print("Setupcontrollogic: Stopping awg")
             return
 
         self.power = np.asarray(self.power)
@@ -165,7 +165,7 @@ class SetupControlLogic(GenericLogic):
                     A2=self.enable_A2,
                     repump=self.enable_Repump,
                     green=self.enable_Green,
-                    length_mus=200
+                    length_mus=50
                     )
         else:
             seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": frequencies, "amplitudes": self.power},
@@ -173,7 +173,7 @@ class SetupControlLogic(GenericLogic):
                     A2=self.enable_A2,
                     repump=self.enable_Repump,
                     green=self.enable_Green,
-                    length_mus=500
+                    length_mus=50
                     )
 
         self._awg.mcas_dict["setupcontrol"] = seq

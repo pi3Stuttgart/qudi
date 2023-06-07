@@ -33,7 +33,7 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
     SigStabilized = QtCore.Signal()
     _TargetPower=0
 
-    def on_activate(self): #TODO this method should be on_activate
+    def on_activate(self):
         self._streaming_device = self.streamUSBnidaq() #Insert device for init
         self._setupcontrol_logic= self.setupcontrollogic1()
         
@@ -42,17 +42,26 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
         self.SigPidProc.connect(self.pid_processing,type=QtCore.Qt.QueuedConnection)
         self.SigUpdatePulseStreamer.connect(self._setupcontrol_logic.write_to_pulsestreamer,type=QtCore.Qt.QueuedConnection)
 
-        self.voltage_list=[]
-        self.pid1_out_list=[]
-        self.setpoint1_list=[]
-        self.time_list=[]
-        self.actual_time_list=[]
-
         self.power_list_length=100 #not yet implemented
 
         self.current_output_voltage=self._setupcontrol_logic.AOM_volt
         self.running=False
-        self.sleep_time = 0.01#5 #FIXME do we really need a sleep? Does this affect performance?
+        self.sleep_time = 100#5 #FIXME do we really need a sleep? Does this affect performance?
+        
+        self.voltage_list=[]
+        self.power_list=np.zeros(500)
+        self.pid1_out_list=[]
+        self.setpoint1_list=[]
+        self.time_list=[]
+        self.actual_time_list=[]
+        self.time=0
+        
+        self.pid1 = PID.PID(float(self.P1_var), float(self.I1_var), float(self.D1_var))
+        self.pid1.setSampleTime(0.01)
+
+        self._streaming_device.start_acquisition()
+        self.SigPidProc.emit()
+        
 
     def on_deactivate(self):
         if self.running:
@@ -65,35 +74,34 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
     @TargetPower.setter
     def TargetPower(self,val):
         self._TargetPower=val
-        self.stabilize=True
+        #self.stabilize=True
 
     @TargetPower.deleter
     def TargetPower(self,val):
         del self._TargetPower
 
-    @QtCore.pyqtSlot()
+    @QtCore.pyqtSlot() # What is a pyqtSlot?
     def start_control(self):
         self.pid1 = PID.PID(float(self.P1_var), float(self.I1_var), float(self.D1_var))
         self.pid1.setSampleTime(0.01)
         if self.running!=True:
             try:  
-                self.voltage_list=[]
-                self.power_list=np.zeros(500)
-                self.pid1_out_list=[]
-                self.setpoint1_list=[]
-                self.time_list=[]
-                self.actual_time_list=[]
-                self.time=0
-                self._streaming_device.start_acquisition()
+                # self.voltage_list=[]
+                # self.power_list=np.zeros(500)
+                # self.pid1_out_list=[]
+                # self.setpoint1_list=[]
+                # self.time_list=[]
+                # self.actual_time_list=[]
+                # self.time=0
                 self.running=True
                 self.pid1.setKp(float(self.P1_var))
                 self.pid1.setKi(float(self.I1_var))
                 self.pid1.setKd(float(self.D1_var))
                 print("Start Power Control...")
                 self.stabilize= True
-                self.SigPidProc.emit()
+                
             except Exception as error:
-                print("An error occured, aborting. ")
+                print("An error occured in powerstabilization, aborting... ")
                 print("++++++++++++++ error message:   ++++++++++++++++\n")
                 print(error)
                 print("After aborting set voltage to 0.")
@@ -105,25 +113,26 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
     @QtCore.pyqtSlot()
     def stop_control(self):
         self.running=False
-        print("Stopping stabilization.")
+        self.stabilize= False
+        print("Stopping stabilization...")
         #self.SigNotPidProc.emit()
-        self._streaming_device.shut_down_streaming() # is also done when shutting down _streaming_device. Does it need to be executed twice?
+        #self._streaming_device.shut_down_streaming() # is also done when shutting down _streaming_device. Does it need to be executed twice?
 
     @QtCore.pyqtSlot()
     def pid_processing(self):
         if self.running:
             # measure the voltage and save the trace
-            if self.stabilize:
-                self._setupcontrol_logic.AOM_volt=self.current_output_voltage
-                self.SigUpdatePulseStreamer.emit()
-
-            QtTest.QTest.qSleep(1000*self.sleep_time) # UNFUG! DONT USE LONG SLEEPS IN QUDI LATER
+            QtTest.QTest.qSleep(self.sleep_time) 
             self.feedback_voltage=sum(self._streaming_device.buffer_in[0])/len(self._streaming_device.buffer_in[0]) # average of all measured values
             self.current_power = self.voltage_to_power(self.feedback_voltage)#*1e9 #nW
             
-            self.pid1.SetPoint = self.power_to_voltage(self.TargetPower)
-            self.pid1.update(self.feedback_voltage)
-            self.current_output_voltage = self.pid1.output
+
+            if self.stabilize:
+                self._setupcontrol_logic.AOM_volt=self.current_output_voltage
+                self.SigUpdatePulseStreamer.emit()
+                self.pid1.SetPoint = self.power_to_voltage(self.TargetPower)
+                self.pid1.update(self.feedback_voltage)
+                self.current_output_voltage = self.pid1.output
 
             self.voltage_list.append(self.feedback_voltage)
             #self.power_list.append(self.current_power)
@@ -167,6 +176,7 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
         return power
 
     
+    # not used anymore, since we give voltage directly from PulseStreamer
     def set_fix_voltage(self, tag): # can A2 be set while A1 is controlled via pid_processing?
         if tag == 'A1':
             self._streaming_device.goToVoltage(self.A1Voltage)

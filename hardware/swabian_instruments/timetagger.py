@@ -29,7 +29,7 @@ class TT(Base, TimeTaggerInterface):
         self.setup_TT()
         #self.tagger.setTriggerLevel(1,0.7)
         #self.tagger.setTriggerLevel(2,0.7)
-        print("Hello, im using the wrong hardware file.")
+        #print("Hello, im using the wrong hardware file.")
         self.tagger.setTriggerLevel(1,0.05)
         self.tagger.setTriggerLevel(2,0.05)
         self.tagger.setDeadtime(1,70000) #to avoid a trigger on the desceding side of the click signal from de SNSPD

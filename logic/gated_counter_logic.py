@@ -8,6 +8,7 @@ import sys
 import os
 import threading
 from PyQt5.QtCore import pyqtSignal
+from PyQt5 import QtTest
 import logic.Analysis as Analysis
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
@@ -127,10 +128,10 @@ class GatedCounter(GenericLogic):
         
     def read_trace(self):
         import time
-        t0 = time.time()
+        #t0 = time.time()
         self.gated_counter_data = self._fast_counter_device.gated_counter_countbetweenmarkers.getData() #If readout takes too long, ask Javid for optimized Readout sequence
         #print("get Data in gated_counter_logic:", len(self.gated_counter_data))
-        print('get trace from TT:',time.time()-t0)
+        #print('get trace from TT:',time.time()-t0)
         if self.ZPL_counter:
             print("ZPL_counter in gated_counter_logic")
             if self.raw_clicks_processing:
@@ -195,18 +196,14 @@ class GatedCounter(GenericLogic):
         #print('tt4:',time.time()-t0)
         #print("number sm in gatedcounterlogic: ", self.trace.number_of_simultaneous_measurements)
 
-        t1 = time.time()
         if self.analyze_trace_during_experiment:
             self.trace_rep = Analysis.TraceRep(trace=self.gated_counter_data[:self.progress],
                                                analyze_sequence=self.trace.analyze_sequence,
                                                number_of_simultaneous_measurements=self.trace.number_of_simultaneous_measurements)
             self.trace.trace = np.array(self.trace_rep.df.groupby(['run', 'sm', 'step', 'memory']).agg({'n': np.sum}).reset_index().n)
             self.update_plot_data()
-        print("Analyze Trace: ", time.time()-t1)
         # print('clear TT start')
         # self.clear_timetaggers()
-        # print('clear TT finished')
-        # print('tt5:',t1-t0)
 
     def clear_timetaggers(self):
         self._fast_counter_device.gated_counter_countbetweenmarkers.clear()
@@ -291,24 +288,19 @@ class GatedCounter(GenericLogic):
     def count(self, abort, ch_dict, turn_off_awgs=True,
               start_trigger_delay_ps_list = None,window_ps_list=None,
               raw_clicks_processing=False, two_zpl_apd = False,raw_clicks_processing_channels = [0,1,2,3,4,5,6,7]):
-        # self.start_timetaggers()
-        t0=time.time()
         self.start_trigger_delay_ps_list = start_trigger_delay_ps_list
         self.window_ps_list = window_ps_list
         self.two_zpl_apd = two_zpl_apd
         self.raw_clicks_processing = raw_clicks_processing
         self.raw_clicks_processing_channels = raw_clicks_processing_channels
         number_of_subtraces = 1 #fixme, later put a len of analyze sequence
-        print("time passed 1",t0-time.time());t0=time.time()
-
+        
         if hasattr(self, '_gui'):
             self.clear_plot_signal.emit(number_of_subtraces)
         try:
-            print("time passed 2",t0-time.time());t0=time.time()
             self.set_counter()
             if not self._mcas_dict.mcas_dict.debug_mode:
                 start_awgs(self._mcas_dict.mcas_dict.awgs, ch_dict=ch_dict)
-            print("time passed 3",t0-time.time());t0=time.time()
             self.progress = 0
             i=0
             while True:
@@ -321,19 +313,17 @@ class GatedCounter(GenericLogic):
                 
                 if i%100==0:
                     dat=self._fast_counter_device.gated_counter_countbetweenmarkers.getData()
-                    print("-----------------------------------------------------\n",np.sum(dat),len(dat))
+                    #print("-----------------------------------------------------\n",np.sum(dat),len(dat))
                 i+=1
                 if ready:
                     # print(self._fast_counter_device.gated_counter_countbetweenmarkers.getData())
                     break
                 else:
-                    time.sleep(0.1)
-            print("time passed 4",t0-time.time());t0=time.time()                    
+                    #time.sleep(0.1)
+                    QtTest.QTest.qSleep(100)
             self.read_trace()
-            print("time passed 5",t0-time.time());t0=time.time()
             self.update_plot()
-            print("time passed 6",t0-time.time());t0=time.time()
-
+            
         except Exception as e:
             print(e)
             abort.set()

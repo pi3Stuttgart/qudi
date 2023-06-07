@@ -6,7 +6,7 @@ class rabi_default_values_and_widget_functions:
         T=True
         rabi_Filename:str="Filename"
 
-        rabi_Tau_Min:float=10 #ns
+        rabi_Tau_Min:float=0 #ns
         rabi_Tau_Max:float=100 #ns
         rabi_Tau_Step:float=10 #ns
         rabi_Tau_Decay:float= 500 #ns
@@ -20,6 +20,14 @@ class rabi_default_values_and_widget_functions:
         rabi_MW3:bool=F
         rabi_MW3_Freq:float=210
         rabi_MW3_Power:float=-20
+        rabi_MW4:bool=F
+        rabi_MW4_Freq:float=140
+        rabi_MW4_Power:float=-20
+        rabi_MW4_Duration:float=100
+        rabi_MW5:bool=F
+        rabi_MW5_Freq:float=210
+        rabi_MW5_Power:float=-20
+        rabi_MW5_Duration:float=100
 
         rabi_A1:bool=F
         rabi_A2:bool=T
@@ -32,14 +40,14 @@ class rabi_default_values_and_widget_functions:
         rabi_PulsedRepump:bool=T
         rabi_RepumpDuration:float=5 #µs
         rabi_AOMDelay:float=450 #ns
-        rabi_IntegrationTime:float= 1000 #ns
+        rabi_IntegrationTime:float= 500 #ns
         rabi_Binning:float=10 #ns
 
         rabi_Interval:float=0
         rabi_PeriodicSaving:bool=F
         rabi_Stoptime:float=0 #ns
 
-        rabi_ReadoutTime:float=3000 #ns
+        rabi_ReadoutTime:float=1300 #ns
         rabi_ReadoutDecay:float=500 #ns
 
         rabi_MaxIterations:float=20
@@ -100,12 +108,6 @@ class rabi_default_values_and_widget_functions:
         def rabi_Load_Button_Clicked(self,on):
                 print('done something with rabi_Load_Button')
                 
-        def rabi_MW2_Freq_LineEdit_textEdited(self,text):
-                #print('done something with rabi_MW2_Freq_LineEdit. Text=',text)
-                try:
-                        self.rabi_MW2_Freq=float(text.replace(",","."))
-                except:
-                        pass
 
         def rabi_RepumpDecay_LineEdit_textEdited(self,text):
                 #print('done something with rabi_RepumpDecay_LineEdit. Text=',text)
@@ -169,10 +171,71 @@ class rabi_default_values_and_widget_functions:
                 #print('done something with rabi_PeriodicSaving_CheckBox')
                 self.rabi_PeriodicSaving=on==2
 
+        def rabi_MW2_CheckBox_StateChanged(self,on):
+                #print('done something with rabi_MW2_CheckBox')
+                self.rabi_MW2=on==2
+                
+        def rabi_MW2_Freq_LineEdit_textEdited(self,text):
+                #print('done something with rabi_MW2_Freq_LineEdit. Text=',text)
+                try:
+                        self.rabi_MW2_Freq=float(text.replace(",","."))
+                except:
+                        pass
+
         def rabi_MW2_Power_LineEdit_textEdited(self,text):
                 #print('done something with rabi_MW2_Power_LineEdit. Text=',text)
                 try:
                         self.rabi_MW2_Power=float(text.replace(",","."))
+                except:
+                        pass
+        
+        def rabi_MW4_CheckBox_StateChanged(self,on):
+                #print('done something with rabi_MW2_CheckBox')
+                self.rabi_MW4=on==2
+
+        def rabi_MW4_Freq_LineEdit_textEdited(self,text):
+                #print('done something with rabi_MW2_Freq_LineEdit. Text=',text)
+                try:
+                        self.rabi_MW4_Freq=float(text.replace(",","."))
+                except:
+                        pass
+
+        def rabi_MW4_Power_LineEdit_textEdited(self,text):
+                #print('done something with rabi_MW2_Power_LineEdit. Text=',text)
+                try:
+                        self.rabi_MW4_Power=float(text.replace(",","."))
+                except:
+                        pass
+        
+        def rabi_MW4_Duration_LineEdit_textEdited(self,text):
+                #print('done something with rabi_MW2_Power_LineEdit. Text=',text)
+                try:
+                        self.rabi_MW4_Duration=float(text.replace(",","."))
+                except:
+                        pass
+        
+        def rabi_MW5_CheckBox_StateChanged(self,on):
+                #print('done something with rabi_MW2_CheckBox')
+                self.rabi_MW5=on==2
+
+        def rabi_MW5_Freq_LineEdit_textEdited(self,text):
+                #print('done something with rabi_MW2_Freq_LineEdit. Text=',text)
+                try:
+                        self.rabi_MW5_Freq=float(text.replace(",","."))
+                except:
+                        pass
+
+        def rabi_MW5_Power_LineEdit_textEdited(self,text):
+                #print('done something with rabi_MW2_Power_LineEdit. Text=',text)
+                try:
+                        self.rabi_MW5_Power=float(text.replace(",","."))
+                except:
+                        pass
+        
+        def rabi_MW5_Duration_LineEdit_textEdited(self,text):
+                #print('done something with rabi_MW2_Power_LineEdit. Text=',text)
+                try:
+                        self.rabi_MW5_Duration=float(text.replace(",","."))
                 except:
                         pass
 
@@ -221,9 +284,6 @@ class rabi_default_values_and_widget_functions:
                 except:
                         pass
 
-        def rabi_MW2_CheckBox_StateChanged(self,on):
-                #print('done something with rabi_MW2_CheckBox')
-                self.rabi_MW2=on==2
 
         def rabi_ReadoutTime_LineEdit_textEdited(self,text):
                 #print('done something with rabi_ReadoutTime_LineEdit. Text=',text)

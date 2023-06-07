@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1079</width>
+    <width>1104</width>
     <height>844</height>
    </rect>
   </property>
@@ -732,6 +732,83 @@
         </property>
        </widget>
       </item>
+      <item row="6" column="10">
+       <widget class="QLineEdit" name="rabi_MW5_Duration_LineEdit">
+        <property name="text">
+         <string>Duration</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="10">
+       <widget class="QLineEdit" name="rabi_MW4_Duration_LineEdit">
+        <property name="text">
+         <string>Duration</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="10">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Duration (ns)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="9">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Frequency (MHz)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="8">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Power (dBm)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="9">
+       <widget class="QLineEdit" name="rabi_MW4_Freq_LineEdit">
+        <property name="text">
+         <string>Frequency</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="9">
+       <widget class="QLineEdit" name="rabi_MW5_Freq_LineEdit">
+        <property name="text">
+         <string>Frequency</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="8">
+       <widget class="QLineEdit" name="rabi_MW5_Power_LineEdit">
+        <property name="text">
+         <string>MW 5 Power</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="8">
+       <widget class="QLineEdit" name="rabi_MW4_Power_LineEdit">
+        <property name="text">
+         <string>MW 4 Power</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="7">
+       <widget class="QCheckBox" name="rabi_MW4_CheckBox">
+        <property name="text">
+         <string>MW 4 Pi pulse</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="7">
+       <widget class="QCheckBox" name="rabi_MW5_CheckBox">
+        <property name="text">
+         <string>MW 5 Pi pulse</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
    </layout>
@@ -741,7 +818,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1079</width>
+     <width>1104</width>
      <height>21</height>
     </rect>
    </property>

@@ -112,6 +112,7 @@ class NuclearOPs(DataGeneration):
         self.recycling_start_hour = 1 # h
         self.recycling_duration = 1 # h
 
+        self.mode=1
 
         #self._confocal = self.confocal()
         #self._tt = self.transition_tracker()
@@ -400,10 +401,10 @@ class NuclearOPs(DataGeneration):
                         self.do_refocus_repump()
 
                     if self.do_confocal_A1A2_refocus or self.do_confocal_A2MW_refocus:
-                        self.do_refocus_zpl()
+                        self.do_refocus_zpl(abort)
 
                     if self.do_ple_refocusA2 or self.do_ple_refocusA1:
-                        self.do_refocus_ple(abort, self.current_iterator_df['A2_power'])
+                        self.do_refocus_ple(abort)
                         # if 'delta_ple_A2' in self.current_iterator_df.keys():
                         #     self.queue.ple_A2.delta_ple = self.current_iterator_df['delta_ple_A2'].unique()[0]
                         #     logging.getLogger().info(
@@ -478,10 +479,8 @@ class NuclearOPs(DataGeneration):
                             #self.queue.ple_repump.desired_freq = yellow_desired_freq
 
                         #self.queue.ple_repump.compensate_drift()
-                    t0=time.time()
                     self.setup_rf(self.current_iterator_df, hashed = self.hashed) #MCAS is ready
-                    print("time pased 1", time.time()-t0); t0=time.time()
-
+                    
                     if abort.is_set(): break
                     
                     if self.raw_clicks_processing:
@@ -498,7 +497,6 @@ class NuclearOPs(DataGeneration):
                     
                     self.data.set_observations([OrderedDict(start_time=datetime.datetime.now())]*self.number_of_simultaneous_measurements)
                     
-                    print("time pased 2", time.time()-t0); t0=time.time()
                     # TODO
                     #Measure powers and record them!!!!
                     ##
@@ -529,14 +527,10 @@ class NuclearOPs(DataGeneration):
                     # Thread1=threading.Thread(target=self.get_trace, args=(abort), kwargs={'delay_ps_list': self.delay_ps_list ,'window_ps_list' : self.window_ps_list})
                     # Thread1.start()
                     self.get_trace(abort,delay_ps_list = self.delay_ps_list ,window_ps_list = self.window_ps_list) #Start AWGs...
-                    print("time pased 3", time.time()-t0); t0=time.time()
-
+                    
                     if abort.is_set(): break
 
-                    
-
                     self.data.set_observations([OrderedDict(end_time=datetime.datetime.now())]*self.number_of_simultaneous_measurements)
-                    print("time pased 4", time.time()-t0); t0=time.time()
                     if self.save_smartly: #non zero to the data
                         #pass
                         # TEMP SOLUTION FIXME LATER, Only for HOM , just uncomment this code
@@ -550,7 +544,6 @@ class NuclearOPs(DataGeneration):
                         pass
                     else:
                         self.data.set_observations([OrderedDict(trace=self.ana_trace.trace)]*self.number_of_simultaneous_measurements)
-                    print("time pased 5", time.time()-t0); t0=time.time()
 
                     # # print('type(self.ana_trace.trace) ', type(self.ana_trace.trace))
                     # # print('self.ana_trace.trace.dtype ', self.ana_trace.trace.dtype)
@@ -607,14 +600,14 @@ class NuclearOPs(DataGeneration):
 
                     
                     if self.do_confocal_repump_refocus:
-                        self.do_refocus_repump()
+                        self.do_refocus_repump(abort)
                     
                     if self.do_confocal_A1A2_refocus or self.do_confocal_A2MW_refocus:
-                        self.do_refocus_zpl()
+                        self.do_refocus_zpl(abort)
                     
                     
                     if self.do_ple_refocus or self.do_ple_refocusA1 or self.do_ple_refocusA2:
-                            self.do_refocus_ple(abort, self.current_iterator_df['A2_power'])
+                            self.do_refocus_ple(abort)
 
 
                     if self.refocus_cw_odmr or self.refocus_pulsed_odmr:
@@ -629,16 +622,13 @@ class NuclearOPs(DataGeneration):
                         break
                     # end of while
                     # print("end of while")
-                print("time pased 6", time.time()-t0); t0=time.time()
-
+               
                 if hasattr(self, '_pld'):
                     self.pld.new_data_arrived()
                 if abort.is_set(): break
-                print("time pased 7", time.time()-t0); t0=time.time()
-
+               
                 self.save()
-                print("time pased 8", time.time()-t0); t0=time.time()
-
+               
                 #end of for
                 # print("end of for")
                 
@@ -730,11 +720,16 @@ class NuclearOPs(DataGeneration):
         return self.parameters['sweeps']
 
 
-    def do_refocus_ple(self,abort, a2power):
+    def do_refocus_ple(self,abort):
         delta_t = time.time() - self.last_ple_refocus
 
         if (delta_t>= self.ple_refocus_interval):
-
+            try: 
+                a2power = self.current_iterator_df['A2_power']
+            except:
+                a2power = 0
+                print("No laserpower in Iterator")
+            self.queue._awg.mcas_dict.stop_awgs()
 
             if self.do_ple_refocusA1:
                 self.do_refocus_pleA1(abort)
@@ -791,12 +786,44 @@ class NuclearOPs(DataGeneration):
         #if self.wavemeter_lock and self.queue.wavemeter.wm_id!=0:
         #    self.queue.wavemeter.unlock_frequency()
         #    time.sleep(0.1)
-        
+        print("voltage before PLE: ", self.queue._PLE_logic._scanning_device.get_scanner_position()[3])
+        # Check that countrate after refocus is not worse than before.
+        self.queue._awg.mcas_dict['RepumpAndA1AndA2'].run()
+        QtTest.QTest.qSleep(4000)
+        counts_before = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
+        counts_after = 0
+        print('average counts before refocus')
+        print(counts_before)
+        repetitions =0
         self.queue._PLE_logic.Lock_laser=True
-        self.queue._PLE_logic.start_scanning()
-        while not self.queue._PLE_logic.stopped: #TODO - make here prone to PLE crashed
-            QtTest.QTest.qSleep(500)
+        volt_before=self.queue._PLE_logic._static_v
+        self.queue._PLE_logic.happy=True
 
+        while counts_before * 0.9 > counts_after:
+            self.queue._PLE_logic.start_scanning()
+            while not self.queue._PLE_logic.stopped: #TODO - make here prone to PLE crashed
+                # TODO ADD ABORT
+                # IF not reached after 10 interations do confocal refocus and try again
+                QtTest.QTest.qSleep(250)
+            self.queue._awg.mcas_dict['RepumpAndA1AndA2'].run()
+            QtTest.QTest.qSleep(4000)
+            counts_after = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
+            print('average counts After refocus')
+            print(counts_after)
+            self.queue._awg.mcas_dict.stop_awgs()
+            if abort.is_set or repetitions > 5:
+                print("*********************************************PLE REFOCUS WAS NOT SUCCESSFUL AFTER 5 ITERATIONS ******************************************")
+                # if self.mode==1:
+                #     self.queue._PLE_logic._static_v=volt_before
+                #     self.queue._PLE_logic.goto_voltage(max(volt_before-0.5,-3))
+                #     self.queue._PLE_logic.goto_voltage(self.queue._PLE_logic._static_v)
+                
+                break
+
+            repetitions +=1
+            self.queue._PLE_logic.happy=False
+
+        print("voltage after PLE: ", self.queue._PLE_logic._scanning_device.get_scanner_position()[3])
         # self.queue.ple_A2.syncFlag = False
         # self.queue.ple_A2.state = 'refocus PLE'
 
@@ -851,18 +878,16 @@ class NuclearOPs(DataGeneration):
 
 
 
-    def do_refocus_zpl(self):
-        
+    def do_refocus_zpl(self, abort):
         delta_t = time.time() - self.last_red_confocal_refocus
 
         if (delta_t >= self.confocal_refocus_interval):
             print("doing confocal refocus with resonant laser")
-
+            self.queue._awg.mcas_dict.stop_awgs()
             if self.do_confocal_A1A2_refocus:
                 print("NuclearOPs: Turn on repump +a1+a2 for confocal refocus")
-                # self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,["A1", "A2", "repump"],0,0)) # last 2 digits are analog output: these are set in the awg_hardware. These parameters are not used
                 self.queue._awg.mcas_dict['RepumpAndA1AndA2'].run()
-                QtTest.QTest.qSleep(250)
+                
             elif self.do_confocal_A2MW_refocus:
                 sequence_name="A2MW_confocal_refocus"
                 MW1_freq = 33.6
@@ -908,14 +933,30 @@ class NuclearOPs(DataGeneration):
             except: 
                 caller_tag = 'NuclearOps_'
             print("caller tag in NUCOPS: ", caller_tag)
-            self.queue._optimizer.start_refocus(initial_pos = self.queue._confocal.get_position(), caller_tag = caller_tag)
-            while not self.queue._optimizer.refocus_finished:
-                QtTest.QTest.qSleep(250)
+
+            # Check that countrate after refocus is not worse than before.
+            QtTest.QTest.qSleep(4000)
+            counts_before = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
+            counts_after = 0
+            print('average counts before refocus')
+            print(counts_before)
+            repetitions = 0
+            while counts_before * 0.9 > counts_after:
+                self.queue._optimizer.start_refocus(initial_pos = self.queue._confocal.get_position(), caller_tag = caller_tag)
+                while not self.queue._optimizer.refocus_finished:
+                    QtTest.QTest.qSleep(250)
+                QtTest.QTest.qSleep(6000)
+                counts_after = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
+                print('average counts after refocus')
+                print(counts_after)
+                if abort.is_set() or repetitions >3: break
+                repetitions +=1
+            
             self.last_red_confocal_refocus = time.time()
             self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[self.queue._optimizer.optim_pos_x], confocal_y=[self.queue._optimizer.optim_pos_y], confocal_z=[self.queue._optimizer.optim_pos_z]))
             self.queue._awg.mcas_dict.stop_awgs()
             #(pulse=(0,[],0,0))
-            QtTest.QTest.qSleep(3000)
+            QtTest.QTest.qSleep(1000)
             self.performedRefocus = True
 
     def check_eom(self):
@@ -1112,10 +1153,10 @@ class NuclearOPs(DataGeneration):
         # print('get_trace NuclearOps window_ps', window_ps_list)
         if not self._md.debug_mode:
             print("INITIALIZING")
-            #self.mcas.initialize()
-            print(self.queue._awg.mcas_dict.keys())
             print(self.mcas.name)
-            self.queue._awg.mcas_dict[self.sequence_name].run()
+            self.mcas.initialize()
+            #print(self.queue._awg.mcas_dict.keys())
+            #self.queue._awg.mcas_dict[self.sequence_name].run()
             print("init fininished")
         print("getting trace")
         self.queue._gated_counter.count(abort,

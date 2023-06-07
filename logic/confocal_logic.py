@@ -409,11 +409,14 @@ class ConfocalLogic(GenericLogic):
 
         @return int: error code (0:OK, -1:error)
         """
+        print("CL 21")
         self._clock_frequency = int(clock_frequency)
         #checks if scanner is still running
         if self.module_state() == 'locked':
+            print("CL 22")
             return -1
         else:
+            print("CL 23")
             return 0
 
     def start_scanning(self, zscan = False, tag='logic'):
@@ -599,13 +602,14 @@ class ConfocalLogic(GenericLogic):
 
         @return int: error code (0:OK, -1:error)
         """
+        print("CL 0")
         if not(self._scanning_device._scanning_device._scanner_counter_daq_tasks==[] or self._scanning_device._scanning_device._scanner_clock_daq_task==None):
             print("another scanner is running. You need to wait. i will continue with current scanner task")
             QtTest.QTest.qSleep(1000)
             self.signal_stop_scanning.emit()
             
             return
-        
+        print("CL 1")
         self.module_state.lock()
 
         self._scanning_device.module_state.lock()
@@ -613,10 +617,10 @@ class ConfocalLogic(GenericLogic):
             self._scanning_device.module_state.unlock()
             self.module_state.unlock()
             return -1
-
+        print("CL 6")
         clock_status = self._scanning_device.set_up_scanner_clock(
             clock_frequency=self._clock_frequency)
-
+        print("CL 2",clock_status)
         if clock_status < 0:
             self._scanning_device.module_state.unlock()
             self.module_state.unlock()
@@ -624,8 +628,9 @@ class ConfocalLogic(GenericLogic):
             return -1
 
         scanner_status = self._scanning_device.set_up_scanner()
-
+        print("CL 3")
         if scanner_status < 0:
+            print("CL 4")
             self._scanning_device.close_scanner_clock()
             self._scanning_device.module_state.unlock()
             self.module_state.unlock()
@@ -633,6 +638,7 @@ class ConfocalLogic(GenericLogic):
             return -1
 
         self.signal_scan_lines_next.emit()
+        print("CL 5")
         return 0
 
     def continue_scanner(self):
@@ -640,6 +646,7 @@ class ConfocalLogic(GenericLogic):
 
         @return int: error code (0:OK, -1:error)
         """
+        print("CL 7")
         self.module_state.lock()
         self._scanning_device.module_state.lock()
 
@@ -669,15 +676,19 @@ class ConfocalLogic(GenericLogic):
 
         @return int: error code (0:OK, -1:error)
         """
+        print("CL 8")
         try:
+            print("CL 9")
             self._scanning_device.close_scanner()
         except Exception as e:
             self.log.exception('Could not close the scanner.')
         try:
+            print("CL 10")
             self._scanning_device.close_scanner_clock()
         except Exception as e:
             self.log.exception('Could not close the scanner clock.')
         try:
+            print("CL 11")
             self._scanning_device.module_state.unlock()
         except Exception as e:
             self.log.exception('Could not unlock scanning device.')
@@ -742,16 +753,17 @@ class ConfocalLogic(GenericLogic):
 
     def _initialise_scanner(self):
         """Initialise the clock and locks for a scan"""
+        print("CL 12")
         self.module_state.lock()
         self._scanning_device.module_state.lock()
-
+        print("CL 13")
         returnvalue = self._scanning_device.set_up_scanner_clock(
             clock_frequency=self._clock_frequency)
         if returnvalue < 0:
             self._scanning_device.module_state.unlock()
             self.module_state.unlock()
             return -1
-
+        print("CL 14")
         returnvalue = self._scanning_device.set_up_scanner()
         if returnvalue < 0:
             self._scanning_device.module_state.unlock()
@@ -762,6 +774,7 @@ class ConfocalLogic(GenericLogic):
 
     def _close_scanner(self):
         """Close the scanner and unlock"""
+        print("CL 15")
         with self.threadlock:
             self.kill_scanner()
             self.stopRequested = False
@@ -772,19 +785,20 @@ class ConfocalLogic(GenericLogic):
         ### starting the scanner
         self.module_state.lock()
         self._scanning_device.module_state.lock()
-
+        print("CL 16")
         clock_status = self._scanning_device.set_up_scanner_clock(
             clock_frequency=self._clock_frequency)
-
+        print("CL 17", clock_status)
         if clock_status < 0:
             self._scanning_device.module_state.unlock()
             self.module_state.unlock()
             self.set_position('scanner')
             return -1
-        
+        print("CL 18")
         scanner_status = self._scanning_device.set_up_scanner()
 
         if scanner_status < 0:
+            print("CL 19")
             self._scanning_device.close_scanner_clock()
             self._scanning_device.module_state.unlock()
             self.module_state.unlock()
@@ -792,6 +806,7 @@ class ConfocalLogic(GenericLogic):
             return -1
 
     def stop_scanner(self):
+        print("CL 20")
         self.kill_scanner()
         self.module_state.unlock()
 

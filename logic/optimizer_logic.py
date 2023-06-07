@@ -157,9 +157,11 @@ class OptimizerLogic(GenericLogic):
         """ Get lis of counting channels from scanning device.
           @return list(str): names of counter channels
         """
+        print("OL 14")
         return self._scanning_device.get_scanner_count_channels()
 
     def set_clock_frequency(self, clock_frequency):
+        print("OL 11")
         """Sets the frequency of the clock
 
         @param int clock_frequency: desired frequency of the clock
@@ -167,11 +169,15 @@ class OptimizerLogic(GenericLogic):
         @return int: error code (0:OK, -1:error)
         """
         # checks if scanner is still running
+        print("OL 11.1", self._scanning_device._scanning_device._clock_daq_task,self._scanning_device._scanning_device._scanner_clock_daq_task)
+
         if self.module_state() == 'locked':
+            print("OL 13")
             return -1
         else:
             self._clock_frequency = int(clock_frequency)
         self.sigClockFrequencyChanged.emit(self._clock_frequency)
+        print("OL 12")
         return 0
 
     def set_refocus_XY_size(self, size):
@@ -191,6 +197,7 @@ class OptimizerLogic(GenericLogic):
         self.sigRefocusZSizeChanged.emit()
 
     def start_refocus(self, initial_pos=None, caller_tag='unknown', tag='logic'):
+        print("OL 10")
         """ Starts the optimization scan around initial_pos
 
             @param list initial_pos: with the structure [float, float, float]
@@ -239,6 +246,7 @@ class OptimizerLogic(GenericLogic):
 
     def stop_refocus(self):
         """Stops refocus."""
+        print("OL 9")
         with self.threadlock:
             self.stopRequested = True
 
@@ -324,6 +332,7 @@ class OptimizerLogic(GenericLogic):
         This method repeats itself using the _sigScanNextXyLine
         until the xy optimization image is complete.
         """
+        print("OL 8")
         
         n_ch = len(self._scanning_device.get_scanner_axes())
         # stop scanning if instructed
@@ -394,6 +403,7 @@ class OptimizerLogic(GenericLogic):
         
 
     def _set_optimized_xy_from_fit(self):
+        print("OL 7")
         """Fit the completed xy optimizer scan and set the optimized xy position."""
         
         try: 
@@ -430,7 +440,17 @@ class OptimizerLogic(GenericLogic):
                     self.optim_sigma_x = 0.
                     self.optim_sigma_y = 0.
         except Exception as e:
-            self.log.error('Error: 2D Gaussian Fit was not successfull!. Error is'+e)
+            self.log.error('Error: 2D Gaussian Fit was not successfull! Error is'+e)
+        try:
+            if result_2D_gaus.success is False:
+                self.log.error('Error: 2D Gaussian Fit was not successfull2!.')
+                print('2D gaussian fit not successfull')
+                self.optim_pos_x = self._initial_pos_x
+                self.optim_pos_y = self._initial_pos_y
+                self.optim_sigma_x = 0.
+                self.optim_sigma_y = 0.
+        except:
+            print("optimizer logic _set_optimized_xy_from_fit did not work properly")
         # emit image updated signal so crosshair can be updated from this fit
         self.sigImageUpdated.emit()
         self._sigDoNextOptimizationStep.emit()
@@ -438,6 +458,7 @@ class OptimizerLogic(GenericLogic):
 
     def do_z_optimization(self):
         """ Do the z axis optimization."""
+        print("OL 6")
         # z scaning
         self._scan_z_line()
         try:
@@ -508,6 +529,7 @@ class OptimizerLogic(GenericLogic):
 
     def finish_refocus(self):
         """ Finishes up and releases hardware after the optimizer scans."""
+        print("OL 3")
         self.kill_scanner()
 
         self.log.info(
@@ -519,15 +541,17 @@ class OptimizerLogic(GenericLogic):
                     self.optim_pos_x,
                     self.optim_pos_y,
                     self.optim_pos_z))
-
+        print("OL 4")
         # Signal that the optimization has finished, and "return" the optimal position along with
         # caller_tag
         self.sigRefocusFinished.emit(
             self._caller_tag,
             [self.optim_pos_x, self.optim_pos_y, self.optim_pos_z, self.scanner_pos[3]])
+        print("OL 5")
         self.refocus_finished = True
 
     def _scan_z_line(self):
+        print("OL 2")
         """Scans the z line for refocus."""
 
         # Moves to the start value of the z-scan
@@ -599,15 +623,18 @@ class OptimizerLogic(GenericLogic):
 
         @return int: error code (0:OK, -1:error)
         """
+        print("OL 0")
         self.module_state.lock()
         clock_status = self._scanning_device.set_up_scanner_clock(
             clock_frequency=self._clock_frequency)
         if clock_status < 0:
+            print("OL 0.1")
             self.module_state.unlock()
             return -1
-
+        print("OL 1")
         scanner_status = self._scanning_device.set_up_scanner()
         if scanner_status < 0:
+            print("OL 1.1")
             self._scanning_device.close_scanner_clock()
             self.module_state.unlock()
             return -1
@@ -619,6 +646,7 @@ class OptimizerLogic(GenericLogic):
 
         @return int: error code (0:OK, -1:error)
         """
+        print("OL 15")
         try:
             rv = self._scanning_device.close_scanner()
         except:
@@ -635,7 +663,7 @@ class OptimizerLogic(GenericLogic):
     def _do_next_optimization_step(self):
         """Handle the steps through the specified optimization sequence
         """
-
+        print("OL 16")
         # At the end fo the sequence, finish the optimization
         if self._optimization_step == len(self.optimization_sequence):
             self._sigFinishedAllOptimizationSteps.emit()

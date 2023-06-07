@@ -23,6 +23,7 @@ top-level directory of this distribution and at <https://github.com/Ulm-IQO/qudi
 import numpy as np
 import re
 
+import nidaqmx.system
 import PyDAQmx as daq
 from qtpy import QtCore
 from core.module import Base
@@ -92,6 +93,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
     # signals to interfuse
     # this signl gets passed from layer to layer until it reaches the gui.
     sigLimitsChanged = QtCore.Signal()
+    
 
     # config options
     _photon_sources = ConfigOption('photon_sources', list(), missing='warn')
@@ -130,6 +132,12 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
     def on_activate(self):
         """ Starts up the NI Card at activation.
         """
+        self.daq=daq
+        self.tusk=[]
+        self.cter=-1
+        self.index=[]
+        self.ret_val=[]
+
         # the tasks used on that hardware device:
         self._counter_daq_tasks = list()
         self._counter_analog_daq_task = None
@@ -148,6 +156,10 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         self._photon_sources = self._photon_sources if self._photon_sources is not None else list()
         self._scanner_counter_channels = self._scanner_counter_channels if self._scanner_counter_channels is not None else list()
         self._scanner_ai_channels = self._scanner_ai_channels if self._scanner_ai_channels is not None else list()
+
+        self.rotation = np.pi/4
+        self.factor_x = 1
+        self.factor_y = 1/np.sqrt(2)
 
         # handle all the parameters given by the config
         self._current_position = np.zeros(len(self._scanner_ao_channels))
@@ -218,11 +230,17 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         """
 
         if not scanner and self._clock_daq_task is not None:
-            self.log.error('Another counter clock is already running, close this one first. "_clock_daq_task" ')
+            print('Trying to close _clock_daq_task...', self._clock_daq_task)
+            self.log.warning('Another counter clock is already running, close this one first. "_clock_daq_task"') #TODO: change warning back to error
+            self.close_clock()
             return -1
 
         if scanner and self._scanner_clock_daq_task is not None:
-            self.log.error('Another scanner clock is already running, close this one first."_scanner_clock_daq_task"')
+            print('Trying to close _scanner_clock_daq_task...', self._scanner_clock_daq_task)
+            self.log.warning('Another scanner clock is already running, close this one first."_scanner_clock_daq_task"') #TODO: change warning back to error
+            self.close_clock()
+            #self.close_scanner_clock()
+            # Probably error was when calling method "close_clock", it should be "close_scanner_clock"
             return -1
 
         # Create handle for task, this task will generate pulse signal for
@@ -273,6 +291,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         # Adjust the idle state if necessary
         my_idle = daq.DAQmx_Val_High if idle else daq.DAQmx_Val_Low
         try:
+
             # create task for clock
             task_name = 'ScannerClock' if scanner else 'CounterClock'
             daq.DAQmxCreateTask(task_name, daq.byref(my_clock_daq_task))
@@ -302,6 +321,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
             # Configure Implicit Timing.
             # Set timing to continuous, i.e. set only the number of samples to
             # acquire or generate without specifying timing:
+
             daq.DAQmxCfgImplicitTiming(
                 # Define task
                 my_clock_daq_task,
@@ -317,8 +337,10 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
                 daq.DAQmxStartTask(my_clock_daq_task)
                 self._clock_daq_task = my_clock_daq_task
         except:
+
             self.log.exception('Error while setting up clock.')
             return -1
+
         return 0
 
     def set_up_counter(self,
@@ -359,6 +381,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
             return -1
 
         try:
+
             for i, ch in enumerate(my_counter_channels):
                 # This task will count photons with binning defined by the clock_channel
                 task = daq.TaskHandle()  # Initialize a Task
@@ -471,16 +494,19 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
                     )
                     self._counter_analog_daq_task = atask
         except:
+
             self.log.exception('Error while setting up counting task.')
             return -1
 
         try:
+
             for i, task in enumerate(self._counter_daq_tasks):
                 # Actually start the preconfigured counter task
                 daq.DAQmxStartTask(task)
             if len(self._counter_ai_channels) > 0:
                 daq.DAQmxStartTask(self._counter_analog_daq_task)
         except:
+
             self.log.exception('Error while starting Counter')
             try:
                 self.close_counter()
@@ -652,33 +678,59 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
             my_task = self._scanner_clock_daq_task
         else:
             my_task = self._clock_daq_task
+
         try:
             # Stop the clock task:
-            daq.DAQmxStopTask(my_task)
 
+            # system = nidaqmx.system.System.local()  # load local system
+            # task_names = system.tasks.task_names  # returns a list of task names
+            # print(task_names)
+            self.tusk.append(my_task)
+            self.cter+=1
+            self.index.append(self.cter)
+            if not my_task==None: #sometimes mytask is none which generates an error
+                self.ret_val.append(daq.DAQmxStopTask(my_task))
+                daq.DAQmxClearTask(my_task)
+                
+            self.index=self.index[:-1]
+            
+            
+
+            # Found in pydaq documentation:
+            #DAQmxClearTask() is automatically called when a Task instance is garbage collected, obviating the need to clean up manually.
             # After stopping delete all the configuration of the clock:
-            daq.DAQmxClearTask(my_task)
-
+            
+            
             # Set the task handle to None as a safety
             if scanner:
                 self._scanner_clock_daq_task = None
             else:
                 self._clock_daq_task = None
         except:
+
+            print("My task: ", my_task)
             self.log.exception('Could not close clock.')
             return -1
+            # https://knowledge.ni.com/KnowledgeArticleDetails?id=kA00Z0000004AE6SAM
+            # 1. If the DAQmx task is successfully initialised and started, but this error occurs
+            # when trying to read or write samples, this indicates that an empty task handle has
+            # been connected to the DAQmx Read or DAQmx Write VI. 
+                # Check the logic of the program to ensure that the initialisation state is not being
+                # skipped, or that the task is not being cleared prior to the read/write
+            
         return 0
 
     # ================ End SlowCounterInterface Commands =======================
 
     # ================ ConfocalScannerInterface Commands =======================
     def reset_hardware(self):
-        print("resetting device NIDAQ")
+        print("resetting device NIDAQ...")
         """ Resets the NI hardware, so the connection is lost and other
             programs can access it.
 
         @return int: error code (0:OK, -1:error)
         """
+
         retval = 0
         chanlist = [
             self._odmr_trigger_channel,
@@ -884,6 +936,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         # The clock for the scanner is created on the same principle as it is
         # for the counter. Just to keep consistency, this function is a wrapper
         # around the set_up_clock.
+
         return self.set_up_clock(
             clock_frequency=clock_frequency,
             clock_channel=clock_channel,
@@ -908,6 +961,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
 
         @return int: error code (0:OK, -1:error)
         """
+
         retval = 0
         if self._scanner_clock_daq_task is None and clock_channel is None:
             self.log.error('No clock running, call set_up_clock before starting the counter.')
@@ -928,6 +982,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
             return -1
 
         try:
+
             # Set the Sample Timing Type. Task timing to use a sampling clock:
             # specify how the Data of the selected task is collected, i.e. set it
             # now to be sampled on demand for the analog output, i.e. when
@@ -1004,7 +1059,9 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
                     ''
                 )
                 self._scanner_analog_daq_task = atask
+            
         except:
+
             self.log.exception('Error while setting up scanner.')
             retval = -1
 
@@ -1030,13 +1087,13 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
             if not(self._scanner_position_ranges[0][0] <= x <= self._scanner_position_ranges[0][1]):
                 self.log.error('You want to set x out of range: {0:f}.'.format(x))
                 return -1
-            self._current_position[0] = np.float(x)
+            self._current_position[0] = np.float(x)#*factor #UNFUG
 
         if y is not None:
             if not(self._scanner_position_ranges[1][0] <= y <= self._scanner_position_ranges[1][1]):
                 self.log.error('You want to set y out of range: {0:f}.'.format(y))
                 return -1
-            self._current_position[1] = np.float(y)
+            self._current_position[1] = np.float(y)#*factor #UNFUG
 
         if z is not None:
             if not(self._scanner_position_ranges[2][0] <= z <= self._scanner_position_ranges[2][1]):
@@ -1112,7 +1169,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         if not isinstance(positions, (frozenset, list, set, tuple, np.ndarray, )):
             self.log.error('Given position list is no array type.')
             return np.array([np.NaN])
-
+        
         vlist = []
         for i, position in enumerate(positions):
             vlist.append(
@@ -1121,7 +1178,15 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
                 * (position - self._scanner_position_ranges[i][0])
                 + self._scanner_voltage_ranges[i][0]
             )
+
+        # Used for rescaling, because confocal scan is distorted
+        rot_mat = lambda rot: np.asarray([[np.cos(rot), -np.sin(rot), 0,0], [np.sin(rot), np.cos(rot),0,0],[0,0,1,0],[0,0,0,1]])
+        scaling_mat= lambda a,b: np.asarray([[a,0, 0,0], [0, b ,0,0],[0,0,1,0],[0,0,0,1]])
+        Vlist=np.asarray(vlist)
+        Vlist=rot_mat(-self.rotation) @ scaling_mat(self.factor_x,self.factor_y) @ rot_mat(self.rotation) @ Vlist
+        vlist=Vlist.copy()
         volts = np.vstack(vlist)
+        # End of rescaling
 
         for i, v in enumerate(volts):
             if v.min() < self._scanner_voltage_ranges[i][0] or v.max() > self._scanner_voltage_ranges[i][1]:
@@ -1159,6 +1224,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         self._line_length = length
 
         try:
+
             # Just a formal check whether length is not a too huge number
             if length < np.inf:
 
@@ -1183,6 +1249,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
 
             # Configure Implicit Timing for the clock.
             # Set timing for scanner clock task to the number of pixel.
+
             daq.DAQmxCfgImplicitTiming(
                 # define task
                 self._scanner_clock_daq_task,
@@ -1241,8 +1308,10 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
                     self._line_length + 1
                 )
         except:
+
             self.log.exception('Error while setting up scanner to scan a line.')
             return -1
+
         return 0
 
     def scan_line(self, line_path=None, pixel_clock=False):
@@ -1260,8 +1329,9 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         n is the number of scanner axes, which can vary. Typical values are 2 for galvo scanners,
         3 for xyz scanners and 4 for xyz scanners with a special function on the a axis.
         """
+
         if self._scanner_counter_channels and len(self._scanner_counter_daq_tasks) < 1:
-            print(self._scanner_counter_channels)
+            print("hardware nidaq/ ", self._scanner_counter_channels)
             print(self._scanner_counter_daq_tasks, len(self._scanner_counter_daq_tasks))
             self.log.error('Configured counter is not running, cannot scan a line.')
             return np.array([[-1.]])
@@ -1274,6 +1344,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
             self.log.error('Given line_path list is not array type.')
             return np.array([[-1.]])
         try:
+
             # set task timing to use a sampling clock:
             # specify how the Data of the selected task is collected, i.e. set it
             # now to be sampled by a hardware (clock) signal.
@@ -1331,6 +1402,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
 
             # number of samples which were read will be stored here
             n_read_samples = daq.int32()
+
             for i, task in enumerate(self._scanner_counter_daq_tasks):
                 # actually read the counted photons
                 daq.DAQmxReadCounterU32(
@@ -1407,6 +1479,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
             # update the scanner position instance variable
             self._current_position = np.array(line_path[:, -1])
         except:
+
             self.log.exception('Error while scanning line.')
             return np.array([[-1.]])
         # return values is a rate of counts/s
@@ -1417,6 +1490,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
 
         @return int: error code (0:OK, -1:error)
         """
+
         a = self._stop_analog_output()
 
         b = 0
@@ -1440,6 +1514,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
 
         @return int: error code (0:OK, -1:error)
         """
+
         return self.close_clock(scanner=True)
 
     # ================ End ConfocalScannerInterface Commands ===================

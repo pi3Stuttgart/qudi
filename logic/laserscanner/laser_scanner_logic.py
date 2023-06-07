@@ -35,6 +35,7 @@ from core.statusvariable import StatusVar
 from core.util.mutex import Mutex
 from logic.generic_logic import GenericLogic
 from qtpy import QtCore
+from PyQt5 import QtTest
 import logging; logger = logging.getLogger(__name__)
 
 import base64
@@ -106,7 +107,10 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.local_counts=[]
         self.slice_number=0
         self.MW1_Power=-21
-
+        self.volt_list=[] #track PLE
+        self.timstap_list=[] #timestamp for PLE track
+        self.accepted_list=[]
+        self.happy=True
  
         
 
@@ -335,7 +339,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         self.currenttime = time.time()
         self._awg.mcas_dict.stop_awgs()
-        self.trace_seq(hashed = True)
+        self.trace_seq(hashed = False)
         if self.enable_PulsedRepump:
             #self.ps.stream(seq=[[int(self.RepumpDuration*1e3),["repump"],0,0],[int(self.RepumpDecay*1e3),[],0,0]],n_runs=1) #self.RepumpDuration is in µs
             self._awg.mcas_dict['repump'].run()
@@ -391,7 +395,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         parts=[x[:,(i*propor<=arr) & (arr<(i+1)*propor)] for i in range(self.slices)]
         return parts
 
-# DOES ERROR, WHICH SHUTS DOWN MEASUREMENT COME FROM HERE???
+# DOES THE ERROR, WHICH SHUTS DOWN MEASUREMENT COME FROM HERE???
     def stop_scanning(self):
         """Stops the scan
 
@@ -501,14 +505,11 @@ class LaserScannerLogic(GenericLogic, ple_default):
         if hashed and not self.curr_sequence_name in self._awg.mcas_dict:
             print("hash in PLE: ", self.curr_sequence_name)
             self._awg.mcas_dict.stop_awgs()
-            
             self.setup_seq(sequence_name=self.curr_sequence_name)
 
         elif hashed == False: 
             self._awg.mcas_dict.stop_awgs()
-            
             self.curr_sequence_name = "ple_trace"
-            
             self.setup_seq(sequence_name=self.curr_sequence_name)
         #else:
             #print("Dont need to set up new RF.")
@@ -533,25 +534,25 @@ class LaserScannerLogic(GenericLogic, ple_default):
         # either by the stop button, the runtime, or number of sequence repetitions.
         seq = self._awg.mcas(name=sequence_name, ch_dict={"2g": [1, 2], "ps": [1]})
         frequencies = np.array([self.MW1_Freq, self.MW2_Freq, self.MW3_Freq])[[self.enable_MW1, self.enable_MW2, self.enable_MW3]]
-        seq.start_new_segment("Microwaves"+str(frequencies), loop_count=1000)
+        seq.start_new_segment("Microwaves"+str(frequencies), loop_count=500)
         if len(self.power) == 0:
             seq.asc(name="without MW",
                     A1=self.enable_A1,
                     A2=self.enable_A2,
                     repump=self.enable_Repump,
-                    length_mus=5
+                    length_mus=10
                     )
         else:
             seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": frequencies, "amplitudes": self.power},
                     A1=self.enable_A1,
                     A2=self.enable_A2,
                     repump=self.enable_Repump,
-                    length_mus=5
+                    length_mus=10
                     )
         
         # if not "PLE_treace" in self._awg.mcas_dict.keys():
         self._awg.mcas_dict.stop_awgs()
-        time.sleep(0.2)
+        QtTest.QTest.qSleep(200)
         self._awg.mcas_dict[sequence_name] = seq
         #self._awg.mcas_dict.print_info()
         return
@@ -680,6 +681,9 @@ class LaserScannerLogic(GenericLogic, ple_default):
             freqs=np.array(self.Frequencies_Fit.split(";")[:-1]).astype(float)
             peak_volt=max(freqs)
             if peak_volt<self.scan_range[1] and peak_volt>self.scan_range[0]:
+                self.volt_list.append(peak_volt)
+                self.timstap_list.append(time.time())
+                self.accepted_list.append(self.happy)
                 self._static_v = peak_volt
                 self.goto_voltage(self._static_v)
 
@@ -953,9 +957,9 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         for i in range(self.NumberOfPeaks):
             try:
-                self.Contrast_Fit=self.Contrast_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"amplitude"].value,2))+"; " # because 1 peak and 2 peak gaussian fit dont give the same result keywords, we add the 'gi_' part (missing in the 1 peak case) by multiplying the string by 1 if paeks!=1 and remove it if peaks=1.
-                self.Frequencies_Fit=self.Frequencies_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"center"].value,2))+"; "
-                self.Linewidths_Fit=self.Linewidths_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"fwhm"].value,2))+"; " #TODO convert linewidth from V to MHz
+                self.Contrast_Fit=self.Contrast_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"amplitude"].value,3))+"; " # because 1 peak and 2 peak gaussian fit dont give the same result keywords, we add the 'gi_' part (missing in the 1 peak case) by multiplying the string by 1 if paeks!=1 and remove it if peaks=1.
+                self.Frequencies_Fit=self.Frequencies_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"center"].value,3))+"; "
+                self.Linewidths_Fit=self.Linewidths_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"fwhm"].value,3))+"; " #TODO convert linewidth from V to MHz
             except Exception as e:
                 print("an error occured:\n", e)
 

@@ -994,18 +994,20 @@ class pulsedODMRLogic(pulsed_default):
         
         for freq in self.mw1_freq:
             if self.pulsed_PulsedRepump:
-                seq.start_new_segment("Repump")
-                seq.asc(name='repump1', length_mus=self.pulsed_RepumpDuration, repump=True)
+                seq.start_new_segment("Repump", loop_counts = int(self.pulsed_RepumpDuration))
+                seq.asc(name='repump1', length_mus=1, repump=True)
+                seq.start_new_segment("Repump_decay")
                 seq.asc(name='repump2', length_mus=self.pulsed_RepumpDecay, repump=False)
             
-            seq.start_new_segment("Init")
+            seq.start_new_segment("Init", loop_counts = int(self.pulsed_InitTime))
             if self.pulsed_CWRepump and (self.pulsed_MW2 or self.pulsed_MW3) and not (self.pulsed_A1 or self.pulsed_A2):
                 seq.asc(name="init_sine"+str(freq),pd2g1 = {"type":"sine", "frequencies":freq_init, "amplitudes":power_init},
                         repump = self.pulsed_CWRepump,
                         A1=self.pulsed_A1,
                         A2=self.pulsed_A2,
-                        length_mus=self.pulsed_InitTime
+                        length_mus=1
                         )  
+                seq.start_new_segment("Init_decay")
                 seq.asc(name='Init_decay'+str(freq), length_mus=self.pulsed_DecayInit, A1=False, A2=False)
             
             elif self.pulsed_CWRepump and not (self.pulsed_A1 or self.pulsed_A2):
@@ -1013,8 +1015,9 @@ class pulsedODMRLogic(pulsed_default):
                         repump = self.pulsed_CWRepump,
                         A1=self.pulsed_A1,
                         A2=self.pulsed_A2,
-                        length_mus=self.pulsed_InitTime
+                        length_mus=1
                         )  
+                seq.start_new_segment("Init_decay")
                 seq.asc(name='Init_decay'+str(freq), length_mus=self.pulsed_DecayInit, A1=False, A2=False)
             
             elif (self.pulsed_A1 or self.pulsed_A2) and (self.pulsed_MW2 or self.pulsed_MW3):

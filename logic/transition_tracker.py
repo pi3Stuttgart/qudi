@@ -642,9 +642,11 @@ class TransitionTracker(GenericLogic):
 
     def update_rabi(self,pi_dur):
         # pi_dur is already a float
-        print("Updating Rabi pi pulse in TT...")
-        print(pi_dur)
-        self.current_local_oscillator_freq=pi_dur
+        pass
+        #print("Updating Rabi pi pulse in TT...")
+        #print(pi_dur)
+        #self.current_local_oscillator_freq=pi_dur
+
 
     def connect_signals(self):
         self._rabi_logic.sigFitPerformed.connect(self.update_rabi)

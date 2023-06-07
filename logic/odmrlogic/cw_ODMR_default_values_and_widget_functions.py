@@ -38,7 +38,7 @@ class cw_ODMR_default_values_and_widget_functions:
 
         cw_Runtime:float=0
 
-        cw_segment_length:float = 100 #length of on-time of a single frequency during cw scan when multiplied by loop_counts in "ODMRLogic.setup_seq()".
+        cw_segment_length:float = 50 #length of on-time of a single frequency during cw scan when multiplied by loop_counts in "ODMRLogic.setup_seq()".
 
         cw_odmr_cb_max:float=100
         cw_odmr_cb_high_percentile:float=100
@@ -185,6 +185,8 @@ class cw_ODMR_default_values_and_widget_functions:
                 self.time_differences.stop()
                 self.measurement_running=False
                 self.cw_odmr_refocus_running=False
+                if 'cwODMR' in self.holder._awg.mcas_dict:
+                        del self.holder._awg.mcas_dict['cwODMR']
                 print("stopping")
 
         def cw_StopFreq_LineEdit_textEdited(self,text):

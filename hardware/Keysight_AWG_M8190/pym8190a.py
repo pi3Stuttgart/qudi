@@ -177,7 +177,7 @@ class MultiChSeq:
             self.sequences[awg_str] = dict([[ch, Sequence(name=self.name)] for ch in chl])
             if awg_str == 'ps':
                 self.sequences[awg_str] = {1:[([],settings.slave_start_delay)]}
-        print(time.time()-t1)
+        print("hardware/pym8190; init_sequences", time.time()-t1)
 
     def dl(self, awg, ch, sequence_step_num=None, wave_step_num=None):
         out = self.sequences[awg][ch]

@@ -374,6 +374,14 @@ class RabiLogic(GenericLogic,rabi_default):
         rabi_MW3=None,
         rabi_MW3_Freq=None,
         rabi_MW3_Power=None,
+        rabi_MW4=None,
+        rabi_MW4_Freq=None,
+        rabi_MW4_Power=None,
+        rabi_MW4_Duration=None,
+        rabi_MW5=None,
+        rabi_MW5_Freq=None,
+        rabi_MW5_Power=None,
+        rabi_MW5_Duration=None,
 
         rabi_A1=None,
         rabi_A2=None,
@@ -433,6 +441,7 @@ class RabiLogic(GenericLogic,rabi_default):
         # generate segment of repump which starts at each repetition of the sequence.
         seq.start_new_segment("Start")
         if self.rabi_PulsedRepump:
+            print("Rabi Pulsed Repump: ", self.rabi_PulsedRepump)
             seq.asc(name='repumpOn', length_mus=self.rabi_RepumpDuration, repump=True)
             seq.asc(name='repumpOff', length_mus=self.rabi_RepumpDecay, repump=False)
 
@@ -442,6 +451,31 @@ class RabiLogic(GenericLogic,rabi_default):
 
         freq_init = np.array([self.rabi_MW2_Freq, self.rabi_MW3_Freq])[[self.rabi_MW2, self.rabi_MW3]]
         power_init = self.power_to_amp(np.array([self.rabi_MW2_Power, self.rabi_MW3_Power])[[self.rabi_MW2, self.rabi_MW3]])
+
+        # Values for flip after tau pulse, for projection if central transition was measured
+        freq_Cpi=np.asarray([self.rabi_MW4_Freq,self.rabi_MW5_Freq])[[self.rabi_MW4 , self.rabi_MW5]]
+        power_Cpi=self.power_to_amp([self.rabi_MW4_Power,self.rabi_MW5_Power])[[self.rabi_MW4 , self.rabi_MW5]]
+
+        # Values for flip after tau pulse if pi duration is different for MW4 and MW5
+        freq_Cpi_2=np.asarray([self.rabi_MW4_Freq,self.rabi_MW5_Freq])[[self.rabi_MW4 and self.rabi_MW4_Duration>self.rabi_MW5_Duration, self.rabi_MW5 and self.rabi_MW4_Duration<self.rabi_MW5_Duration]]
+        power_Cpi_2=self.power_to_amp([self.rabi_MW4_Power,self.rabi_MW5_Power])[[self.rabi_MW4 and self.rabi_MW4_Duration>self.rabi_MW5_Duration, self.rabi_MW5 and self.rabi_MW4_Duration<self.rabi_MW5_Duration]]
+
+
+        print("ON/OFF")
+        print(self.rabi_MW1)
+        print(self.rabi_MW2)
+        print(self.rabi_MW3)
+        print(self.rabi_MW4)
+        print(self.rabi_MW5)
+        print("Freqs Init")
+        print(freq_init)
+        print(power_init)
+        print("Freq_Cpi")
+        print(freq_Cpi)
+        print(power_Cpi)
+        print("Freq_Cpi2")
+        print(freq_Cpi_2)
+        print(power_Cpi_2)
 
         for duration in self.tau_duration:
             seq.start_new_segment("Init")
@@ -467,6 +501,15 @@ class RabiLogic(GenericLogic,rabi_default):
             seq.start_new_segment("Tau_pulse")
             seq.asc(name="Tau_pulse"+str(duration),pd2g1 = {"type":"sine", "frequencies":[self.rabi_MW1_Freq], "amplitudes":self.power_to_amp(self.rabi_MW1_Power)},
                 length_mus = duration/1000) #self.rabi_piPulseDuration is divided by 1000 to be in µs
+            
+            if self.rabi_MW4 or self.rabi_MW5:
+                seq.asc(name="flip",pd2g1 = {"type":"sine", "frequencies":freq_Cpi, "amplitudes":power_Cpi},
+                        length_mus=min(self.rabi_MW4_Duration,self.rabi_MW5_Duration)/1000
+                        )
+                if self.rabi_MW4_Duration!=self.rabi_MW5_Duration:
+                    seq.asc(name="flip",pd2g1 = {"type":"sine", "frequencies":freq_Cpi_2,"amplitudes":power_Cpi_2},
+                            length_mus=abs(self.rabi_MW4_Duration-self.rabi_MW5_Duration)/1000
+                            ) 
             seq.asc(name='Tau_pulse_decay'+str(duration), length_mus=self.rabi_Tau_Decay/1000, A1=False, A2=False) #self.rabi_Tau_Decay is divided by 1000 to be in µs
             
             seq.start_new_segment("Readout")

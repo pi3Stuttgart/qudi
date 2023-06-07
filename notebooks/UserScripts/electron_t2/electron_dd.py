@@ -57,9 +57,6 @@ def init_state_drive(state, freqs): # freqs is list of L12, L23, R12, R34
                     ],             
         'frequencies':freqs
     }
-    print(freqs)
-    print(mw_init32L1, mw_init32L2, mw_init32C1,mw_init32C2,mw_init32R1,mw_init32R2,)
-    
     return pd2g1
 
 def ret_ret_mcas(pdc):
@@ -123,7 +120,6 @@ def ret_ret_mcas(pdc):
                 'L12': [(freqs[0]+freqs[1])/2],
                 'R12':[(freqs[4]+freqs[5])/2],
                 }[_I_['trans']]
-            print("pi freq: ", freq)
 
             sna.electron_rabi(
                 mcas,
@@ -204,7 +200,7 @@ def settings(pdc={}):
 
     #PLE refocus
     nuclear.do_ple_refocusA1 = False #not used 
-    nuclear.do_ple_refocusA2 = False
+    nuclear.do_ple_refocusA2 = True
 
     # ODMR refocus
     nuclear.refocus_cw_odmr = False
@@ -212,7 +208,7 @@ def settings(pdc={}):
 
     #confocal refocus
     nuclear.do_confocal_repump_refocus = False
-    nuclear.do_confocal_A1A2_refocus = False
+    nuclear.do_confocal_A1A2_refocus = True
     nuclear.do_confocal_A2MW_refocus = False
 
     # Resonant Laser power
@@ -236,7 +232,7 @@ def settings(pdc={}):
             ('A2_power', [5]),
             ('init_time', [40]),
             ('readout',['A2']),
-            ('tau_2', E.round_length_mus_full_sample(np.linspace(0,3, 600))),
+            ('tau_2', E.round_length_mus_full_sample(np.linspace(0,6, 1200))),
             ('n_pulses', [8]),
             ('trans', ['L12', 'R12']), 
             ('phase_pi2_2', [0,180])
