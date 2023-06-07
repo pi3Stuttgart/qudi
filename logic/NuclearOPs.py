@@ -70,7 +70,7 @@ class NuclearOPs(DataGeneration):
             repeat=False,
         )
         self.hashed = False
-        self.pause_time = [1.0, 7.0] ## The minutes are in % of an hour.
+        self.pause_time = [2.0, 7.0] ## The minutes are in % of an hour.
         self.do_ple_refocusA2 = False
         self.do_ple_refocusA1 = False
         self.do_ple_refocus = False
@@ -795,6 +795,7 @@ class NuclearOPs(DataGeneration):
         print('average counts before refocus')
         print(counts_before)
         repetitions =0
+        print("Nuclear Ops Repetitions before PLE: ", repetitions)
         self.queue._PLE_logic.Lock_laser=True
         volt_before=self.queue._PLE_logic._static_v
         self.queue._PLE_logic.happy=True
@@ -812,6 +813,7 @@ class NuclearOPs(DataGeneration):
             print(counts_after)
             self.queue._awg.mcas_dict.stop_awgs()
             if abort.is_set or repetitions > 5:
+                print("Nuclear Ops Repetitions When Aborting: ", repetitions)
                 print("*********************************************PLE REFOCUS WAS NOT SUCCESSFUL AFTER 5 ITERATIONS ******************************************")
                 # if self.mode==1:
                 #     self.queue._PLE_logic._static_v=volt_before
@@ -821,6 +823,8 @@ class NuclearOPs(DataGeneration):
                 break
 
             repetitions +=1
+            print("Nuclear Ops Repetitions After Iteration: ", repetitions)
+        
             self.queue._PLE_logic.happy=False
 
         print("voltage after PLE: ", self.queue._PLE_logic._scanning_device.get_scanner_position()[3])

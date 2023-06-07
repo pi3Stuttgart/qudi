@@ -76,6 +76,7 @@ class rabi_default_values_and_widget_functions:
                 self.stoping_time=time.time()
                 self.measurement_running=False
                 self.time_differences.stop()
+                del self._awg.mcas_dict['Rabi']
 
         def rabi_Continue_Button_Clicked(self,on):
                 #print('done something with rabi_Continue_Button')

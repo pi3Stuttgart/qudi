@@ -129,6 +129,10 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
     _RWTimeout = ConfigOption('read_write_timeout', default=10)
     _counting_edge_rising = ConfigOption('counting_edge_rising', default=True)
 
+    _rotation_correction = ConfigOption('rotation_correction', 0)
+    _scaling_correction_a = ConfigOption('scaling_correction_a', 1)
+    _scaling_correction_b = ConfigOption('scaling_correction_b', 1)
+    
     def on_activate(self):
         """ Starts up the NI Card at activation.
         """
@@ -157,9 +161,14 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         self._scanner_counter_channels = self._scanner_counter_channels if self._scanner_counter_channels is not None else list()
         self._scanner_ai_channels = self._scanner_ai_channels if self._scanner_ai_channels is not None else list()
 
-        self.rotation = np.pi/4
-        self.factor_x = 1
-        self.factor_y = 1/np.sqrt(2)
+
+        self._rotation_correction = eval(self._rotation_correction)
+        self._scaling_correction_a = eval(self._scaling_correction_a)
+        self._scaling_correction_b = eval(self._scaling_correction_b)
+
+        # self.rotation = np.pi/4
+        # self.factor_x = 1
+        # self.factor_y = 1/np.sqrt(2)
 
         # handle all the parameters given by the config
         self._current_position = np.zeros(len(self._scanner_ao_channels))
@@ -1183,7 +1192,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         rot_mat = lambda rot: np.asarray([[np.cos(rot), -np.sin(rot), 0,0], [np.sin(rot), np.cos(rot),0,0],[0,0,1,0],[0,0,0,1]])
         scaling_mat= lambda a,b: np.asarray([[a,0, 0,0], [0, b ,0,0],[0,0,1,0],[0,0,0,1]])
         Vlist=np.asarray(vlist)
-        Vlist=rot_mat(-self.rotation) @ scaling_mat(self.factor_x,self.factor_y) @ rot_mat(self.rotation) @ Vlist
+        Vlist=rot_mat(-self._rotation_correction) @ scaling_mat(self._scaling_correction_a,self._scaling_correction_b) @ rot_mat(self._rotation_correction) @ Vlist
         vlist=Vlist.copy()
         volts = np.vstack(vlist)
         # End of rescaling

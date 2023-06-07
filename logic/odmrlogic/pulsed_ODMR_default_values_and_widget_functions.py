@@ -54,7 +54,7 @@ class pulsed_ODMR_default_values_and_widget_functions:
         pulsed_SecondsPerPoint:float=0.02
 
         pulsed_Runtime=0
-        pulsed_Binning = 100
+        pulsed_Binning = 10
 
         pulsed_odmr_cb_max:float=100
         pulsed_odmr_cb_high_percentile:float=100

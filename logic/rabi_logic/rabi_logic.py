@@ -460,23 +460,6 @@ class RabiLogic(GenericLogic,rabi_default):
         freq_Cpi_2=np.asarray([self.rabi_MW4_Freq,self.rabi_MW5_Freq])[[self.rabi_MW4 and self.rabi_MW4_Duration>self.rabi_MW5_Duration, self.rabi_MW5 and self.rabi_MW4_Duration<self.rabi_MW5_Duration]]
         power_Cpi_2=self.power_to_amp([self.rabi_MW4_Power,self.rabi_MW5_Power])[[self.rabi_MW4 and self.rabi_MW4_Duration>self.rabi_MW5_Duration, self.rabi_MW5 and self.rabi_MW4_Duration<self.rabi_MW5_Duration]]
 
-
-        print("ON/OFF")
-        print(self.rabi_MW1)
-        print(self.rabi_MW2)
-        print(self.rabi_MW3)
-        print(self.rabi_MW4)
-        print(self.rabi_MW5)
-        print("Freqs Init")
-        print(freq_init)
-        print(power_init)
-        print("Freq_Cpi")
-        print(freq_Cpi)
-        print(power_Cpi)
-        print("Freq_Cpi2")
-        print(freq_Cpi_2)
-        print(power_Cpi_2)
-
         for duration in self.tau_duration:
             seq.start_new_segment("Init")
             
@@ -531,7 +514,7 @@ class RabiLogic(GenericLogic,rabi_default):
         self.interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*10) # for the fitting part
 
         if tag == 'Cosinus':
-            print("Doing Cosinus")
+            #print("Doing Cosinus")
             model,params=self._fit_logic.make_sine_model()
 
             result = self._fit_logic.make_sine_fit(
@@ -546,7 +529,7 @@ class RabiLogic(GenericLogic,rabi_default):
             #self.fit_data = fit_func(x=self.interplolated_x_data, *result.x)
 
         if tag == 'Cosinus+Phase':
-            print("Doing Cosinus+Phase")
+            #print("Doing Cosinus+Phase")
             model,params=self._fit_logic.make_sine_model()
 
             result = self._fit_logic.make_sine_fit(

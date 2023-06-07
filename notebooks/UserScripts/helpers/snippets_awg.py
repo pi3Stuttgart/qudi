@@ -739,7 +739,7 @@ class SSR(object):
                 
                 elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_A1':
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-                    self.mcas.asc(A1=False, length_mus=self.dur_step[alt_step][6], name = 'initial wait') # Delete me again
+                    #self.mcas.asc(A1=False, length_mus=self.dur_step[alt_step][6], name = 'initial wait') # Delete me again
                     self.mcas.asc(A1=True, length_mus=self.dur_step[alt_step][5], name = 'ple_A1_readout')
                     self.mcas.asc(length_mus=0.5,name = 'wait')
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')

@@ -147,6 +147,23 @@ class SetupControlLogic(GenericLogic):
         if len(self.power)==0 and (self.enable_A1 == False and self.enable_A2 == False and self.enable_Repump == False and self.enable_Green == False):
             print("Setupcontrollogic: Stopping awg")
             return
+        
+        if len(self.power)==0 and (self.enable_A1 == False and self.enable_A2 == False and self.enable_Repump == True and self.enable_Green == False):
+            self._awg.mcas_dict['repump'].run()
+            return
+        if len(self.power)==0 and (self.enable_A1 == True and self.enable_A2 == False and self.enable_Repump == False and self.enable_Green == False):
+            self._awg.mcas_dict['A1'].run()
+            return
+        if len(self.power)==0 and (self.enable_A1 == False and self.enable_A2 == True and self.enable_Repump == False and self.enable_Green == False):
+            self._awg.mcas_dict['A2'].run()
+            return
+        if len(self.power)==0 and (self.enable_A1 == False and self.enable_A2 == False and self.enable_Repump == False and self.enable_Green == True):
+            self._awg.mcas_dict['green'].run()
+            return
+        if len(self.power)==0 and (self.enable_A1 == True and self.enable_A2 == True and self.enable_Repump == True and self.enable_Green == False):
+            self._awg.mcas_dict['RepumpAndA1AndA2'].run()
+            return
+        
 
         self.power = np.asarray(self.power)
         self.power=self.power_to_amp(self.power)
@@ -179,6 +196,7 @@ class SetupControlLogic(GenericLogic):
         self._awg.mcas_dict["setupcontrol"] = seq
         #self._awg.mcas_dict.print_info()
         self._awg.mcas_dict["setupcontrol"].run()
+        return
     
     def write_to_pulsestreamer(self):
         #self.active_chanels=list(filter(("").__ne__, ["A1"*self.enable_A1,"A2"*self.enable_A2,"green"*self.enable_Green,"repump"*self.enable_Repump,'FlipMirror'*self.flip_mirror]))
