@@ -427,14 +427,19 @@ class MultiChSeq:
             for ch in chl:
 
                 if awg_str is 'ps':
-                    if awg_str in self.ch_dict:
+                    if awg_str in self.ch_dict: 
                         sequence = self.sequences[awg_str][ch] # In green md there is no awg_str == ps.
                         sequence = self.mcas_dict.awgs[awg_str].unwrap_sequence(sequence)
+                        #self.sequence = sequence #UNFUG
+                        #print(self.sequence) #UNFUG
                         self.mcas_dict.awgs[awg_str].setSequence(sequence, triggered=True,
                                                                  run=False, loops = 1) ## This have to be implemented now
                 else:
                     if ch in self.ch_dict.get(awg_str, []):
                         sequence = self.sequences[awg_str][ch]
+                        #self.sequence_awg = sequence #UNFUG
+                        #print(awg_str, ch)
+                        #print(self.sequence_awg) #UNFUG
                     else:
                         sequence = self.mcas_dict['wait'].sequences[awg_str][ch]
                     self.mcas_dict.awgs[awg_str].ch[ch].initialize_sequence(sequence)

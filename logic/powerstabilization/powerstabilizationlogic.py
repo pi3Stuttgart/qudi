@@ -27,34 +27,28 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
     # Declare signals
     SigUpdatePlots=QtCore.Signal()
     SigStartControl = QtCore.Signal()
-    SigStopControl = QtCore.Signal()
-    SigPidProc = QtCore.Signal()
-    SigUpdatePulseStreamer=QtCore.Signal()
     SigStabilized = QtCore.Signal()
+    SigPidProc = QtCore.Signal()
+    #SigUpdatePulseStreamer=QtCore.Signal()
     _TargetPower=0
 
     def on_activate(self):
         self._streaming_device = self.streamUSBnidaq() #Insert device for init
-        self._setupcontrol_logic= self.setupcontrollogic1()
-        
+        self._setupcontrol_logic= self.setupcontrollogic1() # For turning on lasers and Setting Analog PS Output.
         self.SigStartControl.connect(self.start_control,type=QtCore.Qt.QueuedConnection)
-        self.SigStopControl.connect(self.stop_control,type=QtCore.Qt.QueuedConnection)
         self.SigPidProc.connect(self.pid_processing,type=QtCore.Qt.QueuedConnection)
-        self.SigUpdatePulseStreamer.connect(self._setupcontrol_logic.write_to_pulsestreamer,type=QtCore.Qt.QueuedConnection)
-
-        self.power_list_length=100 #not yet implemented
+        #self.SigUpdatePulseStreamer.connect(self._setupcontrol_logic.write_to_pulsestreamer,type=QtCore.Qt.QueuedConnection)
 
         self.current_output_voltage=self._setupcontrol_logic.AOM_volt
-        self.running=False
-        self.sleep_time = 100#5 #FIXME do we really need a sleep? Does this affect performance?
         
-        self.voltage_list=[]
-        self.power_list=np.zeros(500)
+        #self.voltage_list=[]
+        self.voltage_list=np.zeros(self.datapoints)
+        self.power_list=np.zeros(self.datapoints)
         self.pid1_out_list=[]
         self.setpoint1_list=[]
-        self.time_list=[]
+        #self.time_list=[]
         self.actual_time_list=[]
-        self.time=0
+        self.time_step=0
         
         self.pid1 = PID.PID(float(self.P1_var), float(self.I1_var), float(self.D1_var))
         self.pid1.setSampleTime(0.01)
@@ -64,8 +58,10 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
         
 
     def on_deactivate(self):
-        if self.running:
-            self.stop_control()
+        self.stabilizing= False
+        self.SigStabilized.emit()
+        pass
+        #TODO: deactivate hardware
 
     @property
     def TargetPower(self):
@@ -74,7 +70,7 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
     @TargetPower.setter
     def TargetPower(self,val):
         self._TargetPower=val
-        #self.stabilize=True
+        #self.stabilizing=True
 
     @TargetPower.deleter
     def TargetPower(self,val):
@@ -82,88 +78,74 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
 
     @QtCore.pyqtSlot() # What is a pyqtSlot?
     def start_control(self):
-        self.pid1 = PID.PID(float(self.P1_var), float(self.I1_var), float(self.D1_var))
-        self.pid1.setSampleTime(0.01)
-        if self.running!=True:
-            try:  
-                # self.voltage_list=[]
-                # self.power_list=np.zeros(500)
-                # self.pid1_out_list=[]
-                # self.setpoint1_list=[]
-                # self.time_list=[]
-                # self.actual_time_list=[]
-                # self.time=0
-                self.running=True
-                self.pid1.setKp(float(self.P1_var))
-                self.pid1.setKi(float(self.I1_var))
-                self.pid1.setKd(float(self.D1_var))
-                print("Start Power Control...")
-                self.stabilize= True
-                
-            except Exception as error:
-                print("An error occured in powerstabilization, aborting... ")
-                print("++++++++++++++ error message:   ++++++++++++++++\n")
-                print(error)
-                print("After aborting set voltage to 0.")
-                self.stop_control()
-        else:
-            print("Stabilization already running.")
-            self.stabilize= True
+        self.pid1 = PID.PID(float(self.P1_var), float(self.I1_var), float(self.D1_var), output = self._setupcontrol_logic.AOM_volt)
+        self.pid1.setSampleTime(1) #0.01 #does nothing rn?
+        try:  
+            # self.voltage_list=[]
+            # self.power_list=np.zeros(500)
+            # self.pid1_out_list=[]
+            # self.setpoint1_list=[]
+            # self.time_list=[]
+            # self.actual_time_list=[]
+            # self.time=0
+            self.pid1.setKp(float(self.P1_var))
+            self.pid1.setKi(float(self.I1_var))
+            self.pid1.setKd(float(self.D1_var))
+            print("Start Power Control...")
+            self.stabilizing= True
+            
+        except Exception as error:
+            print("An error occured in powerstabilization, aborting... ")
+            print("++++++++++++++ error message:   ++++++++++++++++\n")
+            print(error)
+            print("After aborting set voltage to 0.")
+            self.stabilizing= False
+            self.SigStabilized.emit()
+        # else:
+        #     print("Stabilization already running.")
+        #     self.stabilizing= True
     
     @QtCore.pyqtSlot()
-    def stop_control(self):
-        self.running=False
-        self.stabilize= False
-        print("Stopping stabilization...")
-        #self.SigNotPidProc.emit()
-        #self._streaming_device.shut_down_streaming() # is also done when shutting down _streaming_device. Does it need to be executed twice?
-
-    @QtCore.pyqtSlot()
     def pid_processing(self):
-        if self.running:
-            # measure the voltage and save the trace
-            QtTest.QTest.qSleep(self.sleep_time) 
-            self.feedback_voltage=sum(self._streaming_device.buffer_in[0])/len(self._streaming_device.buffer_in[0]) # average of all measured values
-            self.current_power = self.voltage_to_power(self.feedback_voltage)#*1e9 #nW
-            
+        # measure the voltage and save the trace
+        self.feedback_voltage=sum(self._streaming_device.buffer_in[0])/len(self._streaming_device.buffer_in[0]) # average of all measured values
+        self.current_power = self.voltage_to_power(self.feedback_voltage)#*1e9 #nW
 
-            if self.stabilize:
-                self._setupcontrol_logic.AOM_volt=self.current_output_voltage
-                self.SigUpdatePulseStreamer.emit()
-                self.pid1.SetPoint = self.power_to_voltage(self.TargetPower)
-                self.pid1.update(self.feedback_voltage)
-                self.current_output_voltage = self.pid1.output
+        if self.stabilizing:
+            self.pid1.SetPoint = self.power_to_voltage(self.TargetPower)
+            self.pid1.update(self.feedback_voltage)
+            self.current_output_voltage = self.pid1.output
+            self._setupcontrol_logic.AOM_volt=self.current_output_voltage #TODO: Add two variables for AOM1 and AOM2. Done via "self.controlA1"
+            self._setupcontrol_logic.write_to_pulsestreamer()
+            #self.SigUpdatePulseStreamer.emit()
 
-            self.voltage_list.append(self.feedback_voltage)
-            #self.power_list.append(self.current_power)
-            self.power_list = shift(self.power_list,-1, cval=self.current_power)
+        # Update lists for plotting
+        self.voltage_list = shift(self.voltage_list,-1, cval=self.feedback_voltage) # nowhere used
+        self.power_list = shift(self.power_list,-1, cval=self.current_power)
 
-            last_points=10
-            tolerance=0.03
+        self.last_points=25
+        self.tolerance=0.03
 
-            power_stability_list=np.asarray(self.power_list[-last_points:])
-            msk=(power_stability_list> self.TargetPower*(1+tolerance)) | (power_stability_list< self.TargetPower*(1-tolerance))
+        power_stability_list=np.asarray(self.power_list[-self.last_points:])
+        msk=(power_stability_list> self.TargetPower*(1+self.tolerance)) | (power_stability_list< self.TargetPower*(1-self.tolerance))
 
-            # print(power_stability_list,self.TargetPower)
-            # print(msk,np.sum(msk))
+        # print(power_stability_list,self.TargetPower)
+        # print(msk,np.sum(msk))
 
-            if self.stabilize and not sum(msk): #all values in power_stability_list are between target +- tolerance%
-                self.stabilize=False
-                self.SigStabilized.emit()
+        if self.stabilizing and not sum(msk): #all values in power_stability_list are between target +- self.tolerance%
+            self.stabilizing=False
+            self.SigStabilized.emit()
 
-            self.setpoint1_list.append(self.pid1.SetPoint)
-            self.pid1_out_list.append(self.current_output_voltage)
+        #self.setpoint1_list.append(self.pid1.SetPoint)
+        #self.pid1_out_list.append(self.current_output_voltage)
 
-            self.time_list.append(self.time)
-            self.actual_time_list.append(time.time())
-            self.time=self.time+1
-
-            self.SigPidProc.emit()
-
-        else:
-            pass
-            #self.stop_control()
+        #self.time_list.append(self.time_step)
+        #self.actual_time_list.append(time.time())
+        #self.time_step=self.time_step+1
         self.SigUpdatePlots.emit()
+
+        QtTest.QTest.qSleep(self.sleep_time) 
+        self.SigPidProc.emit() # calling pid_processing again
 
 
 
@@ -175,11 +157,17 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
         power = (voltage - self.voltage_offset) / self.voltage_to_power_ratio
         return power
 
-    
+    def set_fix_voltage(self, tag):
+        if tag == 'A1':
+            self._streaming_device.goToVoltage(self.A1Voltage)
+        if tag == 'A2':
+            self._setupcontrol_logic.AOM_volt=self.A2Voltage #TODO: Add two variables for AOM1 and AOM2
+            
     # not used anymore, since we give voltage directly from PulseStreamer
     def set_fix_voltage(self, tag): # can A2 be set while A1 is controlled via pid_processing?
         if tag == 'A1':
             self._streaming_device.goToVoltage(self.A1Voltage)
         if tag == 'A2':
+            
             self._streaming_device.goToVoltage(self.A2Voltage)
         # TODO: Tell hardware file which channel to use

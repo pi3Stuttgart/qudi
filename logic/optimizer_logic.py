@@ -440,7 +440,7 @@ class OptimizerLogic(GenericLogic):
                     self.optim_sigma_x = 0.
                     self.optim_sigma_y = 0.
         except Exception as e:
-            self.log.error('Error: 2D Gaussian Fit was not successfull! Error is'+e)
+            self.log.error('Error: 2D Gaussian Fit was not successfull!')
         try:
             if result_2D_gaus.success is False:
                 self.log.error('Error: 2D Gaussian Fit was not successfull2!.')

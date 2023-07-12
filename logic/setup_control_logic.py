@@ -45,7 +45,7 @@ class SetupControlLogic(GenericLogic):
     enable_Repump: bool = False
     enable_Green: bool = False
 
-    active_chanels=[] # used to talk to the pulsestreamer directly
+    active_channels=[] # used to talk to the pulsestreamer directly
     flip_mirror=False
 
     SigReadPower= QtCore.Signal()
@@ -148,21 +148,21 @@ class SetupControlLogic(GenericLogic):
             print("Setupcontrollogic: Stopping awg")
             return
         
-        if len(self.power)==0 and (self.enable_A1 == False and self.enable_A2 == False and self.enable_Repump == True and self.enable_Green == False):
-            self._awg.mcas_dict['repump'].run()
-            return
-        if len(self.power)==0 and (self.enable_A1 == True and self.enable_A2 == False and self.enable_Repump == False and self.enable_Green == False):
-            self._awg.mcas_dict['A1'].run()
-            return
-        if len(self.power)==0 and (self.enable_A1 == False and self.enable_A2 == True and self.enable_Repump == False and self.enable_Green == False):
-            self._awg.mcas_dict['A2'].run()
-            return
-        if len(self.power)==0 and (self.enable_A1 == False and self.enable_A2 == False and self.enable_Repump == False and self.enable_Green == True):
-            self._awg.mcas_dict['green'].run()
-            return
-        if len(self.power)==0 and (self.enable_A1 == True and self.enable_A2 == True and self.enable_Repump == True and self.enable_Green == False):
-            self._awg.mcas_dict['RepumpAndA1AndA2'].run()
-            return
+        # if len(self.power)==0 and (self.enable_A1 == False and self.enable_A2 == False and self.enable_Repump == True and self.enable_Green == False):
+        #     self._awg.mcas_dict['repump'].run()
+        #     return
+        # if len(self.power)==0 and (self.enable_A1 == True and self.enable_A2 == False and self.enable_Repump == False and self.enable_Green == False):
+        #     self._awg.mcas_dict['A1'].run()
+        #     return
+        # if len(self.power)==0 and (self.enable_A1 == False and self.enable_A2 == True and self.enable_Repump == False and self.enable_Green == False):
+        #     self._awg.mcas_dict['A2'].run()
+        #     return
+        # if len(self.power)==0 and (self.enable_A1 == False and self.enable_A2 == False and self.enable_Repump == False and self.enable_Green == True):
+        #     self._awg.mcas_dict['green'].run()
+        #     return
+        # if len(self.power)==0 and (self.enable_A1 == True and self.enable_A2 == True and self.enable_Repump == True and self.enable_Green == False):
+        #     self._awg.mcas_dict['RepumpAndA1AndA2'].run()
+        #     return
         
 
         self.power = np.asarray(self.power)
@@ -188,6 +188,7 @@ class SetupControlLogic(GenericLogic):
             seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": frequencies, "amplitudes": self.power},
                     A1=self.enable_A1,
                     A2=self.enable_A2,
+                    gateMW=True,
                     repump=self.enable_Repump,
                     green=self.enable_Green,
                     length_mus=50
@@ -199,9 +200,9 @@ class SetupControlLogic(GenericLogic):
         return
     
     def write_to_pulsestreamer(self):
-        #self.active_chanels=list(filter(("").__ne__, ["A1"*self.enable_A1,"A2"*self.enable_A2,"green"*self.enable_Green,"repump"*self.enable_Repump,'FlipMirror'*self.flip_mirror]))
-        self.active_chanels=list(filter(("").__ne__, []))
-        self.ps.constant(pulse=(0,self.active_chanels,self.AOM_volt,0)) #Ok this is actually not the power we set but the analog input on the A2 AOM
+        self.active_channels=list(filter(("").__ne__, ["A1"*self.enable_A1,"A2"*self.enable_A2,"green"*self.enable_Green,"repump"*self.enable_Repump,'FlipMirror'*self.flip_mirror]))
+        #self.active_channels=list(filter(("").__ne__, [])) #This turns off all lasers when adjusting the AOM power
+        self.ps.constant(pulse=(0,self.active_channels,self.AOM_volt,0)) #Ok this is actually not the power we set but the analog input on the A2 AOM
 
     def MW_on(self):
         return self.enable_MW1 or self.enable_MW2 or self.enable_MW3

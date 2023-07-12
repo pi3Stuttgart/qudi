@@ -70,7 +70,7 @@ class NuclearOPs(DataGeneration):
             repeat=False,
         )
         self.hashed = False
-        self.pause_time = [2.0, 7.0] ## The minutes are in % of an hour.
+        self.pause_time = [0.0, 7.0] ## The minutes are in % of an hour.
         self.do_ple_refocusA2 = False
         self.do_ple_refocusA1 = False
         self.do_ple_refocus = False
@@ -108,9 +108,6 @@ class NuclearOPs(DataGeneration):
         self.raw_clicks_processing_channels = [0,1,2,3,4,5,6,7]
 
         self.performedRefocus = False
-
-        self.recycling_start_hour = 1 # h
-        self.recycling_duration = 1 # h
 
         self.mode=1
 
@@ -231,6 +228,7 @@ class NuclearOPs(DataGeneration):
 
     @property
     def dtypes(self):
+        print('Nuclear OPS called "def dtypes"')
         if not hasattr(self, '_dtypes'):
             if self.save_smartly:
 
@@ -309,6 +307,7 @@ class NuclearOPs(DataGeneration):
         else:
             self.thread = threading.Thread(target=self.run_measurement,args = args, kwargs = kwargs)
             self.thread.start()
+            # Whats difference between envs/qudi/lib/threading and envs/qudi/lib/subprocess?
             #self.run_measurement(*args, **kwargs)
 
     #def mainloop():
@@ -317,20 +316,6 @@ class NuclearOPs(DataGeneration):
 
     #def run_iteration(self, current_iterator):
 
-    def check_time(self):
-        hour, minute = int(time.strftime("%H", time.gmtime()))+1, int(time.strftime("%m", time.gmtime()))+6 # +1 and +6 to adjust for time-zone
-        minute_of_day = hour*60+minute
-        stop_minute = self.recycling_start_hour*60-30 # Stop measurement 5 min before recycling starts
-        start_minute = self.recycling_start_hour*60+self.recycling_duration*60+30 # Start measurement 10 min after recycling stopped
-        idx = 0
-        while minute_of_day >= stop_minute and minute_of_day <= start_minute:
-            QtTest.QTest.qSleep(10000)
-            if idx == 0:
-                print("Stopped measurement because recycling starts soon.")
-            idx+=1
-        if idx > 0:
-            print("Continue measurement because recycling stopped.")
-        
     def checktime(self, abort):
         start_pause_time = self.pause_time[0]
         end_pause_time = self.pause_time[1]
@@ -394,17 +379,21 @@ class NuclearOPs(DataGeneration):
                     #     time.sleep(0.1)
 
                     while self.queue._counter.heating:
+                        now = datetime.datetime.now()
+                        current_time = now.strftime("%H:%M:%S")
+                        print("Current Time =", current_time)
                         print("Countrate too high. Assuming hearting of photon detector. Going to sleep for 1min.")
                         QtTest.QTest.qSleep(60000)
 
+                    if self.do_ple_refocusA2 or self.do_ple_refocusA1:
+                        self.do_refocus_ple(abort)
+                        
                     if self.do_confocal_repump_refocus:
                         self.do_refocus_repump()
 
                     if self.do_confocal_A1A2_refocus or self.do_confocal_A2MW_refocus:
                         self.do_refocus_zpl(abort)
 
-                    if self.do_ple_refocusA2 or self.do_ple_refocusA1:
-                        self.do_refocus_ple(abort)
                         # if 'delta_ple_A2' in self.current_iterator_df.keys():
                         #     self.queue.ple_A2.delta_ple = self.current_iterator_df['delta_ple_A2'].unique()[0]
                         #     logging.getLogger().info(
@@ -599,15 +588,15 @@ class NuclearOPs(DataGeneration):
                     if abort.is_set(): break
 
                     
+                    if self.do_ple_refocus or self.do_ple_refocusA1 or self.do_ple_refocusA2:
+                            self.do_refocus_ple(abort)
                     if self.do_confocal_repump_refocus:
                         self.do_refocus_repump(abort)
-                    
                     if self.do_confocal_A1A2_refocus or self.do_confocal_A2MW_refocus:
                         self.do_refocus_zpl(abort)
                     
                     
-                    if self.do_ple_refocus or self.do_ple_refocusA1 or self.do_ple_refocusA2:
-                            self.do_refocus_ple(abort)
+                    
 
 
                     if self.refocus_cw_odmr or self.refocus_pulsed_odmr:
@@ -724,11 +713,11 @@ class NuclearOPs(DataGeneration):
         delta_t = time.time() - self.last_ple_refocus
 
         if (delta_t>= self.ple_refocus_interval):
-            try: 
+            if 'A2_power' in self.current_iterator_df:
                 a2power = self.current_iterator_df['A2_power']
-            except:
+            else:
                 a2power = 0
-                print("No laserpower in Iterator")
+                print("No laserpower in Iterator. Check for bugs. Is laserpower set correctly?")
             self.queue._awg.mcas_dict.stop_awgs()
 
             if self.do_ple_refocusA1:
@@ -753,7 +742,7 @@ class NuclearOPs(DataGeneration):
                 self.queue._powerstabilization_logic.TargetPower = self.A1LaserPower
                 self.queue._powerstabilization_logic.start_control
                 start_time = time.time()
-                while self.queue._powerstabilization_logic.stabilize:
+                while self.queue._powerstabilization_logic.stabilizing:
                     QtTest.QTest.qSleep(100)
                     if abort.is_set(): break
                     if start_time - time.time() > 30:
@@ -762,19 +751,19 @@ class NuclearOPs(DataGeneration):
                         self.queue._powerstabilization_logic.set_fix_voltage(tag="A1")               
                 self.queue._awg.mcas_dict.stop_awgs()
             if self.checkA2LaserPower:
-                self.queue._awg.mcas_dict['A2'].run()
+                self.queue._awg.mcas_dict['A2'].run() #probably is not registered in setupcontrol logic --> this would turn off the laser when updating the analog voltage
                 self.queue._powerstabilization_logic.controlA2 = True
                 self.queue._powerstabilization_logic.controlA1 = False
                 self.queue._powerstabilization_logic.TargetPower = a2power#self.A2LaserPower
                 self.queue._powerstabilization_logic.start_control
                 start_time = time.time()
-                while self.queue._powerstabilization_logic.stabilize:
+                while self.queue._powerstabilization_logic.stabilizing:
                     QtTest.QTest.qSleep(500)
-                    print("abort: ", abort.is_set())
+                    #print("abort: ", abort.is_set())
                     if abort.is_set(): break
                     elif start_time - time.time() > 30:
-                        logging.getLogger().info('Could not reach desired A2-laserpower in reasonable time. Set analog voltage to 0.5V.')
-                        self.queue._powerstabilization_logic.A2Voltage = 0.5
+                        logging.getLogger().info('Could not reach desired A2-laserpower in reasonable time. Set analog voltage to 1V.')
+                        self.queue._powerstabilization_logic.A2Voltage = 1
                         self.queue._powerstabilization_logic.set_fix_voltage(tag="A2")
                 print("Done stabilizing. Turning laser off now...")             
                 self.queue._awg.mcas_dict.stop_awgs()
@@ -795,7 +784,6 @@ class NuclearOPs(DataGeneration):
         print('average counts before refocus')
         print(counts_before)
         repetitions =0
-        print("Nuclear Ops Repetitions before PLE: ", repetitions)
         self.queue._PLE_logic.Lock_laser=True
         volt_before=self.queue._PLE_logic._static_v
         self.queue._PLE_logic.happy=True
@@ -809,11 +797,12 @@ class NuclearOPs(DataGeneration):
             self.queue._awg.mcas_dict['RepumpAndA1AndA2'].run()
             QtTest.QTest.qSleep(4000)
             counts_after = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
-            print('average counts After refocus')
+            print('average counts before refocus:')
+            print(counts_before)
+            print('average counts After refocus:')
             print(counts_after)
             self.queue._awg.mcas_dict.stop_awgs()
-            if abort.is_set or repetitions > 5:
-                print("Nuclear Ops Repetitions When Aborting: ", repetitions)
+            if repetitions > 5:
                 print("*********************************************PLE REFOCUS WAS NOT SUCCESSFUL AFTER 5 ITERATIONS ******************************************")
                 # if self.mode==1:
                 #     self.queue._PLE_logic._static_v=volt_before
@@ -823,11 +812,9 @@ class NuclearOPs(DataGeneration):
                 break
 
             repetitions +=1
-            print("Nuclear Ops Repetitions After Iteration: ", repetitions)
-        
+            
             self.queue._PLE_logic.happy=False
 
-        print("voltage after PLE: ", self.queue._PLE_logic._scanning_device.get_scanner_position()[3])
         # self.queue.ple_A2.syncFlag = False
         # self.queue.ple_A2.state = 'refocus PLE'
 
@@ -1153,15 +1140,11 @@ class NuclearOPs(DataGeneration):
 
 
     def get_trace(self, abort, delay_ps_list = None,window_ps_list = None):
-        # print('get_trace NuclearOps delay', delay_ps_list)
-        # print('get_trace NuclearOps window_ps', window_ps_list)
         if not self._md.debug_mode:
-            print("INITIALIZING")
-            print(self.mcas.name)
+            #print("INITIALIZING")
+            #print(self.mcas.name)
             self.mcas.initialize()
-            #print(self.queue._awg.mcas_dict.keys())
-            #self.queue._awg.mcas_dict[self.sequence_name].run()
-            print("init fininished")
+            #print("init fininished")
         print("getting trace")
         self.queue._gated_counter.count(abort,
                                  ch_dict=self.mcas.ch_dict,
@@ -1187,7 +1170,7 @@ class NuclearOPs(DataGeneration):
     #     print("t 3", time.time()-t1)
     #     #logging.info('finished setting up the sequence')
 
-    def setup_rf(self, current_iterator_df, hashed = True):
+    def setup_rf(self, current_iterator_df, hashed = False):
         #print("current_iterator_df ", current_iterator_df)
         if "sweeps" in current_iterator_df.columns:
             current_iterator_df = current_iterator_df.drop(["sweeps"], axis=1)
@@ -1202,7 +1185,9 @@ class NuclearOPs(DataGeneration):
                 
                 self.mcas = self.ret_mcas(self,current_iterator_df, self.sequence_name)
                 while self.mcas=='':
+                    print("loading sequence in NuclearOPs...")
                     QtTest.QTest.qSleep(10)
+                print("done loading")
         
                 self.queue._awg.mcas_dict[self.sequence_name] = self.mcas
    
@@ -1212,17 +1197,20 @@ class NuclearOPs(DataGeneration):
                 
                 self.mcas = self.ret_mcas(self,current_iterator_df, self.sequence_name)
                 while self.mcas=='':
+                    print("loading sequence in NuclearOPs...2")
                     QtTest.QTest.qSleep(10)
+                print("done loading2")
         
                 self.queue._awg.mcas_dict[self.sequence_name] = self.mcas
 
             #self.mcas = self.queue._awg.mcas_dict[sequence_name]
             # This means that this is a new cun? so better to reassemble the sequence, isn't?
    
-            elif self.mcas.name != self.sequence_name:
-                # What is this case? - maybe if we changed the sequence on the go? Can you comment when you see error if this is commented?
-                self.queue._awg.mcas_dict.stop_awgs()
-                self.mcas = self.queue._awg.mcas_dict[self.sequence_name]
+            #elif self.mcas.name != self.sequence_name:
+            #    # What is this case? - maybe if we changed the sequence on the go? Can you comment when you see error if this is commented?
+            #    print("Using the weird mcas setup...")
+            #    self.queue._awg.mcas_dict.stop_awgs()
+            #    self.mcas = self.queue._awg.mcas_dict[self.sequence_name]
             else:
                 print("Dont need to set up new RF.")
 
@@ -1336,3 +1324,11 @@ class NuclearOPs(DataGeneration):
         self.odmr_interval = 15
         self.file_notes = ''
         self.thread = None
+        # get rid of old hashes
+        try:
+            for seq in self.mcas_dict_awg.mcas_dict:
+                if seq.startswith("Nuclear"):
+                    print("Deleting used Nuclear Ops Sequences")
+                    del seq
+        except:
+            pass

@@ -20,6 +20,8 @@ import types
 from . import util
 
 __SAMPLE_FREQUENCY__ = 12e3
+__SAMPLE_FREQUENCY_PS__ = 1e3
+__ROUND_SAMPLE_PRESET__ = 16
 __ADVANCE_MODE_MAP__ = {'AUTO': 0, 'COND': 1, 'REP': 2, 'SING': 3}
 __AMPLITUDE_GRANULARITY__ = 1 / 2. ** 11
 __MAX_LENGTH_SMPL__ = 2e9  # most probably wrong, but a reasonable estimate
@@ -34,6 +36,25 @@ def round_length_mus_to_64_multiple(length_mus):
     def r(lm):
         return np.around(np.array(lm) * __SAMPLE_FREQUENCY__ / 64.) / __SAMPLE_FREQUENCY__ * 64.
     return round_length_mus_full_sample(r(length_mus))
+
+def round_length_mus_full_sample_ps(length_mus):# Added to synchronize pulsestreamer and awg, which have different sampling rate
+    return np.around(np.array(length_mus) * __SAMPLE_FREQUENCY_PS__) / __SAMPLE_FREQUENCY_PS__
+
+def round_length_mus_to_16_multiple_ps(length_mus): # Added to synchronize pulsestreamer and awg, which have different sampling rate
+    def r(lm):
+        return np.around(np.array(lm) * __SAMPLE_FREQUENCY_PS__ / 16.) / __SAMPLE_FREQUENCY_PS__ * 16.
+    return round_length_mus_full_sample_ps(r(length_mus))
+def round_length_mus_to_64_multiple_ps(length_mus): # Added to synchronize pulsestreamer and awg, which have different sampling rate
+    def r(lm):
+        return np.around(np.array(lm) * __SAMPLE_FREQUENCY_PS__ / 64.) / __SAMPLE_FREQUENCY_PS__ * 64.
+    return round_length_mus_full_sample_ps(r(length_mus))
+
+def round_length_mus_to_x_multiple_ps(length_mus,x=__ROUND_SAMPLE_PRESET__): # Added to synchronize pulsestreamer and awg, which have different sampling rate
+    x = float(int(x)) # to have float of a whole number
+    def r(lm):
+        return np.around(np.array(lm) * __SAMPLE_FREQUENCY_PS__ / x) / __SAMPLE_FREQUENCY_PS__ * x
+    return round_length_mus_full_sample_ps(r(length_mus))
+
 
 def valid_length_mus(length_mus):
     if not np.allclose(length_mus, round_length_mus_full_sample(length_mus=length_mus), __SAMPLE_DURATION_TOLERANCE__):
@@ -94,6 +115,7 @@ class DataList(collections.MutableSequence):
     def missing_smpl(self):
         ls = sum([step.length_smpl for step in self.list])
         return max(5 * 64 - ls, (-ls) % 64)
+        #return max(5 * 64*3 - ls, (-ls) % 64*3) #Javid's solution to the 3ns jittering (AWG slave, PS Master, PS gives clock, AWG triggers PS)
 
     @property
     def missing_smpl_step(self):

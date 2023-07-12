@@ -14,6 +14,7 @@ import hardware.Keysight_AWG_M8190.elements as E
 
 import logic.misc as misc
 #from pi3diamond import pi3d
+import notebooks.UserScripts.helpers.shared as shared
 from hardware.Keysight_AWG_M8190.elements import WaveFile, WaveStep, SequenceStep, Sequence
 import hardware.Keysight_AWG_M8190.pym8190a as pym8190a
 import numbers
@@ -75,7 +76,7 @@ __STANDARD_WAVEFILES__ = {'14n+1': r"D:\data\NuclearOPs\Robust\test_pi_three_nit
 
 __WAIT_SWITCH__ = 0.0
 __IQ_MIXER__ = False
-__TT_TRIGGER_LENGTH__ = 0.01#10*192/12e3
+__TT_TRIGGER_LENGTH__ = 0.064#10*192/12e3
 __SAMPLE_FREQUENCY__ = 12e3
 def nuclear_rabi(mcas, new_segment=False, **kwargs):
     type = 'robust' if 'wave_file' in kwargs else 'sine'
@@ -88,7 +89,7 @@ def nuclear_rabi(mcas, new_segment=False, **kwargs):
         for ch in chl:
             if 'pd' + awg_str + str(ch) in kwargs:
                 pd['pd' + awg_str + str(ch)] = kwargs.pop('pd' + awg_str + str(ch), None)
-    mcas.asc(pd128m1=dict(type=type, **kwargs), name=kwargs.get('name', 'rf'), **pd)
+    mcas.asc(pd2g2=dict(type=type, **kwargs), name=kwargs.get('name', 'rf'), **pd)
 
 def electron_pi_and_rf_on(mcas, new_segment = False,iq_mixer=__IQ_MIXER__, **allkwargs):
     """
@@ -150,11 +151,12 @@ def electron_rabi(mcas, name='e_rabi', iq_mixer=__IQ_MIXER__, mixer_deg=-90, new
     if 'pd2g1' in kwargs or 'pd2g2' in kwargs:
         raise Exception('Error!')
     pd = {}
+    
     for awg_str, chl in mcas.ch_dict.items():
         for ch in chl:
             if 'pd' + awg_str + str(ch) in kwargs:
                 pd['pd' + awg_str + str(ch)] = kwargs.pop('pd' + awg_str + str(ch), None)
-
+    
     if mixer_deg is None:
         raise Exception('Error: mixer_deg must be given.')
     elif isinstance(mixer_deg, (list, np.ndarray)):
@@ -181,9 +183,29 @@ def electron_rabi(mcas, name='e_rabi', iq_mixer=__IQ_MIXER__, mixer_deg=-90, new
     if iq_mixer:
         pd2g[2]['phases'] = np.array(pd2g[2]['phases']) + mixer_deg
         pd2g[2]['smpl_marker'] = False
-        mcas.asc(pd2g1=pd2g[1], pd2g2=pd2g[2], name=name, **pd) #MW is set here
+        mcas.asc(pd2g1=pd2g[1], pd2g2=pd2g[2], name=name, **pd, **kwargs) #UNFUG
+        #mcas.asc(pd2g1=pd2g[1], pd2g2=pd2g[2], name=name, **pd) #MW is set here
     else:
-        mcas.asc(pd2g1=pd2g[1], name=name, **pd)
+        mcas.asc(pd2g1=pd2g[1], name=name, **pd, **kwargs)#UNFUG
+        #mcas.asc(pd2g1=pd2g[1], name=name, **pd)
+
+def set_init_seq(mcas, state, init_time = 10, segment_length = 1, **kwargs):
+    pd2g1 = kwargs.pop("pd2g1").copy() # Need to copy to circumvent using the same pd twice, because pd gets changed in asc.
+    loops, correction_mus = shared.calculate_loop_count(init_time,segment_length)
+
+    # main loop
+    mcas.start_new_segment(name='init', loop_count = loops)
+    mcas.asc(**kwargs, length_mus = segment_length) 
+    
+    # correction segment
+    mcas.start_new_segment(name='init', loop_count = 1)
+    if correction_mus >= 0.128: correction_mus = correction_mus-0.128
+    mcas.asc(**kwargs, length_mus = correction_mus)
+
+    # Turning of gateMW
+    gateMW = False
+    mcas.asc(**kwargs, length_mus = correction_mus)
+
 
 # def single_robust_electron_pi(mcas, nuc, **kwargs):
 #     if 'mixer_deg' in kwargs:
@@ -732,16 +754,16 @@ class SSR(object):
 
                 elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_A2':
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-                    self.mcas.asc(A2=True, length_mus=self.dur_step[alt_step][5], name = 'ple_A2_readout')
-                    self.mcas.asc(length_mus=0.5,name = 'wait')
+                    self.mcas.asc(A2=True, length_mus=E.round_length_mus_to_x_multiple_ps(self.dur_step[alt_step][5]), name = 'ple_A2_readout')
+                    self.mcas.asc(length_mus=E.round_length_mus_to_x_multiple_ps(0.5),name = 'wait')
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
                 
                 
                 elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_A1':
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
                     #self.mcas.asc(A1=False, length_mus=self.dur_step[alt_step][6], name = 'initial wait') # Delete me again
-                    self.mcas.asc(A1=True, length_mus=self.dur_step[alt_step][5], name = 'ple_A1_readout')
-                    self.mcas.asc(length_mus=0.5,name = 'wait')
+                    self.mcas.asc(A1=True, length_mus=E.round_length_mus_to_16_multiple_ps(self.dur_step[alt_step][5]), name = 'ple_A1_readout')
+                    self.mcas.asc(length_mus=E.round_length_mus_to_16_multiple_ps(0.5),name = 'wait')
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
 
                 elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_A2_delay':

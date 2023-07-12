@@ -40,23 +40,18 @@ restore_awg_settings = True
 #                 }
 
 marker_alias = {
-                # 'memory': ['2g', 2, 'sync',None],
-                # 'aom_Ex': ['2g', 2, 'smpl',None],
-                'gateAWG': ['2g', 1, 'smpl',None],
-                'FlipMirror':['ps',1,'FlipMirror','0'],
-                #'A2':['ps',1,'A2','1'],
-                'A2':['2g',2,'smpl',None],
-                'repump': ['ps',1,'repump','2'],
-                'green': ['ps',1,'green','3'],
-                #ch4 is clock to AWG
-                'A1':['ps',1,'A1','5'],
-                #'gate': ['2g',1,'gate','7'],
-                'gate': ['2g', 1, 'smpl',None],
-                #'gate': ['ps',1,'gate','7'],
-                #'memory': ['ps',1,'memory','6'],
-                'memory': ['2g', 2, 'sync',None],
-                'tt_sync': ['ps',1,'tt_sync','6'],
-                'tt_trigger': ['ps',1,'tt_trigger','7']
+                'gateAWG':   ['2g', 1, 'smpl', None],
+                'gate':      ['2g', 1, 'smpl', None],
+                'gateMW':    ['2g', 2, 'smpl', None],
+                'memory':    ['2g', 2, 'sync', None],
+                'FlipMirror':['ps', 1, 'FlipMirror', '0'],
+                'A2':        ['ps', 1, 'A2', '1'],
+                'repump':    ['ps', 1, 'repump', '2'],
+                'green':     ['ps', 1, 'green', '3'],
+                # PS CHANNEL 4 IS CLOCK
+                'A1':        ['ps', 1, 'A1', '5'],
+                'tt_sync':   ['ps', 1, 'tt_sync', '6'],
+                'tt_trigger':['ps', 1, 'tt_trigger', '7'],
                 }
 
 

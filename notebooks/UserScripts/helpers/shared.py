@@ -1,6 +1,8 @@
 from __future__ import print_function, absolute_import, division
 from imp import reload
 
+import hardware.Keysight_AWG_M8190.elements as E 
+
 import numpy as np
 import threading
 
@@ -87,6 +89,20 @@ __BASE_TAU__ = 2*192/12e3
 #                             'Total tau must be at least {} (current: {})'.format(self.minimum_total_tau, self.total_tau))
 # #         return self.tau_list - self.eff_pulse_dur_waiting_time
 
+def calculate_loop_count(length_mus, length_segment):
+    correction = 0
+    if length_segment > length_mus:
+        return 0, E.round_length_mus_to_x_multiple_ps(length_mus)
+    
+    round_ls = E.round_length_mus_to_x_multiple_ps(length_segment)
+    # amount of loops needed to be as close as possible to length_mus
+    loop_count = (int(length_mus/round_ls)) 
+    # due to rounding, the exact value of length_mus may not be
+    # reached. Then a small correction is needed.
+    if (length_mus-loop_count*round_ls) > 0:
+        correction = E.round_length_mus_to_x_multiple_ps(length_mus-loop_count*round_ls)
+    return loop_count, correction
+
 def round_to(val, base_val):
     return np.around(np.array(val) / base_val)*base_val
 
@@ -106,6 +122,13 @@ def dbm2v(Lp):
 
 def v2dmb(V):
     raise Exception('not implemented')
+
+def dbm2amp(power_dBm, impedance=50):
+        power_dBm = np.atleast_1d(power_dBm)
+        P_watts = 10**(power_dBm / 10) * 1e-3
+        V_rms = np.sqrt(P_watts * impedance)
+        V_pp = V_rms * 2 * np.sqrt(2)
+        return V_pp / 0.35 #0.35 comes from awg setting, and can vary!
 
 def complement_arr(arr, direction):
     """

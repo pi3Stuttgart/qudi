@@ -127,11 +127,7 @@ class GatedCounter(GenericLogic):
         self.n_values = int(self.readout_duration/ (mcas.length_mus/sm) * sum([step[3] for step in analyze_sequence]))
         
     def read_trace(self):
-        import time
-        #t0 = time.time()
         self.gated_counter_data = self._fast_counter_device.gated_counter_countbetweenmarkers.getData() #If readout takes too long, ask Javid for optimized Readout sequence
-        #print("get Data in gated_counter_logic:", len(self.gated_counter_data))
-        #print('get trace from TT:',time.time()-t0)
         if self.ZPL_counter:
             print("ZPL_counter in gated_counter_logic")
             if self.raw_clicks_processing:
@@ -189,22 +185,17 @@ class GatedCounter(GenericLogic):
                             # getattr(self._fast_counter_device, counter_name).sync()
                             setattr(self, trace_name,zpl_counter_data)
 
-                        # print('22 tt:',time.time()-t0)
-        #print('tt3:',time.time()-t0)
-
+        
         self.set_progress()
-        #print('tt4:',time.time()-t0)
-        #print("number sm in gatedcounterlogic: ", self.trace.number_of_simultaneous_measurements)
-
+        #UNFUG
         if self.analyze_trace_during_experiment:
+            print("analyze trace during measurement in gated_counter_logic")
             self.trace_rep = Analysis.TraceRep(trace=self.gated_counter_data[:self.progress],
                                                analyze_sequence=self.trace.analyze_sequence,
                                                number_of_simultaneous_measurements=self.trace.number_of_simultaneous_measurements)
             self.trace.trace = np.array(self.trace_rep.df.groupby(['run', 'sm', 'step', 'memory']).agg({'n': np.sum}).reset_index().n)
             self.update_plot_data()
-        # print('clear TT start')
-        # self.clear_timetaggers()
-
+        
     def clear_timetaggers(self):
         self._fast_counter_device.gated_counter_countbetweenmarkers.clear()
         if self.ZPL_counter:
@@ -287,7 +278,8 @@ class GatedCounter(GenericLogic):
 
     def count(self, abort, ch_dict, turn_off_awgs=True,
               start_trigger_delay_ps_list = None,window_ps_list=None,
-              raw_clicks_processing=False, two_zpl_apd = False,raw_clicks_processing_channels = [0,1,2,3,4,5,6,7]):
+              raw_clicks_processing=False, two_zpl_apd = False,raw_clicks_processing_channels = [0,1,2,3,4,5,6,7],
+              hashed = False, seq_name=''):
         self.start_trigger_delay_ps_list = start_trigger_delay_ps_list
         self.window_ps_list = window_ps_list
         self.two_zpl_apd = two_zpl_apd
@@ -300,6 +292,9 @@ class GatedCounter(GenericLogic):
         try:
             self.set_counter()
             if not self._mcas_dict.mcas_dict.debug_mode:
+                print('start awgs in gated_counter_logic via "start_awgs(self._mcas_dict._mcas_dict.awgs)", which is direct connection to hardware file')
+                # shouldnt it be started via mcas_dict['"sequence_name"].run()
+                # How does awgs know which sequence to run?
                 start_awgs(self._mcas_dict.mcas_dict.awgs, ch_dict=ch_dict)
             self.progress = 0
             i=0
@@ -312,6 +307,8 @@ class GatedCounter(GenericLogic):
                 ready = self._fast_counter_device.gated_counter_countbetweenmarkers.ready()
                 
                 if i%100==0:
+                    #why get counts here already? its done at the end of measurement when self.read_trace() is called
+                    # seems like read_trace() is not doing much...
                     dat=self._fast_counter_device.gated_counter_countbetweenmarkers.getData()
                     #print("-----------------------------------------------------\n",np.sum(dat),len(dat))
                 i+=1
@@ -334,9 +331,6 @@ class GatedCounter(GenericLogic):
                 self._mcas_dict.mcas_dict.stop_awgs()
 
             self.stop_timetaggers()
-
-            # begin2 = time.time()
-            # self.clear_timetaggers()
 
             # self._fast_counter_device.gated_counter_countbetweenmarkers.stop()
             self.state = 'idle'

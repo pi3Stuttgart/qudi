@@ -87,11 +87,11 @@ class CounterLogic(GenericLogic):
             self.log.debug('{0}: {1}'.format(key, config[key]))
 
         # in bins
-        self._count_length = 300
-        self._smooth_window_length = 10
+        self._count_length = 1000
+        self._smooth_window_length = 20
         self._counting_samples = 1      # oversampling
         # in hertz
-        self._count_frequency = 50
+        self._count_frequency = 121
 
         # self._binned_counting = True  # UNUSED?
         self._counting_mode = CountingMode['CONTINUOUS']
@@ -206,7 +206,7 @@ class CounterLogic(GenericLogic):
         self.sigCountLengthChanged.emit(self._count_length)
         return self._count_length
 
-    def set_count_frequency(self, frequency=50):
+    def set_count_frequency(self, frequency=121):
         """ Sets the frequency with which the data is acquired.
 
         @param float frequency: the desired frequency of counting in Hz

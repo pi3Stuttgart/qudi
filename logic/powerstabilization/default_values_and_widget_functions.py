@@ -2,21 +2,22 @@ import threading
 from PyQt5 import QtCore
 class powerstabilization_default():
 
-        TargetPower: float = 3
+        TargetPower: float = 10
         TargetVoltage: float = 1
         A1Voltage: float = 0
         A2Voltage: float = 0
         current_power: float = 0
         current_voltage: float = 0
-        controlA1: bool =False
-        controlA2: bool =True
+        controlA1: bool = False
+        controlA2: bool = True
         voltage_offset: float = 0.0000
         voltage_to_power_ratio: float = 0.1402 #V/nW
-        running: bool = False
+        stabilizing: bool = False
         P1_var: float = 0.05
         I1_var: float = 0.1
         D1_var: float = 0.0001
         datapoints : int = 500
+        sleep_time: int = 100
                 
         @QtCore.pyqtSlot(str)
         def TargetPower_LineEdit_textEdited(self, input):

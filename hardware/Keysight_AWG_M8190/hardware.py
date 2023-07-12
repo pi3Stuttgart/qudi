@@ -1610,7 +1610,7 @@ class PulseStreamerPGProxy(PulseStreamer):
         self._triggered = None
         self._sequence  = None
         self.t_prepolarize = None
-        self.analog_volt=0.5 #1234 change the A2 AOM voltage here
+        self.analog_volt=1 #1234 change the A2 AOM voltage here
 
 
     def missing_smpl(self,ls):

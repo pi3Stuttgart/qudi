@@ -47,12 +47,13 @@ class TimeTaggerCounter(Base, SlowCounterInterface):
     _channel_apd_0 = ConfigOption('timetagger_channel_apd_0', missing='error')
     _channel_apd_1 = ConfigOption('timetagger_channel_apd_1', None, missing='warn')
     _sum_channels = ConfigOption('timetagger_sum_channels', False)
+    _count_frequency = ConfigOption('timetagger_count_frequency', 53)
 
     def on_activate(self):
         """ Start up TimeTagger interface
         """
         self._tagger = tt.createTimeTagger()
-        self._count_frequency = 50  # Hz
+        #self._count_frequency = 100  # Hz
         self._tagger.setTriggerLevel(1, 0.05)
         self._tagger.setTriggerLevel(2, 0.05)
 

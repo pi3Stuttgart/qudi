@@ -23,7 +23,6 @@ top-level directory of this distribution and at <https://github.com/Ulm-IQO/qudi
 import numpy as np
 import re
 
-import nidaqmx.system
 import PyDAQmx as daq
 from qtpy import QtCore
 from core.module import Base

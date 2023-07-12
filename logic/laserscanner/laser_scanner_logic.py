@@ -111,6 +111,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.timstap_list=[] #timestamp for PLE track
         self.accepted_list=[]
         self.happy=True
+        self.hashed = False
  
         
 
@@ -339,7 +340,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         self.currenttime = time.time()
         self._awg.mcas_dict.stop_awgs()
-        self.trace_seq(hashed = False)
+        self.trace_seq()
         if self.enable_PulsedRepump:
             #self.ps.stream(seq=[[int(self.RepumpDuration*1e3),["repump"],0,0],[int(self.RepumpDecay*1e3),[],0,0]],n_runs=1) #self.RepumpDuration is in µs
             self._awg.mcas_dict['repump'].run()
@@ -498,16 +499,16 @@ class LaserScannerLogic(GenericLogic, ple_default):
     def MW1_Power(self,val):
         self._MW1_Power=val
 
-    def trace_seq(self, hashed):
+    def trace_seq(self):
         hash = base64.b64encode(hashlib.sha1(self.convert_seq_params_to_string().encode()).digest())
         #Added self.queue._gated_counter.readout_duration such that the hash recognizes a change in readout duration and will update n_values in the sequence accordingly
         self.curr_sequence_name = "ple_trace_hash_{}".format(hash)
-        if hashed and not self.curr_sequence_name in self._awg.mcas_dict:
+        if self.hashed and not self.curr_sequence_name in self._awg.mcas_dict:
             print("hash in PLE: ", self.curr_sequence_name)
             self._awg.mcas_dict.stop_awgs()
             self.setup_seq(sequence_name=self.curr_sequence_name)
 
-        elif hashed == False: 
+        elif self.hashed == False: 
             self._awg.mcas_dict.stop_awgs()
             self.curr_sequence_name = "ple_trace"
             self.setup_seq(sequence_name=self.curr_sequence_name)
@@ -546,6 +547,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
             seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": frequencies, "amplitudes": self.power},
                     A1=self.enable_A1,
                     A2=self.enable_A2,
+                    gateMW=True,
                     repump=self.enable_Repump,
                     length_mus=10
                     )
@@ -562,9 +564,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
         P_watts = 10**(power_dBm / 10) * 1e-3
         V_rms = np.sqrt(P_watts * impedance)
         V_pp = V_rms * 2 * np.sqrt(2)
-        return V_pp / 0.35 #awg_amplitude
-        #return V_pp / float(self.awg_device.amp1) #awg_amplitude
-
+        return V_pp / self._awg.mcas_dict.awgs['2g'].ch[1].output_amplitude
+       
     def _generate_ramp(self, voltage1, voltage2, speed):
         """Generate a ramp vrom voltage1 to voltage2 that
         satisfies the speed, step, smoothing_steps parameters.  Smoothing_steps=0 means that the
