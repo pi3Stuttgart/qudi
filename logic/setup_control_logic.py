@@ -23,8 +23,7 @@ class SetupControlLogic(GenericLogic):
     sigUpdate = QtCore.Signal()
 
     mcas_holder = Connector(interface='McasDictHolderInterface')
-    #powercontrol = Connector(interface='LaserPowerHolder')
-    #automizedmeasurementlogic = Connector(interface = 'Automatedmeasurement')
+    # powercontrol = Connector(interface='LaserPowerHolder')
     savelogic = Connector(interface = 'SaveLogic')
 
     _AOM_volt:float=1
@@ -63,6 +62,7 @@ class SetupControlLogic(GenericLogic):
         self._save_logic = self.savelogic()
         self.flipmirror_sequence_created = False
         self.ps=self._awg.mcas_dict.awgs["ps"]
+
 
     def on_deactivate(self):
         """ Deactivate module.
@@ -281,10 +281,11 @@ class SetupControlLogic(GenericLogic):
         self.write_to_pulsestreamer()
         time.sleep(0.01)
         self.flip_mirror=False
-        if self.MW_on():
-            self._awg.mcas_dict["setupcontrol"].run()
-        else:
-            self.write_to_pulsestreamer()
+        self._awg.mcas_dict.stop_awgs()
+        # if self.MW_on():
+        #     self._awg.mcas_dict["setupcontrol"].run()
+        # else:
+        #     self.write_to_pulsestreamer()
 
 
     def create_flipmirror_sequence(self):
@@ -317,13 +318,15 @@ class SetupControlLogic(GenericLogic):
         
     def StartAutoMeas_Button_Clicked(self,on):
         # save current POIs
-        self._save_logic.save_array_as_text(data = self._automized_measurement_logic._scanner_logic.pois, filename = 'POIs.txt', filepath = self._automized_measurement_logic.save_folder)
+        print("nothing happens")
+        #self._save_logic.save_array_as_text(data = self._automized_measurement_logic._scanner_logic.pois, filename = 'POIs.txt', filepath = self._automized_measurement_logic.save_folder)
 
         # start automized measurement
-        self._automized_measurement_logic.start()
+        #self._automized_measurement_logic.start()
 
     def StopAutoMeas_Button_Clicked(self,on):
-        self._automized_measurement_logic.stop()
+        print('nothing happend')
+        #self._automized_measurement_logic.stop()
 
     def SavePOIs_Button_Clicked(self,on):
         print("Nothing happend")  

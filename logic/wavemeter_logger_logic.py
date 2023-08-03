@@ -66,7 +66,7 @@ class HardwarePull(QtCore.QObject):
         """
 
         hardware = self._parentclass._wavemeter_device
-        self._parentclass.current_wavelength = 1.0 * hardware.get_current_wavelength()
+        self._parentclass.current_wavelength = 1.0 * hardware.get_current_wavelength2()
 
         time_stamp = time.time() - self._parentclass._acqusition_start_time
 
@@ -102,7 +102,8 @@ class WavemeterLoggerLogic(GenericLogic):
     sig_fit_updated = QtCore.Signal()
 
     # declare connectors
-    wavemeter1 = Connector(interface='WavemeterInterface')
+    wavemeter1 = Connector(interface='HighFinesseWavemeter')
+    #wavemeter1 = Connector(interface='WavemeterInterface')
     counterlogic = Connector(interface='CounterLogic')
     savelogic = Connector(interface='SaveLogic')
     fitlogic = Connector(interface='FitLogic')
@@ -123,14 +124,14 @@ class WavemeterLoggerLogic(GenericLogic):
         self.threadlock = Mutex()
 
         self._acqusition_start_time = 0
-        self._bins = 200
+        self._bins = 500
         self._data_index = 0
 
         self._recent_wavelength_window = [0, 0]
         self.counts_with_wavelength = []
 
-        self._xmin = 650
-        self._xmax = 750
+        self._xmin = 916.
+        self._xmax = 917.
         # internal min and max wavelength determined by the measured wavelength
         self.intern_xmax = -1.0
         self.intern_xmin = 1.0e10
@@ -359,11 +360,13 @@ class WavemeterLoggerLogic(GenericLogic):
         # TODO: Does this depend on things, or do we loop fast enough to get every wavelength value?
         wavelength_recentness = np.min([5, len(self._wavelength_data)])
 
-        recent_counts = np.array(self._counter_logic._data_to_save[-count_recentness:])
-        recent_wavelengths = np.array(self._wavelength_data[-wavelength_recentness:])
+        recent_counts = np.array(self._counter_logic._data_to_save[-count_recentness:]).T
+        recent_wavelengths = np.array(self._wavelength_data[-wavelength_recentness:]).T
 
         # The latest counts are those recorded during the recent_wavelength_window
-        count_idx = [0, 0]
+        #print(recent_counts) [time, counts]
+        #print(self._recent_wavelength_window) [second last time stamp, last timestamp] ?
+        count_idx = [0, 0] 
         count_idx[0] = np.searchsorted(recent_counts[:, 0], self._recent_wavelength_window[0])
         count_idx[1] = np.searchsorted(recent_counts[:, 0], self._recent_wavelength_window[1])
 
@@ -376,7 +379,7 @@ class WavemeterLoggerLogic(GenericLogic):
                                              )
 
         # Stitch interpolated wavelength into latest counts array
-        latest_stitched_data = np.insert(latest_counts, 2, values=interpolated_wavelengths, axis=1)
+        latest_stitched_data = np.insert(latest_counts, 1, values=interpolated_wavelengths, axis=1)
 
         # Add this latest data to the list of counts vs wavelength
         self.counts_with_wavelength += latest_stitched_data.tolist()

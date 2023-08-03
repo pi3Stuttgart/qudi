@@ -102,7 +102,7 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
     # this following flag is modified to override every existing file
     _cCtrlStartMeasurment        = ctypes.c_uint16(0x1002)
     _cReturnWavelangthAir        = ctypes.c_long(0x0001)
-    _cReturnWavelangthVac        = ctypes.c_long(0x0000)
+    _cReturnWavelangthVac        = ctypes.c_long(0x0000) #0: vac, 1 air, 2: freq, 3: wavenumber, 4: energy ?
 
 
     def __init__(self, config, **kwargs):
@@ -122,7 +122,7 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
         #############################################
         try:
             # imports the spectrometer specific function from dll
-            self._wavemeterdll = ctypes.windll.LoadLibrary('wlmData.dll')
+            self._wavemeterdll = ctypes.windll.LoadLibrary(r'C:\Windows\System32\wlmData_backup.dll')
 
         except:
             self.log.critical('There is no Wavemeter installed on this '
@@ -241,36 +241,32 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
 
         return 0
 
-    def get_current_wavelength(self, kind="air"):
+    def get_current_wavelength(self, kind="air",ch=1):
         """ This method returns the current wavelength.
 
         @param string kind: can either be "air" or "vac" for the wavelength in air or vacuum, respectively.
 
         @return float: wavelength (or negative value for errors)
         """
-        if kind in "air":
-            # for air we need the convert the current wavelength. The Wavemeter DLL already gives us a nice tool do do so.
-            return float(self._wavemeterdll.ConvertUnit(self._current_wavelength,self._cReturnWavelangthVac,self._cReturnWavelangthAir))
-        if kind in "vac":
-            # for vacuum just return the current wavelength
-            return float(self._current_wavelength)
-        return -2.0
+        factor = {"vac": 0, "air": 1, "freq": 2, "wavenumber": 3, "energy": 4}[kind]
+        self._wavemeterdll.GetWavelengthNum.restype = ctypes.c_double
+        self._current_wavelength = self._wavemeterdll.GetWavelengthNum(ch, ctypes.c_double(0))
+        return float(self._wavemeterdll.ConvertUnit(self._current_wavelength,0,factor))
+    
 
-    def get_current_wavelength2(self, kind="air"):
+
+    def get_current_wavelength2(self, kind="air", ch=2):
         """ This method returns the current wavelength of the second input channel.
 
         @param string kind: can either be "air" or "vac" for the wavelength in air or vacuum, respectively.
 
         @return float: wavelength (or negative value for errors)
         """
-        if kind in "air":
-            # for air we need the convert the current wavelength. The Wavemeter DLL already gives us a nice tool do do so.
-            return float(self._wavemeterdll.ConvertUnit(self._current_wavelength2,self._cReturnWavelangthVac,self._cReturnWavelangthAir))
-        if kind in "vac":
-            # for vacuum just return the current wavelength
-            return float(self._current_wavelength2)
-        return -2.0
-
+        factor = {"vac": 0, "air": 1, "freq": 2, "wavenumber": 3, "energy": 4}[kind]
+        self._wavemeterdll.GetWavelengthNum.restype = ctypes.c_double
+        self._current_wavelength2 = self._wavemeterdll.GetWavelengthNum(ch, ctypes.c_double(0))
+        return float(self._wavemeterdll.ConvertUnit(self._current_wavelength2,0,factor))
+        
     def get_timing(self):
         """ Get the timing of the internal measurement thread.
 

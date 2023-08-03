@@ -50,7 +50,7 @@ class AutomizedMeasurementWindow(QtWidgets.QMainWindow):
 class AutomizedMeasurementGUI(GUIBase):
 
     ## declare connectors
-    automizedmeasurementlogic = Connector(interface='AutomizedMeasurementLogic')
+    automatedmeasurementlogic = Connector(interface='AutomatedMeasurementLogic')
 
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
@@ -59,7 +59,7 @@ class AutomizedMeasurementGUI(GUIBase):
         """ Definition and initialisation of the GUI plus staring the measurement.
         """
 
-        self.automized_measurement_logic = self.automizedmeasurementlogic() 
+        self.automized_measurement_logic = self.automatedmeasurementlogic() 
 
         #####################
         # Configuring the dock widgets
@@ -72,11 +72,11 @@ class AutomizedMeasurementGUI(GUIBase):
         
         
         self._mw.StartAutoMeas_Button.clicked.connect(self.automized_measurement_logic.StartAutoMeas_Button)
-        self._mw.StopAutoMeas_Button.clicked.connect(self.automized_measurement_logic.StartAutoMeas_Button)
-        self._mw.SavePOIs_Button.clicked.connect(self.automized_measurement_logic.StartAutoMeas_Button)
-        self._mw.DeletePOIs_Button.clicked.connect(self.automized_measurement_logic.StartAutoMeas_Button)
-        self._mw.SetSequence_Button.clicked.connect(self.automized_measurement_logic.StartAutoMeas_Button)
-        self._mw.SetBackgroundSeq_Button.clicked.connect(self.automized_measurement_logic.StartAutoMeas_Button)
+        self._mw.StopAutoMeas_Button.clicked.connect(self.automized_measurement_logic.StopAutoMeas_Button)
+        self._mw.SavePOIs_Button.clicked.connect(self.automized_measurement_logic.SavePOIs_Button)
+        self._mw.DeletePOIs_Button.clicked.connect(self.automized_measurement_logic.DeletePOIs_Button)
+        self._mw.SetSequence_Button.clicked.connect(self.automized_measurement_logic.SetSequence_Button)
+        self._mw.SetBackgroundSeq_Button.clicked.connect(self.automized_measurement_logic.SetBackgroundSeq_Button)
         
         self._mw.Sequence_lineEdit.textChanged.connect(self.automized_measurement_logic.Sequence_lineEdit)
         self._mw.Background_lineEdit.textChanged.connect(self.automized_measurement_logic.Background_lineEdit)
@@ -96,7 +96,6 @@ class AutomizedMeasurementGUI(GUIBase):
         self._mw.DeletePOIs_Button.clicked.disconnect()
         self._mw.SetSequence_Button.clicked.disconnect()
         self._mw.SetBackgroundSeq_Button.clicked.disconnect()
-        self._mw.SaveFolder_Button.clicked.disconnect()
 
         self._mw.Sequence_lineEdit.textChanged.disconnect()
         self._mw.Background_lineEdit.textChanged.disconnect()

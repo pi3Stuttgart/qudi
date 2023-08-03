@@ -35,7 +35,6 @@ class PID:
     """
 
     def __init__(self, P=1.5, I=0.0, D=0.4, output = 0):
-        print("IM IN PID SETTINGS")
     #def __init__(self, P=0.2, I=0.0, D=0.0, current_time=None):
 
         self.Kp = P

@@ -9,8 +9,10 @@ from core.connector import Connector
 from core.configoption import ConfigOption
 from logic.generic_logic import GenericLogic
 from core.pi3_utils import delay
+from PyQt5 import QtTest
+import csv
 
-class Automatedmeasurement(GenericLogic):
+class AutomatedMeasurementLogic(GenericLogic):
     """ How to use this thing:
         1. create pois with poimanager (Qudi)
         2. create instance of class
@@ -26,11 +28,13 @@ class Automatedmeasurement(GenericLogic):
         4. connect it to _next_step() in __init__()
     """
     # declare connectors
+    poimanagerlogic = Connector(interface='PoiManagerLogic')
+    savelogic = Connector(interface='SaveLogic')
     scannerlogic = Connector(interface='ConfocalLogic')
     spectrumlogic = Connector(interface='SpectrumLogic')
     optimizerlogic = Connector(interface = 'OptimizerLogic')
     setupcontrollogic = Connector(interface = 'SetupControlLogic')
-    mcas_holder = Connector(interface='McasDictHolderInterface')
+    # mcas_holder = Connector(interface='McasDictHolderInterface')
     counterlogic = Connector(interface='CounterLogic')
     laserscannerlogic = Connector(interface = 'LaserScannerLogic')
     powerstabilizationlogic= Connector(interface='PowerStabilizationLogic')
@@ -43,32 +47,38 @@ class Automatedmeasurement(GenericLogic):
     SigLoop = QtCore.Signal()
 
     abort = False
-    #steps = ['move', 'optimize', 'spectrum', 'spectrum']
+    steps_bg = ['move', 'spectrum', 'spectrum']
     #steps = ['move', 'optimize', 'ple']
-    steps_bg = []
+    #steps_bg = []
 
     
-    _laser_power_list=list(np.arange(0.3,9.3,0.5))
+    _laser_power_list=[0.5,1,1.5,2,3,4,5,7.5,10,15,20,25,30,35]
+
     _MW_power_list=list(np.arange(-30,-16,1))*len(_laser_power_list)
     
-    steps= (['next laser power']+['next MW power','ple']*len(_MW_power_list))*len(_laser_power_list)
+    #steps= ['resonant_optimize', 'next_laser_power', 'ple']*len(_laser_power_list)
+    steps= ['move', 'optimize', 'spectrum', 'spectrum']
+    #steps= (['next laser power']+['next MW power','ple']*len(_MW_power_list))*len(_laser_power_list)
 
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
         self.func_dict = {
             'move' : self.move_to_poi,
             'optimize' : self.optimize_on_poi,
+            'resonant_optimize' : self.resonant_optimize_on_poi,
             'spectrum' : self.take_spectrum,
             'ple' : self.take_PLE,
             'next MW power': self.next_MW_power,
-            'next laser power': self.next_laser_power
+            'next_laser_power': self.next_laser_power
         }
        
     def on_activate(self):
         """ Initialisation performed during activation of the module.
         """
 
-        self._awg = self.mcas_holder()
+        # self._awg = self.mcas_holder()
+        self._save_logic = self.savelogic() 
+        self._poimanager_logic = self.poimanagerlogic() 
         self._spectrum_logic = self.spectrumlogic() 
         self._scanner_logic = self.scannerlogic()
         self._optimizer_logic = self.optimizerlogic()
@@ -77,9 +87,9 @@ class Automatedmeasurement(GenericLogic):
         self._setupcontrol_logic = self.setupcontrollogic()
         self._powerstabilization_logic = self.powerstabilizationlogic()
 
-        # self._poimanagerlogic = self.poimanagerlogic()
+        # self._poimanagerlogic = self.poimanagerlogic() # is already included in confocal gui
      
-        self.save_folder = "C:/Data/2022/AutomizedSpectra" # save_folder0
+        self.save_folder = "C:/Data/2023/AutomizedSpectra/" # save_folder0
         
         ## signals
         # connect internal signals
@@ -91,9 +101,10 @@ class Automatedmeasurement(GenericLogic):
         self._spectrum_logic.sig_specdata_taken.connect(self.save_spectrum, QtCore.Qt.QueuedConnection)
         self._laser_scanner_logic.sigScanFinished.connect(self.save_ple, QtCore.Qt.QueuedConnection)
         #spectrumlogic.sig_specdata_updated.connect(self._next_step)
-        self._optimizer_logic._sigFinishedAllOptimizationSteps.connect(self._next_step, QtCore.Qt.QueuedConnection)
+        #self._optimizer_logic.sigRefocusFinished.connect(self._next_step, QtCore.Qt.QueuedConnection)
         self._powerstabilization_logic.SigStabilized.connect(self.laser_power_stabilized, QtCore.Qt.QueuedConnection)
         self.SigLoop.connect(self.loop, QtCore.Qt.QueuedConnection)
+        
 
         ## initialisation of variables
         self.angles_for_pol_dep_spec = np.linspace(0,360,3) # TODO: change num to 100
@@ -120,13 +131,35 @@ class Automatedmeasurement(GenericLogic):
     #     self._awg.mcas_dict['FlippyFloppy'] = seq
     #     self._awg.mcas_dict.print_info()
 
-    # def create_repump_sequence(self):
-    #     seq = self._awg.mcas(name="Repump", ch_dict={"2g": [1,2],"ps": [1]})
-    #     seq.start_new_segment("Start", loop_count=200)
-    #     seq.asc(name='Repump', length_mus=200, repump=True)
-    #     self._awg.mcas_dict.stop_awgs()
-    #     self._awg.mcas_dict['Repump'] = seq
-    #     self._awg.mcas_dict.print_info()
+    def run_repump(self):
+        self._setupcontrol_logic.enable_A1 = False
+        self._setupcontrol_logic.enable_A2 = False
+        self._setupcontrol_logic.enable_Green = False
+        self._setupcontrol_logic.enable_Repump = True
+        self._setupcontrol_logic.run()
+
+    def run_repumpA1A2(self):
+        self._setupcontrol_logic._awg.mcas_dict['RepumpAndA1AndA2'].run()
+        # self._setupcontrol_logic.enable_A1 = True
+        # self._setupcontrol_logic.enable_A2 = True
+        # self._setupcontrol_logic.enable_Green = False
+        # self._setupcontrol_logic.enable_Repump = True
+        # self._setupcontrol_logic.run()
+    def run_A1(self):
+        self._setupcontrol_logic._awg.mcas_dict['A1'].run()
+        # self._setupcontrol_logic.enable_A1 = True
+        # self._setupcontrol_logic.enable_A2 = False
+        # self._setupcontrol_logic.enable_Green = False
+        # self._setupcontrol_logic.enable_Repump = False
+        # self._setupcontrol_logic.run()
+    def run_A2(self):
+        self._setupcontrol_logic._awg.mcas_dict['A2'].run()
+        # self._setupcontrol_logic.enable_A1 = False
+        # self._setupcontrol_logic.enable_A2 = True
+        # self._setupcontrol_logic.enable_Green = False
+        # self._setupcontrol_logic.enable_Repump = False
+        # self._setupcontrol_logic.run()
+
 
     def next_MW_power(self):
         print("setting MW Power")
@@ -150,9 +183,8 @@ class Automatedmeasurement(GenericLogic):
     def next_laser_power(self):
         print("setting laserpower")
         if len(self.laser_power_list)>0:
-            self._setupcontrol_logic.enable_A2=True
-            self._setupcontrol_logic.enable_A1=False
-            self._setupcontrol_logic.write_to_pulsestreamer()
+            self._setupcontrol_logic._awg.mcas_dict.stop_awgs()
+            self.run_A2()
 
             new_power=self.laser_power_list.pop(0)
             self.Laserpower_stabilized=False
@@ -167,8 +199,8 @@ class Automatedmeasurement(GenericLogic):
     def loop(self):
         #print("looping")
         if not(self.Laserpower_stabilized):
-            time.sleep(0.25)
-            if time.time()-self.start_time<60: #do not try to sabilize over an infinite time period
+            QtTest.QTest.qSleep(250)
+            if time.time()-self.start_time<100: #do not try to sabilize over an infinite time period
                 self.SigLoop.emit()
             else:
                 print("Stabilization not successful")
@@ -180,8 +212,8 @@ class Automatedmeasurement(GenericLogic):
 
     def end_looping(self):
         #self._powerstabilization_logic.SigStopControl.emit()
-        time.sleep(0.2)
-        self._setupcontrol_logic.write_to_pulsestreamer()
+        QtTest.QTest.qSleep(200)
+        self._setupcontrol_logic._awg.mcas_dict.stop_awgs()
         self.sigNextStep.emit()
 
 
@@ -193,22 +225,22 @@ class Automatedmeasurement(GenericLogic):
         # #self._awg.mcas_dict['Repump'].run()
         # self._awg.mcas_dict["setupcontrol"].run()
         # #delay(1000)
-        time.sleep(0.5)
+        QtTest.QTest.qSleep(500)
 
     def start(self):
         """Starts the measurements"""
         try:
             self._spectrum_logic._spectrometer_device.on_activate()
+            # save  current save options
+            self.get_save_pdf = self._spectrum_logic._save_logic.save_pdf
+            self.get_save_png = self._spectrum_logic._save_logic.save_png
+
+            # overwrite save options. Only txt should be saved.
+            self._spectrum_logic._save_logic.save_pdf = False
+            self._spectrum_logic._save_logic.save_png = False
         except:
             print("No unopended device found.")
 
-        # save  current save options
-        self.get_save_pdf = self._spectrum_logic._save_logic.save_pdf
-        self.get_save_png = self._spectrum_logic._save_logic.save_png
-
-        # overwrite save options. Only txt should be saved.
-        self._spectrum_logic._save_logic.save_pdf = False
-        self._spectrum_logic._save_logic.save_png = False
         
         self.abort = False
         self.measurementStarted = True
@@ -255,11 +287,11 @@ class Automatedmeasurement(GenericLogic):
         if self.abort or (len(self._poi_names)==0):
             print('Stopping(poi).')
             print(self.abort,len(self._poi_names))
-            self._awg.mcas_dict.stop_awgs()
+            self._setupcontrol_logic._awg.mcas_dict.stop_awgs()
         
             # Restore save options to previous state
-            self._spectrum_logic._save_logic.save_pdf = self.get_save_pdf
-            self._spectrum_logic._save_logic.save_png = self.get_save_png
+            self._spectrum_logic._save_logic.save_pdf = self._spectrum_logic.get_save_pdf
+            self._spectrum_logic._save_logic.save_png = self._spectrum_logic.get_save_png
             return
 
         # Choose the first poi in the list, set it as the current one and delete it.
@@ -267,6 +299,7 @@ class Automatedmeasurement(GenericLogic):
         print('Current poi %s'%self._current_poi_name)
         # updates the position of the current poi
         self._current_poi_position = self.poi_positions[self._current_poi_name]
+        print("_next_poi: _current_poi_position", self._current_poi_position)
         # copy the steps into an array that we can modify
         if self._current_poi_name != '1':
             self.record_background = False
@@ -295,7 +328,7 @@ class Automatedmeasurement(GenericLogic):
             # Restore save options to previous state
             self._spectrum_logic._save_logic.save_pdf = self.get_save_pdf
             self._spectrum_logic._save_logic.save_png = self.get_save_png
-            self._awg.mcas_dict.stop_awgs()
+            self._setupcontrol_logic._awg.mcas_dict.stop_awgs()
             return
         elif len(self._steps)==0:
             # all steps for the current poi are done, go to next poi
@@ -356,10 +389,27 @@ class Automatedmeasurement(GenericLogic):
         On completion, a signal is emitted from optimizerlogic
         """
         self.tag_for_saving = ''
-        #delay(200)
-        time.sleep(0.2)
+        QtTest.QTest.qSleep(200)
+        self.run_repump()
         self.check_countrate(tag = 'mirror_up')
-        self.sigAutomizedRefocus.emit()  
+        crosshair_pos = self._scanner_logic.get_position()
+        self._optimizer_logic.start_refocus(crosshair_pos, caller_tag = 'confocalgui') # TODO: fix me; What happens when caller tag is gui? Is crosshair
+        while not self._optimizer_logic.refocus_finished:
+            QtTest.QTest.qSleep(250)
+        self._next_step()
+        # self._optimizer_logic.start_refocus(initial_pos = [self._scanner_logic._current_x,self._scanner_logic._current_y,self._scanner_logic._current_z], caller_tag = 'automation_logic')
+    
+    def resonant_optimize_on_poi(self): # TODO: combine with other optimize
+        """Tells optimizerlogic to start the refocus.
+        
+        On completion, a signal is emitted from optimizerlogic
+        """
+        print("automationlogic x,y,z,a position before refocus:", self._optimizer_logic._scanning_device.get_scanner_position())
+        self.tag_for_saving = ''
+        QtTest.QTest.qSleep(200)
+        self.run_repumpA1A2()
+        self.check_countrate(tag = 'mirror_up')
+        self._optimizer_logic.start_refocus(initial_pos = [self._scanner_logic._current_x,self._scanner_logic._current_y,self._scanner_logic._current_z], caller_tag = 'automation_logic')
         return
     
     
@@ -369,8 +419,9 @@ class Automatedmeasurement(GenericLogic):
         """
         self.check_autofocus_close_to_poi()
         self.flip_spectrometermirror()
-        time.sleep(1)
+        QtTest.QTest.qSleep(1000)
         self.check_countrate(tag = 'mirror_down')
+        QtTest.QTest.qSleep(1000)
         print("STARTED TAKING SPECTRUM")
         now = time.time()
         self._spectrum_logic.get_single_spectrum()
@@ -381,13 +432,8 @@ class Automatedmeasurement(GenericLogic):
         return
 
     def take_PLE(self):
-        """Tells laser_scanner_logic to start scanning.
-        
-        """
-        #check if most recent spectrum is above threshold at pixel at 917nm
-        self._setupcontrol_logic.Repump_Button_Clicked(True)
         self.check_countrate(tag = 'mirror_up')
-        self._setupcontrol_logic.Repump_Button_Clicked(False)
+        self._setupcontrol_logic._awg.mcas_dict.stop_awgs()
         print("start scanning the laser")
         self._laser_scanner_logic.start_scanning()
         #After PLE scan is finished, a signal is emitted by _laser_scanner_logic which saves the collected data
@@ -396,26 +442,39 @@ class Automatedmeasurement(GenericLogic):
    
 
     def check_countrate(self, tag = ''):
-        countrate_limit = 200
+        print("Checking Mirror Position...")
+        self.run_repump()
+        QtTest.QTest.qSleep(2000)
+        countrate_limit = 400
         iteration = 0
-        self._counter_logic.startCount()
-        avg_counts = np.sum(self._counter_logic.countdata[0][-10:-1])/10 # average over 10 data points aquired
+        avg_counts = np.mean(self._counter_logic.countdata[0][-5:-1]) # average over 10 data points aquired
         if tag == 'mirror_up':
-            while (avg_counts < countrate_limit) and (iteration < 3):
+            while (avg_counts < countrate_limit) and (iteration < 5):
                 print('avg_counts: ', avg_counts)
                 iteration +=1
                 self.flip_spectrometermirror()
-                self.move_to_poi_failed_autofocus(self._current_poi_name) 
-                avg_counts = np.sum(self._counter_logic.countdata[0][-10:-1])/10 # average over 10 data points aquired
+                QtTest.QTest.qSleep(1000)
+                self.run_repump()
+                QtTest.QTest.qSleep(2000)
+                # self.move_to_poi_failed_autofocus(self._current_poi_name) 
+                avg_counts = np.mean(self._counter_logic.countdata[0][-5:-1]) # average over 10 data points aquired
+                QtTest.QTest.qSleep(1000)
                 if iteration >= 2:
                     self.tag_for_saving = '_autofocus_not_sucessful'
+            print("mirror should be up")
         elif tag == 'mirror_down':
-            while (avg_counts > countrate_limit) and (iteration < 3):
+            while (avg_counts > countrate_limit) and (iteration < 5):
                 print('avg_counts: ', avg_counts)
                 iteration +=1
                 self.flip_spectrometermirror()
-                time.sleep(1)
-                avg_counts = np.sum(self._counter_logic.countdata[0][-10:-1])/10 # average over 10 data points aquired
+                QtTest.QTest.qSleep(1000)
+                self.run_repump()
+                QtTest.QTest.qSleep(2000)
+                avg_counts = np.mean(self._counter_logic.countdata[0][-5:-1]) # average over 10 data points aquired
+                QtTest.QTest.qSleep(1000)
+            print("mirror should be down")
+        return
+
     
     def check_autofocus_close_to_poi(self):
         # TODO: CHECK SIGNAL TO NOISE IN REFOCUS
@@ -452,45 +511,48 @@ class Automatedmeasurement(GenericLogic):
 
     @QtCore.Slot() #what is this?   
     def save_ple(self):
-        time.sleep(0.4) # give the logic the time to make a fit
-        self._laser_scanner_logic.save_data(tag=self._laser_scanner_logic.Filename)
+        QtTest.QTest.qSleep(1000) # give the logic the time to make a fit
+        filename = self._laser_scanner_logic.Filename
+        print("Filename:", filename)
+        #filename += str(new_power)
+        #print("Filename:", filename)
+        self._laser_scanner_logic.save_data(tag=filename)
         self.sigStepDone.emit()
-        
-
 
     def StartAutoMeas_Button(self,on):
-        print('done something with StartAutoMeas_Button')
-        self._spectrum_logic._save_logic.save_array_as_text(data = self._scanner_logic.pois, filename = 'POIs.txt', filepath = self.save_folder)
-
+        self._save_logic.save_array_as_text(data = self._scanner_logic.pois, filename = 'POIs.txt', filepath = self.save_folder)
         self.start()
 
     def StopAutoMeas_Button(self,on):
-        print('done something with StopAutoMeas_Button')
         self.stop()
 
     def SavePOIs_Button(self,on):
-        print('done something with SavePOIs_Button')
-        print("Nothing happend yet") 
+        print(self._scanner_logic.pois)
+        self._save_logic.save_array_as_text(data = self._scanner_logic.pois, filename = 'POIs.txt', filepath = self.save_folder)
+
+        
         
     def DeletePOIs_Button(self,on):
-        print('done something with DeletePOIs_Button')
-        print("Nothing happend yet") 
+        self._scanner_logic.pois = np.array([]) 
 
     def SetSequence_Button(self,on):
-        print('done something with SetSequence_Button')
+        self.steps = self.steps_preliminary  
         
     def SetBackgroundSeq_Button(self,on):
-        print('done something with SetBackgroundSeq_Button')
+        self.steps_bg = self.steps_bg_preliminary 
         
     def Sequence_lineEdit(self,value):
-        print('done something with Sequence_lineEdit')
-        print(value)
+        self.steps = str(value)
         
     def Background_lineEdit(self,value):
-        print('done something with Background_lineEdit')
-        print(value)
+        self.steps_bg_preliminary = str(value)
 
     def SaveFolder_lineEdit(self,value):
-        print('done something with SaveFolder_lineEdit')
-        print(value)
+        self.save_folder = str(value)
         
+
+    def copy_pois_from_poilogic(self):
+        newpois = []
+        for entry in self._poimanager_logic.poi_positions:
+            newpois.append(self._poimanager_logic.poi_positions[entry].tolist())
+        self._scanner_logic.pois = np.array(newpois)

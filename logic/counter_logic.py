@@ -182,6 +182,7 @@ class CounterLogic(GenericLogic):
         return self._counting_samples
 
     def set_count_length(self, length=300):
+        print("counter logic: setting count length to ", length)
         """ Sets the time trace in units of bins.
 
         @param int length: time trace in units of bins (positive int).

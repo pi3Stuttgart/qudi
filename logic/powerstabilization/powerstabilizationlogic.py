@@ -5,6 +5,7 @@ from logic.generic_logic import GenericLogic
 from PyQt5 import QtCore
 from PyQt5 import QtTest
 import numpy as np
+from core.statusvariable import StatusVar
 from scipy.ndimage.interpolation import shift
 from logic.powerstabilization.default_values_and_widget_functions import powerstabilization_default as powerstabilization_default
 
@@ -32,6 +33,8 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
     #SigUpdatePulseStreamer=QtCore.Signal()
     _TargetPower=0
 
+    voltage_offset = StatusVar('voltage_offset', 0.0)
+    
     def on_activate(self):
         self._streaming_device = self.streamUSBnidaq() #Insert device for init
         self._setupcontrol_logic= self.setupcontrollogic1() # For turning on lasers and Setting Analog PS Output.

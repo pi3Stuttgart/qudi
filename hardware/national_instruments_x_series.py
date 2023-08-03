@@ -32,7 +32,46 @@ from interface.slow_counter_interface import SlowCounterConstraints
 from interface.slow_counter_interface import CountingMode
 from interface.odmr_counter_interface import ODMRCounterInterface
 from interface.confocal_scanner_interface import ConfocalScannerInterface
+import time
 
+class ilist(np.ndarray): #Hehe, this is basically a list, only that it can fill a second list with the times when an element was assigned
+    def __init__(self,r=list(),timestamp_list=[]):
+        list.__init__(self,r)
+        self.timestamp_list=timestamp_list
+
+
+    def insert(self, i, v):
+        print("insert")
+        return super(ilist, self).insert(i, v)
+
+    def append(self, v):
+        print("append")
+        return super(ilist, self).append(v)
+
+    def extend(self, t):
+        print("extend")
+        return super(ilist, self).extend([ v for v in t ])
+
+    def __add__(self, t): # This is for something like `ilist(validator, [1, 2, 3]) + list([4, 5, 6])`...
+        print("add")
+        return super(ilist, self).__add__([ v for v in t ])
+
+    def __iadd__(self, t): # This is for something like `l = ilist(validator); l += [1, 2, 3]`
+        print("iadd")
+        return super(ilist, self).__iadd__([ v for v in t ])
+
+    def __setitem__(self, i, v):
+        self.timestamp_list.append(time.time())
+        print(v, "at time", time.time())
+        if isinstance(i, slice):
+            return super(ilist, self).__setitem__(i, [ v1 for v1 in v ]) # Extended slice...
+        else:
+            return super(ilist, self).__setitem__(i, v)
+
+    def __setslice__(self, i, j, t): # NOTE: extended slices use __setitem__, passing in a tuple for i
+        print("slice")
+        return super(ilist, self).__setslice__(i, j, [ v for v in t ])
+    
 
 class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInterface, ODMRCounterInterface):
     """ A National Instruments device that can count and control microvave generators.
@@ -164,6 +203,8 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         self._rotation_correction = eval(self._rotation_correction)
         self._scaling_correction_a = eval(self._scaling_correction_a)
         self._scaling_correction_b = eval(self._scaling_correction_b)
+
+        self.timestamp_list=[] # this list contains the timestaps of the data value assignment of the _scan_data list in the scan_line method
 
         # self.rotation = np.pi/4
         # self.factor_x = 1
@@ -1407,6 +1448,12 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
             self._scan_data = np.empty(
                 (len(self.get_scanner_count_channels()), 2 * self._line_length),
                 dtype=np.uint32)
+            
+            #print(self._scan_data)
+
+            #self.timestamp_list=[]
+            #self._scan_data=[ilist(self._scan_data[0],self.timestamp_list)]
+            #print(self._scan_data)
 
             # number of samples which were read will be stored here
             n_read_samples = daq.int32()
@@ -1432,6 +1479,10 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
                 # stop the counter task
                 daq.DAQmxStopTask(task)
 
+            #print(self.timestamp_list)
+            #print(self._scan_data)
+
+            #self._scan_data=np.array(self._scan_data)
             # Analog channels
             if self._scanner_ai_channels:
                 self._analog_data = np.full(
