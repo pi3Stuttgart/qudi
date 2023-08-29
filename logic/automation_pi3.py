@@ -60,6 +60,13 @@ class AutomatedMeasurementLogic(GenericLogic):
     steps= ['move', 'optimize', 'spectrum', 'spectrum']
     #steps= (['next laser power']+['next MW power','ple']*len(_MW_power_list))*len(_laser_power_list)
 
+    #scan ranges for PLE
+    scan_range=[[-3,0],[-2,2],[0,3]] #should_work without jumps
+    secure_scan_range=np.array([np.arange(-3,2,1),np.arange(-1,4,1)]).T #this scan range really should work if the previous should fail
+
+    # Secure_scan_range={tuple(secure_scan_range[i-1]):secure_scan_range[i] for i in range(len(secure_scan_range))}
+    # Scan_range={tuple(scan_range[i-1]):scan_range[i] for i in range(len(scan_range))}
+
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
         self.func_dict = {
@@ -69,7 +76,8 @@ class AutomatedMeasurementLogic(GenericLogic):
             'spectrum' : self.take_spectrum,
             'ple' : self.take_PLE,
             'next MW power': self.next_MW_power,
-            'next_laser_power': self.next_laser_power
+            'next_laser_power': self.next_laser_power,
+            "measure_PLE": self.measure_ple
         }
        
     def on_activate(self):
@@ -160,6 +168,14 @@ class AutomatedMeasurementLogic(GenericLogic):
         # self._setupcontrol_logic.enable_Repump = False
         # self._setupcontrol_logic.run()
 
+
+    def measure_ple(self):
+        for Range in self.scan_range:
+            #measure PLE with range
+            #stich parts toguether
+
+            pass
+        #save PLE
 
     def next_MW_power(self):
         print("setting MW Power")

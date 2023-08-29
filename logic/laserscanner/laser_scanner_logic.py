@@ -789,7 +789,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 #Range=self.scan_range[1]-self.scan_range[0]
                 Range=0.7
 
-                self.scan_range[0],self.scan_range[1]=peak_volt-0.7*Range,peak_volt+0.3*Range
+                #self.scan_range[0],self.scan_range[1]=peak_volt-0.7*Range,peak_volt+0.3*Range
             else: 
                 # emit an error?
                 #retry with bigger scan range:
@@ -797,8 +797,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
                     print("No PLE found")
                     return
                     
-                self.scan_range[0],self.scan_range[1]=self.scan_range[0]-1,self.scan_range[1]+1
-                self.scan_range=list(np.clip(self.scan_range,-3,3))
+                #self.scan_range[0],self.scan_range[1]=self.scan_range[0]-1,self.scan_range[1]+1
+                #self.scan_range=list(np.clip(self.scan_range,-3,3))
                 self.start_scanning()
         self.stopped=True
         return

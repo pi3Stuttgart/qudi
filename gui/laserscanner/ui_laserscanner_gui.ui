@@ -630,7 +630,14 @@
        </layout>
       </item>
       <item row="10" column="8">
-       <widget class="QDoubleSpinBox" name="constDoubleSpinBox"/>
+       <widget class="QDoubleSpinBox" name="constDoubleSpinBox">
+        <property name="minimum">
+         <double>-4.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>4.000000000000000</double>
+        </property>
+       </widget>
       </item>
       <item row="7" column="3">
        <widget class="QLineEdit" name="ple_RepumpDuration_LineEdit">
