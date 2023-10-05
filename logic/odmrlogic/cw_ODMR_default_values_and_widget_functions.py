@@ -7,7 +7,7 @@ class cw_ODMR_default_values_and_widget_functions:
         T=True
         cw_Filename:str="filename"
         cw_MW1:bool=T
-        cw_MW2:bool=T
+        cw_MW2:bool=F
         cw_MW3:bool=F
 
         cw_MW1_Power:float=-20 #dBm
@@ -15,17 +15,17 @@ class cw_ODMR_default_values_and_widget_functions:
         cw_MW3_Power:float= -20 #dBm
 
         cw_StartFreq:float=20 #MHz
-        cw_StopFreq:float=40 #MHz
-        cw_Stepsize:float=1 #MHz
+        cw_StopFreq:float=100 #MHz
+        cw_Stepsize:float=2 #MHz
         cw_MW2_Freq:float=173 #MHz
         cw_MW3_Freq:float=140 #MHz
 
         cw_A1:bool=F
-        cw_A2:bool=T
-        cw_PulsedRepump:bool=T
+        cw_A2:bool=F
+        cw_PulsedRepump:bool=F
         cw_RepumpDuration:float=5 #µs
         cw_RepumpDecay:float=3 #µs
-        cw_CWRepump:bool=F
+        cw_CWRepump:bool=T
         cw_Stoptime:float=0 #s
         cw_PeriodicSaving:bool=F
         cw_Interval:float=0 #s
@@ -185,8 +185,8 @@ class cw_ODMR_default_values_and_widget_functions:
                 self.time_differences.stop()
                 self.measurement_running=False
                 self.cw_odmr_refocus_running=False
-                if 'cwODMR' in self.holder._awg.mcas_dict:
-                        del self.holder._awg.mcas_dict['cwODMR']
+                # if 'cwODMR' in self.holder._awg.mcas_dict:
+                #         del self.holder._awg.mcas_dict['cwODMR']
                 print("stopping")
 
         def cw_StopFreq_LineEdit_textEdited(self,text):
@@ -203,6 +203,7 @@ class cw_ODMR_default_values_and_widget_functions:
 
         def cw_Run_Button_Clicked(self,on):
                 print("cwrun button clicked")
+                self.holder.CheckReady_Beacon.stop()
                 self.cw_odmr_refocus_running=True
                 self.holder.Contrast_Fit = ''
                 self.holder.Frequencies_Fit = ''

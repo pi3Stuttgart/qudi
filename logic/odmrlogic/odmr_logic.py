@@ -640,6 +640,7 @@ class ODMRLogic_holder(GenericLogic):
 
 class ODMRLogic(cw_default):
     def __init__(self,holder):
+        self.now = time.time()
         self.measurement_running=False
         self.holder=holder
         #self.counter=self.holder._time_tagger.counter()
@@ -659,7 +660,12 @@ class ODMRLogic(cw_default):
 
         self.starting_time=0
 
+        # Counter that counts how often the histogram indef of the Time Differences measurement was reset to 0. It should correlate with the number of scanned lines 
+        # and is reset at the beginning of a scan
+        self.histogram_rollover = 0
+
     def data_readout(self):
+        #print("dur ", time.time()-self.now)
         self.current_runtime = time.time()-self.starting_time
         if (self.current_runtime>self.cw_Stoptime and self.cw_Stoptime!=0) and self.measurement_running:
             self.cw_Stop_Button_Clicked(True)
@@ -669,15 +675,34 @@ class ODMRLogic(cw_default):
                 return
 
         if self.continuing:
-            self.ancient_data=self.time_differences.getData()
+            self.ancient_data=self.time_differences_cw.getData()
             self.continuing=False
             
+        # else:
+        #     data=self.time_differences.getData().flatten()
+        #     self.ancient_data=data+self.ancient_data
+
+        #     self.scanmatrix = np.vstack(
+        #         (data, self.scanmatrix[:-1, :])
+        #     )
+        #     self.data += data
+
+        #     self.holder.sigOdmrPlotsUpdated.emit()
+
         else:
+            ## Checks if the histogram index was reset (i.e. if a full ODMR line was measured in the time tagger)
+            rollover_recent = self.time_differences.getCounts()
+            if rollover_recent == self.histogram_rollover:
+                return
+            
+            #print(self.time_differences.getCounts())  ## Test print of the read out rollover number: If printed it should go up in steps of one
+            
+            self.histogram_rollover +=1
             data=self.time_differences.getData()-self.ancient_data
-            #print(data)
-            data=np.array(data,dtype=object)
-            self.ancient_data=data+self.ancient_data
-            data=np.sum(data,axis=1)
+            data=np.array(data,dtype=object)           
+            self.ancient_data += data          # update already recorded data
+            data=np.sum(data,axis=1)           # because data initially is a list of lists. something like [[432],[444],[123],[432],[542]]
+            
             try:
                 if self.scanmatrix.shape[0]< self.cw_NumberOfLines:
                     add=np.zeros((int(self.cw_NumberOfLines-self.scanmatrix.shape[0]),self.scanmatrix.shape[1]))
@@ -690,8 +715,8 @@ class ODMRLogic(cw_default):
             self.scanmatrix[1:]=self.scanmatrix[0:-1]
             self.scanmatrix[0]=data
             self.data=self.data+data
-            
             self.holder.sigOdmrPlotsUpdated.emit()
+           
                 
             
 
@@ -744,6 +769,9 @@ class ODMRLogic(cw_default):
         #calculate the number of repetitions such that the sequence remains on one frequence for "secondsperpoint". One Segment is 1µs by default (this can be changed).
         #self.loop_count = int(self.cw_SecondsPerPoint/(50e-6))
 
+        # Rollover index has to be reset to 1 at beginnign of the scan
+        self.histogram_rollover = 0
+
         self.loop_count = int((self.cw_SecondsPerPoint*1e6)/self.cw_segment_length) #great numbers (~8000) will probably result in too long writing time.
         #print("loop_count= ",self.loop_count)   
         if self.loop_count > 2000:
@@ -757,10 +785,18 @@ class ODMRLogic(cw_default):
 
         #setting up the measurement data
         self.number_of_points_per_line=len(self.mw1_freq)
-        
-        self.time_differences = self.holder.setup_time_tagger(n_histograms=self.number_of_points_per_line,
+
+
+        self.time_differences = self.holder.setup_time_tagger(
+            #tagger = self.holder._time_tagger,
+            click_channel=1,
+            start_channel=12, #negative slope of channel 4
+            next_channel=4, 
+            sync_channel=7,
+            #binwidth=int(self.cw_SecondsPerPoint*1e12),
             binwidth=int(self.cw_SecondsPerPoint*1e12),
-            n_bins=1
+            n_bins=1,
+            n_histograms=self.number_of_points_per_line,
         )
 
         # Setup list which contains the mw-powers of all the active microwaves
@@ -781,38 +817,38 @@ class ODMRLogic(cw_default):
             
         # generate a single MW sequence with the needed mw frequencies and play is continuously until the measurement is stopped,
         # either by the stop button, the runtime, or number of sequence repetitions. 
+
         seq = self.holder._awg.mcas(name="cwODMR", ch_dict={"2g": [1,2],"ps": [1]})
 
         # generate segment of repump which starts at each repetition of the sequence.
         seq.start_new_segment("Start")
         if self.cw_PulsedRepump:
-            seq.asc(name='repump1', length_mus=self.cw_RepumpDuration, repump=True)
-            seq.asc(name='repump2', length_mus=self.cw_RepumpDecay, repump=False)
+            seq.asc(name='repump1', length_mus=E.round_length_mus_to_x_multiple_ps(self.cw_RepumpDuration), repump=True)
+            seq.asc(name='repump2', length_mus=E.round_length_mus_to_x_multiple_ps(self.cw_RepumpDecay), repump=False)
+
 
         # short pulses to SYNC and TRIGGER the timedifferences module of TimeTagger.
-        seq.asc(name='tt_sync1', length_mus=0.01, memory=True)        
-        seq.asc(name='tt_sync2', length_mus=0.01, gate=True)        
-        seq.asc(name='tt_sync3', length_mus=0.01, gate=False) 
-
-
+        #seq.asc(name='tt_sync1', length_mus=E.round_length_mus_to_x_multiple_ps(0.064), memory=True)        
+        #seq.asc(name='tt_sync3', length_mus=E.round_length_mus_to_x_multiple_ps(0.064)) 
+        #seq.asc(name='tt_sync2', length_mus=E.round_length_mus_to_x_multiple_ps(0.064), gate=True)        
+        #seq.asc(name='tt_sync3', length_mus=E.round_length_mus_to_x_multiple_ps(0.064), gate=False) 
         # generate multiple segments, each containing one of the microwave frequencies. Length of each segment is determined by the loop-count.      
+        #seq.start_new_segment("Microwaves")
+
+
         for freq, self.cw_MW2_Frequency,self.cw_MW3_Frequency  in zip(self.mw1_freq, [self.cw_MW2_Freq]*len(self.mw1_freq), [self.cw_MW3_Freq]*len(self.mw1_freq)):
             frequencies=np.array([freq, self.cw_MW2_Frequency,self.cw_MW3_Frequency])[[self.cw_MW1,self.cw_MW2,self.cw_MW3]]
-            #print(frequencies)
             #print([freq, self.cw_MW2_Frequency,self.cw_MW3_Frequency])
             #print([self.cw_MW1,self.cw_MW2,self.cw_MW3])
-            seq.start_new_segment("Microwaves"+str(frequencies),loop_count=self.loop_count)
-            seq.asc(name="Microvaves"+str(frequencies),pd2g1 = {"type":"sine", "frequencies":frequencies, "amplitudes":self.power},
-                A1=self.cw_A1,
-                A2=self.cw_A2,
-                gateMW=True,
-                repump=self.cw_CWRepump,
-                green=enable_green,
-                gate = True,
-                length_mus=self.cw_segment_length
-                )
+            #seq.start_new_segment("Microwaves"+str(frequencies))
             #turn off tt_trigger to increment the histogram-index of TimeTagger
-            seq.start_new_segment("MW_readout"+str(frequencies))
+            #seq.start_new_segment("MW_readout"+str(frequencies))
+            seq.start_new_segment("Next click"+str(frequencies),loop_count=1)
+            seq.asc(name="MW_readout"+str(frequencies)[:32],pd2g1 = {"type":"sine", "frequencies":frequencies, "amplitudes":self.power},
+                gate = True,
+                length_mus=E.round_length_mus_to_x_multiple_ps(0.064)
+                ) 
+            seq.start_new_segment("Start Click"+str(frequencies),loop_count=int(self.cw_SecondsPerPoint*1e6/50))
             seq.asc(name="MW_readout"+str(frequencies)[:32],pd2g1 = {"type":"sine", "frequencies":frequencies, "amplitudes":self.power},
                 A1=self.cw_A1,
                 A2=self.cw_A2,
@@ -820,8 +856,34 @@ class ODMRLogic(cw_default):
                 repump=self.cw_CWRepump,
                 green=enable_green,
                 gate = False,
-                length_mus=0.01
-                )
+                length_mus=E.round_length_mus_to_x_multiple_ps(50)
+                )  
+            
+
+        seq.start_new_segment("Sequence call",loop_count=1)
+        seq.asc(name='tt_sync1', length_mus=E.round_length_mus_to_x_multiple_ps(0.064), 
+                A1=self.cw_A1,
+                A2=self.cw_A2,
+                gateMW=True,
+                repump=self.cw_CWRepump,
+                green=enable_green,
+                gate = False,
+                memory=True,
+                )  
+
+        seq.start_new_segment("Waiting for Readout, rollover",loop_count=int(self.cw_SecondsPerPoint*1e6*(self.number_of_points_per_line/2)/50))
+        seq.asc(name="MW_readout"+str(frequencies)[:32],pd2g1 = {"type":"sine", "frequencies":frequencies, "amplitudes":self.power},
+            A1=self.cw_A1,
+            A2=self.cw_A2,
+            gateMW=True,
+            repump=self.cw_CWRepump,
+            green=enable_green,
+            gate = False,
+            memory = False,
+            length_mus=E.round_length_mus_to_x_multiple_ps(50)
+            ) 
+
+          
 
         #self.holder._awg.mcas.status = 1
         self.holder._awg.mcas_dict.stop_awgs()
@@ -830,7 +892,8 @@ class ODMRLogic(cw_default):
         self.holder._awg.mcas_dict['cwODMR'].run()        
         print("running sequence cwODMR")
 
-
+        self.holder.CheckReady_Beacon = RepeatedTimer(0.01, self.holder.CheckReady)
+                
 
 class pulsedODMRLogic(pulsed_default):
     def __init__(self,holder):
@@ -1077,8 +1140,6 @@ class pulsedODMRLogic(pulsed_default):
         self.holder._awg.mcas_dict.print_info()
         self.holder._awg.mcas_dict['pulsedODMR'].run()
         print("running sequence pulsedODMR")
-
-
 
 
 
