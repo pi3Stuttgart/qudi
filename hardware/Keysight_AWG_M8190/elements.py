@@ -533,7 +533,7 @@ class WaveStep(BaseWave):
     @type.setter
     def type(self, val):
         self._type = util.check_list_element(val, 'type', ['wait', 'constant', 'sine', 'robust','gauss',
-                                                           'gauss_6ns','gauss_10ns','gauss_2_pulses'])
+                                                           'gauss_6ns','gauss_10ns','gauss_2_pulses','OC_test'])
         if self.type == 'robust' and hasattr(self, '_wave_file'):
             self.length_mus = self.wave_file.length_mus
 
@@ -596,6 +596,22 @@ class WaveStep(BaseWave):
             np.sin(arg, out=arg)
             arg *= amps[i] * 2047
             samples[start:start + length_smpl] += np.int16(arg)
+
+    def OC_test(self,samples,start,amps,freqs,length_smpl):
+        data=np.loadtxt(r"z:\Pierre_Kuna\smpls_pulse_test_OC.csv")
+        data=data/max(data)
+
+        data = data[self.wf_start:]
+        if length_smpl < np.size(data):
+            N = length_smpl
+        else:
+            N = np.size(data)
+        # print('length_smpl ', length_smpl)
+        # print('N ', N)
+        # print('start ', start)
+        res = np.zeros(length_smpl)
+        res[0:N] = data[0:N]
+        samples[start:start + length_smpl] = np.int16(np.round(res * amps * 2047, 1))
 
 
     def gauss(self, samples, start, amps, inv_fwhm, length_smpl):
@@ -4851,7 +4867,13 @@ class WaveStep(BaseWave):
                        inv_fwhm=self.frequencies,
                        length_smpl=self.length_smpl)
 
-
+        elif self.type== "OC_test":
+            amplitudes = self.amplitudes
+            self.OC_test(samples=samples,
+                       start=start,
+                       amps=amplitudes,
+                       freqs=self.frequencies,
+                       length_smpl=self.length_smpl)
 
         samples[start:start + self.length_smpl] *= 2 ** 4
         samples[start:start + self.length_smpl] += self.marker
@@ -4893,6 +4915,9 @@ class WaveStep(BaseWave):
 
         elif self.type == 'gauss_10ns':
             return 0
+        
+        elif self.type == 'OC_test':
+            return 0
 
         else:
             raise Exception('Neither sine nor robust do apply here...{}'.format(self.type))
@@ -4921,6 +4946,10 @@ class WaveStep(BaseWave):
         elif self.type == 'gauss_10ns':
             l = [self.name, self.length_mus, self.type, self.frequencies, self.amplitudes, int(self.smpl_marker),
                  int(self.sync_marker)]
+            
+        elif self.type == 'OC_test':
+            l= [self.name, self.length_mus, self.type, self.frequencies, self.amplitudes]
+
         return self.ret_list(l, row=row, prefix=prefix)
 
     def print_info(self, *args, **kwargs):

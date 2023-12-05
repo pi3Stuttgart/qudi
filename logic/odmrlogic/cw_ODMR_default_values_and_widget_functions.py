@@ -21,11 +21,11 @@ class cw_ODMR_default_values_and_widget_functions:
         cw_MW3_Freq:float=140 #MHz
 
         cw_A1:bool=F
-        cw_A2:bool=F
-        cw_PulsedRepump:bool=F
+        cw_A2:bool=T
+        cw_PulsedRepump:bool=T
         cw_RepumpDuration:float=5 #µs
         cw_RepumpDecay:float=3 #µs
-        cw_CWRepump:bool=T
+        cw_CWRepump:bool=F
         cw_Stoptime:float=0 #s
         cw_PeriodicSaving:bool=F
         cw_Interval:float=0 #s

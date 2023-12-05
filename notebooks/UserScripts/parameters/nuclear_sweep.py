@@ -58,7 +58,8 @@ def ret_ret_mcas(pdc):
                                  frequencies=[pi3d.tt.t(_I_['transition']).current_frequency + _I_['x']],
                                  length_mus=pi3d.tt.rp(_I_['transition'], amp=amp).pi)
             pi()
-            ssr_frequencies = [pi3d.tt.mfl(sms['nuc'] + '_left'), pi3d.tt.mfl(sms['nuc'] + '_right')] if '13c' in sms['nuc'] else [pi3d.tt.mfl({'14N': [+1]}), pi3d.tt.mfl({'14N': [0]}), pi3d.tt.mfl({'14N': [-1]})]
+            ssr_frequencies = [pi3d.tt.mfl(sms['nuc'] + '_left'), 
+                               pi3d.tt.mfl(sms['nuc'] + '_right')] if '13c' in sms['nuc'] else [pi3d.tt.mfl({'14N': [+1]}), pi3d.tt.mfl({'14N': [0]}), pi3d.tt.mfl({'14N': [-1]})]
             sna.ssr(mcas, frequencies=ssr_frequencies, nuc=sms['nuc'], transition='left', robust=True, mixer_deg=-90, step_idx=0)
         return mcas
     return ret_mcas

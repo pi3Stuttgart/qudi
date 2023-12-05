@@ -24,7 +24,7 @@ import collections
 __CURRENT_POL_RED__ = 76
 __T_POL_RED__ = 0.2
 __RED_LASER__DELAY__ = 0.1
-__SSR_REPETITIONS__ = {'14n+1': 1500, '14n-1': 1500, '14n': 1500, '14n0': 1200, '13c414': 1500, '13c90': 2000,
+__SSR_REPETITIONS__ = {'14n+1': 1500, '14n-1': 1500, '14n': 1500, '14n0': 1200, '13c414': 1500, '13c90': 2000, '13c5000': 10,
                        'charge_state':1,'charge_state_A1_aom_Ex':1,'charge_state_ExMW':1, 'ple_A2': 1,'ple_A1': 1, 'ple_A2_delay': 1,'ple_A1_delay': 1,'Ex_pi_readout':1,'Ex_pi_readout_6ns':1,
                        'Ex_ampl_sweep_SSR' : 1,
                        'opt_mw_delays_calibration':1,
@@ -43,6 +43,8 @@ __LASER_DUR_DICT__ = {'14n+1': .175,
                      '13c414': .9, 
                      '13c90': .21,
                      '29Si8_A2': 5.,
+                     '13c5000_A2': 5.,
+                     '13c5000': 5.,
                     'single_state': .9, 
                       'charge_state': 2000.0,
                       'charge_state_ExMW': 2000.0,
@@ -63,14 +65,12 @@ __LASER_DUR_DICT__ = {'14n+1': .175,
                       'Ex_pi_readout_10ns' : 481*5/12.0e3,
                         'Ex_pi_readout' : 481/12.0e3 # (Len in samples / sampling rate)
                       } # us
-__PERIODS__ = {'14n+1': 1.6, '14n-1': 1.6, '29Si8_A2':1.0,
-'14n': 1.6,
- '14n0': 1.6, '13c414': 6.0, '13c90': 20., 'charge_state': 0.0,'charge_state_A1_aom_Ex': 0.0,
+__PERIODS__ = {'14n+1': 1.6, '14n-1': 1.6, '29Si8_A2':1.0, '13c5000_A2':1.0, '14n': 1.6,  '14n0': 1.6, '13c414': 6.0, '13c90': 20., 'charge_state': 0.0,'charge_state_A1_aom_Ex': 0.0,
                'charge_state_ExMW': 0.0,'ple_A2': 0.0,'ple_A1': 0.0,'ple_A2_delay': 0.0,'ple_A1_delay': 0.0,'Ex_pi_readout':0.0,'Ex_pi_readout_6ns':0.0,'Ex_ampl_sweep_SSR' :0.0,
                'Ex_ampl_sweep_SSR_6ns' :0.0, 'Ex_pi_readout_10ns':0.0,'opt_mw_delays_calibration':0.0,
                'opt_mw_delays_calibration2':0.0,'2_opt_mw_delays_calibration':0.0,'Ex_RO':0.0,
                '2opt_withMW_pi':0.0,'entanglement':0.0,'entanglement_for_tests':0.0,'HOM':0.0}
-__WAVE_FILE_SCALING_FACTOR_DICT__ = {'14n+1': 2.5, '14n-1': 2.5, '14n': 2.5, '14n0': 2.5, '13c414': 1.0,'charge_state_A1_aom_Ex':1.0, 'charge_state': 1.0,'ple_A2': 1.0,'ple_A1': 0.0}
+__WAVE_FILE_SCALING_FACTOR_DICT__ = {'14n+1': 2.5, '14n-1': 2.5, '14n': 2.5, '14n0': 2.5, '13c414': 1.0, '13c5000': 1.0,'charge_state_A1_aom_Ex':1.0, 'charge_state': 1.0,'ple_A2': 1.0,'ple_A1': 0.0}
 __STANDARD_WAVEFILE__ = 'D:\data\Robust_Pulses\single_pulse_ON03_OFF05_Rabi10_02.dat'
 __STANDARD_WAVEFILES__ = {'14n+1': r"D:\data\NuclearOPs\Robust\test_pi_three_nitrogen\20171204-h18m52s32CnROTe-gateFN3.08e-01_selective_to_all\MW.dat"}
 
@@ -649,8 +649,8 @@ class SSR(object):
                     pd2g_dict[ch][i]['phases'] = np.array([self.mixer_deg])
                 else:
                     pd2g_dict[2][i] = {}
-                # if ch == 1 and self.wait_switch > 0:
-                #     pd2g_dict[ch][i]['smpl_marker'] = True
+                #if ch == 1 and self.wait_switch > 0: # TODO
+                #    pd2g_dict[ch][i]['gateMW'] = True
         return pd2g_dict
 
     def compile(self):
@@ -679,7 +679,7 @@ class SSR(object):
             self.compileMW()
 
     def compileMW(self):
-        # print('compileMW in snippets_awg')
+        print('compileMW in snippets_awg')
         aa = dict()
         if self.repetitions != 0:
             self.mcas.start_new_segment(name=self.name,
@@ -701,14 +701,18 @@ class SSR(object):
                     #self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name = 'triggerFalse_memory') # ODMR... ORABI
                     #self.mcas.asc(length_mus=2.1, name = 'wait_after_memory')
 
-                self.mcas.asc(pd2g1=d[1][2], pd2g2=d[2][2], name='MW', **aa) # CNOT(s)
+                # self.mcas.asc(pd2g1=d[1][2], pd2g2=d[2][2], name='MW', **aa) # CNOT(s) #ORIGINAL VERSION
+                self.mcas.asc(gateMW=True, name='MW', length_mus=0.256) # CNOT(s) #Canged
+                self.mcas.asc(pd2g1=d[1][2], GateMW=True, name='MW', **aa) # CNOT(s) #Canged
                 ### ===============================
                 ### Conventional repetitive readout
                 ### ===============================
-                self.mcas.asc(length_mus=self.dur_step[alt_step][5], A2=True, name='Laser A2', **aa)
-                self.mcas.asc(length_mus=self.dur_step[alt_step][6], name='Count', **aa)
-                #if self.gate_or_trigger == 'trigger':
+                # read out counts after system is fully polarized
+                self.mcas.asc(length_mus=E.round_length_mus_to_x_multiple_ps(self.dur_step[alt_step][5]), A2=True, name='Laser A2', **aa)
+                self.mcas.asc(length_mus=E.round_length_mus_to_x_multiple_ps(self.dur_step[alt_step][6]), name='Count', **aa)
                 self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'triggerTrue2_memory')
+            
+                #if self.gate_or_trigger == 'trigger':
                 #if 'buffer_time' in self.kwargs.keys():
                 #   self.mcas.asc(length_mus=self.kwargs['buffer_time'], name = 'Buffer')
 

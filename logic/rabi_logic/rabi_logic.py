@@ -356,7 +356,7 @@ class RabiLogic(GenericLogic,rabi_default):
         P_watts = 10**(power_dBm / 10) * 1e-3
         V_rms = np.sqrt(P_watts * impedance)
         V_pp = V_rms * 2 * np.sqrt(2)
-        return V_pp / self._awg.mcas_dict.awgs['2g'].ch[1].output_amplitude
+        return V_pp / self._awg.mcas_dict.awgs['2g'].ch[2].output_amplitude
         #return V_pp / float(self.awg_device.amp1) #awg_amplitude
 
     def setup_seq(
@@ -450,6 +450,7 @@ class RabiLogic(GenericLogic,rabi_default):
 
         # short pulses to SYNC and TRIGGER the timedifferences module of TimeTagger.
         seq.asc(name='tt_sync1', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to), memory=True) #Set histogram index to 0       
+        seq.asc(name='wait', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to)) 
         seq.asc(name='tt_sync2', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to), gate=True) #increment histogram index
 
         freq_init = np.array([self.rabi_MW2_Freq, self.rabi_MW3_Freq])[[self.rabi_MW2, self.rabi_MW3]]
@@ -470,42 +471,42 @@ class RabiLogic(GenericLogic,rabi_default):
             seq.start_new_segment("Init")
             
             if (self.rabi_A1 or self.rabi_A2) and (self.rabi_MW2 or self.rabi_MW3):
-                seq.asc(name="init_sine"+str(duration),pd2g1 = {"type":"sine", "frequencies":freq_init, "amplitudes":power_init},
+                seq.asc(name="init_sine"+str(duration),pd2g2 = {"type":"sine", "frequencies":freq_init, "amplitudes":power_init},
                         A1=self.rabi_A1,
                         A2=self.rabi_A2,
                         gateMW=True,
-                        length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_InitTime, round_to)
+                        length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_InitTime, 64)
                         )  
                 seq.asc(name='Init_decay'+str(duration), length_mus=rabi_DecayInit, A1=False, A2=False)
             elif self.rabi_A1 or self.rabi_A2:
                 seq.asc(name='init_no_sine',
                         A1=self.rabi_A1,
                         A2=self.rabi_A2,
-                        length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_InitTime, round_to)
+                        length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_InitTime, 64)
                         )  
-                seq.asc(name='Init_decay'+str(duration), length_mus=E.round_length_mus_to_x_multiple_ps(rabi_DecayInit, round_to), A1=False, A2=False)
+                seq.asc(name='Init_decay'+str(duration), length_mus=E.round_length_mus_to_x_multiple_ps(rabi_DecayInit, 64), A1=False, A2=False)
             else:
                 logger.warning("No Laser assigned for Init Sequence.")
 
-            seq.asc(name="gateMW", gateMW=True, length_mus=E.round_length_mus_to_x_multiple_ps(gateMW_dur, round_to))
-            seq.asc(name="Tau_pulse"+str(duration),pd2g1 = {"type":"sine", "frequencies":[self.rabi_MW1_Freq], "amplitudes":self.power_to_amp(self.rabi_MW1_Power)},
+            seq.asc(name="gateMW", gateMW=True, length_mus=E.round_length_mus_to_x_multiple_ps(gateMW_dur, 64))
+            seq.asc(name="Tau_pulse"+str(duration),pd2g2 = {"type":"sine", "frequencies":[self.rabi_MW1_Freq], "amplitudes":self.power_to_amp(self.rabi_MW1_Power)},
                 length_mus = duration,
                 gateMW=True) #self.rabi_piPulseDuration is divided by 1000 to be in µs
             
             if self.rabi_MW4 or self.rabi_MW5:
                 seq.start_new_segment("Projecting_Pulse") 
-                seq.asc(name="flip",pd2g1 = {"type":"sine", "frequencies":freq_Cpi, "amplitudes":power_Cpi},
+                seq.asc(name="flip",pd2g2 = {"type":"sine", "frequencies":freq_Cpi, "amplitudes":power_Cpi},
                         length_mus=E.round_length_mus_to_x_multiple_ps(min(self.rabi_MW4_Duration,self.rabi_MW5_Duration)/1000, round_to), gateMW =True
                         )
                 if self.rabi_MW4_Duration!=self.rabi_MW5_Duration:
-                    seq.asc(name="flip",pd2g1 = {"type":"sine", "frequencies":freq_Cpi_2,"amplitudes":power_Cpi_2},
+                    seq.asc(name="flip",pd2g2 = {"type":"sine", "frequencies":freq_Cpi_2,"amplitudes":power_Cpi_2},
                             length_mus=E.round_length_mus_to_x_multiple_ps(abs(self.rabi_MW4_Duration-self.rabi_MW5_Duration)/1000, round_to), gateMW = True
                             ) 
             seq.asc(name='Tau_pulse_decay'+str(duration), length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_Tau_Decay/1000, round_to), A1=False, A2=False) #self.rabi_Tau_Decay is divided by 1000 to be in µs
             
             seq.start_new_segment("Readout")
-            seq.asc(name='readout'+str(duration), length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_ReadoutTime/1000, round_to), A1=self.rabi_A1Readout, A2=self.rabi_A2Readout, gate=True)
-            seq.asc(name='readout_decay'+str(duration), length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_ReadoutDecay/1000, round_to), A1=False, A2=False, gate=True)
+            seq.asc(name='readout'+str(duration), length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_ReadoutTime/1000, 64), A1=self.rabi_A1Readout, A2=self.rabi_A2Readout, gate=True)
+            seq.asc(name='readout_decay'+str(duration), length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_ReadoutDecay/1000, 64), A1=False, A2=False, gate=True)
         
         #self.awg.mcas.status = 1
         self._awg.mcas_dict.stop_awgs()

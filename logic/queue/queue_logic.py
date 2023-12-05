@@ -118,12 +118,9 @@ class ScriptQueueList(collections.MutableSequence):
 class queue_logic(GenericLogic):
 
     # declare connections
-    # MCAS
     mcas_holder = Connector(interface='McasDictHolderInterface')
-    # Transition tracker
     transition_tracker = Connector(interface = 'TransitionTracker') # Should be a name of the class
     confocal = Connector('ConfocalLogic')
-    # Gated counter.
     gated_counter = Connector('GatedCounter') # Should be name of the class.
     optimizer= Connector('OptimizerLogic')
     PLE_logic= Connector("LaserScannerLogic")
@@ -154,20 +151,18 @@ class queue_logic(GenericLogic):
 
     def on_activate(self):
 
-        self._awg = self.mcas_holder()  #self._mcas_dict = self.mcas_holder()#float(9)#self.mcas_holder()  # mcas_dict()
-        self._transition_tracker = self.transition_tracker() #float(10)#self.transition_tracker()
-        self._gated_counter = self.gated_counter() # connection to the GC.
+        self._awg = self.mcas_holder()
+        self._transition_tracker = self.transition_tracker()
+        self._gated_counter = self.gated_counter()
         self._optimizer = self.optimizer()
         self._PLE_logic = self.PLE_logic()
         self._ODMR_logic = self.odmr_logic()
         self._powerstabilization_logic = self.powerstabilization_logic()
         self._poimanagerlogic = self.poimanagerlogic()
         self._counter=self.counterlogic1()
-        self.init_run() #
+        self.init_run()
         self.write_standard_awg_sequences()
-        # TODO we are adding confocal later.
         self._confocal = self.confocal()
-        #self._confocal_optimizer=self._confocal._op
         self.tt = self._transition_tracker
     def on_deactivate(self):
         pass
@@ -292,7 +287,7 @@ class queue_logic(GenericLogic):
             self.save_value_to_file(self.current_memory_usage(), 'memory_mb')
             # CAREFUL WITH THREADING AND WRITING TO SAME HDF FILE self.save_values_hdf(classifier='memory_mb', vd=dict(none=self.current_memory_usage()))
             # possible solution: https://stackoverflow.com/questions/22522551/pandas-hdf5-as-a-database
-            time.sleep(5)
+            QtTest.QTest.qSleep(5000)#time.sleep(5)
 
     # def current_memory_usage(self):
     #     print(os.getpid())
@@ -353,7 +348,7 @@ class queue_logic(GenericLogic):
                 print('entering waiting loop in queue...')
                 if hasattr(self, 'cun'):
                     while self.cun.state == 'run':
-                        QtTest.QTest.qSleep(1)  #This is Qt version for time.sleep to prevent freezinng.
+                        QtTest.QTest.qSleep(1000)  #This is Qt version for time.sleep to prevent freezinng.
                 else:
                     pass
                     

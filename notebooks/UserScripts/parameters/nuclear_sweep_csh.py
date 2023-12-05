@@ -157,7 +157,8 @@ def ret_ret_mcas(pdc):
             # sna.polarize_green(mcas, length_mus=0.2, new_segment=True)  # to pump back from nv0
             sna.polarize(mcas, new_segment=True)
             {'b': csh_b}[_I_['csh_type']]()
-            sna.ssr(mcas, frequencies=[pi3d.tt.mfl({'14N': [+1]}), pi3d.tt.mfl({'14N': [0]}), pi3d.tt.mfl({'14N': [-1]})], nuc='14N+1', robust=True, mixer_deg=-90, step_idx=0)
+            sna.ssr(mcas, frequencies=[pi3d.tt.mfl({'14N': [+1]}), pi3d.tt.mfl({'14N': [0]}), pi3d.tt.mfl({'14N': [-1]})], 
+                    nuc='14N+1', robust=True, mixer_deg=-90, step_idx=0)
         return mcas
 
     return ret_mcas

@@ -32,7 +32,7 @@ class TT(Base, TimeTaggerInterface):
         #print("Hello, im using the wrong hardware file.")
         self.tagger.setTriggerLevel(1,0.05)
         self.tagger.setTriggerLevel(2,0.05)
-        self.tagger.setDeadtime(1,70000) #to avoid a trigger on the desceding side of the click signal from de SNSPD
+        self.tagger.setDeadtime(1,35000) #70000, to avoid a trigger on the desceding side of the click signal from de SNSPD
 
     def on_deactivate(self):
         pass

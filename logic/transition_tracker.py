@@ -633,10 +633,10 @@ class TransitionTracker(GenericLogic):
         for freq in freqs.split(';')[:-1]: # last entry in none
             freq_list.append(float(freq))
         #self.mw_mixing_frequency_L=float(freqs.split(';')[0])
-        if tag[-1] == 'L':
+        if (len(tag) != 0) and (tag[-1] == 'L'):
             print("updating left trans",np.mean(freq_list))
             self.mw_mixing_frequency_L=np.mean(freq_list)
-        elif tag[-1] == 'R':
+        elif (len(tag) != 0) and (tag[-1] == 'R'):
             print("updating right trans",np.mean(freq_list))
             self.mw_mixing_frequency_R=np.mean(freq_list)
 

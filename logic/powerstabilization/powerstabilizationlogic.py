@@ -30,6 +30,7 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
     SigStartControl = QtCore.Signal()
     SigStabilized = QtCore.Signal()
     SigPidProc = QtCore.Signal()
+    SigStopControl = QtCore.Signal()
     #SigUpdatePulseStreamer=QtCore.Signal()
     _TargetPower=0
 
