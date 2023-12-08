@@ -703,7 +703,22 @@ class SSR(object):
 
                 # self.mcas.asc(pd2g1=d[1][2], pd2g2=d[2][2], name='MW', **aa) # CNOT(s) #ORIGINAL VERSION
                 self.mcas.asc(gateMW=True, name='MW', length_mus=0.256) # CNOT(s) #Canged
-                self.mcas.asc(pd2g1=d[1][2], GateMW=True, name='MW', **aa) # CNOT(s) #Canged
+                if len(d[1][2]['frequencies'])>1:
+                    print("compileMW in snippets_awg")
+                    print(d[1][2]['frequencies'][0])
+                    print(d[1][2]['frequencies'][1])
+                    freq1 = d[1][2]['frequencies'][0]
+                    freq2 = d[1][2]['frequencies'][1]
+                    amp1 = d[1][2]['amplitudes'][0]
+                    amp2 = d[1][2]['amplitudes'][1]
+                    dur = d[1][2]['length_mus']
+                    
+                    pd2g1 = {'frequencies': [freq1], 'type': 'sine', 'amplitudes': [amp1], 'length_mus': dur}
+                    self.mcas.asc(pd2g1=pd2g1, GateMW=True, name='MW', **aa) # CNOT(s) #Canged
+                    pd2g1 = {'frequencies': [freq2], 'type': 'sine', 'amplitudes': [amp2], 'length_mus': dur}
+                    self.mcas.asc(pd2g1=pd2g1, GateMW=True, name='MW', **aa) # CNOT(s) #Canged
+                else:
+                    self.mcas.asc(pd2g1=d[1][2], GateMW=True, name='MW', **aa) # CNOT(s) #Canged
                 ### ===============================
                 ### Conventional repetitive readout
                 ### ===============================

@@ -50,8 +50,8 @@ marker_alias = {
                 'green':     ['ps', 1, 'green', '3'],
                 # PS CHANNEL 4 IS CLOCK
                 'A1':        ['ps', 1, 'A1', '5'],
-                'tt_sync':   ['ps', 1, 'tt_sync', '6'],
-                'tt_trigger':['ps', 1, 'tt_trigger', '7'],
+                'gateRF':   ['ps', 1, 'gateRF', '6'],
+                'tt_trigger':['ps', 1, 'tt_trigger', '7'], # Currently unused
                 }
 
 

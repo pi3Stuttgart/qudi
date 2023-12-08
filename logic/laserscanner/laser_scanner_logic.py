@@ -41,6 +41,9 @@ import logging; logger = logging.getLogger(__name__)
 import base64
 import hashlib
 
+from scipy.signal import find_peaks
+from scipy.interpolate import UnivariateSpline
+
 from logic.laserscanner.ple_default_values_and_widget_functions import ple_default_values_and_widget_functions as ple_default
 
 
@@ -57,6 +60,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
     savelogic = Connector(interface='SaveLogic')
     mcas_holder = Connector(interface='McasDictHolderInterface')
     fitlogic = Connector(interface='FitLogic')
+    
     wavemeterlogic= Connector(interface="WavemeterLoggerLogic")
     
     scan_range = StatusVar('scan_range', [-4, 4])
@@ -302,7 +306,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.scan_matrix = np.zeros((self.number_of_repeats, scan_length))
         self.scan_matrix2 = np.zeros((self.number_of_repeats, scan_length))
         self.plot_x = np.linspace(self.scan_range[0], self.scan_range[1], scan_length)
-        #self.plot_x_frequency=self.plot_x*1e9/0.30 #1000 MHz equals 0.22 V on the PLE x range with FeedForward on # 1000 MHz equals 0.30 V on the PLE x range without FeedForward
         self.plot_x_frequency=self.plot_x/0.30 #1000 MHz equals 0.22 V on the PLE x range with FeedForward on # 1000 MHz equals 0.30 V on the PLE x range without FeedForward
         self.plot_y = np.zeros(scan_length)
         self.plot_y2 = np.zeros(scan_length)
@@ -561,6 +564,12 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         
         else: #retrace
+            #self.measured_frequencies=np.concatenate(self._wavemeterlogic._hardware_pull._parentclass._wavelength_data.copy(), axis=0)[1::2]
+            #if len(self.measured_frequencies)!=0:
+            #    self.extract_freqlines() #updates plot_x_frequency
+            #print("X AXIS:")
+            #print(self.plot_x_frequency)
+            #print(np.shape(self.plot_x_frequency))
             self.sigUpdatePlots.emit()
             if self.enable_PulsedRepump:
                 # self.ps.stream(seq=[[int(self.RepumpDuration*1e3),["repump"],0,0],[int(self.RepumpDecay*1e3),[],0,0]],n_runs=1) #self.RepumpDuration is in µs
@@ -640,8 +649,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
                     length_mus=10
                     )
         else:
-            #seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": frequencies, "amplitudes": self.power},
-            seq.asc(name="with MW", pd2g2={"type": "sine", "frequencies": frequencies, "amplitudes": self.power},
+            seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": frequencies, "amplitudes": self.power},
                     A1=self.enable_A1,
                     A2=self.enable_A2,
                     gateMW=True,
@@ -785,6 +793,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 self.accepted_list.append(self.happy)
                 self._static_v = peak_volt
                 self.goto_voltage(self._static_v)
+                #self._wavemeterlogic._wavemeter_device.get_reference_course(self.Frequencies_Fit[-1], channel=2)
 
                 # follow the defect PLE line by applying a voltage to the laser chamber
                 #Range=self.scan_range[1]-self.scan_range[0]
@@ -1043,6 +1052,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
     def do_gaussian_fit(self):
         #print("doing gaussian fit")
         x_data=self.plot_x.astype(np.float)
+        #x_data=self.plot_x_frequency.astype(np.float)
         y_data=self.plot_y.astype(np.float)
         if self.NumberOfPeaks==1:
             model,params=self._fit_logic.make_gaussian_model()
@@ -1102,3 +1112,65 @@ class LaserScannerLogic(GenericLogic, ple_default):
     
     def convert_seq_params_to_string(self):
         return str(self.MW1_Power)+str(self.MW2_Power)+str(self.MW3_Power)+str(self.MW1_Freq)+str(self.MW2_Freq)+str(self.MW3_Freq)+str(self.enable_MW1)+str(self.enable_MW2)+str(self.enable_MW3)+str(self.enable_A1)+str(self.enable_A2)+str(self.enable_Repump)+str(self.enable_PulsedRepump)+str(self.Lock_laser)+str(self.RepumpDuration)+str(self.RepumpDecay)
+    
+
+    ### From here:
+    # Take frequency data from wavemeter and extrapolate it
+    # Use this extrapolated data as new x-axis for plot and fit
+
+    def find_freq_extrema(self, data, testplot=False):
+        ### Getting minima and maxima with peakfinder (for minima the plot has to be mirrored)
+        maxima = find_peaks(data - np.mean(data))[0]
+        minima = find_peaks(np.mean(data) - data)[0]
+
+        ## Removing the last element of the minima since it is already related to the way back to 0 of the scan:
+        #minima = minima[: -1]
+        #minima = minima[1:]
+
+        ## Removing first element of maxima since first line is about to be ignored
+        maxima = maxima[1:]
+
+        if testplot:
+            plt.plot(data)
+            plt.plot(maxima, data[maxima], 'o')
+            plt.plot(minima, data[minima], 'o')
+            plt.show()
+
+        return (maxima, minima)
+    
+    def interpolate_freqlines(self, data, minima, maxima, samples):
+        frequencylist = []
+        linelist = []
+        for i, max in enumerate(maxima):
+            y = data[minima[i]:maxima[i]]
+            x = np.arange(0, len(y), 1)
+            f = UnivariateSpline(x, y)
+            f.set_smoothing_factor(0.35)
+            freqline = f(np.linspace(0, maxima[i] - minima[i] - 1, samples))
+            frequencylist.append(freqline)
+
+            linelist.append(np.full((samples), i + 1))
+
+        frequencylist = np.array(frequencylist)
+        ## Estimating the mean frequency:
+        meanfreq = np.mean(frequencylist)
+        relativelist = (frequencylist - meanfreq) * 1e3
+
+        #return (relativelist, linelist, meanfreq)
+        return (frequencylist*1e3, linelist, meanfreq)
+    
+    def average_freqlines(self, freqlines):
+        frequencymean = np.zeros_like(freqlines)
+        for i in freqlines:
+            frequencymean += i
+        print("FREQLINES SHAPE:")
+        print(np.shape(freqlines)[0])
+        frequencymean = frequencymean / np.shape(freqlines)[0]
+        return (frequencymean[0])
+        
+    def extract_freqlines(self, extrematest=False):
+        maxima, minima = self.find_freq_extrema(self.measured_frequencies, extrematest)
+        freqlines, linelist, meanfreq = self.interpolate_freqlines(self.measured_frequencies, minima, maxima, int(self.resolution))
+        if np.shape(freqlines)[0] > 0:
+            freqmeanline = self.average_freqlines(freqlines)
+            self.plot_x_frequency = freqmeanline

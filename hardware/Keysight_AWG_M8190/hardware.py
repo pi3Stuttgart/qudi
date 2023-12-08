@@ -1635,6 +1635,8 @@ class PulseStreamerPGProxy(PulseStreamer):
                                )
 
                 length = 0
+                #print("HARDWAREFILE OF AWG")
+                #print(range(item[0]))
                 for i in range(item[0]): #item[0] is loop count
                     for step in segment:
                         seq.append(step)

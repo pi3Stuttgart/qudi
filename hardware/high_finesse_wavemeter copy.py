@@ -33,13 +33,6 @@ from core.module import Base
 from core.configoption import ConfigOption
 from core.util.mutex import Mutex
 
-from ctypes import*
-from math import *
-
-#from hardware.wavemeter.wavemeter import WaveMeter, PIDParams
-
-#WAVEMETER_PID = PIDParams(1.1, 0.38, 0.82, 1.05, .155, 9.99)
-
 
 class HardwarePull(QtCore.QObject):
     """ Helper class for running the hardware communication in a separate thread. """
@@ -129,7 +122,6 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
         #############################################
         try:
             # imports the spectrometer specific function from dll
-            #self._wavemeterdll = ctypes.windll.LoadLibrary(r'C:\Windows\System32\wlmData_backup.dll')
             self._wavemeterdll = ctypes.windll.LoadLibrary(r'C:\Windows\System32\wlmData_backup.dll')
             
         except:
@@ -294,7 +286,7 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
 
     #Start of the PID Loop
     def startPIDLoop(self):
-        self._wavemeterdll.SetDeviationChannel(ctypes.c_bool(2),ctypes.c_bool(1))
+        self._wavemeterdll.SetDeviationChannel(ctypes.c_bool(2),ctypes.c_bool(2))
         return 'True'
 
     #Stop of the PID Loop
@@ -306,24 +298,24 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
     def setPIDFrequency(self,value):
         self._wavemeterdll.SetDeviationReference(ctypes.c_double(value))
 
-    # #Start of the PID Loop # Setzt Häckchen auf 1
+    # #Start of the PID Loop
     # def startPIDLoop(self):
     #     self._wavemeterdll.SetDeviationMode(ctypes.c_bool(1))
     #     return 'True'
 
-    # #Stop of the PID Loop # Setzt Häckchen auf 0
+    # #Stop of the PID Loop
     # def stopPIDLoop(self): #shouldn't be touched, because it also turns of PID lock for all other connected lasers
     #     self._wavemeterdll.SetDeviationMode(ctypes.c_bool(0))
     #     return 'False'
 
-    #Status of the PID LOOP (Häckchen an (1) oder aus (0))
+    #Status of the PID LOOP
     def statusPIDLoop(self):
         self._wavemeterdll.GetDeviationMode.restype = ctypes.c_bool
         state = self._wavemeterdll.GetDeviationMode(ctypes.c_bool())
         return state
     
     #Get PID reference course, channel num for multi switches, in case of SiC-LT 2 its channel 2
-    def get_reference_course(self,channel=2): # Reads current aimed frequency
+    def get_reference_course(self,channel=2):
         """
         Arguments: channel
         Returns: the string corresponing to the reference set on the WLM.
@@ -357,9 +349,3 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
         self._wavemeterdll.SetPIDCourseNum.argtypes = [ctypes.c_long, xp]
         string_buffer.value = "{}".format(function).encode()
         self._wavemeterdll.SetPIDCourseNum(channel, string_buffer)
-
-    def stop_control(port = 2, signal = 0):
-        WaveMeter.set_deviation_channel(port, signal)
-    
-    def start_control(port = 2, signal = 2):
-        WaveMeter.set_deviation_channel(port, signal)

@@ -684,7 +684,7 @@ class NuclearOPs(DataGeneration):
         finally:
             #TODO do this
             #self._md.debug_mode = False
-            self.queue.stop_awgs() ##FIXME # its probably not stopped?
+            self.queue._awg.mcas_dict.stop_awgs()
             self.update_current_str()
             if os.path.exists(self.save_dir) and not os.listdir(self.save_dir):
                 os.rmdir(self.save_dir)
