@@ -10,7 +10,7 @@ np.set_printoptions(suppress=True, linewidth=500, threshold=sys.maxsize)#np.nan)
 from logic.qudip_enhanced.qutip_enhanced import *
 
 gamma = {'e': -2.0028 * 1.6021766208e-19 / (4 * np.pi * 9.10938356e-31) * 1e-6,
-         '13c': 10.705,
+         '13c': 10.705, '29si':-8.465,
          '14n': +3.0766,
          '15n': -4.3156}
 
@@ -69,17 +69,17 @@ class NVHam:
         :param D: float
             Zero field splitting, default 2870 MHz.
         """
-        self.j = {'14n': 1, '15n': .5, 'e': 1, '13c': .5}
+        self.j = {'14n': 1, '15n': .5, 'e': 1.5, '13c': .5, '29si':0.5}
         self._gamma = gamma  # gyromagnetic ratios given in 1/2pi MHz/T, i.e. f = gamma*B
-        self._qp = {'14n': -4.945745, '15n': 0.0, '13c': 0}
+        self._qp = {'14n': -4.945745, '15n': 0.0, '13c': 0, '29si':0}
         self._hf_para_n = {'14n': -2.165, '15n': +3.03}
         self._hf_perp_n = {'14n': -2.7, '15n': +3.65}
-        self.D = 2870.3
-        self.dims = [3]
+        self.D = 34.9
+        self.dims = [4]# 3 for NV was
         self.magnet_field_cart = coordinates.Coord().coord(magnet_field, 'cart')  # magnet field in cartesian coordinates
-        self.n_type = n_type
+        self.n_type = n_type #'14n', '15n', None
         self.nitrogen_levels = nitrogen_levels
-        self.electron_levels = [0, 1, 2] if electron_levels is None else electron_levels
+        self.electron_levels = [0,1,2,3] if electron_levels is None else electron_levels
         for key in kwargs:
             setattr(self, key, kwargs[key])
         self.set_h_nv()
@@ -204,6 +204,12 @@ class NVHam:
         Final size of h_electron depends on self.electron_levels. 
         """
         return self.calc_zeeman(self.gamma['13c'], 1 / 2.0)
+    def h_29si(self):
+        """
+        calculate 13C hamilton matrix with with zeeman splitting. This
+        Final size of h_electron depends on self.electron_levels.
+        """
+        return self.calc_zeeman(self.gamma['29si'], 1 / 2.0)
 
     @staticmethod
     def hft_13c_dd(*args, **kwargs):
@@ -218,9 +224,9 @@ class NVHam:
         """
         h_hf = 0 * qeye(list(np.append(self.h_nv.dims[0], len(nslvl_l))))
         eye_mat = None if self.h_nv.dims[0][1:] == [] else qeye(self.h_nv.dims[0][1:])  # unity matrix for spinsnot involved in HF
-        for i in range(3):
+        for i in range(3): #why is here 3?
             electron = jmat(self.spins[0], coordinates.Coord().cart_coord[i]).extract_states(self.spin_levels[0])
-            for j in range(3):
+            for j in range(3): #why is here 3?
                 new = jmat(dim2spin(nsd), coordinates.Coord().cart_coord[j]).extract_states(nslvl_l)
                 tmp = tensor(electron, eye_mat, new) if eye_mat is not None else tensor(electron, new)
                 h_hf = h_hf + hft[i, j] * tmp
@@ -230,7 +236,7 @@ class NVHam:
         """
         calculates the base hamiltonian with parameters specified at instantiation
         """
-        self.spins = np.array([1])
+        self.spins = np.array([1.5])
         self.spin_levels = [self.electron_levels]
         self.h_nv = self.h_electron().extract_states(self.electron_levels)
         if self.n_type is not None:

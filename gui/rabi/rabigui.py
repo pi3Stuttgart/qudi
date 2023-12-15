@@ -82,7 +82,8 @@ class RabiGUI(GUIBase,rabi_default_functions):
         # Use the inherited class 'CounterMainWindow' to create the GUI window
         self._mw = RabiWindow()
         self._rabi_logic= self.rabilogic()
-        self.initialize_connections_and_defaultvalues() #outsource all the connectors into a second file, to keep the GUI file clean
+        self.initialize_connections_and_defaultvalues()
+        #outsource all the connectors into a second file, to keep the GUI file clean
 
 
         #connect the signals:

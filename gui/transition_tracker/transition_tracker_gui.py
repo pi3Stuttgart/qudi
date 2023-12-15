@@ -42,10 +42,11 @@ class TransitionTrackerGui(GUIBase):
 
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
+        self._mw = window()
         #self.show()
 
     def on_activate(self):
-        self._mw = window()
+        
         self._transition_tracker = self.transition_tracker_logic()
 
         self._mw.setObjectName("window")
@@ -166,6 +167,7 @@ class TransitionTrackerGui(GUIBase):
 
     def on_deactivate(self):
         self._mw.close()
+        #TODO - clean the memory
 
     def update_gui_electron(self):
         self._mw.current_local_oscillator_freq_text_field.setText("{:.10f}".format(self._transition_tracker.current_local_oscillator_freq))
@@ -212,4 +214,4 @@ class TransitionTrackerGui(GUIBase):
         self.ple_A1_label.setText(_translate("window", "PLE A1"))
 
 
-from qutip_enhanced.qtgui.custom_widgets import QTableWidgetEnhancedDrop
+#from logic.qudip_enhanced.qutip_enhanced.qtgui.custom_widgets import QTableWidgetEnhancedDrop

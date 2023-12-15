@@ -16,7 +16,7 @@ from mpl_toolkits.mplot3d import proj3d
 import itertools
 import zipfile
 import copy
-from . import coordinates
+from logic.qudip_enhanced import coordinates
 np.set_printoptions(suppress=True, linewidth=100000)
 
 def save_qutip_enhanced(destination_dir):

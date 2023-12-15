@@ -18,6 +18,7 @@ import notebooks.UserScripts.helpers.sequence_creation_helpers as sch; importlib
 
 def run_fun(self,
             abort,
+
             freq=None,
             zfs=70,
             repeat=False,
@@ -26,7 +27,7 @@ def run_fun(self,
             wait_repeat=0.0,
             final_transition='both',
             n=1, **kwargs):
-    
+    #nice try!
     _tt = self.queue._transition_tracker
     _pODMR = self.queue._ODMR_logic.pulsedODMRLogic
     _awg = self.queue._awg

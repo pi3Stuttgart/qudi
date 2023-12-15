@@ -136,7 +136,7 @@ def create_nuclear(script_path):
     nuclear_name = "NuclearOPs{}_{}".format(nuclear.file_name, datetime.datetime.strftime(nuclear.date_of_creation, nuclear.__TITLE_DATE_FORMAT__))
     nuclear.pld = data_handling.PlotData(title=nuclear_name, gui=True)
     nuclear.file_notes = ''#TODO get transition tracker here... file_notes_frequencies()
-    #setattr(pi3d, nuclear_name, nuclear)
+    #setattr(pi3d, nuclear_name, nuclear)##todo
     return nuclear
 
 if __name__ == '__main__':

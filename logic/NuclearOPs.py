@@ -187,8 +187,9 @@ class NuclearOPs(DataGeneration):
                             'start_time', 'end_time',
                             'mw_mixing_frequency', 'local_oscillator_freq',
                             'confocal_x', 'confocal_y', 'confocal_z',
-                            'aom_Ex_power_measured', 'aom_A1_power_measured', 'Ex_RO_power_measured',
-                            'EOM_Ex_integrator_voltage',
+                            'A2_Power',
+                            #'aom_Ex_power_measured', 'aom_A1_power_measured', 'Ex_RO_power_measured', 'A2_Power',
+                            # 'EOM_Ex_integrator_voltage',
                             'windows_ps', 'delays_ps']+yell
 
                 if self.raw_clicks_processing:
@@ -202,8 +203,9 @@ class NuclearOPs(DataGeneration):
                             'start_time', 'end_time',
                             'ple_A2', 'ple_A1',
                             'confocal_x', 'confocal_y', 'confocal_z',
-                            'aom_Ex_power_measured', 'aom_A1_power_measured',
-                            'Ex_RO_power_measured', 'EOM_Ex_integrator_voltage',
+                            # 'aom_Ex_power_measured', 'aom_A1_power_measured', 'Ex_RO_power_measured',
+                            # 'EOM_Ex_integrator_voltage', 
+                            'A2_Power',
                             'windows_ps', 'delays_ps']+yell
 
                 else:
@@ -219,8 +221,9 @@ class NuclearOPs(DataGeneration):
                             'start_time', 'end_time',
                             'mw_mixing_frequency', 'local_oscillator_freq',
                             'confocal_x', 'confocal_y', 'confocal_z',
-                            'aom_Ex_power_measured', 'aom_A1_power_measured', 'Ex_RO_power_measured',
-                            'EOM_Ex_integrator_voltage',
+                            # 'aom_Ex_power_measured', 'aom_A1_power_measured', 'Ex_RO_power_measured',
+                            'A2_Power',
+                            # 'EOM_Ex_integrator_voltage',
                             'windows_ps', 'delays_ps']+yell
         except Exception:
             exc_type, exc_value, exc_tb = sys.exc_info()
@@ -509,7 +512,19 @@ class NuclearOPs(DataGeneration):
                         #self.data.set_observations([OrderedDict(aom_A1_power_measured=self.queue.power_calibration.pd_list['pd_A1_power'].get_data())]*self.number_of_simultaneous_measurements)
                         time.sleep(0.1)
                         self._md.stop_awgs()
-
+                    if self.check_A2_power:
+                        self.queue._awg.mcas_dict['A2'].run()
+                        QtTest.QTest.qSleep(1000)
+                        self.data.set_observations([OrderedDict(A2_Power=self.queue._powerstabilization_logic.current_power)]*self.number_of_simultaneous_measurements)
+                        self.queue._awg.mcas_dict.stop_awgs()
+                        QtTest.QTest.qSleep(1000)
+                    if self.do_repump:
+                        self.queue._awg.mcas_dict['repump'].run()
+                        # self.data.set_observations([OrderedDict(aom_A1_power_measured=self.queue.power_calibration.pd_list['pd_A1_power'].get_data())]*self.number_of_simultaneous_measurements)
+                        QtTest.QTest.qSleep(100)
+                        self.queue._awg.mcas_dict.stop_awgs()
+                        QtTest.QTest.qSleep(1000)
+                    
                     #TODO add laser power meters to the df
                     #if self.yellow_repump_compensation:
                         #self.data.set_observations([OrderedDict(yellow_freq_measured=self.queue.wavemeter.dll.GetFrequencyNum(3, 0))] * self.number_of_simultaneous_measurements)
@@ -1003,9 +1018,38 @@ class NuclearOPs(DataGeneration):
     #     #     interferometer.do_calibration_scan()
     #     #     while interferometer.syncFlag == False:
     #     #         time.sleep(0.1)
-
-
-
+    def do_refocusodmr(self, abort=None, check_odmr_frequency_drift_ok=True, initial_odmr=False):
+        if abort.is_set():
+            logging.getLogger().info('do_refocusodmr stopped here0')
+        self.queue._odmr_ref.file_name = self.file_name #todo need to add the odmr-refocus file to the queue.
+        delta_t = time.time() - self.last_odmr
+        if self.odmr_interval != 0 and (delta_t >= self.odmr_interval) or len(self.data.df) == 0 or initial_odmr:
+            if check_odmr_frequency_drift_ok and hasattr(self, 'maximum_odmr_drift'):
+                self.add_odmr_script_to_queue(abort, self.odmr_pd)
+                current_drift = np.abs(self.queue.tt.current_local_oscillator_freq - self.data.df.iloc[-1, :].local_oscillator_freq)
+                if current_drift > self.maximum_odmr_drift:
+                    logging.getLogger().info("Too much drift ({} > {}), trying again!".format(current_drift, self.maximum_odmr_drift))
+                    odmr_frequency_drift_ok = False
+                else:
+                    logging.getLogger().info("Drift is ok  ({} < {})".format(current_drift, self.maximum_odmr_drift))
+                    odmr_frequency_drift_ok = True
+                if self.refocus_interval != 0 and self.odmr_count % self.refocus_interval == 0:
+                    self.add_odmr_script_to_queue(abort, self.odmr_pd_refocus)
+            else:
+                if self.refocus_interval != 0 and self.odmr_count % self.refocus_interval == 0:
+                    self.add_odmr_script_to_queue(abort, self.odmr_pd_refocus)
+                else:
+                    self.add_odmr_script_to_queue(abort, self.odmr_pd)
+                odmr_frequency_drift_ok = True
+            self.odmr_count += 1
+            self.last_odmr = time.time()
+            if abort.is_set():
+                logging.getLogger().info('do_refocusodmr stopped here1')
+            return odmr_frequency_drift_ok
+        elif check_odmr_frequency_drift_ok:
+            if abort.is_set():
+                logging.getLogger().info('do_refocusodmr stopped here2')
+            return True
 
     def run_refocus(self):
         pass
@@ -1021,9 +1065,10 @@ class NuclearOPs(DataGeneration):
         #     logging.getLogger().info("Refocus ma_deviation [nm]: {}, {}, {}".format(*[(getattr(self.queue.confocal, axis) - self.df_refocus_pos.iloc[-1, :]['confocal_{}'.format(axis)])*1000 for axis in ['x', 'y', 'z']]))
 
     def add_odmr_script_to_queue(self, abort, pd):
-        sys.modules[self.queue.init_task(name='refocus_confocal_odmr', folder='C:/src/qudi/notebooks')].run_fun(self, abort=abort, **pd)
+        sys.modules[self.queue.init_task(name='refocus_confocal_odmr', folder='C:/src/qudi/notebooks')].run_fun(
+            self, abort=abort, **pd)
 
-    def do_refocusodmr(self, abort=None, check_odmr_frequency_drift_ok=True, initial_odmr=False):
+    def do_refocusodmr_gui(self, abort=None, check_odmr_frequency_drift_ok=True, initial_odmr=False):
         print("do ODMR refocus?")
         if abort.is_set():
             pass
@@ -1238,8 +1283,12 @@ class NuclearOPs(DataGeneration):
                 raise Exception('This was supposed to be a sanity check. The programmer made shit.')
         data = self.data if data is None else data
         if ana_trace.analyze_type is not None:
-            df = ana_trace.analyze_fast().df # experimental still, but looks ok.
-            #df = ana_trace.analyze().df
+
+            # ACHTUNG!!!! trace analysis code.
+            #df = ana_trace.analyze_fast().df # experimental still, but looks ok.
+            df = ana_trace.analyze().df ## TRY this for init? This was the code before.
+
+
             if (df.events == 0).any() and not self.analyze_type == 'consecutive' and df.at[0, 'events'] != 0:
                 return True #Means that runn was not succesfull, 0 events, ==> repeat measurements.
             if 'result_num' in df.columns: #if there are multiple readouts of type "result", here step index is important

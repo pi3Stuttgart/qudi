@@ -102,7 +102,7 @@ class QDPlotterGui(GUIBase):
     sigRemovePlotClicked = QtCore.Signal(int)
 
     # declare connectors
-    qdplot_logic = Connector(interface='QDPlotLogic')
+    queue_logic = Connector(interface="queue_logic")
     # declare config options
     _pen_color_list = ConfigOption(name='pen_color_list', default=['b', 'y', 'm', 'g'])
     # declare status variables
@@ -125,7 +125,7 @@ class QDPlotterGui(GUIBase):
     def on_activate(self):
         """ Definition and initialisation of the GUI.
         """
-        self._plot_logic = self.qdplot_logic()
+        self._plot_logic = self.queue_logic()
 
         if not isinstance(self._pen_color_list, (list, tuple)) or len(self._pen_color_list) < 1:
             self.log.warning(
@@ -150,9 +150,9 @@ class QDPlotterGui(GUIBase):
         self._mw = QDPlotMainWindow()
 
         # Fit settings dialogs
-        self._fsd = FitSettingsDialog(self._plot_logic.fit_container)
-        self._fsd.applySettings()
-        self._mw.fit_settings_Action.triggered.connect(self._fsd.show)
+        #self._fsd = FitSettingsDialog(self._plot_logic.fit_container)
+        #self._fsd.applySettings()
+        #self._mw.fit_settings_Action.triggered.connect(self._fsd.show)
 
         # Connect the main window restore view actions
         self._mw.restore_tabbed_view_Action.triggered.connect(self.restore_tabbed_view)
@@ -166,30 +166,33 @@ class QDPlotterGui(GUIBase):
         self._plot_curves = list()
         self._fit_curves = list()
         self._pg_signal_proxys = list()
-        self.update_number_of_plots(self._plot_logic.number_of_plots)
+        self.update_number_of_plots(3)
         # Update all plot parameters and data from logic
         for index, _ in enumerate(self._plot_dockwidgets):
-            self.update_data(index)
-            self.update_fit_data(index)
-            self.update_plot_parameters(index)
+            pass
+            #self.update_data(index)
+            #self.update_fit_data(index)
+            #self.update_plot_parameters(index)
         self.restore_view()
 
-        # Connect signal to logic
-        self.sigPlotParametersChanged.connect(
-            self._plot_logic.update_plot_parameters, QtCore.Qt.QueuedConnection)
-        self.sigAutoRangeClicked.connect(
-            self._plot_logic.update_auto_range, QtCore.Qt.QueuedConnection)
-        self.sigDoFit.connect(self._plot_logic.do_fit, QtCore.Qt.QueuedConnection)
-        self.sigRemovePlotClicked.connect(self._plot_logic.remove_plot, QtCore.Qt.QueuedConnection)
-        self._mw.new_plot_Action.triggered.connect(
-            self._plot_logic.add_plot, QtCore.Qt.QueuedConnection)
-        # Connect signals from logic
-        self._plot_logic.sigPlotDataUpdated.connect(self.update_data, QtCore.Qt.QueuedConnection)
-        self._plot_logic.sigPlotParamsUpdated.connect(
-            self.update_plot_parameters, QtCore.Qt.QueuedConnection)
-        self._plot_logic.sigPlotNumberChanged.connect(
-            self.update_number_of_plots, QtCore.Qt.QueuedConnection)
-        self._plot_logic.sigFitUpdated.connect(self.update_fit_data, QtCore.Qt.QueuedConnection)
+
+        if False:
+            # Connect signal to logic # TODO
+            self.sigPlotParametersChanged.connect(
+                self._plot_logic.update_plot_parameters, QtCore.Qt.QueuedConnection)
+            self.sigAutoRangeClicked.connect(
+                self._plot_logic.update_auto_range, QtCore.Qt.QueuedConnection)
+            self.sigDoFit.connect(self._plot_logic.do_fit, QtCore.Qt.QueuedConnection)
+            self.sigRemovePlotClicked.connect(self._plot_logic.remove_plot, QtCore.Qt.QueuedConnection)
+            self._mw.new_plot_Action.triggered.connect(
+                self._plot_logic.add_plot, QtCore.Qt.QueuedConnection)
+            # Connect signals from logic
+            self._plot_logic.sigPlotDataUpdated.connect(self.update_data, QtCore.Qt.QueuedConnection)
+            self._plot_logic.sigPlotParamsUpdated.connect(
+                self.update_plot_parameters, QtCore.Qt.QueuedConnection)
+            self._plot_logic.sigPlotNumberChanged.connect(
+                self.update_number_of_plots, QtCore.Qt.QueuedConnection)
+            self._plot_logic.sigFitUpdated.connect(self.update_fit_data, QtCore.Qt.QueuedConnection)
 
         self.show()
 
@@ -224,7 +227,7 @@ class QDPlotterGui(GUIBase):
         # disconnect GUI elements
         self.update_number_of_plots(0)
 
-        self._fsd.sigFitsUpdated.disconnect()
+        #self._fsd.sigFitsUpdated.disconnect()
         self._mw.close()
 
     @QtCore.Slot(int)
@@ -248,7 +251,7 @@ class QDPlotterGui(GUIBase):
         while count > len(self._plot_dockwidgets):
             index = len(self._plot_dockwidgets)
             dockwidget = PlotDockWidget('Plot {0:d}'.format(index + 1), self._mw)
-            dockwidget.widget().fit_comboBox.setFitFunctions(self._fsd.currentFits)
+            #fixme#dockwidget.widget().fit_comboBox.setFitFunctions(self._fsd.currentFits)
             dockwidget.widget().show_fit_checkBox.setChecked(False)
             dockwidget.widget().show_controls_checkBox.setChecked(False)
             dockwidget.widget().fit_groupBox.setVisible(False)
@@ -263,7 +266,7 @@ class QDPlotterGui(GUIBase):
 
     def _connect_plot_signals(self, index):
         dockwidget = self._plot_dockwidgets[index].widget()
-        self._fsd.sigFitsUpdated.connect(dockwidget.fit_comboBox.setFitFunctions)
+        #self._fsd.sigFitsUpdated.connect(dockwidget.fit_comboBox.setFitFunctions)
         dockwidget.fit_pushButton.clicked.connect(functools.partial(self.fit_clicked, index))
 
         x_lim_callback = functools.partial(self.x_limits_changed, index)
@@ -299,7 +302,7 @@ class QDPlotterGui(GUIBase):
 
     def _disconnect_plot_signals(self, index):
         dockwidget = self._plot_dockwidgets[index].widget()
-        self._fsd.sigFitsUpdated.disconnect(dockwidget.fit_comboBox.setFitFunctions)
+        #self._fsd.sigFitsUpdated.disconnect(dockwidget.fit_comboBox.setFitFunctions)
         dockwidget.fit_pushButton.clicked.disconnect()
 
         dockwidget.x_lower_limit_DoubleSpinBox.valueChanged.disconnect()

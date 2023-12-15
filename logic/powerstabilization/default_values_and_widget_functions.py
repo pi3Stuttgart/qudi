@@ -58,9 +58,9 @@ class powerstabilization_default():
         @QtCore.pyqtSlot(bool)
         def Offset_PushButton_Clicked(self, state):
                 print("Done something with Offset_PushButton_Clicked")
-                print("Not yet implemented")
-                #misused as trigger to start the trace
-                #self.SigUpdatePlots.emit()
+                # TODO: Turn off lasers
+                self.voltage_offset = self.pid1.output
+        
 
         @QtCore.pyqtSlot(bool)
         def SaveTrace_PushButton_Clicked(self, state):

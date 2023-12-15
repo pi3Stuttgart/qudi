@@ -339,7 +339,8 @@ class GatedCounter(GenericLogic):
         self.ZPL_counter = False
         ## Needs to be adjusted tohas the qudi gated counter #TODO
         def f():
-            nlp_per_point = sum([step[3] for step in self.trace.analyze_sequence])
+            nlp_per_point = sum([
+                step[3] for step in self.trace.analyze_sequence])
 
             #TODO redo the interfaces . Init counter to gated counter now, or make it inside the TT class?
             self._fast_counter_device.count_between_markers(

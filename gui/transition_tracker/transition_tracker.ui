@@ -360,7 +360,7 @@
   <customwidget>
    <class>QTableWidgetEnhancedDrop</class>
    <extends>QTableWidget</extends>
-   <header>qutip_enhanced/qtgui/custom_widgets.h</header>
+   <header>logic/qudip_enhanced/qtgui/custom_widgets.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

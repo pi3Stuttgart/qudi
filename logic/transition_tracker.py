@@ -132,6 +132,7 @@ def get_last_values_from_file(filename, flg_out_date=False, full_path=None):
         full_path = os.path.join(folder,last_file_name)
     else:
         full_path = get_path_for_save_value_to_file(filename) if full_path is None else full_path
+        full_path = get_path_for_save_value_to_file(filename) if full_path is None else full_path
     fil = open(full_path, 'r')
 
     line_str_list = fil.readlines()[-1].split('\t')
@@ -146,6 +147,7 @@ def get_last_values_from_file(filename, flg_out_date=False, full_path=None):
     if flg_out_date is True:
         date = datetime.datetime.strptime(line_str_list[0], '%Y%m%d-h%Hm%Ms%S')
         return val, date
+    print(val)
     return val
 
 def get_values_time_span(filename, start_date_str, end_date_str=None):
@@ -512,8 +514,8 @@ class Transition:
         self.set_meta()
 
     name = misc.ret_property_typecheck('name', str)
-    ms_state = misc.ret_property_list_element('ms_state', [+1, 0, -1])
-    spin_type = misc.ret_property_list_element('spin_type', ['14n', '13c'])
+    ms_state = misc.ret_property_list_element('ms_state', [1.5, 0.5,-0.5, -1.5])
+    spin_type = misc.ret_property_list_element('spin_type', ['14n', '13c','29si'])
     current_frequency = misc.ret_property_typecheck('current_frequency', Number)
 
     @property
@@ -534,8 +536,8 @@ class Transition:
     def set_meta(self):
         name = TransitionTracker.correct_transition_name(self.name)
         self.nuc, ms = name.split(' ')
-        self.ms_state = int(ms[2:])
-        self.spin_type = '14n' if '14n' in self.nuc else '13c'
+        self.ms_state = float(ms[2:])
+        self.spin_type = '14n' if '14n' in self.nuc else '13c' #Fixme should be 29si?
         if self.spin_type == '14n':
             self.start_angular_momentum, self.end_angular_momentum = sorted([0, int(self.nuc[-2:])])
         else:
@@ -546,21 +548,21 @@ class Transition:
 # gui QMainWindow, transition_tracker_gui.Ui_window
 class TransitionTracker(GenericLogic):
     c13_list = []#['13c414', '13c90', '13c13', '13c6', '13c-5', '13c-6']
-    si29_list = []
+    si29_list = ['29si8']
     transitions = misc.ret_property_array_like_typ('transitions', Transition)
     log_folder = r"C:\src\qudi\log\transition_tracker_log"
-
-    g_factors = {'e': -2.0028 * 1.6021766208e-19 / (4 * np.pi * 9.10938356e-31) * 1e-6}
+    g_factors = {'e': -2.0028 * 1.6021766208e-19 / (4 * np.pi * 9.10938356e-31) * 1e-6,
+                 'C':10.78,'Si':-8.4} # why again? it is already in qutip enhanced.
 
     #transition_tracker_gui = Connector(interface="transition_tracker_gui")
-    mcas_holder = Connector(interface='McasDictHolderInterface')
-    rabi_logic= Connector(interface='RabiLogic')
-    odmr_logic= Connector(interface='ODMRLogic_holder')
-    ple_logic= Connector(interface='LaserScannerLogic')
-    powerstabilization_logic = Connector(interface='PowerStabilizationLogic')
+    mcas_holder = Connector(interface='McasDictHolderInterface') #why?
+    #rabi_logic= Connector(interface='RabiLogic') #why? we do it via nuclear ops.
+    odmr_logic= Connector(interface='ODMRLogic_holder') #ok for refocus.
+    ple_logic= Connector(interface='LaserScannerLogic') #ok for refocus
+    powerstabilization_logic = Connector(interface='PowerStabilizationLogic') # ok for power calibartion?
 
     update_tt_nuclear_gui = pyqtSignal()
-    update_tt_electron_gui = pyqtSignal()
+    update_tt_electron_gui = pyqtSignal() #is it connected?
 
     def __init__(self,config, **kwargs):
         super().__init__(config=config, **kwargs)
@@ -569,7 +571,7 @@ class TransitionTracker(GenericLogic):
         # super(TransitionTracker, self).__init__()
         # self.setupUi(self)
         self._awg = self.mcas_holder()  # mcas_dict()
-        self._rabi_logic= self.rabi_logic()
+        #self._rabi_logic= self.rabi_logic()
         self._odmr_logic= self.odmr_logic()
         self._ple_logic= self.ple_logic()
         self._powerstabilization_logic = self.powerstabilization_logic()
@@ -579,6 +581,7 @@ class TransitionTracker(GenericLogic):
         # self.setWindowTitle(title)
         self.reload_nuclear_parameters()
         self.mw_mixing_frequency_L = get_last_value_from_file('mw_mixing_frequency_L')
+        self.mw_mixing_frequency_C = get_last_value_from_file('mw_mixing_frequency_C')
         self.mw_mixing_frequency_R = get_last_value_from_file('mw_mixing_frequency_R')
         self.ple_A2 = get_last_value_from_file('ple_A2')
         self.ple_A2_fit_params = get_last_value_from_file('ple_A2_fit_params')
@@ -586,17 +589,16 @@ class TransitionTracker(GenericLogic):
         self.interferometer_history = get_last_value_from_file('interferometer_history')
         self.ple_A1 = get_last_value_from_file('ple_A1')
         self.ple_A1_fit_params = get_last_value_from_file('ple_A1_fit_params')
-        
-        self.ple_repump = get_last_value_from_file('ple_repump')
+        self.ple_repump = get_last_value_from_file('ple_repump') # we are not using itm  right?
 
         # self.xyz = pi3d.get_last_values_from_file('xyz')
-        self.current_local_oscillator_freq = get_last_value_from_file('current_local_oscillator_freq')
+        self.current_local_oscillator_freq = get_last_value_from_file('current_local_oscillator_freq') #also not using it.
         self.zero_field_splitting = get_last_value_from_file('zfs')
-        self.transition_name_list = [['+1', '0', '-1'], ['+1', '0', '-1']] + [['+0.5', '-0.5']] * len(self.c13_list)
+        self.transition_name_list = [['-1.5', '-0.5', '+0.5','+1.5']] + [['+0.5', '-0.5']] * (len(self.c13_list)+len(self.si29_list))
         self.states_list = [range(len(i)) for i in self.transition_name_list]
-        self.spin_name_list = ['e', '14n'] + self.c13_list# + self.si29_list
+        self.spin_name_list = ['e'] + self.c13_list + self.si29_list
         self.set_h_diag()
-        self.set_ntd()
+        self.set_ntd() #nuclear transition dict
         self.load_transitions()
         if not self._awg.mcas_dict.debug_mode:
             self.load_rabi_parameters()
@@ -649,7 +651,7 @@ class TransitionTracker(GenericLogic):
 
 
     def connect_signals(self):
-        self._rabi_logic.sigFitPerformed.connect(self.update_rabi)
+        #self._rabi_logic.sigFitPerformed.connect(self.update_rabi)
         self._odmr_logic.sigFitPerformed.connect(self.update_ODMR)
         self._ple_logic.sigFitPerformed.connect(self.update_ple)
 
@@ -657,18 +659,24 @@ class TransitionTracker(GenericLogic):
         #self.update_tt_electron_gui.connect(self.update_gui_electron)
 
     def nuclear_transition_name(self, transition):
+        """
+        this transitions is for the nuclear spin.
+        """
+
         ms = self.transition_name_list[0][transition[0][0]]
         fsn = flipped_spin_numbers(transition)[0]
-        nuc = self.spin_name_list[fsn]
-        if ms == '0' and '13c' in nuc:
+        nuc = self.spin_name_list[fsn] #nuc = 29si8 ms = +1.5
+        if ms == '0' and '13c' in nuc: # no there is never happens here. basically all are at larmor.
             return '13c ms0'
         else:
-            if fsn == 1:
+            if fsn == 1 and '14n' in nuc: #if it is nuclear spin flipped. (nitrogen, I assume?)
                 if transition[0][1] == 0: #initial transition is '+1'
                     mn = '+1'
                 elif transition[1][1] == 2: #initial transition is '0'
                     mn = '-1'
                 nuc += mn
+
+            #here is not used??
             return "{} ms{}".format(nuc, ms)
 
     def set_ntd(self):
@@ -685,23 +693,40 @@ class TransitionTracker(GenericLogic):
         self.ntd = ntd
 
     def reload_nuclear_parameters(self):
+        
+        # 14N is just an example. 
         self.g_factors['14n'] = get_last_values_from_file(filename='gamma_14n.dat', full_path=os.path.join(self.log_folder,'gamma_14n.dat'))[0]#r"{}\gamma_14n.dat".format(self.log_folder))[0]
         self.qp = {'14n': get_last_values_from_file(filename='qp_14n.dat', full_path=os.path.join(self.log_folder,'qp_14n.dat'))[0]}#r"{}\qp_14n.dat".format(self.log_folder))[0]}
-        self.hf_para_n = {'14n': get_last_values_from_file(filename='hf_14n.dat', full_path=os.path.join(self.log_folder,'hf_14n.dat'))[0]}#r"{}\hf_14n.dat".format(self.log_folder))[0]}
+        self.hf_para_n = {'14n': get_last_values_from_file(filename='hf_14n.dat',
+                                                           full_path=os.path.join(self.log_folder,'hf_14n.dat'))[0]
+                          }#r"{}\hf_14n.dat".format(self.log_folder))[0]}
         self.hf_perp_n = {'14n': get_last_values_from_file(filename='hf_perp_14n.dat', full_path=os.path.join(self.log_folder,'hf_perp_14n.dat'))[0]}#r"{}\hf_perp_14n.dat".format(self.log_folder))[0]}
-        self.hf_para_n.update(dict([(key, get_last_values_from_file(filename='hf_1{}.dat'.format(key), full_path=os.path.join(self.log_folder,'hf_{}.dat'.format(key))[0])) for key in self.c13_list]))
+        self.hf_para_n.update(dict([(key, 
+                                     get_last_values_from_file(filename='hf_{}.dat'.format(key),
+                                                               full_path=os.path.join(
+                                                                   self.log_folder,'hf_{}.dat'.format(key)))[0]
+                                                                   ) for key in self.c13_list+self.si29_list]))
+        self.hf_perp_n.update(dict([(key, 
+                                     get_last_values_from_file(filename='hf_perp_{}.dat'.format(key),
+                                                               full_path=os.path.join(
+                                                                   self.log_folder,'hf_perp_{}.dat'.format(key)))[0]
+                                                                   ) for key in self.c13_list+self.si29_list]))
 
     def set_h_diag(self):
         self.nvham = NVHam(magnet_field={'z': self.current_magnetic_field},
-                           n_type='14n', nitrogen_levels=[0, 1, 2],
-                           electron_levels=[0, 1, 2], gamma=self.g_factors,
+                           n_type=None, nitrogen_levels=[],
+                           electron_levels=[0,1,2,3], gamma=self.g_factors,
                            qp=self.qp, hf_para_n=self.hf_para_n,
                            hf_perp_n=self.hf_perp_n)
         for c13 in self.c13_list:
-            self.nvham.add_spin(np.matrix(np.diag([0.0, 0.0, self.hf_para_n[c13]])), self.nvham.h_13c(), [0, 1])
+            self.nvham.add_spin(np.matrix(np.diag([0.0, 0.0, self.hf_para_n[c13]])), 
+                                self.nvham.h_13c(), [0, 1])
 
-        #for si29 in self.si29_list:
-            #self.nvham.add_spin(np.matrix(np.diag([0.0, 0.0, self.hf_para_n[si29]])), self.nvham.h_13c(), [0, 1])
+        for si29 in self.si29_list:
+            self.nvham.add_spin(
+                hft=np.matrix(np.diag([self.hf_perp_n[si29], self.hf_perp_n[si29], self.hf_para_n[si29]])),
+                h_ns=self.nvham.h_29si(),
+                nslvl_l=[0, 1])
 
         eval_evec = self.nvham.h_nv.eigenstates()
         # *np.linalg.eig(self.nvham.h_nv.data.todense())[::-1]
@@ -714,7 +739,7 @@ class TransitionTracker(GenericLogic):
                 Transition(
                     parent=self,
                     name=key,
-                    current_frequency=-get_transition_frequency(h_diag=self.h_diag, dims=self.nvham.dims, transition=val)
+                    current_frequency=-get_transition_frequency(h_diag=self.h_diag, dims=self.nvham.dims, transition=val) # fixme get it right
                 )
             )
 
@@ -777,7 +802,6 @@ class TransitionTracker(GenericLogic):
         return r"{}transition_tracker_log".format(log_dir)
 
 
-
     @property
     def current_local_oscillator_freq(self):
         return self._current_local_oscillator_freq
@@ -811,12 +835,25 @@ class TransitionTracker(GenericLogic):
 
     @property
     def mw_transition_frequency(self):
-        return self.mw_mixing_frequency_L + self.current_local_oscillator_freq
+        return self.mw_mixing_frequency_L# + self.current_local_oscillator_freq
 
 
     @property
     def mw_mixing_frequency_R(self):
         return self._mw_mixing_frequency_R
+
+    @property
+    def mw_mixing_frequency_C(self):
+        return self._mw_mixing_frequency_C
+
+    @mw_mixing_frequency_C.setter
+    def mw_mixing_frequency_C(self, val):
+        print("TT:")
+        print(val)
+        self._mw_mixing_frequency_C = misc.check_type(val, '_mw_mixing_frequency_C', Number)
+        if getattr(self, '_mw_mixing_frequency_L', 0.0) != 0.0:
+            save_value_to_file(self.mw_mixing_frequency_C, 'mw_mixing_frequency_C')
+        self.update_stuff()
 
     @mw_mixing_frequency_R.setter
     def mw_mixing_frequency_R(self, val):
@@ -1016,7 +1053,7 @@ class TransitionTracker(GenericLogic):
 
     @staticmethod
     def correct_transition_name(name):
-        name = name.replace('13C', '13c').replace('14N', '14n').replace('mS', 'ms')
+        name = name.replace('13C', '13c').replace('14N', '14n').replace('mS', 'ms').replace('29Si','29si')
         if '13c' in name and 'ms0' in name:
             name = '13c ms0'
         if 'e_rabi' in name:
@@ -1206,28 +1243,33 @@ class TransitionTracker(GenericLogic):
 
     @property
     def current_magnetic_field(self): #z field
-        return -(self.current_local_oscillator_freq - self.mw_mixing_frequency_L + self.zero_field_splitting) / self.g_factors['e']
+        return -(self.current_local_oscillator_freq - self.mw_mixing_frequency_L + 
+                 2*self.zero_field_splitting) / self.g_factors['e']
 
     @property
     def current_magnetic_field_vector(self):  # z and x field
-        sx, sy, sz = jmat(1)
+        sx, sy, sz = jmat(1.5)
+        print('B field calculator')
         f1 = self.mw_mixing_frequency_L
         f2 = self.mw_mixing_frequency_R
+        f3 = self.mw_mixing_frequency_C
         def H(B_z, B_x):
-            D = 2878.0
-            gamma_e = 2.8
+            D = 34.9
+            gamma_e = 2.804
             return D * sz ** 2 + gamma_e * B_z * sz + gamma_e * B_x * sx
 
         def odmr(B_z, B_x):
             enerriges = H(B_z, B_x).eigenenergies()
-            return (enerriges - enerriges[0])[1:]
+            return np.array([enerriges[1] - enerriges[0], 
+                             enerriges[2]-enerriges[1],
+                             enerriges[3]-enerriges[2]])
 
         def func(params):
             bz = params[0]
             bx = params[1]
-            return (odmr(bz, bx)[0] - f1) ** 2 + (odmr(bz, bx)[1] - f2) ** 2
+            return (odmr(bz, bx)[0] - f1) ** 2 + (odmr(bz, bx)[1] - f2) ** 2 + (odmr(bz, bx)[2] - f3) ** 2 
 
-        return minimize(fun =func,x0 = [300.,50.]).x
+        return minimize(fun =func,x0 = np.array([1.,0.])).x
 
 
 
@@ -1237,7 +1279,8 @@ class TransitionTracker(GenericLogic):
         elif '_hf' in typ:
             return self.hf_para_n[typ.split('_')[0].lower()]
 
-    def mfl(self, td, mw_mixing_frequency_L=None, ms_trans='-1'): #TODO: update ms from NV to V2
+    def mfl(self, td, mw_mixing_frequency_L=None, ms_trans='0.5'): 
+        #TODO: update ms from NV to V2
         """
 
         :param td: dict
@@ -1250,7 +1293,7 @@ class TransitionTracker(GenericLogic):
         if mw_mixing_frequency_L is None: mwfm = self.mw_mixing_frequency_L
 
         if type(td) is str:
-            td = td.replace('14n', '14N').replace('13c', '13C')
+            td = td.replace('14n', '14N').replace('13c', '13C').replace('29si','29Si')
             if td == '14N_all':
                 td = {'14N': [-1, 0, 1]}
             elif td == '14N+1':
@@ -1280,18 +1323,23 @@ class TransitionTracker(GenericLogic):
         else:
             for key, val in td.items():
                 del td[key]
-                td[key.replace('14n', '14N').replace('13c', '13C')] = val
+                td[key.replace('14n', '14N').replace('13c', '13C').replace('29si','29Si')] = val
         f = list()
         for key in td.keys():
-            if key not in ['14N', '13C414', '13C90']:
+            if key not in ['14N', '13C414', '13C90','29Si8']:
                 raise Exception("Key '{}' is not a valid nuclear spin".format(key))
-        for i in ['14N']:#, '13C414', '13C90']:
+        for i in ['29Si8']:#why not put here all spin list?
             a = np.array(td.get(i, [])) * self.get_f("{}_hf".format(i.lower()))
             if np.size(a) > 0:
                 f.append(a)
         ff = list(product(*f))
         mfl = np.array(sorted([mwfm + sum(fff) for fff in ff if not np.size(fff) == 0]))
+
+        #here do some ms?
         if ms_trans in ['right', '+1']:
             return mfl - self.mw_mixing_frequency_L + self.mw_mixing_frequency_R
+
+        elif ms_trans in ['-1.5','+0.5','-0.5', '+1.5']:
+            return mfl + self._zero_field_splitting
         else:
             return mfl

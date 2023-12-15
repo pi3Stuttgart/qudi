@@ -25,7 +25,14 @@ __CURRENT_POL_RED__ = 76
 __T_POL_RED__ = 0.2
 __RED_LASER__DELAY__ = 0.1
 __SSR_REPETITIONS__ = {'14n+1': 1500, '14n-1': 1500, '14n': 1500, '14n0': 1200, '13c414': 1500, '13c90': 2000, '13c5000': 10,
-                       'charge_state':1,'charge_state_A1_aom_Ex':1,'charge_state_ExMW':1, 'ple_A2': 1,'ple_A1': 1, 'ple_A2_delay': 1,'ple_A1_delay': 1,'Ex_pi_readout':1,'Ex_pi_readout_6ns':1,
+                       'charge_state':1,'charge_state_A1_aom_Ex':1,
+                       'charge_state_ExMW':1,
+                       'ple_A2': 1,
+                       'ple_A1': 1,
+                       'ple_A2_delay': 1,
+                       'ple_A1_delay': 1,
+                       'Ex_pi_readout':1,
+                       'Ex_pi_readout_6ns':1,
                        'Ex_ampl_sweep_SSR' : 1,
                        'opt_mw_delays_calibration':1,
                        'opt_mw_delays_calibration2': 1,
@@ -46,9 +53,9 @@ __LASER_DUR_DICT__ = {'14n+1': .175,
                      '13c5000_A2': 5.,
                      '13c5000': 5.,
                     'single_state': .9, 
-                      'charge_state': 2000.0,
+                      'charge_state': 1000.0,
                       'charge_state_ExMW': 2000.0,
-                      'charge_state_A1_aom_Ex':2000.0, 
+                      'charge_state_A1_aom_Ex':2000.0,
                       'ple_A2': 50.0,
                       'ple_A1': 50.,
                       'Ex_pi_readout_6ns' : 481*3/12.0e3, # (Len in samples / sampling rate)
@@ -686,8 +693,9 @@ class SSR(object):
                                         loop_count=self.repetitions,
                                         advance_mode=self.advance_mode)
 
-            if self.number_of_alternating_steps!= 1:
-                raise Warning('most probably something is wrong with PulseStreamer - AWG syncronization')
+            #if self.number_of_alternating_steps!= 1:
+            #    pass
+                #raise Warning('most probably something is wrong with PulseStreamer - AWG syncronization')
             for alt_step in range(self.number_of_alternating_steps):
                 d = self.pd2g_dict(alt_step)
                 #if 'cw_mw' in self.kwargs.keys():
@@ -696,29 +704,20 @@ class SSR(object):
                 #   laser = False
 
                 #if self.gate_or_trigger == 'trigger':
-                self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name = 'triggerTrue_gate') # Gated counter
+                self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, gateMW = True, name = 'triggerTrue_gate') # Gated counter
                 #else:
                     #self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name = 'triggerFalse_memory') # ODMR... ORABI
                     #self.mcas.asc(length_mus=2.1, name = 'wait_after_memory')
 
                 # self.mcas.asc(pd2g1=d[1][2], pd2g2=d[2][2], name='MW', **aa) # CNOT(s) #ORIGINAL VERSION
-                self.mcas.asc(gateMW=True, name='MW', length_mus=0.256) # CNOT(s) #Canged
-                if len(d[1][2]['frequencies'])>1:
+                self.mcas.asc(gateMW=True, name='MW', length_mus=0.256-__TT_TRIGGER_LENGTH__)
+                
+                for idx,freq in enumerate(d[1][2]['frequencies']): #d[1][2] means awg, ch2?
                     print("compileMW in snippets_awg")
-                    print(d[1][2]['frequencies'][0])
-                    print(d[1][2]['frequencies'][1])
-                    freq1 = d[1][2]['frequencies'][0]
-                    freq2 = d[1][2]['frequencies'][1]
-                    amp1 = d[1][2]['amplitudes'][0]
-                    amp2 = d[1][2]['amplitudes'][1]
-                    dur = d[1][2]['length_mus']
-                    
-                    pd2g1 = {'frequencies': [freq1], 'type': 'sine', 'amplitudes': [amp1], 'length_mus': dur}
-                    self.mcas.asc(pd2g1=pd2g1, GateMW=True, name='MW', **aa) # CNOT(s) #Canged
-                    pd2g1 = {'frequencies': [freq2], 'type': 'sine', 'amplitudes': [amp2], 'length_mus': dur}
-                    self.mcas.asc(pd2g1=pd2g1, GateMW=True, name='MW', **aa) # CNOT(s) #Canged
-                else:
-                    self.mcas.asc(pd2g1=d[1][2], GateMW=True, name='MW', **aa) # CNOT(s) #Canged
+                    print(d[1][2]['frequencies'][idx])
+                    pd2g1 = {'frequencies': [d[1][2]['frequencies'][idx]], 'type': 'sine', 'amplitudes': [d[1][2]['amplitudes'][idx]], 'length_mus': d[1][2]['length_mus']}
+                    self.mcas.asc(pd2g1=pd2g1, gateMW=True, name='MW', **aa)
+
                 ### ===============================
                 ### Conventional repetitive readout
                 ### ===============================

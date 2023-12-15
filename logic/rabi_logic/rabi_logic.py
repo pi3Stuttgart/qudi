@@ -154,6 +154,7 @@ class RabiLogic(GenericLogic,rabi_default):
         data_matrix['Detection Time + Tau'] = self.scanmatrix
 
         parameters = OrderedDict()
+        parameters['Runtime)'] = self.starting_time-time.time()
         parameters['Enable Microwave1 (bool)'] = self.rabi_MW1
         parameters['Enable Microwave2 (bool)'] = self.rabi_MW2
         parameters['Enable Microwave3 (bool)'] = self.rabi_MW3

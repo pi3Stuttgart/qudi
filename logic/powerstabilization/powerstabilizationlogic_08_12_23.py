@@ -65,7 +65,6 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
         self.stabilizing= False
         self.SigStabilized.emit()
         pass
-        #TODO: deactivate hardware
 
     @property
     def TargetPower(self):

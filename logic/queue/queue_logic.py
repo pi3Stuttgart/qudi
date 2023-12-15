@@ -35,7 +35,8 @@ import numpy as np
 import logging
 
 import collections
-
+import importlib
+import logic.ODMR_nops as odmr; importlib.reload(odmr)
 
 class ScriptQueueStep:
     def __init__(self, name, pd):
@@ -123,6 +124,7 @@ class queue_logic(GenericLogic):
     confocal = Connector('ConfocalLogic')
     gated_counter = Connector('GatedCounter') # Should be name of the class.
     optimizer= Connector('OptimizerLogic')
+    fastcounter = Connector(interface='TimeTaggerInterface')
     PLE_logic= Connector("LaserScannerLogic")
     odmr_logic= Connector("ODMRLogic_holder")
     poimanagerlogic = Connector('PoiManagerLogic')
@@ -160,10 +162,13 @@ class queue_logic(GenericLogic):
         self._powerstabilization_logic = self.powerstabilization_logic()
         self._poimanagerlogic = self.poimanagerlogic()
         self._counter=self.counterlogic1()
+        self._fast_counter_device = self.fastcounter()  # FIXME
+        self.create_odmr()  #only logic (no gui)
         self.init_run()
         self.write_standard_awg_sequences()
         self._confocal = self.confocal()
         self.tt = self._transition_tracker
+
     def on_deactivate(self):
         pass
         #FIXME destroy me gently
@@ -325,7 +330,7 @@ class queue_logic(GenericLogic):
         ## Why this is needed??????
 
         #from tools_2 import emod
-        #emod.JobManager().start()
+        #emod.JobManager().start() ## maybe this is something which makes multiple sequences actuakly working.
 
         # start the CronDaemon
         #from tools_2 import cron
@@ -463,6 +468,11 @@ class queue_logic(GenericLogic):
         if self.q.qsize() > 0:
             del self.script_queue[-1]
             self.q.get()
+
+    def create_odmr(self):
+
+        self.odmr = odmr.ODMR(self)
+
 
     def init_task(self, name, folder=None):
         folder = self.user_script_folder if folder is None else folder

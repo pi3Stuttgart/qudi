@@ -95,16 +95,23 @@ class GatedCounterGui(GUIBase):
         self._gp.setLabel('bottom', 'Number of Gates', units='#')
 
         # Create an empty plot curve to be filled later, set its pen
-        self._trace1 = self._gp.plot()
-        self._trace1.setPen(palette.c1)
+        self._trace1=[]
+        colors = [palette.c2,palette.c4,palette.c6]
+        for i in range(3):
+            self._trace1.append(self._gp.plot())
+            self._trace1[i].setPen(colors[i])
 
         self._hp = self._mw.histogram_PlotWidget
         self._hp.setLabel('left', 'Occurrences', units='#')
         self._hp.setLabel('bottom', 'Counts', units='counts/s')
 
-        self._histoplot1 = pg.PlotCurveItem()
-        self._histoplot1.setPen(palette.c1)
-        self._hp.addItem(self._histoplot1)
+
+        self._histoplot1=[]
+        self.colors_fill=[pg.mkColor(102, 94, 252, 100), pg.mkColor(255, 175, 43,100), pg.mkColor(255, 81, 152,100)]
+        for i in range(3):
+            self._histoplot1.append(pg.PlotCurveItem())
+            self._histoplot1[i].setPen(colors[i])
+            self._hp.addItem(self._histoplot1[i])
 
 
         # Configure the fit of the data in the main pulse analysis display:
@@ -192,7 +199,7 @@ class GatedCounterGui(GUIBase):
         # QtCore.Qt.AllDockWidgetAreas        DockWidgetArea_Mask
         # QtCore.Qt.NoDockWidgetArea          0
 
-        self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(4), self._mw.control_param_DockWidget)
+        #self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(4), self._mw.control_param_DockWidget)
         self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(8), self._mw.count_trace_DockWidget)
         self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(8), self._mw.histogram_DockWidget)
 
@@ -200,7 +207,7 @@ class GatedCounterGui(GUIBase):
             """ Handling the Start button to stop and restart the counter. """
             print("start clicked")
         #if self._counter_logic.module_state() != 'locked':
-            self.sigStartGatedCounter.emit()
+            #self.sigStartGatedCounter.emit()
             self._mw.start_counter_Action.setEnabled(False)
             self._mw.stop_counter_Action.setEnabled(True)
 
@@ -208,7 +215,7 @@ class GatedCounterGui(GUIBase):
             """ Handling the Stop button to stop and restart the counter. """
 
         #if self._counter_logic.module_state() == 'locked':
-            self.sigStopGatedCounter.emit()
+            #self.sigStopGatedCounter.emit()
             self.reset_toolbar_display()
 
     def reset_toolbar_display(self):
@@ -247,19 +254,19 @@ class GatedCounterGui(GUIBase):
         """
         self._counter_logic.set_counting_samples(samples=self._mw.count_per_readout_SpinBox.value())
 
-    def update_trace(self, trace):
+    def update_trace(self, i,trace):
         """ The function that grabs the data and sends it to the plot. """
 
         #if self._counter_logic.module_state() == 'locked':
-        self._trace1.setData(x=np.arange(0, trace.shape[0]),
+        self._trace1[i].setData(x=np.arange(0, trace.shape[0]),
                                  y=trace)
 
-    def update_histogram(self, bins, hist):
+    def update_histogram(self, i,bins, hist):
         """ Update procedure for the histogram to display the new data. """
-        self._histoplot1.setData(x=bins,
+        self._histoplot1[i].setData(x=bins,
                                  y=hist,
                                  stepMode=True, fillLevel=0,
-                                 brush=palettedark.c1)
+                                 brush=self.colors_fill[i])
 
     def num_bins_changed(self, num_bins):
         """
@@ -306,8 +313,9 @@ class GatedCounterGui(GUIBase):
         number_of_subtraces: multiple readouts in 1 sequence
         '''
         try:
-            self._trace1.clear() #FIXME
-            self._histoplot1.clear()
+            for i in range(number_of_subtraces):
+                self._trace1[i].clear() #FIXME
+                self._histoplot1[i].clear()
             self._fit_image.clear()
         except:
             pass
@@ -321,10 +329,10 @@ class GatedCounterGui(GUIBase):
             import time
             t0 = time.time()
             for nst, st in enumerate(effective_subtrace_list):
-                self.update_trace(st.flatten())
+                self.update_trace(nst,st.flatten())
                 if len(hist_list[nst]) > 0:
                     for h in hist_list[nst]:
-                        self.update_histogram(np.append(np.array([0]),h['bin_edges']), h['hist'])
+                        self.update_histogram(nst,np.append(np.array([0]),h['bin_edges']), h['hist'])
 
         except Exception as e:
             logging.error('Plotting error:'+str(e))
