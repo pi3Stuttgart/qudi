@@ -41,7 +41,7 @@ class GatedCounterMainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         # Get the path to the *.ui file
         this_dir = os.path.dirname(__file__)
-        ui_file = os.path.join(this_dir, 'ui_gated_counter_gui.ui')
+        ui_file = os.path.join(this_dir, 'ui_gated_counter_gui_layout.ui')
 
         # Load it
         super(GatedCounterMainWindow, self).__init__()
@@ -93,7 +93,15 @@ class GatedCounterGui(GUIBase):
         self._gp = self._mw.gated_count_trace_PlotWidget
         self._gp.setLabel('left', 'Counts', units='counts/s')
         self._gp.setLabel('bottom', 'Number of Gates', units='#')
+        x= []
+        y = []
+        self.pg_layout = self._mw.plotlayuowidget
+        # Add subplots
+        self.pg_layout.addPlot(x=x, y=y, pen=None, symbol='x', row=0, col=0, title="SSR1")
+        self.pg_layout.addPlot(x=x, y=y, pen=None, symbol='x', row=1, col=0, title="SSR2")
+        self.pg_layout.addPlot(x=x, y=y, pen=None, symbol='x', row=2, col=0, title="CRC")
 
+        # Show our layout holding multiple subplots
         # Create an empty plot curve to be filled later, set its pen
         self._trace1=[]
         colors = [palette.c2,palette.c4,palette.c6]
@@ -188,9 +196,10 @@ class GatedCounterGui(GUIBase):
     def set_default_view_main_window(self):
         """ Restore the default view and arrangement of the DockWidgets. """
 
-        self._mw.control_param_DockWidget.setFloating(False)
+        #self._mw.control_param_DockWidget.setFloating(False)
         self._mw.count_trace_DockWidget.setFloating(False)
-        self._mw.histogram_DockWidget.setFloating(False)
+        #self._mw.histogram_DockWidget.setFloating(False)
+        self._mw.hist_array_dock_widget.setFloating(False)
 
         # QtCore.Qt.LeftDockWidgetArea        0x1
         # QtCore.Qt.RightDockWidgetArea       0x2

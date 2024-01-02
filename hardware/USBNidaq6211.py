@@ -100,7 +100,7 @@ class streamUSBnidaq(Base, StreamUSBNidaqInterface): #Hardware file
         else:
             print("Setting Outputvoltage to", V, "V.")
             self.task_out.write(V)
-            QtTest.QTest.qSleep(1) # needed at all?
+            QtTest.QTest.qSleep(10) # needed at all?
             self.current_voltage = V
     
     def MultiplegoToVoltage(self, V):

@@ -53,7 +53,7 @@ __LASER_DUR_DICT__ = {'14n+1': .175,
                      '13c5000_A2': 5.,
                      '13c5000': 5.,
                     'single_state': .9, 
-                      'charge_state': 1000.0,
+                      'charge_state': 500.0,
                       'charge_state_ExMW': 2000.0,
                       'charge_state_A1_aom_Ex':2000.0,
                       'ple_A2': 50.0,
@@ -686,7 +686,7 @@ class SSR(object):
             self.compileMW()
 
     def compileMW(self):
-        print('compileMW in snippets_awg')
+        #print('compileMW in snippets_awg')
         aa = dict()
         if self.repetitions != 0:
             self.mcas.start_new_segment(name=self.name,
@@ -713,8 +713,8 @@ class SSR(object):
                 self.mcas.asc(gateMW=True, name='MW', length_mus=0.256-__TT_TRIGGER_LENGTH__)
                 
                 for idx,freq in enumerate(d[1][2]['frequencies']): #d[1][2] means awg, ch2?
-                    print("compileMW in snippets_awg")
-                    print(d[1][2]['frequencies'][idx])
+                    #print("compileMW in snippets_awg")
+                    #print(d[1][2]['frequencies'][idx])
                     pd2g1 = {'frequencies': [d[1][2]['frequencies'][idx]], 'type': 'sine', 'amplitudes': [d[1][2]['amplitudes'][idx]], 'length_mus': d[1][2]['length_mus']}
                     self.mcas.asc(pd2g1=pd2g1, gateMW=True, name='MW', **aa)
 

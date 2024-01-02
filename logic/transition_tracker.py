@@ -34,6 +34,7 @@ from qutip import *
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.optimize import minimize
+from scipy.interpolate import UnivariateSpline
 
 from qtpy import QtCore
 from collections import OrderedDict
@@ -559,8 +560,8 @@ class TransitionTracker(GenericLogic):
     #rabi_logic= Connector(interface='RabiLogic') #why? we do it via nuclear ops.
     odmr_logic= Connector(interface='ODMRLogic_holder') #ok for refocus.
     ple_logic= Connector(interface='LaserScannerLogic') #ok for refocus
-    powerstabilization_logic = Connector(interface='PowerStabilizationLogic') # ok for power calibartion?
-
+    powerstabilization_logic= Connector(interface='PowerStabilizationLogic') #ok for refocus
+    
     update_tt_nuclear_gui = pyqtSignal()
     update_tt_electron_gui = pyqtSignal() #is it connected?
 
@@ -568,14 +569,11 @@ class TransitionTracker(GenericLogic):
         super().__init__(config=config, **kwargs)
 
     def on_activate(self):
-        # super(TransitionTracker, self).__init__()
-        # self.setupUi(self)
-        self._awg = self.mcas_holder()  # mcas_dict()
-        #self._rabi_logic= self.rabi_logic()
+        self._awg = self.mcas_holder()
         self._odmr_logic= self.odmr_logic()
         self._ple_logic= self.ple_logic()
-        self._powerstabilization_logic = self.powerstabilization_logic()
-
+        self._powerstabilization_logic= self.powerstabilization_logic()
+    
         self.connect_signals()  # todo
         # title = '' if title is None else title
         # self.setWindowTitle(title)
@@ -649,11 +647,11 @@ class TransitionTracker(GenericLogic):
         #print(pi_dur)
         #self.current_local_oscillator_freq=pi_dur
 
-
     def connect_signals(self):
         #self._rabi_logic.sigFitPerformed.connect(self.update_rabi)
         self._odmr_logic.sigFitPerformed.connect(self.update_ODMR)
         self._ple_logic.sigFitPerformed.connect(self.update_ple)
+        #self._powerstabilization_logic.SigPowerCalibrationFinished.connect(self.update_power_calibration)
 
         #self.update_tt_nuclear_gui.connect(self.update_gui_nuclear)
         #self.update_tt_electron_gui.connect(self.update_gui_electron)
@@ -1334,7 +1332,7 @@ class TransitionTracker(GenericLogic):
                 f.append(a)
         ff = list(product(*f))
         mfl = np.array(sorted([mwfm + sum(fff) for fff in ff if not np.size(fff) == 0]))
-
+        print(mfl,'TT:why it is 3000?')
         #here do some ms?
         if ms_trans in ['right', '+1']:
             return mfl - self.mw_mixing_frequency_L + self.mw_mixing_frequency_R

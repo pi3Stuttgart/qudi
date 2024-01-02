@@ -415,6 +415,9 @@ class PlotData(qudip_enhanced.qtgui.gui_helpers.WithQt):
         elif self.fit_function == 'cosine':
             from . import lmfit_custom_models
             mod = lmfit_custom_models.CosineModel()
+        elif self.fit_function =='sinc':
+            from . import lmfit_custom_models
+            mod = lmfit_custom_models.SincModel()
         elif self.fit_function == 'exp':
             pass
         elif self.fit_function == 'lorentz':

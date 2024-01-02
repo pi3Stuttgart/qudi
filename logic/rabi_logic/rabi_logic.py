@@ -25,6 +25,7 @@ from collections import OrderedDict
 import matplotlib.pyplot as plt
 import datetime
 import hardware.Keysight_AWG_M8190.elements as E
+import notebooks.UserScripts.helpers.snippets_awg as sna
 
 class RabiLogic(GenericLogic,rabi_default):
     #declare connectors
@@ -152,9 +153,10 @@ class RabiLogic(GenericLogic,rabi_default):
         data_detection['Detection Time (ns)'] = self.measured_times*1e9 # save in [ns]
         data_detection['Detection Counts (counts)'] = self.data_detect
         data_matrix['Detection Time + Tau'] = self.scanmatrix
-
         parameters = OrderedDict()
-        parameters['Runtime)'] = self.starting_time-time.time()
+
+        
+        parameters['Runtime)'] = time.time()-self.starting_time # TODO This does not work with continue measurement
         parameters['Enable Microwave1 (bool)'] = self.rabi_MW1
         parameters['Enable Microwave2 (bool)'] = self.rabi_MW2
         parameters['Enable Microwave3 (bool)'] = self.rabi_MW3
@@ -472,7 +474,7 @@ class RabiLogic(GenericLogic,rabi_default):
             seq.start_new_segment("Init")
             
             if (self.rabi_A1 or self.rabi_A2) and (self.rabi_MW2 or self.rabi_MW3):
-                seq.asc(name="init_sine"+str(duration),pd2g1 = {"type":"sine", "frequencies":freq_init, "amplitudes":power_init},
+                seq.asc(name="init_sine"+str(duration), pd2g1 = {"type":"sine", "frequencies":freq_init, "amplitudes":power_init},
                         A1=self.rabi_A1,
                         A2=self.rabi_A2,
                         gateMW=True,

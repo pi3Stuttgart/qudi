@@ -77,8 +77,10 @@ class NuclearOPs(DataGeneration):
         self.do_confocal_repump_refocus = False
         self.do_confocal_A1A2_refocus = False
         self.do_confocal_A2MW_refocus = False
-        self.checkA1LaserPower = False
-        self.checkA2LaserPower = False
+        self.check_A1_power = False
+        self.check_A2_power = False
+        self.set_A1_power = False
+        self.set_A2_power = False
         self.A1LaserPower = 1 #nW
         self.A2LaserPower = 1 #nW
         #
@@ -387,6 +389,9 @@ class NuclearOPs(DataGeneration):
                         print("Current Time =", current_time)
                         print("Countrate too high. Assuming hearting of photon detector. Going to sleep for 1min.")
                         QtTest.QTest.qSleep(60000)
+
+                    if self.set_A1_power or self.set_A2_power:
+                        self.set_laser_power(abort)
 
                     if self.do_ple_refocusA2 or self.do_ple_refocusA1:
                         self.do_refocus_ple(abort)
@@ -728,12 +733,6 @@ class NuclearOPs(DataGeneration):
         delta_t = time.time() - self.last_ple_refocus
 
         if (delta_t>= self.ple_refocus_interval):
-            if 'A2_power' in self.current_iterator_df:
-                a2power = self.current_iterator_df['A2_power']
-            else:
-                a2power = 0
-                print("No laserpower in Iterator. Check for bugs. Is laserpower set correctly?")
-            self.queue._awg.mcas_dict.stop_awgs()
 
             if self.do_ple_refocusA1:
                 self.do_refocus_pleA1(abort)
@@ -746,44 +745,57 @@ class NuclearOPs(DataGeneration):
             self.last_ple_refocus = time.time()
             self.queue._awg.mcas_dict.stop_awgs()
             QtTest.QTest.qSleep(1000)
-            
-            if self.checkA1LaserPower:
-                print("A1 POWER STAB = TRUE")
-                #somewhere the output voltage is set to 1 at beginning of stabilization
-                #self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,["A1"],0,0))
-                self.queue._awg.mcas_dict['A1'].run()
-                self.queue._powerstabilization_logic.controlA1 = True
-                self.queue._powerstabilization_logic.controlA2 = False
-                self.queue._powerstabilization_logic.TargetPower = self.A1LaserPower
-                self.queue._powerstabilization_logic.start_control
-                start_time = time.time()
-                while self.queue._powerstabilization_logic.stabilizing:
-                    QtTest.QTest.qSleep(100)
-                    if abort.is_set(): break
-                    if start_time - time.time() > 30:
-                        logging.getLogger().info('Could not reach desired A1-laserpower in reasonable time. Set analog voltage to 0.5V.')
-                        self.queue._powerstabilization_logic.A1Voltage = 0.5
-                        self.queue._powerstabilization_logic.set_fix_voltage(tag="A1")               
-                self.queue._awg.mcas_dict.stop_awgs()
-            if self.checkA2LaserPower:
-                self.queue._awg.mcas_dict['A2'].run() #probably is not registered in setupcontrol logic --> this would turn off the laser when updating the analog voltage
-                self.queue._powerstabilization_logic.controlA2 = True
-                self.queue._powerstabilization_logic.controlA1 = False
-                self.queue._powerstabilization_logic.TargetPower = a2power#self.A2LaserPower
-                self.queue._powerstabilization_logic.start_control
-                start_time = time.time()
-                while self.queue._powerstabilization_logic.stabilizing:
-                    QtTest.QTest.qSleep(500)
-                    #print("abort: ", abort.is_set())
-                    if abort.is_set(): break
-                    elif start_time - time.time() > 30:
-                        logging.getLogger().info('Could not reach desired A2-laserpower in reasonable time. Set analog voltage to 1V.')
-                        self.queue._powerstabilization_logic.A2Voltage = 1
-                        self.queue._powerstabilization_logic.set_fix_voltage(tag="A2")
-                print("Done stabilizing. Turning laser off now...")             
-                self.queue._awg.mcas_dict.stop_awgs()
-        
-            
+        return
+
+    def set_laser_power(self, abort):
+        if 'A2_power' in self.current_iterator_df:
+            a2power = float(max(self.current_iterator_df['A2_power']))
+        else:
+            a2power = 0
+            print("No laserpower in Iterator. Check for bugs. Is laserpower set correctly?")
+        self.queue._awg.mcas_dict.stop_awgs()
+
+        if self.check_A1_power:
+            print("A1 POWER STAB = TRUE")
+            # somewhere the output voltage is set to 1 at beginning of stabilization
+            # self.queue._awg.mcas_dict.awgs["ps"].constant(pulse=(0,["A1"],0,0))
+            self.queue._awg.mcas_dict['A1'].run()
+            self.queue._powerstabilization_logic.controlA1 = True
+            self.queue._powerstabilization_logic.controlA2 = False
+            self.queue._powerstabilization_logic.TargetPower = self.A1LaserPower
+            self.queue._powerstabilization_logic.start_control
+            start_time = time.time()
+            QtTest.QTest.qSleep(1000)
+            while self.queue._powerstabilization_logic.stabilizing:
+                QtTest.QTest.qSleep(500)
+                if abort.is_set(): break
+                if start_time - time.time() > 30:
+                    logging.getLogger().info(
+                        'Could not reach desired A1-laserpower in reasonable time. Set analog voltage to 0.5V.')
+                    self.queue._powerstabilization_logic.A1Voltage = 0.5
+                    self.queue._powerstabilization_logic.set_fix_voltage(tag="A1")
+            self.queue._awg.mcas_dict.stop_awgs()
+        if self.check_A2_power:
+            print("Start A2 laser for Powerstab in Nuclear OPs")
+            self.queue._awg.mcas_dict['A2'].run()
+            print("A2 power to set", a2power)
+            #self.queue._powerstabilization_logic.TargetPower = a2power  # self.A2LaserPower
+            print("Starting power stab via NuclearOps")
+            self.queue._powerstabilization_logic.set_power(a2power)#start_control
+            # start_time = time.time()
+            QtTest.QTest.qSleep(1000)
+            # while self.queue._powerstabilization_logic.stabilizing:
+            #     QtTest.QTest.qSleep(500)
+            #     # print("abort: ", abort.is_set())
+            #     if abort.is_set():
+            #         break
+            #     elif start_time - time.time() > 30:
+            #         logging.getLogger().info(
+            #             'Could not reach desired A2-laserpower in reasonable time. Set analog voltage to 1V.')
+            #         self.queue._powerstabilization_logic.A2Voltage = 1
+            #         self.queue._powerstabilization_logic.set_fix_voltage(tag="A2")
+            # print("Done stabilizing. Turning laser off now...")
+            self.queue._awg.mcas_dict.stop_awgs()
         return
 
     def do_refocus_pleA2(self, abort): #CHANGED! commented what belonged to wavemeter
@@ -803,7 +815,7 @@ class NuclearOPs(DataGeneration):
         volt_before=self.queue._PLE_logic._static_v
         self.queue._PLE_logic.happy=True
 
-        while counts_before * 0.9 > counts_after:
+        while counts_before * 0.5 > counts_after: #This is keeping refocusing forever! if ple moved e.g.?
             self.queue._PLE_logic.start_scanning()
             while not self.queue._PLE_logic.stopped: #TODO - make here prone to PLE crashed
                 # TODO ADD ABORT
@@ -814,10 +826,10 @@ class NuclearOPs(DataGeneration):
             counts_after = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
             print('average counts before refocus:')
             print(counts_before)
-            print('average counts After refocus:')
+            print('average counts After refocus No '+str(repetitions)+':')
             print(counts_after)
             self.queue._awg.mcas_dict.stop_awgs()
-            if repetitions > 5:
+            if repetitions > 1:
                 print("*********************************************PLE REFOCUS WAS NOT SUCCESSFUL AFTER 5 ITERATIONS ******************************************")
                 # if self.mode==1:
                 #     self.queue._PLE_logic._static_v=volt_before
@@ -947,15 +959,15 @@ class NuclearOPs(DataGeneration):
             print('average counts before refocus')
             print(counts_before)
             repetitions = 0
-            while counts_before * 0.9 > counts_after:
+            while counts_before * 0.5 > counts_after: #What if PLE is misaligned?
                 self.queue._optimizer.start_refocus(initial_pos = self.queue._confocal.get_position(), caller_tag = caller_tag)
                 while not self.queue._optimizer.refocus_finished:
                     QtTest.QTest.qSleep(250)
                 QtTest.QTest.qSleep(6000)
                 counts_after = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
-                print('average counts after refocus')
+                print('average counts after refocus No'+str(repetitions))
                 print(counts_after)
-                if abort.is_set() or repetitions >3: break
+                if abort.is_set() or repetitions >1: break
                 repetitions +=1
             
             self.last_red_confocal_refocus = time.time()

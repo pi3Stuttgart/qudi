@@ -7,7 +7,6 @@ from PyQt5 import QtTest
 import numpy as np
 from core.statusvariable import StatusVar
 from scipy.ndimage.interpolation import shift
-from scipy.interpolate import InterpolatedUnivariateSpline
 from logic.powerstabilization.default_values_and_widget_functions import powerstabilization_default as powerstabilization_default
 
 
@@ -25,14 +24,14 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
 
     streamUSBnidaq = Connector(interface='StreamUSBNidaqInterface')
     setupcontrollogic1 = Connector(interface='SetupControlLogic')
-    #transition_tracker = Connector(interface='TransitionTracker')
 
     # Declare signals
-    SigStabilized=QtCore.Signal()
     SigUpdatePlots=QtCore.Signal()
-    SigStartPowerCalibration=QtCore.Signal()
+    SigStartControl = QtCore.Signal()
+    SigStabilized = QtCore.Signal()
     SigPidProc = QtCore.Signal()
-    SigPowerCalibrationFinished=QtCore.Signal(list, list) # [voltage], [power]
+    SigStopControl = QtCore.Signal()
+    #SigUpdatePulseStreamer=QtCore.Signal()
     _TargetPower=0
 
     voltage_offset = StatusVar('voltage_offset', 0.0)
@@ -40,27 +39,33 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
     def on_activate(self):
         self._streaming_device = self.streamUSBnidaq() #Insert device for init
         self._setupcontrol_logic= self.setupcontrollogic1() # For turning on lasers and Setting Analog PS Output.
-        #self._transition_tracker= self.transition_tracker() # For turning on lasers and Setting Analog PS Output.
+        self.SigStartControl.connect(self.start_control,type=QtCore.Qt.QueuedConnection)
         self.SigPidProc.connect(self.pid_processing,type=QtCore.Qt.QueuedConnection)
-        
-        self.SigStartPowerCalibration.connect(self.calibrate_power,type=QtCore.Qt.QueuedConnection)
-        
+        #self.SigUpdatePulseStreamer.connect(self._setupcontrol_logic.write_to_pulsestreamer,type=QtCore.Qt.QueuedConnection)
+
         self.current_output_voltage=self._setupcontrol_logic.AOM_volt
         
-        self.voltage_min = 0
-        self.voltage_max = 1
-        self.number_steps = 51
-
-        self.power_list=np.zeros(self.datapoints)
+        #self.voltage_list=[]
         self.voltage_list=np.zeros(self.datapoints)
+        self.power_list=np.zeros(self.datapoints)
+        self.pid1_out_list=[]
+        self.setpoint1_list=[]
+        #self.time_list=[]
+        self.actual_time_list=[]
+        self.time_step=0
         
+        self.pid1 = PID.PID(float(self.P1_var), float(self.I1_var), float(self.D1_var))
+        self.pid1.setSampleTime(0.01)
+
         self._streaming_device.start_acquisition()
         self.SigPidProc.emit()
-
-        self.load_calibration()
+        
 
     def on_deactivate(self):
         self.stabilizing= False
+        self.SigStabilized.emit()
+        pass
+        #TODO: deactivate hardware
 
     @property
     def TargetPower(self):
@@ -75,54 +80,48 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
     def TargetPower(self,val):
         del self._TargetPower
 
-    @QtCore.pyqtSlot()
-    def calibrate_power(self):
-        self._setupcontrol_logic._awg.mcas_dict.stop_awgs()
-        QtTest.QTest.qSleep(1000)
-        self._setupcontrol_logic._awg.mcas_dict["A2"].run() # TODO: doesnt turn on laser yet. Why?
-        QtTest.QTest.qSleep(1000)
-
-        self.scan_voltage = np.linspace(self.voltage_min, self.voltage_max, self.number_steps)
-        self.scan_power = []
-        print("Started calibration")
-        for volt in self.scan_voltage:
-            print("Current voltage:", volt)
-            self._setupcontrol_logic.AOM_volt=volt #TODO: Add two variables for AOM1 and AOM2. Done via "self.controlA1"
-            self._setupcontrol_logic.write_to_pulsestreamer()
-            QtTest.QTest.qSleep(1000)
-            feedback_voltage=sum(self._streaming_device.buffer_in[0])/len(self._streaming_device.buffer_in[0]) # average of all measured values
-            self.scan_power.append(self.voltage_to_power(np.mean(feedback_voltage)))
-        self.scan_voltage = np.array(self.scan_voltage)
-        self.scan_power = np.array(self.scan_power)
-
-    def set_power(self, wanted_power):
-        extrapolator = InterpolatedUnivariateSpline(self.scan_voltage, self.scan_power-float(wanted_power), k=3)
-        print("Roots of Interpolation:", extrapolator.roots())
-        try:
-            self._setupcontrol_logic.AOM_volt=min(extrapolator.roots())
-            self._setupcontrol_logic.write_to_pulsestreamer()
-        except:
-            print("ERROR MESSAGE HERE. Wanted laserpower cannot be reached.")
-            self._setupcontrol_logic.AOM_volt=.8
+    @QtCore.pyqtSlot() # What is a pyqtSlot?
+    def start_control(self):
+        self.pid1 = PID.PID(float(self.P1_var), float(self.I1_var), float(self.D1_var), output = self._setupcontrol_logic.AOM_volt)
+        self.pid1.setSampleTime(1) #0.01 #does nothing rn?
+        try:  
+            # self.voltage_list=[]
+            # self.power_list=np.zeros(500)
+            # self.pid1_out_list=[]
+            # self.setpoint1_list=[]
+            # self.time_list=[]
+            # self.actual_time_list=[]
+            # self.time=0
+            self.pid1.setKp(float(self.P1_var))
+            self.pid1.setKi(float(self.I1_var))
+            self.pid1.setKd(float(self.D1_var))
+            print("Start Power Control...")
+            self.stabilizing = True
             
-
-    def power_to_voltage(self, power):
-        voltage = power * self.voltage_to_power_ratio + self.voltage_offset,4
-        return voltage
-
-    def voltage_to_power(self, voltage):
-        power = (voltage - self.voltage_offset) / self.voltage_to_power_ratio
-        return power
-
-    def load_calibration(self):#
-        self.scan_voltage = np.array([0.  , 0.02, 0.04, 0.06, 0.08, 0.1 , 0.12, 0.14, 0.16, 0.18, 0.2 , 0.22, 0.24, 0.26, 0.28, 0.3 , 0.32, 0.34, 0.36, 0.38, 0.4 , 0.42, 0.44, 0.46, 0.48, 0.5 , 0.52, 0.54, 0.56, 0.58, 0.6 , 0.62, 0.64, 0.66, 0.68, 0.7 , 0.72, 0.74, 0.76, 0.78, 0.8 , 0.82, 0.84, 0.86, 0.88, 0.9 , 0.92, 0.94, 0.96, 0.98, 1.  ])
-        self.scan_power = np.array([ 0.1238836 ,  0.12599493,  0.22159166,  0.68937049,  1.54317239,  2.78440493,  4.25741556,  5.93053428,  7.6515102 ,  9.36321997, 11.040093  , 12.60412704, 14.31536895, 15.89324504, 17.36590648, 18.69018796, 19.92368213, 21.08022998, 21.99455996, 22.78220943, 23.62451957, 24.30050268, 25.23735482, 25.50397125, 26.02136908, 26.40258496, 26.75647065, 26.99083052, 27.24407526, 27.1358099 , 27.37357142, 27.56629082, 27.6788962 , 27.97683129, 28.00275399, 28.0284421 , 28.28110047,
-       28.34713886, 28.45129887, 28.45681184, 28.43346968, 28.67029297, 28.7260092 , 28.5505324 , 28.47112212, 28.48613617, 28.26315399, 28.23863885, 28.44942211, 28.27781615, 28.20028263])
-
+        except Exception as error:
+            print("An error occured in powerstabilization, aborting... ")
+            print("++++++++++++++ error message:   ++++++++++++++++\n")
+            print(error)
+            print("After aborting set voltage to 0.")
+            self.stabilizing= False
+            self.SigStabilized.emit()
+        # else:
+        #     print("Stabilization already running.")
+        #     self.stabilizing= True
+    
+    @QtCore.pyqtSlot()
     def pid_processing(self):
         # measure the voltage and save the trace
         self.feedback_voltage=sum(self._streaming_device.buffer_in[0])/len(self._streaming_device.buffer_in[0]) # average of all measured values
         self.current_power = self.voltage_to_power(self.feedback_voltage)#*1e9 #nW
+
+        if self.stabilizing:
+            self.pid1.SetPoint = self.power_to_voltage(self.TargetPower)
+            self.pid1.update(self.feedback_voltage)
+            self.current_output_voltage = self.pid1.output
+            self._setupcontrol_logic.AOM_volt=self.current_output_voltage #TODO: Add two variables for AOM1 and AOM2. Done via "self.controlA1"
+            self._setupcontrol_logic.write_to_pulsestreamer()
+            #self.SigUpdatePulseStreamer.emit()
 
         # Update lists for plotting
         self.voltage_list = shift(self.voltage_list,-1, cval=self.feedback_voltage) # nowhere used
@@ -158,3 +157,28 @@ class PowerStabilizationLogic(GenericLogic, powerstabilization_default):
 
         QtTest.QTest.qSleep(self.sleep_time) 
         self.SigPidProc.emit() # calling pid_processing again
+
+
+
+    def power_to_voltage(self, power):
+        voltage = power * self.voltage_to_power_ratio + self.voltage_offset
+        return voltage
+
+    def voltage_to_power(self, voltage):
+        power = (voltage - self.voltage_offset) / self.voltage_to_power_ratio
+        return power
+
+    def set_fix_voltage(self, tag):
+        if tag == 'A1':
+            self._streaming_device.goToVoltage(self.A1Voltage)
+        if tag == 'A2':
+            self._setupcontrol_logic.AOM_volt=self.A2Voltage #TODO: Add two variables for AOM1 and AOM2
+            
+    # not used anymore, since we give voltage directly from PulseStreamer
+    def set_fix_voltage(self, tag): # can A2 be set while A1 is controlled via pid_processing?
+        if tag == 'A1':
+            self._streaming_device.goToVoltage(self.A1Voltage)
+        if tag == 'A2':
+            
+            self._streaming_device.goToVoltage(self.A2Voltage)
+        # TODO: Tell hardware file which channel to use
