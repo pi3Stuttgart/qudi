@@ -15,6 +15,7 @@ from logic.rabi_logic.rabi_default_values_and_widget_functions import rabi_defau
 
 
 from qtpy import QtCore
+from PyQt5 import QtTest
 
 import inspect
 import logging
@@ -26,6 +27,7 @@ import matplotlib.pyplot as plt
 import datetime
 import hardware.Keysight_AWG_M8190.elements as E
 import notebooks.UserScripts.helpers.snippets_awg as sna
+import notebooks.UserScripts.helpers.shared as shared
 
 class RabiLogic(GenericLogic,rabi_default):
     #declare connectors
@@ -81,6 +83,12 @@ class RabiLogic(GenericLogic,rabi_default):
         self.counter=self._time_tagger.counter()
         self.time_differences = self._time_tagger.time_differences()
         self.scanmatrix=np.zeros(np.array(self.time_differences.getData(),dtype=object).shape)
+        self.fit_data = np.zeros_like(self.scanmatrix)[0]
+        self.interpolated_x_data = np.linspace(0,1,len(self.fit_data))
+        self.Amplitude_Fit:str=''
+        self.Frequency_Fit:str=''
+        self.Phase_Fit:str=''
+        self.tau_pulse:float=0 #ns
         self.SigCheckReady_Beacon.connect(self.get_data)
    
         self.syncing=False
@@ -197,7 +205,7 @@ class RabiLogic(GenericLogic,rabi_default):
             data_matrix['Detection Time + Tau'],
             data_detection['Detection Time (ns)'],
             data_detection['Detection Counts (counts)'],
-            self.interplolated_x_data,
+            self.interpolated_x_data,
             self.fit_data,
             cbar_range=colorscale_range,
             percentile_range=percentile_range
@@ -362,168 +370,369 @@ class RabiLogic(GenericLogic,rabi_default):
         return V_pp / self._awg.mcas_dict.awgs['2g'].ch[1].output_amplitude
         #return V_pp / float(self.awg_device.amp1) #awg_amplitude
 
+
+    # ### THIS WAS USED TO MEASURE SSR TRACE ###
+    # def setup_seq(
+    #         self,
+    #         rabi_Tau_Min=None,
+    #         rabi_Tau_Max=None,
+    #         rabi_Tau_Step=None,
+    #         rabi_Tau_Decay=None,
+
+    #         rabi_MW1=None,
+    #         rabi_MW1_Freq=None,
+    #         rabi_MW1_Power=None,
+    #         rabi_MW2=None,
+    #         rabi_MW2_Freq=None,
+    #         rabi_MW2_Power=None,
+    #         rabi_MW3=None,
+    #         rabi_MW3_Freq=None,
+    #         rabi_MW3_Power=None,
+    #         rabi_MW4=None,
+    #         rabi_MW4_Freq=None,
+    #         rabi_MW4_Power=None,
+    #         rabi_MW4_Duration=None,
+    #         rabi_MW5=None,
+    #         rabi_MW5_Freq=None,
+    #         rabi_MW5_Power=None,
+    #         rabi_MW5_Duration=None,
+
+    #         rabi_A1=None,
+    #         rabi_A2=None,
+    #         rabi_A1Readout=None,
+    #         rabi_A2Readout=None,
+    #         rabi_InitTime=None,
+    #         rabi_DecayInit=None,
+    #         rabi_RepumpDecay=None,
+    #         rabi_CWRepump=None,
+    #         rabi_PulsedRepump=None,
+    #         rabi_RepumpDuration=None,
+    #         rabi_AOMDelay=None,
+    #         rabi_IntegrationTime=None,
+    #         rabi_Binning=None,
+    #         rabi_Interval=None,
+    #         rabi_PeriodicSaving=None,
+    #         rabi_Stoptime=None,
+
+    #         rabi_ReadoutTime=None,
+    #         rabi_ReadoutDecay=None
+    # ):
+    #     gateMW_dur = 0.256
+    #     self.round_to = 16
+    #     round_to = self.round_to
+
+    #     trans = {'L1': 3837.874445, 'L2': 3846.570445, 'C1': 3907.7906053279216, 'C2': 3916.438605327922,
+    #              'R1': 3977.480326, 'R2': 3986.160326}
+
+    #     ancient_self_variables = {}
+    #     sig = inspect.signature(self.setup_seq)
+    #     for parameter in sig.parameters.keys():
+    #         # print(parameter)
+    #         exec(f"ancient_self_variables['{parameter}']=self.{parameter}")
+    #         if locals()[parameter] != None:
+    #             exec(f"self.{parameter}={parameter}")
+
+    #     # Setup list of all frequencies which the sequence should output.
+    #     self.tau_duration = np.arange(self.rabi_Tau_Min, self.rabi_Tau_Max + self.rabi_Tau_Step, self.rabi_Tau_Step) / 1000
+    #     self.time_differences.stop()
+    #     QtTest.QTest.qSleep(200)
+
+    #     self.time_differences = self.setup_time_tagger(n_histograms=len(self.tau_duration),
+    #                                                    binwidth=int(self.rabi_Binning * 1000),
+    #                                                    # rabi_Binning input is in ns.
+    #                                                    n_bins=int(self.rabi_ReadoutTime / self.rabi_Binning)
+    #                                                    )
+
+
+
+    #     seq = self._awg.mcas(name="Rabi", ch_dict={"2g": [1, 2], "ps": [1]})
+    #     # generate segment of repump which starts at each repetition of the sequence.
+    #     seq.start_new_segment("Start")
+
+    #     ### Start counting ###
+    #     seq.asc(name='tt_sync1', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to),
+    #             memory=True)  # Set histogram index to 0
+    #     seq.asc(name='wait', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to))
+    #     seq.asc(name='tt_sync2', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to),
+    #            gate=True)  # increment histogram index
+    #     seq.asc(name='wait', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to))
+    #     seq.asc(name='tt_sync2', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to),
+    #            gate=True)  # increment histogram index
+        
+    #     ### Repump ###
+    #     seq.asc(length_mus=5, repump=True, name='Repump')
+    #     seq.asc(length_mus=5, repump=False, name='RepumpDecay')
+
+    #     ### Init electron spin ###
+    #     loops, correction_mus = shared.calculate_loop_count(50, 5)
+    #     seq.start_new_segment(name='init', loop_count=loops)
+    #     seq.asc(
+    #         A2=True,
+    #         gateMW=True,
+    #         length_mus=E.round_length_mus_to_x_multiple_ps(10),
+    #         name='resonant_init',
+    #         pd2g1={'type': 'sine', 'phases': [0], 'amplitudes': [0.3,0.3], 'frequencies': [3837.874445, 3846.570445]},
+    #     )
+    #     seq.start_new_segment(name='sequence', loop_count=1)
+    #     seq.asc(length_mus=E.round_length_mus_to_x_multiple_ps(1), name='Init Decay')
+
+    #     ### CnNOTe ###
+    #     seq.asc(length_mus=E.round_length_mus_to_x_multiple_ps(0.256), gateMW=True)
+    #     sna.electron_rabi(
+    #         seq,
+    #         new_segment=False,
+    #         gateMW=True,
+    #         length_mus=E.round_length_mus_to_x_multiple_ps(0.512),
+    #         amplitudes=[0.80586849],
+    #         frequencies=[3846.570445],
+    #         mixer_deg=[-90]
+    #     )
+
+    #     ### Flip Nuc spin ###
+    #     seq.asc(length_mus=E.round_length_mus_to_x_multiple_ps(1), name='RFSafetyWait1')
+    #     seq.asc(
+    #         length_mus=E.round_length_mus_to_x_multiple_ps(28.5),
+    #         name='nuc',
+    #         pd2g2={"type": "sine", "frequencies": [5.512 + 0.0021], "amplitudes": [0.5], "phases": [0],
+    #                 "phase_type_offset": 'absolute'}
+    #     )
+    #     seq.asc(length_mus=E.round_length_mus_to_x_multiple_ps(5), name='RFSafetyWait2')
+
+    #     ### Init electron spin to bring AOM into steady state ###
+    #     loops, correction_mus = shared.calculate_loop_count(500, 5)
+    #     seq.start_new_segment(name='init', loop_count=loops)
+    #     seq.asc(
+    #         A2=True,
+    #         gateMW=True,
+    #         length_mus=E.round_length_mus_to_x_multiple_ps(10),
+    #         name='resonant_init',
+    #         pd2g1={'type': 'sine', 'phases': [0], 'amplitudes': [0.3,0.3], 'frequencies': [3837.874445, 3846.570445]},
+    #     )
+    #     seq.start_new_segment(name='sequence', loop_count=1)
+    #     seq.asc(length_mus=E.round_length_mus_to_x_multiple_ps(1), name='Init Decay')
+
+        
+    #     ### Rep readout
+    #     #number_reps = 1
+    #     # seq.asc(name='readout_decay', length_mus=E.round_length_mus_to_x_multiple_ps(0.016), gate=True)
+    #     #for reps in range(number_reps):
+    #     seq.start_new_segment(name='init', loop_count=len(self.tau_duration))
+    #     seq.asc(gateMW=True, name='gateMW', length_mus=0.256)
+    #     pd2g1 = {'frequencies': [trans['L1']], 'type': 'sine',
+    #             'amplitudes': [0.80586849], 'length_mus': 0.512}
+    #     seq.asc(pd2g1=pd2g1, gateMW=True, name='MW')
+    #     pd2g1 = {'frequencies': [trans['R1']], 'type': 'sine',
+    #             'amplitudes': [0.7652966], 'length_mus': 0.512}
+    #     seq.asc(pd2g1=pd2g1, gateMW=True, name='MW')
+    #     seq.asc(length_mus=E.round_length_mus_to_x_multiple_ps(14.976), A2=True, name='Laser A2')
+    #     seq.asc(length_mus=E.round_length_mus_to_x_multiple_ps(1.024), name='Count')
+
+
+    #     seq.start_new_segment(name='decay', loop_count=1)
+    #     seq.asc(name='decay', length_mus=E.round_length_mus_to_x_multiple_ps(0.016))
+            
+    #     # self.awg.mcas.status = 1
+    #     self._awg.mcas_dict.stop_awgs()
+    #     self._awg.mcas_dict['Rabi'] = seq
+    #     self._awg.mcas_dict.print_info()
+    #     self._awg.mcas_dict['Rabi'].run()
+    #     for key, val in ancient_self_variables.items():  # restore the ancient variables
+    #         exec(f"self.{key}={val}")
     def setup_seq(
-        self,
-        rabi_Tau_Min=None,
-        rabi_Tau_Max=None,
-        rabi_Tau_Step=None,
-        rabi_Tau_Decay=None,
-
-        rabi_MW1=None,
-        rabi_MW1_Freq=None,
-        rabi_MW1_Power=None,
-        rabi_MW2=None,
-        rabi_MW2_Freq=None,
-        rabi_MW2_Power=None,
-        rabi_MW3=None,
-        rabi_MW3_Freq=None,
-        rabi_MW3_Power=None,
-        rabi_MW4=None,
-        rabi_MW4_Freq=None,
-        rabi_MW4_Power=None,
-        rabi_MW4_Duration=None,
-        rabi_MW5=None,
-        rabi_MW5_Freq=None,
-        rabi_MW5_Power=None,
-        rabi_MW5_Duration=None,
-
-        rabi_A1=None,
-        rabi_A2=None,
-        rabi_A1Readout=None,
-        rabi_A2Readout=None,
-        rabi_InitTime=None,
-        rabi_DecayInit=None,
-        rabi_RepumpDecay=None,
-        rabi_CWRepump=None,
-        rabi_PulsedRepump=None,
-        rabi_RepumpDuration=None,
-        rabi_AOMDelay=None,
-        rabi_IntegrationTime=None,
-        rabi_Binning=None,
-        rabi_Interval=None,
-        rabi_PeriodicSaving=None,
-        rabi_Stoptime=None,
-
-        rabi_ReadoutTime=None,
-        rabi_ReadoutDecay=None
-        ):
+            self,
+            rabi_Tau_Min=None,
+            rabi_Tau_Max=None,
+            rabi_Tau_Step=None,
+            rabi_Tau_Decay=None,
+    
+            rabi_MW1=None,
+            rabi_MW1_Freq=None,
+            rabi_MW1_Power=None,
+            rabi_MW2=None,
+            rabi_MW2_Freq=None,
+            rabi_MW2_Power=None,
+            rabi_MW3=None,
+            rabi_MW3_Freq=None,
+            rabi_MW3_Power=None,
+            rabi_MW4=None,
+            rabi_MW4_Freq=None,
+            rabi_MW4_Power=None,
+            rabi_MW4_Duration=None,
+            rabi_MW5=None,
+            rabi_MW5_Freq=None,
+            rabi_MW5_Power=None,
+            rabi_MW5_Duration=None,
+    
+            rabi_A1=None,
+            rabi_A2=None,
+            rabi_A1Readout=None,
+            rabi_A2Readout=None,
+            rabi_InitTime=None,
+            rabi_DecayInit=None,
+            rabi_RepumpDecay=None,
+            rabi_CWRepump=None,
+            rabi_PulsedRepump=None,
+            rabi_RepumpDuration=None,
+            rabi_AOMDelay=None,
+            rabi_IntegrationTime=None,
+            rabi_Binning=None,
+            rabi_Interval=None,
+            rabi_PeriodicSaving=None,
+            rabi_Stoptime=None,
+    
+            rabi_ReadoutTime=None,
+            rabi_ReadoutDecay=None
+    ):
         gateMW_dur = 0.256
         self.round_to = 16
         round_to = self.round_to
-
-        ancient_self_variables={}
-        sig=inspect.signature(self.setup_seq)
+    
+        ancient_self_variables = {}
+        sig = inspect.signature(self.setup_seq)
         for parameter in sig.parameters.keys():
-            #print(parameter)
+            # print(parameter)
             exec(f"ancient_self_variables['{parameter}']=self.{parameter}")
-            if locals()[parameter]!=None:
+            if locals()[parameter] != None:
                 exec(f"self.{parameter}={parameter}")
-                #print(parameter)
-                #exec(f'print(self.{parameter})')
-
+                # print(parameter)
+                # exec(f'print(self.{parameter})')
+    
         # Setup list of all frequencies which the sequence should output.
-        self.tau_duration = np.unique(E.round_length_mus_to_x_multiple_ps(np.arange(self.rabi_Tau_Min,self.rabi_Tau_Max+self.rabi_Tau_Step,self.rabi_Tau_Step)/1000))
+        self.tau_duration = np.unique(E.round_length_mus_to_x_multiple_ps(
+            np.arange(self.rabi_Tau_Min, self.rabi_Tau_Max + self.rabi_Tau_Step, self.rabi_Tau_Step) / 1000))
         self.time_differences.stop()
-        time.sleep(0.02) #maybe the timetagger would get too much commands at the same time
-
-        self.time_differences=self.setup_time_tagger(n_histograms=len(self.tau_duration),
-            binwidth=int(self.rabi_Binning*1000), #rabi_Binning input is in ns.
-            n_bins=int(self.rabi_ReadoutTime/self.rabi_Binning)
-        )
-
+        time.sleep(0.02)  # maybe the timetagger would get too much commands at the same time
+    
+        self.time_differences = self.setup_time_tagger(n_histograms=len(self.tau_duration),
+                                                        binwidth=int(self.rabi_Binning * 1000),
+                                                        # rabi_Binning input is in ns.
+                                                        n_bins=int(self.rabi_ReadoutTime / self.rabi_Binning)
+                                                        )
+    
         self.power = []
         if self.rabi_MW2:
             self.power += [self.rabi_MW2_Power]
         if self.rabi_MW3:
             self.power += [self.rabi_MW3_Power]
-
+    
         self.power = np.asarray(self.power)
-        self.power=self.power_to_amp(self.power)
-        if np.sum(self.power)>1:
-            logger.error("Combined Microwavepower of all active channels too high! Need value below 1. Value of {} was given.", np.sum(self.power))
+        self.power = self.power_to_amp(self.power)
+        if np.sum(self.power) > 1:
+            logger.error(
+                "Combined Microwavepower of all active channels too high! Need value below 1. Value of {} was given.",
+                np.sum(self.power))
             raise Exception
-        
-        seq = self._awg.mcas(name="Rabi", ch_dict={"2g": [1,2],"ps": [1]})
+    
+        seq = self._awg.mcas(name="Rabi", ch_dict={"2g": [1, 2], "ps": [1]})
         # generate segment of repump which starts at each repetition of the sequence.
         seq.start_new_segment("Start")
         if self.rabi_PulsedRepump:
             print("Rabi Pulsed Repump: ", self.rabi_PulsedRepump)
-            seq.asc(name='repumpOn', length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_RepumpDuration, round_to), repump=True)
-            seq.asc(name='repumpOff', length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_RepumpDecay, round_to), repump=False)
-
+            seq.asc(name='repumpOn',
+                    length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_RepumpDuration, round_to),
+                    repump=True)
+            seq.asc(name='repumpOff',
+                    length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_RepumpDecay, round_to),
+                    repump=False)
+    
         # short pulses to SYNC and TRIGGER the timedifferences module of TimeTagger.
-        seq.asc(name='tt_sync1', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to), memory=True) #Set histogram index to 0       
-        seq.asc(name='wait', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to)) 
-        seq.asc(name='tt_sync2', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to), gate=True) #increment histogram index
-
+        seq.asc(name='tt_sync1', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to),
+                memory=True)  # Set histogram index to 0
+        seq.asc(name='wait', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to))
+        seq.asc(name='tt_sync2', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to),
+                gate=True)  # increment histogram index
+    
         freq_init = np.array([self.rabi_MW2_Freq, self.rabi_MW3_Freq])[[self.rabi_MW2, self.rabi_MW3]]
-        power_init = self.power_to_amp(np.array([self.rabi_MW2_Power, self.rabi_MW3_Power])[[self.rabi_MW2, self.rabi_MW3]])
-
+        power_init = self.power_to_amp(
+            np.array([self.rabi_MW2_Power, self.rabi_MW3_Power])[[self.rabi_MW2, self.rabi_MW3]])
+    
         # Values for flip after tau pulse, for projection if central transition was measured
-        freq_Cpi=np.asarray([self.rabi_MW4_Freq,self.rabi_MW5_Freq])[[self.rabi_MW4 , self.rabi_MW5]]
-        power_Cpi=self.power_to_amp([self.rabi_MW4_Power,self.rabi_MW5_Power])[[self.rabi_MW4 , self.rabi_MW5]]
-
+        freq_Cpi = np.asarray([self.rabi_MW4_Freq, self.rabi_MW5_Freq])[[self.rabi_MW4, self.rabi_MW5]]
+        power_Cpi = self.power_to_amp([self.rabi_MW4_Power, self.rabi_MW5_Power])[
+            [self.rabi_MW4, self.rabi_MW5]]
+    
         # Values for flip after tau pulse if pi duration is different for MW4 and MW5
-        freq_Cpi_2=np.asarray([self.rabi_MW4_Freq,self.rabi_MW5_Freq])[[self.rabi_MW4 and self.rabi_MW4_Duration>self.rabi_MW5_Duration, self.rabi_MW5 and self.rabi_MW4_Duration<self.rabi_MW5_Duration]]
-        power_Cpi_2=self.power_to_amp([self.rabi_MW4_Power,self.rabi_MW5_Power])[[self.rabi_MW4 and self.rabi_MW4_Duration>self.rabi_MW5_Duration, self.rabi_MW5 and self.rabi_MW4_Duration<self.rabi_MW5_Duration]]
-
-        if (self.rabi_DecayInit-gateMW_dur)> 0: rabi_DecayInit = self.rabi_DecayInit-gateMW_dur
-        else: rabi_DecayInit = self.rabi_DecayInit
-
+        freq_Cpi_2 = np.asarray([self.rabi_MW4_Freq, self.rabi_MW5_Freq])[
+            [self.rabi_MW4 and self.rabi_MW4_Duration > self.rabi_MW5_Duration,
+                self.rabi_MW5 and self.rabi_MW4_Duration < self.rabi_MW5_Duration]]
+        power_Cpi_2 = self.power_to_amp([self.rabi_MW4_Power, self.rabi_MW5_Power])[
+            [self.rabi_MW4 and self.rabi_MW4_Duration > self.rabi_MW5_Duration,
+                self.rabi_MW5 and self.rabi_MW4_Duration < self.rabi_MW5_Duration]]
+    
+        if (self.rabi_DecayInit - gateMW_dur) > 0:
+            rabi_DecayInit = self.rabi_DecayInit - gateMW_dur
+        else:
+            rabi_DecayInit = self.rabi_DecayInit
+    
         for duration in self.tau_duration:
             seq.start_new_segment("Init")
-            
+    
             if (self.rabi_A1 or self.rabi_A2) and (self.rabi_MW2 or self.rabi_MW3):
-                seq.asc(name="init_sine"+str(duration), pd2g1 = {"type":"sine", "frequencies":freq_init, "amplitudes":power_init},
+                seq.asc(name="init_sine" + str(duration),
+                        pd2g1={"type": "sine", "frequencies": freq_init, "amplitudes": power_init},
                         A1=self.rabi_A1,
                         A2=self.rabi_A2,
                         gateMW=True,
                         length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_InitTime, 64)
-                        )  
-                seq.asc(name='Init_decay'+str(duration), length_mus=rabi_DecayInit, A1=False, A2=False)
+                        )
+                seq.asc(name='Init_decay' + str(duration), length_mus=rabi_DecayInit, A1=False, A2=False)
             elif self.rabi_A1 or self.rabi_A2:
                 seq.asc(name='init_no_sine',
                         A1=self.rabi_A1,
                         A2=self.rabi_A2,
                         length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_InitTime, 64)
-                        )  
-                seq.asc(name='Init_decay'+str(duration), length_mus=E.round_length_mus_to_x_multiple_ps(rabi_DecayInit, 64), A1=False, A2=False)
+                        )
+                seq.asc(name='Init_decay' + str(duration),
+                        length_mus=E.round_length_mus_to_x_multiple_ps(rabi_DecayInit, 64), A1=False, A2=False)
             else:
                 logger.warning("No Laser assigned for Init Sequence.")
-
+    
             seq.asc(name="gateMW", gateMW=True, length_mus=E.round_length_mus_to_x_multiple_ps(gateMW_dur, 64))
-            seq.asc(name="Tau_pulse"+str(duration),pd2g1 = {"type":"sine", "frequencies":[self.rabi_MW1_Freq], "amplitudes":self.power_to_amp(self.rabi_MW1_Power)},
-                length_mus = duration,
-                gateMW=True) #self.rabi_piPulseDuration is divided by 1000 to be in µs
-            
+            seq.asc(name="Tau_pulse" + str(duration),
+                    pd2g1={"type": "sine", "frequencies": [self.rabi_MW1_Freq],
+                            "amplitudes": self.power_to_amp(self.rabi_MW1_Power)},
+                    length_mus=duration,
+                    gateMW=True)  # self.rabi_piPulseDuration is divided by 1000 to be in µs
+    
             if self.rabi_MW4 or self.rabi_MW5:
-                seq.start_new_segment("Projecting_Pulse") 
-                seq.asc(name="flip",pd2g1 = {"type":"sine", "frequencies":freq_Cpi, "amplitudes":power_Cpi},
-                        length_mus=E.round_length_mus_to_x_multiple_ps(min(self.rabi_MW4_Duration,self.rabi_MW5_Duration)/1000, round_to), gateMW =True
+                seq.start_new_segment("Projecting_Pulse")
+                seq.asc(name="flip", pd2g1={"type": "sine", "frequencies": freq_Cpi, "amplitudes": power_Cpi},
+                        length_mus=E.round_length_mus_to_x_multiple_ps(
+                            min(self.rabi_MW4_Duration, self.rabi_MW5_Duration) / 1000, round_to), gateMW=True
                         )
-                if self.rabi_MW4_Duration!=self.rabi_MW5_Duration:
-                    seq.asc(name="flip",pd2g1 = {"type":"sine", "frequencies":freq_Cpi_2,"amplitudes":power_Cpi_2},
-                            length_mus=E.round_length_mus_to_x_multiple_ps(abs(self.rabi_MW4_Duration-self.rabi_MW5_Duration)/1000, round_to), gateMW = True
-                            ) 
-            seq.asc(name='Tau_pulse_decay'+str(duration), length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_Tau_Decay/1000, round_to), A1=False, A2=False) #self.rabi_Tau_Decay is divided by 1000 to be in µs
-            
+                if self.rabi_MW4_Duration != self.rabi_MW5_Duration:
+                    seq.asc(name="flip",
+                            pd2g1={"type": "sine", "frequencies": freq_Cpi_2, "amplitudes": power_Cpi_2},
+                            length_mus=E.round_length_mus_to_x_multiple_ps(
+                                abs(self.rabi_MW4_Duration - self.rabi_MW5_Duration) / 1000, round_to),
+                            gateMW=True
+                            )
+            seq.asc(name='Tau_pulse_decay' + str(duration),
+                    length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_Tau_Decay / 1000, round_to),
+                    A1=False,
+                    A2=False)  # self.rabi_Tau_Decay is divided by 1000 to be in µs
+    
             seq.start_new_segment("Readout")
-            seq.asc(name='readout'+str(duration), length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_ReadoutTime/1000, 64), A1=self.rabi_A1Readout, A2=self.rabi_A2Readout, gate=True)
-            seq.asc(name='readout_decay'+str(duration), length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_ReadoutDecay/1000, 64), A1=False, A2=False, gate=True)
-        
-        #self.awg.mcas.status = 1
+            seq.asc(name='readout' + str(duration),
+                    length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_ReadoutTime / 1000, 64),
+                    A1=self.rabi_A1Readout, A2=self.rabi_A2Readout, gate=True)
+            seq.asc(name='readout_decay' + str(duration),
+                    length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_ReadoutDecay / 1000, 64), A1=False,
+                    A2=False, gate=True)
+    
+        # self.awg.mcas.status = 1
         self._awg.mcas_dict.stop_awgs()
         self._awg.mcas_dict['Rabi'] = seq
         self._awg.mcas_dict.print_info()
         self._awg.mcas_dict['Rabi'].run()
-        for key,val in ancient_self_variables.items(): # restore the ancient variables
+        for key, val in ancient_self_variables.items():  # restore the ancient variables
             exec(f"self.{key}={val}")
 
     def do_fit(self, x_data, y_data, tag):
         
         x_data=x_data.astype(np.float)
         y_data=y_data.astype(np.float)
-        self.interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*10) # for the fitting part
+        self.interpolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*10) # for the fitting part
 
         if tag == 'Cosinus':
             #print("Doing Cosinus")
@@ -538,7 +747,7 @@ class RabiLogic(GenericLogic,rabi_default):
 
             #fit_func=self._fit_logic.sine
             #result=fit_func.fit(x_data,y_data)
-            #self.fit_data = fit_func(x=self.interplolated_x_data, *result.x)
+            #self.fit_data = fit_func(x=self.interpolated_x_data, *result.x)
 
         if tag == 'Cosinus+Phase':
             #print("Doing Cosinus+Phase")
@@ -552,7 +761,7 @@ class RabiLogic(GenericLogic,rabi_default):
                                 )
 
         
-        self.fit_data = model.eval(x=self.interplolated_x_data, params=result.params)
+        self.fit_data = model.eval(x=self.interpolated_x_data, params=result.params)
         self.Amplitude_Fit:str=''
         self.Frequency_Fit:str=''
         self.Phase_Fit:str=''
@@ -570,7 +779,7 @@ class RabiLogic(GenericLogic,rabi_default):
         
         self.sigFitPerformed.emit(1/(result.params["frequency"].value)/2)
 
-        return self.interplolated_x_data,self.fit_data,result
+        return self.interpolated_x_data,self.fit_data,result
 
 from threading import Timer
 class RepeatedTimer(object):

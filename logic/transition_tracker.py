@@ -1277,7 +1277,7 @@ class TransitionTracker(GenericLogic):
         elif '_hf' in typ:
             return self.hf_para_n[typ.split('_')[0].lower()]
 
-    def mfl(self, td, mw_mixing_frequency_L=None, ms_trans='0.5'): 
+    def mfl(self, td, mw_mixing_frequency_L=None, ms_trans='L'):
         #TODO: update ms from NV to V2
         """
 
@@ -1332,12 +1332,12 @@ class TransitionTracker(GenericLogic):
                 f.append(a)
         ff = list(product(*f))
         mfl = np.array(sorted([mwfm + sum(fff) for fff in ff if not np.size(fff) == 0]))
-        print(mfl,'TT:why it is 3000?')
+
         #here do some ms?
-        if ms_trans in ['right', '+1']:
+        if ms_trans in ['R']:
             return mfl - self.mw_mixing_frequency_L + self.mw_mixing_frequency_R
 
-        elif ms_trans in ['-1.5','+0.5','-0.5', '+1.5']:
-            return mfl + self._zero_field_splitting
+        elif ms_trans in ['C']:
+            return mfl + -self._mw_mixing_frequency_L+self._mw_mixing_frequency_C
         else:
             return mfl
