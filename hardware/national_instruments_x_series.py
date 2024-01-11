@@ -280,13 +280,15 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
 
         if not scanner and self._clock_daq_task is not None:
             print('Trying to close _clock_daq_task...', self._clock_daq_task)
-            self.log.warning('Another counter clock is already running, close this one first. "_clock_daq_task"') #TODO: change warning back to error
+            self.log.warning('Another counter clock is already running, close this one first. "_clock_daq_task"')
+            #TODO: change warning back to error
             self.close_clock()
             return -1
 
         if scanner and self._scanner_clock_daq_task is not None:
             print('Trying to close _scanner_clock_daq_task...', self._scanner_clock_daq_task)
-            self.log.warning('Another scanner clock is already running, close this one first."_scanner_clock_daq_task"') #TODO: change warning back to error
+            self.log.warning('Another scanner clock is already running, close this one first."_scanner_clock_daq_task"')
+            #TODO: change warning back to error
             self.close_clock()
             #self.close_scanner_clock()
             # Probably error was when calling method "close_clock", it should be "close_scanner_clock"

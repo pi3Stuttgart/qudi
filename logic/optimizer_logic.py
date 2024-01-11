@@ -27,7 +27,7 @@ from logic.generic_logic import GenericLogic
 from core.connector import Connector
 from core.statusvariable import StatusVar
 from core.util.mutex import Mutex
-
+from PyQt5 import QtTest
 
 class OptimizerLogic(GenericLogic):
 
@@ -530,9 +530,10 @@ class OptimizerLogic(GenericLogic):
 
     def finish_refocus(self):
         """ Finishes up and releases hardware after the optimizer scans."""
-
-        self.kill_scanner()
-
+        #print('1killing')
+        self._kill_res = self.kill_scanner()
+        #QtTest.QTest.qSleep(500)
+        print('2kiliing',self._kill_res)
         self.log.info(
                 'Optimised from ({0:.3e},{1:.3e},{2:.3e}) to local '
                 'maximum at ({3:.3e},{4:.3e},{5:.3e}).'.format(

@@ -744,7 +744,8 @@ class NuclearOPs(DataGeneration):
 
             self.last_ple_refocus = time.time()
             self.queue._awg.mcas_dict.stop_awgs()
-            QtTest.QTest.qSleep(1000)
+            while self.queue._PLE_logic.happy:
+                QtTest.QTest.qSleep(1000)
         return
 
     def set_laser_power(self, abort):
@@ -805,7 +806,7 @@ class NuclearOPs(DataGeneration):
         print("voltage before PLE: ", self.queue._PLE_logic._scanning_device.get_scanner_position()[3])
         # Check that countrate after refocus is not worse than before.
         self.queue._awg.mcas_dict['RepumpAndA1AndA2'].run()
-        QtTest.QTest.qSleep(4000)
+        QtTest.QTest.qSleep(3000)
         counts_before = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
         counts_after = 0
         print('average counts before refocus')
@@ -819,10 +820,11 @@ class NuclearOPs(DataGeneration):
             self.queue._PLE_logic.start_scanning()
             while not self.queue._PLE_logic.stopped: #TODO - make here prone to PLE crashed
                 # TODO ADD ABORT
+                if abort.is_set(): break
                 # IF not reached after 10 interations do confocal refocus and try again
                 QtTest.QTest.qSleep(250)
             self.queue._awg.mcas_dict['RepumpAndA1AndA2'].run()
-            QtTest.QTest.qSleep(4000)
+            QtTest.QTest.qSleep(3000)
             counts_after = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
             print('average counts before refocus:')
             print(counts_before)
@@ -953,7 +955,7 @@ class NuclearOPs(DataGeneration):
             print("caller tag in NUCOPS: ", caller_tag)
 
             # Check that countrate after refocus is not worse than before.
-            QtTest.QTest.qSleep(4000)
+            QtTest.QTest.qSleep(3000)
             counts_before = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
             counts_after = 0
             print('average counts before refocus')
@@ -963,7 +965,7 @@ class NuclearOPs(DataGeneration):
                 self.queue._optimizer.start_refocus(initial_pos = self.queue._confocal.get_position(), caller_tag = caller_tag)
                 while not self.queue._optimizer.refocus_finished:
                     QtTest.QTest.qSleep(250)
-                QtTest.QTest.qSleep(6000)
+                QtTest.QTest.qSleep(3000)
                 counts_after = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
                 print('average counts after refocus No'+str(repetitions))
                 print(counts_after)

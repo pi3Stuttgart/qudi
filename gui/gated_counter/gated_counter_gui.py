@@ -93,13 +93,13 @@ class GatedCounterGui(GUIBase):
         self._gp = self._mw.gated_count_trace_PlotWidget
         self._gp.setLabel('left', 'Counts', units='counts/s')
         self._gp.setLabel('bottom', 'Number of Gates', units='#')
-        x= []
-        y = []
-        self.pg_layout = self._mw.plotlayuowidget
+        #x= []
+        #y = []
+        #self.pg_layout = self._mw.plotlayuowidget
         # Add subplots
-        self.pg_layout.addPlot(x=x, y=y, pen=None, symbol='x', row=0, col=0, title="SSR1")
-        self.pg_layout.addPlot(x=x, y=y, pen=None, symbol='x', row=1, col=0, title="SSR2")
-        self.pg_layout.addPlot(x=x, y=y, pen=None, symbol='x', row=2, col=0, title="CRC")
+        #self.pg_layout.addPlot(x=x, y=y, pen=None, symbol='x', row=0, col=0, title="SSR1")
+        #self.pg_layout.addPlot(x=x, y=y, pen=None, symbol='x', row=1, col=0, title="SSR2")
+        #self.pg_layout.addPlot(x=x, y=y, pen=None, symbol='x', row=2, col=0, title="CRC")
 
         # Show our layout holding multiple subplots
         # Create an empty plot curve to be filled later, set its pen
@@ -109,9 +109,10 @@ class GatedCounterGui(GUIBase):
             self._trace1.append(self._gp.plot())
             self._trace1[i].setPen(colors[i])
 
-        self._hp = self._mw.histogram_PlotWidget
-        self._hp.setLabel('left', 'Occurrences', units='#')
-        self._hp.setLabel('bottom', 'Counts', units='counts/s')
+        self._hp_l = [self._mw.histogram_PlotWidget_2,self._mw.histogram_PlotWidget_3,self._mw.histogram_PlotWidget_4]
+        for hp in self._hp_l:
+            hp.setLabel('left', 'Occurrences', units='#')
+            hp.setLabel('bottom', 'Counts', units='counts/s')
 
 
         self._histoplot1=[]
@@ -119,12 +120,12 @@ class GatedCounterGui(GUIBase):
         for i in range(3):
             self._histoplot1.append(pg.PlotCurveItem())
             self._histoplot1[i].setPen(colors[i])
-            self._hp.addItem(self._histoplot1[i])
+            self._hp_l[i].addItem(self._histoplot1[i])
 
 
         # Configure the fit of the data in the main pulse analysis display:
         self._fit_image = pg.PlotCurveItem()
-        self._hp.addItem(self._fit_image)
+        self._hp_l[0].addItem(self._fit_image)
 
         # setting the x axis length correctly
         self._gp.setXRange(0, self._counter_logic.get_count_length())
@@ -199,7 +200,7 @@ class GatedCounterGui(GUIBase):
         #self._mw.control_param_DockWidget.setFloating(False)
         self._mw.count_trace_DockWidget.setFloating(False)
         #self._mw.histogram_DockWidget.setFloating(False)
-        self._mw.hist_array_dock_widget.setFloating(False)
+        #self._mw.hist_array_dock_widget.setFloating(False)
 
         # QtCore.Qt.LeftDockWidgetArea        0x1
         # QtCore.Qt.RightDockWidgetArea       0x2
@@ -210,7 +211,9 @@ class GatedCounterGui(GUIBase):
 
         #self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(4), self._mw.control_param_DockWidget)
         self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(8), self._mw.count_trace_DockWidget)
-        self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(8), self._mw.histogram_DockWidget)
+        self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(8), self._mw.histogram_DockWidget_2)
+        self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(8), self._mw.histogram_DockWidget_3)
+        self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(8), self._mw.histogram_DockWidget_4)
 
     def start_clicked(self):
             """ Handling the Start button to stop and restart the counter. """

@@ -1012,7 +1012,7 @@ class PoiManagerLogic(GenericLogic):
         # If the refocus was initiated by poimanager, update POI and ROI position
         print("caller_tag in poi manager logic:")
         print(caller_tag)
-        if caller_tag.startswith('poimanager_') or caller_tag.startswith('poimanagermoveroi_') or caller_tag.startswith('NuclearOps'):
+        if caller_tag.startswith('poimanager_') or caller_tag.startswith('poimanagermoveroi_') :#or caller_tag.startswith('NuclearOps'):
             shift_roi = caller_tag.startswith('poimanagermoveroi_')
             poi_name = caller_tag.split('_', 1)[1]
             if poi_name in self.poi_names:
@@ -1024,6 +1024,7 @@ class PoiManagerLogic(GenericLogic):
                     self.set_poi_anchor_from_position(name=poi_name, position=optimal_pos)
                 if self._move_scanner_after_optimization:
                     self.move_scanner(position=optimal_pos)
+        ##if
         self.sigRefocusStateUpdated.emit(False)
         return
 
