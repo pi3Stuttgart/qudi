@@ -129,18 +129,18 @@ class GatedCounterGui(GUIBase):
 
         # setting the x axis length correctly
         self._gp.setXRange(0, self._counter_logic.get_count_length())
-        self._mw.hist_bins_SpinBox.setRange(1, self._counter_logic.get_count_length())
+        #self._mw.hist_bins_SpinBox_2.setRange(1, self._counter_logic.get_count_length())
 
         # set up the slider with the values of the logic:
-        self._mw.hist_bins_Slider.setRange(1,self._counter_logic.get_count_length())
-        self._mw.hist_bins_Slider.setSingleStep(1)
+        self._mw.hist_bins_Slider_2.setRange(1,self._counter_logic.get_count_length())
+        self._mw.hist_bins_Slider_2.setSingleStep(1)
 
         # set the counting mode in the logic:
         #self._counter_logic.set_counting_mode('FINITE_GATED')
 
         # Setting default parameters
-        self._mw.count_length_SpinBox.setValue(self._counter_logic.get_count_length())
-        self._mw.count_per_readout_SpinBox.setValue(self._counter_logic.get_counting_samples())
+        #self._mw.count_length_SpinBox_2.setValue(self._counter_logic.get_count_length())
+        #self._mw.count_per_readout_SpinBox_2.setValue(self._counter_logic.get_counting_samples())
 
         # Connecting user interactions
         # set at first the action buttons in the tab
@@ -152,12 +152,12 @@ class GatedCounterGui(GUIBase):
         # that is also the default value of the histogram method in logic
         # important: the set of a value should not trigger a redrawn of the
         # current empty histogram, which is at the start of the program.
-        self._mw.hist_bins_SpinBox.setValue(50)
+        #self._mw.hist_bins_SpinBox_2.setValue(50)
         # connect now a reaction on a change of the various input widgets:
-        self._mw.count_length_SpinBox.editingFinished.connect(self.count_length_changed)
-        self._mw.count_per_readout_SpinBox.editingFinished.connect(self.count_per_readout_changed)
-        self._mw.hist_bins_Slider.valueChanged.connect(self.num_bins_changed)
-        self._mw.hist_bins_SpinBox.valueChanged.connect(self.num_bins_changed)
+        #self._mw.count_length_SpinBox_2.editingFinished.connect(self.count_length_changed)
+        #self._mw.count_per_readout_SpinBox.editingFinished.connect(self.count_per_readout_changed)
+        #self._mw.hist_bins_Slider_2.valueChanged.connect(self.num_bins_changed)
+        #self._mw.hist_bins_SpinBox_2.valueChanged.connect(self.num_bins_changed)
         #self._trace_analysis.sigHistogramUpdated.connect(self.update_histogram)
 
         self._counter_logic.sigTraceUpdated.connect(self.update_plot_signal_emitted)
@@ -176,8 +176,8 @@ class GatedCounterGui(GUIBase):
         #self._mw.fit_methods_ComboBox.addItems(fit_functions)
 
         # Push buttons
-        self._mw.fit_PushButton.clicked.connect(self.fit_clicked)
-
+        #self._mw.fit_PushButton.clicked.connect(self.fit_clicked)
+        pass
         # Connect analysis result update
         #self._trace_analysis.sigAnalysisResultsUpdated.connect(self.update_analysis_results)
 
@@ -198,8 +198,11 @@ class GatedCounterGui(GUIBase):
         """ Restore the default view and arrangement of the DockWidgets. """
 
         #self._mw.control_param_DockWidget.setFloating(False)
-        self._mw.count_trace_DockWidget.setFloating(False)
-        #self._mw.histogram_DockWidget.setFloating(False)
+        #self._mw.count_trace_DockWidget.setFloating(False)
+        self._mw.histogram_DockWidget_2.setFloating(False)
+        self._mw.histogram_DockWidget_3.setFloating(False)
+        self._mw.histogram_DockWidget_4.setFloating(False)
+        #self._mw.histogram_DockWidget_2.setFloating(False)
         #self._mw.hist_array_dock_widget.setFloating(False)
 
         # QtCore.Qt.LeftDockWidgetArea        0x1
@@ -210,10 +213,11 @@ class GatedCounterGui(GUIBase):
         # QtCore.Qt.NoDockWidgetArea          0
 
         #self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(4), self._mw.control_param_DockWidget)
-        self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(8), self._mw.count_trace_DockWidget)
-        self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(8), self._mw.histogram_DockWidget_2)
-        self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(8), self._mw.histogram_DockWidget_3)
-        self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(8), self._mw.histogram_DockWidget_4)
+        self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(QtCore.Qt.BottomDockWidgetArea), self._mw.count_trace_DockWidget)
+        self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(QtCore.Qt.TopDockWidgetArea), self._mw.histogram_DockWidget_2)
+        self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(QtCore.Qt.TopDockWidgetArea), self._mw.histogram_DockWidget_3)
+        self._mw.addDockWidget(QtCore.Qt.DockWidgetArea(QtCore.Qt.TopDockWidgetArea), self._mw.histogram_DockWidget_4)
+        pass
 
     def start_clicked(self):
             """ Handling the Start button to stop and restart the counter. """
@@ -256,15 +260,16 @@ class GatedCounterGui(GUIBase):
         """ Handle the change of the count_length and send it to the measurement.
         """
 
-        self._counter_logic.set_count_length(self._mw.count_length_SpinBox.value())
+        #self._counter_logic.set_count_length(self._mw.count_length_SpinBox_2.value())
         self._gp.setXRange(0, self._counter_logic.get_count_length())
-        self._mw.hist_bins_Slider.setRange(1, self._counter_logic.get_count_length())
-        self._mw.hist_bins_SpinBox.setRange(1, self._counter_logic.get_count_length())
+        #self._mw.hist_bins_Slider.setRange(1, self._counter_logic.get_count_length())
+        #self._mw.hist_bins_SpinBox.setRange(1, self._counter_logic.get_count_length())
 
     def count_per_readout_changed(self):
         """ Handling the change of the oversampling and sending it to the measurement.
         """
-        self._counter_logic.set_counting_samples(samples=self._mw.count_per_readout_SpinBox.value())
+        #self._counter_logic.set_counting_samples(samples=self._mw.count_per_readout_SpinBox.value())
+        pass
 
     def update_trace(self, i,trace):
         """ The function that grabs the data and sends it to the plot. """
@@ -291,8 +296,9 @@ class GatedCounterGui(GUIBase):
         """
 
         #self._trace_analysis.set_num_bins_histogram(num_bins)
-        self._mw.hist_bins_SpinBox.setValue(num_bins)
-        self._mw.hist_bins_Slider.setValue(num_bins)
+        #self._mw.hist_bins_SpinBox.setValue(num_bins)
+        #self._mw.hist_bins_Slider.setValue(num_bins)
+        pass
 
     def fit_clicked(self):
         """ Do the configured fit and show it in the sum plot """
