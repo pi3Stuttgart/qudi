@@ -824,7 +824,7 @@ class NuclearOPs(DataGeneration):
             self.queue._PLE_logic.start_scanning()
             print(self.queue.module_state)
             print("inside")
-            while self.queue._PLE_logic.module_state() == 'running':
+            while self.queue._PLE_logic.module_state() == 'locked':
                 print(self.queue._PLE_logic.module_state())
                 QtTest.QTest.qSleep(250)
 
@@ -959,10 +959,11 @@ class NuclearOPs(DataGeneration):
             #while counts_before * 0.5 > counts_after: #What if PLE is misaligned?
             with self._thread_lock:
                 self.queue._optimizer.start_refocus(initial_pos = self.queue._confocal.get_position(), caller_tag = caller_tag)
-                while self.queue._optimizer.module_state() =='running':
+                while self.queue._optimizer.module_state() =='locked':
                     QtTest.QTest.qSleep(250)
                 # while not self.queue._optimizer.refocus_finished:
             #     QtTest.QTest.qSleep(250)
+            print("huuuuuuuuuuuuuuuuuuuuuuuuuuuray")
             #QtTest.QTest.qSleep(3000)
             #    counts_after = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
             #    print('average counts after refocus No'+str(repetitions))
