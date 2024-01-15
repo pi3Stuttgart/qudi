@@ -37,6 +37,7 @@ import logging
 import collections
 import importlib
 import logic.ODMR_nops as odmr; importlib.reload(odmr)
+from core.util.mutex import Mutex
 
 class ScriptQueueStep:
     def __init__(self, name, pd):
@@ -131,6 +132,7 @@ class queue_logic(GenericLogic):
     powerstabilization_logic = Connector("PowerStabilizationLogic")
     counterlogic1=Connector("CounterLogic")
 
+
     update_selected_user_script_combo_box_signal = pyqtSignal(collections.OrderedDict)
     update_queue_list = pyqtSignal(collections.OrderedDict)
     user_script_list = misc.ret_property_array_like_typ('user_script_list', str)
@@ -148,7 +150,7 @@ class queue_logic(GenericLogic):
 
     def __init__(self, config , **kwargs):
         super(queue_logic, self).__init__(config=config, **kwargs)
-
+        self._threadlock=Mutex()
         self.script_history = []
 
     def on_activate(self):

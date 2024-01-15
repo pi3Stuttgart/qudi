@@ -1,3 +1,5 @@
+"""author: Erik and Jonathan"""
+
 import json
 import os
 
@@ -272,6 +274,7 @@ class AutomatedMeasurementLogic(GenericLogic):
         """Stops the program"""
         self.abort = True
         self.measurementStarted = False
+        #TODO : disconnect all the signals which were connoected!!!!!!!!!!
         return
     
     

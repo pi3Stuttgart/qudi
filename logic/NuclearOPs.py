@@ -32,6 +32,7 @@ from core.connector import Connector
 from logic.qudip_enhanced.data_generation import DataGeneration
 from logic.qudip_enhanced.util import ret_property_list_element
 from logic.qudip_enhanced import save_qutip_enhanced
+from core.util.mutex import Mutex
 import logic.qudip_enhanced.data_handling as data_handling
 import base64
 import hashlib
@@ -108,7 +109,7 @@ class NuclearOPs(DataGeneration):
         self.two_zpl_apd = False
         self.raw_clicks_processing = False
         self.raw_clicks_processing_channels = [0,1,2,3,4,5,6,7]
-
+        self._thread_lock = Mutex()
         self.performedRefocus = False
 
         self.mode=1
@@ -805,44 +806,44 @@ class NuclearOPs(DataGeneration):
         #    time.sleep(0.1)
         print("voltage before PLE: ", self.queue._PLE_logic._scanning_device.get_scanner_position()[3])
         # Check that countrate after refocus is not worse than before.
-        self.queue._awg.mcas_dict['RepumpAndA1AndA2'].run()
-        QtTest.QTest.qSleep(3000)
-        counts_before = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
-        counts_after = 0
-        print('average counts before refocus')
-        print(counts_before)
+        #self.queue._awg.mcas_dict['RepumpAndA1AndA2'].run()
+        #QtTest.QTest.qSleep(3000)
+        #counts_before = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
+        #counts_after = 0
+        #print('average counts before refocus')
+        #print(counts_before)
         repetitions =0
         self.queue._PLE_logic.Lock_laser=True
         volt_before=self.queue._PLE_logic._static_v
         self.queue._PLE_logic.happy=True
 
-        while counts_before * 0.5 > counts_after: #This is keeping refocusing forever! if ple moved e.g.?
-            self.queue._PLE_logic.start_scanning()
-            while not self.queue._PLE_logic.stopped: #TODO - make here prone to PLE crashed
-                # TODO ADD ABORT
-                if abort.is_set(): break
-                # IF not reached after 10 interations do confocal refocus and try again
-                QtTest.QTest.qSleep(250)
-            self.queue._awg.mcas_dict['RepumpAndA1AndA2'].run()
-            QtTest.QTest.qSleep(3000)
-            counts_after = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
-            print('average counts before refocus:')
-            print(counts_before)
-            print('average counts After refocus No '+str(repetitions)+':')
-            print(counts_after)
-            self.queue._awg.mcas_dict.stop_awgs()
-            if repetitions > 1:
-                print("*********************************************PLE REFOCUS WAS NOT SUCCESSFUL AFTER 5 ITERATIONS ******************************************")
-                # if self.mode==1:
-                #     self.queue._PLE_logic._static_v=volt_before
-                #     self.queue._PLE_logic.goto_voltage(max(volt_before-0.5,-3))
-                #     self.queue._PLE_logic.goto_voltage(self.queue._PLE_logic._static_v)
-                
-                break
+        #while counts_before * 0.5 > counts_after: #This is keeping refocusing forever! if ple moved e.g.?
+        # TODO - this should be in PLE ITSELF!!!! not a buisness of Nops whatever happens in ple refocus.
+        with self.queue._threadlock:
 
-            repetitions +=1
+            self.queue._PLE_logic.start_scanning()
+            print(self.queue.module_state)
+            print("inside")
+            while self.queue._PLE_logic.module_state() == 'running':
+                print(self.queue._PLE_logic.module_state())
+                QtTest.QTest.qSleep(250)
+
+        print("huuuuuuuuuuuuuuuuuuuuuuuuuuuray")
+
+        self.queue._awg.mcas_dict.stop_awgs()
+        self.queue._PLE_logic.happy = False
+        # if repetitions > 1:
+        #     print("*********************************************PLE REFOCUS WAS NOT SUCCESSFUL AFTER 5 ITERATIONS ******************************************")
+        #         if self.mode==1: # what does this mean?
+        #             self.queue._PLE_logic._static_v=volt_before
+        #             self.queue._PLE_logic.goto_voltage(max(volt_before-0.5,-3))
+        #             self.queue._PLE_logic.goto_voltage(self.queue._PLE_logic._static_v)
+            #
+            # break
+
+        #repetitions +=1
             
-            self.queue._PLE_logic.happy=False
+
 
         # self.queue.ple_A2.syncFlag = False
         # self.queue.ple_A2.state = 'refocus PLE'
@@ -948,35 +949,30 @@ class NuclearOPs(DataGeneration):
                         QtTest.QTest.qSleep(10)
                     self.queue._awg.mcas_dict[sequence_name].run()
             
-            try: #Add current defect name name to callertag
-                caller_tag = 'NuclearOps_' + str(self.current_iterator_df.defect_ids.at[0])
-            except: 
-                caller_tag = 'NuclearOps_'
-            print("caller tag in NUCOPS: ", caller_tag)
+            #try: #Add current defect name name to callertag
+            #    caller_tag = 'NuclearOps_' + str(self.current_iterator_df.defect_ids.at[0])
+            #except:
+            caller_tag = 'NuclearOps_'
 
-            # Check that countrate after refocus is not worse than before.
-            QtTest.QTest.qSleep(3000)
-            counts_before = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
-            counts_after = 0
-            print('average counts before refocus')
-            print(counts_before)
-            repetitions = 0
-            while counts_before * 0.5 > counts_after: #What if PLE is misaligned?
+            #counts_before = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
+            #repetitions = 0
+            #while counts_before * 0.5 > counts_after: #What if PLE is misaligned?
+            with self._thread_lock:
                 self.queue._optimizer.start_refocus(initial_pos = self.queue._confocal.get_position(), caller_tag = caller_tag)
-                while not self.queue._optimizer.refocus_finished:
+                while self.queue._optimizer.module_state() =='running':
                     QtTest.QTest.qSleep(250)
-                QtTest.QTest.qSleep(3000)
-                counts_after = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
-                print('average counts after refocus No'+str(repetitions))
-                print(counts_after)
-                if abort.is_set() or repetitions >1: break
-                repetitions +=1
+                # while not self.queue._optimizer.refocus_finished:
+            #     QtTest.QTest.qSleep(250)
+            #QtTest.QTest.qSleep(3000)
+            #    counts_after = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
+            #    print('average counts after refocus No'+str(repetitions))
+            #    print(counts_after)
+            #if abort.is_set() or repetitions >1: break
+            #repetitions +=1
             
             self.last_red_confocal_refocus = time.time()
             self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[self.queue._optimizer.optim_pos_x], confocal_y=[self.queue._optimizer.optim_pos_y], confocal_z=[self.queue._optimizer.optim_pos_z]))
-            self.queue._awg.mcas_dict.stop_awgs()
-            #(pulse=(0,[],0,0))
-            QtTest.QTest.qSleep(1000)
+            #self.queue._awg.mcas_dict.stop_awgs()
             self.performedRefocus = True
 
     def check_eom(self):
@@ -1099,7 +1095,8 @@ class NuclearOPs(DataGeneration):
             except: 
                 caller_tag = 'NuclearOps_ODMR_'
                 
-            self.queue._optimizer.start_refocus(initial_pos = self.queue._confocal.get_position(), caller_tag = caller_tag)
+            self.queue._optimizer.start_refocus(initial_pos = self.queue._confocal.get_position(),
+                                                caller_tag = caller_tag)
             
             if self.refocus_cw_odmr:
                 self.queue._ODMR_logic.ODMRLogic.cw_PerformFit=True

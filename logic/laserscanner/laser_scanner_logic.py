@@ -435,7 +435,9 @@ class LaserScannerLogic(GenericLogic, ple_default):
         """
         #print("Stopping...")
         with self.threadlock:
+            print("threadlock laserscanning")
             if self.module_state() == 'locked':
+                print("i'm locked")
                 self._close_scanner() # hope this will not destroy something
                 self._initialise_scanner()
                 self.stopRequested = True
