@@ -54,6 +54,7 @@ class TimeTaggerCounter(Base, SlowCounterInterface):
         """
         self._tagger = tt.createTimeTagger()
         #self._count_frequency = 100  # Hz
+        self._tagger.setTriggerLevel(0, 0.05)
         self._tagger.setTriggerLevel(1, 0.05)
         self._tagger.setTriggerLevel(2, 0.05)
 
