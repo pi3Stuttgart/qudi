@@ -1534,7 +1534,7 @@ class PulseStreamer():
     # def __init__(self, ip='192.168.1.100', channel_map={'ch0':0,'ch1':1,'ch2':2,'ch3':3,'ch4':4,'ch5':5,'ch6':6,'ch7':7}):
     def __init__(self, ip='192.168.0.54',channel_map={'ch0': 0, 'ch1': 1, 'ch2': 2, 'ch3': 3, 'ch4': 4, 'ch5': 5, 'ch6': 6, 'ch7': 7}):
         # 00:26:32:F0:92:23 serial number of our new ps 169.254.8.2
-        ps = pulsestreamer.PulseStreamer('129.69.46.36')
+        ps = pulsestreamer.PulseStreamer('169.254.8.2')
         ps.setSquareWave125MHz([4])
         
         # print("start pulsestreamer...")
@@ -1548,7 +1548,7 @@ class PulseStreamer():
 
         self.channel_map = channel_map
 
-        url = 'http://'+'129.69.46.36'+':8050/json-rpc'
+        url = 'http://'+'169.254.8.2'+':8050/json-rpc'
         client = RPCClient(
             JSONRPCProtocol(),
             HttpPostClientTransport(url)

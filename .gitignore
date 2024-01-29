@@ -43,3 +43,5 @@ log/single_values/ple_A1/202211ple_A1.dat
 log/single_values/ple_A1_fit_params/202211ple_A1_fit_params.dat
 log/single_values/ple_A2/202211ple_A2.dat
 log/single_values/ple_A2_fit_params/202211ple_A2_fit_params.dat
+hardware/Keysight_AWG_M8190/settings.py
+hardware/Keysight_AWG_M8190/hardware.py

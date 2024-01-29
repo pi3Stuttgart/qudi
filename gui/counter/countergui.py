@@ -261,10 +261,10 @@ class CounterGui(GUIBase):
         """
         if self._counting_logic.module_state() == 'locked':
             if 0 < self._counting_logic.countdata_smoothed[(self._display_trace-1), -1] < 10:
-                self._mw.count_value_Label.setText( f"{int(self._counting_logic.countdata_smoothed[(self._display_trace-1), -1])} ({np.round(self._counting_logic.countdata_avg,3)})")
+                self._mw.count_value_Label.setText( f"{int(self._counting_logic.countdata_smoothed[(self._display_trace-1), -1])} ({np.round(self._counting_logic.countdata_avg,2)})")
                 #    '{0:,.6f} ({0:.1f})'.format(self._counting_logic.countdata_smoothed[(self._display_trace-1), -1],self._counting_logic.countdata_avg))
             else:
-                self._mw.count_value_Label.setText( f"{int(self._counting_logic.countdata_smoothed[(self._display_trace-1), -1])} ({np.round(self._counting_logic.countdata_avg,3)})")
+                self._mw.count_value_Label.setText( f"{int(self._counting_logic.countdata_smoothed[(self._display_trace-1), -1])} ({np.round(self._counting_logic.countdata_avg,2)})")
                 #    '{0:,.0f} ({0:.1f})'.format(self._counting_logic.countdata_smoothed[(self._display_trace-1), -1],self._counting_logic.countdata_avg))
             x_vals = (
                 np.arange(0, self._counting_logic.get_count_length())
