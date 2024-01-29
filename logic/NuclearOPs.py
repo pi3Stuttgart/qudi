@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 import logging
 from PyQt5 import QtTest
+from qtpy import QtCore
 import collections
 
 from numbers import Number
@@ -111,7 +112,6 @@ class NuclearOPs(DataGeneration):
         self.raw_clicks_processing_channels = [0,1,2,3,4,5,6,7]
         self._thread_lock = Mutex()
         self.performedRefocus = False
-
         self.mode=1
 
         #self._confocal = self.confocal()
@@ -333,12 +333,13 @@ class NuclearOPs(DataGeneration):
         t=datetime.datetime.now()
         while t.hour <= eph and t.hour >= sph and t.minute < epm and t.minute >= spm:
             if abort.is_set(): break
-            QtTest.QTest.qSleep(100)
+            QtTest.QTest.qSleep(1000)
             #time.sleep(100) #FIXME #Does this help instead of qSleep?
             if idx==0:
                 print('3 am pauseAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
                 idx +=1
             t = datetime.datetime.now()
+            print(t,t.hour,eph,sph,t.minute,epm,spm)
         if idx > 0:
             print('ContinueAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
 
@@ -709,6 +710,7 @@ class NuclearOPs(DataGeneration):
             self.update_current_str()
             if os.path.exists(self.save_dir) and not os.listdir(self.save_dir):
                 os.rmdir(self.save_dir)
+            self.state = 'idle'
 
     def dowork(self,):
         QtTest.QTest.qSleep(1000)
@@ -822,13 +824,13 @@ class NuclearOPs(DataGeneration):
         with self.queue._threadlock:
 
             self.queue._PLE_logic.start_scanning()
-            print(self.queue.module_state)
-            print("inside")
+            #print(self.queue.module_state)
+            #print("inside")
             while self.queue._PLE_logic.module_state() == 'locked':
-                print(self.queue._PLE_logic.module_state())
-                QtTest.QTest.qSleep(250)
-
-        print("huuuuuuuuuuuuuuuuuuuuuuuuuuuray")
+                #print(self.queue._PLE_logic.module_state())
+                QtTest.QTest.qSleep(500)
+        QtTest.QTest.qSleep(1000)
+        #print("huuuuuuuuuuuuuuuuuuuuuuuuuuuray")
 
         self.queue._awg.mcas_dict.stop_awgs()
         self.queue._PLE_logic.happy = False
@@ -960,11 +962,10 @@ class NuclearOPs(DataGeneration):
             with self._thread_lock:
                 self.queue._optimizer.start_refocus(initial_pos = self.queue._confocal.get_position(), caller_tag = caller_tag)
                 while self.queue._optimizer.module_state() =='locked':
-                    QtTest.QTest.qSleep(250)
-                # while not self.queue._optimizer.refocus_finished:
-            #     QtTest.QTest.qSleep(250)
-            print("huuuuuuuuuuuuuuuuuuuuuuuuuuuray")
-            #QtTest.QTest.qSleep(3000)
+                    QtTest.QTest.qSleep(500)
+            self.queue._awg.mcas_dict.stop_awgs()
+            print("huuuuuuuuuuuuuuuuuuuuuuuuuuuray confocal")
+            QtTest.QTest.qSleep(2000) #TODO find a better synchro tool.
             #    counts_after = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
             #    print('average counts after refocus No'+str(repetitions))
             #    print(counts_after)
@@ -973,7 +974,7 @@ class NuclearOPs(DataGeneration):
             
             self.last_red_confocal_refocus = time.time()
             self.df_refocus_pos = pd.DataFrame(OrderedDict(confocal_x=[self.queue._optimizer.optim_pos_x], confocal_y=[self.queue._optimizer.optim_pos_y], confocal_z=[self.queue._optimizer.optim_pos_z]))
-            #self.queue._awg.mcas_dict.stop_awgs()
+
             self.performedRefocus = True
 
     def check_eom(self):

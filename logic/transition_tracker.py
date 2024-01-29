@@ -548,8 +548,8 @@ class Transition:
 
 # gui QMainWindow, transition_tracker_gui.Ui_window
 class TransitionTracker(GenericLogic):
-    c13_list = []#['13c414', '13c90', '13c13', '13c6', '13c-5', '13c-6']
-    si29_list = ['29si8']
+    c13_list = []#'13c5']#['13c414', '13c90', '13c13', '13c6', '13c-5', '13c-6']
+    si29_list = ['29si2.2']
     transitions = misc.ret_property_array_like_typ('transitions', Transition)
     log_folder = r"C:\src\qudi\log\transition_tracker_log"
     g_factors = {'e': -2.0028 * 1.6021766208e-19 / (4 * np.pi * 9.10938356e-31) * 1e-6,
@@ -717,7 +717,7 @@ class TransitionTracker(GenericLogic):
                            qp=self.qp, hf_para_n=self.hf_para_n,
                            hf_perp_n=self.hf_perp_n)
         for c13 in self.c13_list:
-            self.nvham.add_spin(np.matrix(np.diag([0.0, 0.0, self.hf_para_n[c13]])), 
+            self.nvham.add_spin(np.matrix(np.diag([self.hf_perp_n[c13], self.hf_perp_n[c13], self.hf_para_n[c13]])), 
                                 self.nvham.h_13c(), [0, 1])
 
         for si29 in self.si29_list:
@@ -743,7 +743,8 @@ class TransitionTracker(GenericLogic):
 
     def update_current_frequencies(self):
         for key, val in self.ntd.items():
-            self.transition(key).current_frequency = -get_transition_frequency(h_diag=self.h_diag, dims=self.nvham.dims, transition=val)
+            self.transition(key).current_frequency = -get_transition_frequency(h_diag=self.h_diag, dims=self.nvham.dims, 
+                                                                               transition=val)
         self.update_tt_nuclear_gui.emit() #connect to gui.
 
     def load_rabi_parameters(self):
@@ -1059,7 +1060,7 @@ class TransitionTracker(GenericLogic):
         return name
 
     def transition(self, name):
-        name=self.correct_transition_name(name)
+        name=self.correct_transition_name(name) 
         for transition in self.transitions:
             if str(transition.name) in name:
                 return transition
@@ -1324,9 +1325,10 @@ class TransitionTracker(GenericLogic):
                 td[key.replace('14n', '14N').replace('13c', '13C').replace('29si','29Si')] = val
         f = list()
         for key in td.keys():
-            if key not in ['14N', '13C414', '13C90','29Si8']:
+            if key not in ['14N', '13C414', '13C90','29Si8', '13C5','29Si8.00',"29Si2.2"]:
                 raise Exception("Key '{}' is not a valid nuclear spin".format(key))
-        for i in ['29Si8']:#why not put here all spin list?
+        for i in ['29Si2.2']:#why not put here all spin list?
+        #for i in [*self.c13_list,*self.si29_list]:#why not put here all spin list?
             a = np.array(td.get(i, [])) * self.get_f("{}_hf".format(i.lower()))
             if np.size(a) > 0:
                 f.append(a)
