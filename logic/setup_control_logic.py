@@ -26,9 +26,9 @@ class SetupControlLogic(GenericLogic):
     # powercontrol = Connector(interface='LaserPowerHolder')
     savelogic = Connector(interface = 'SaveLogic')
 
-    _AOM_volt:float=1
     read_power:str='-'
 
+    _AOM_volt = StatusVar('_AOM_volt', 1)
     MW1_freq = StatusVar('MW1_freq', 70)
     MW2_freq = StatusVar('MW2_freq', 140)
     MW3_freq = StatusVar('MW3_freq', 210)
@@ -110,9 +110,8 @@ class SetupControlLogic(GenericLogic):
         P_watts = 10**(power_dBm / 10) * 1e-3
         V_rms = np.sqrt(P_watts * impedance)
         V_pp = V_rms * 2 * np.sqrt(2)
-        return V_pp / 0.35 #awg_amplitude
-        #return V_pp / float(self.awg_device.amp1) #awg_amplitude
-
+        return V_pp / self._awg.mcas_dict.awgs['2g'].ch[1].output_amplitude
+    
     def setup_seq(
         self,
         enable_A1:bool=None,

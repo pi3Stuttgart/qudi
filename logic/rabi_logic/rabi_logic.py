@@ -599,7 +599,7 @@ class RabiLogic(GenericLogic,rabi_default):
     
         # Setup list of all frequencies which the sequence should output.
         self.tau_duration = np.unique(E.round_length_mus_to_x_multiple_ps(
-            np.arange(self.rabi_Tau_Min, self.rabi_Tau_Max + self.rabi_Tau_Step, self.rabi_Tau_Step) / 1000))
+            np.arange(self.rabi_Tau_Min, self.rabi_Tau_Max + self.rabi_Tau_Step, self.rabi_Tau_Step) / 1000,16))
         self.time_differences.stop()
         time.sleep(0.02)  # maybe the timetagger would get too much commands at the same time
     
