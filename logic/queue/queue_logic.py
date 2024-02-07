@@ -356,6 +356,8 @@ class queue_logic(GenericLogic):
                 if hasattr(self, 'cun'):
                     while self.cun.state == 'run':
                         QtTest.QTest.qSleep(1000)  #This is Qt version for time.sleep to prevent freezinng.
+                    else:
+                        print("new measurement can be started")
                 else:
                     pass
                     

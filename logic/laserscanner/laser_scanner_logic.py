@@ -194,6 +194,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         self.tmp_storage=[]
         self.measured_frequencies=[]
+        self.start_list=[]
+        self.stop_list=[]
 
     def on_deactivate(self):
         """ Deinitialisation performed during deactivation of the module.
@@ -411,7 +413,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         self.stopped=False
         self.start_stop_timestamps=[]
-
+        self.start_list=[]
+        self.stop_list=[]
         # initialize wavemeter data
         #self._wavemeterlogic._hardware_pull._parentclass._wavelength_data=[]
 
@@ -490,15 +493,16 @@ class LaserScannerLogic(GenericLogic, ple_default):
             # print("running seq: ", self.curr_sequence_name) # Does it affect the sequence if it is started repeatedly?
             self._awg.mcas_dict.stop_awgs()
             self._awg.mcas_dict[self.curr_sequence_name].run()
-
+            
             fstart=self._wavemeterlogic._wavemeter_device.get_current_wavelength2()
+            self.start_list.append(time.time()-self._wavemeterlogic._acqusition_start_time)
             counts = self._scan_line(self._upwards_ramp_slices[self.slice_number])
             fend=self._wavemeterlogic._wavemeter_device.get_current_wavelength2()
             self.f_start_end.append([fstart,fend,len(counts)])
 
             #get the timestamp from the wavemeter
             self.timestamp_list.append(self._scanning_device.timestamp_list)
-
+            
 
             #print("PLElogic position during _do_next_line", self._scanning_device.get_scanner_position())
         
@@ -518,7 +522,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
                     freqs=np.concatenate([np.interp(Ts,xp=times,fp=wavelengths) for Ts in self.timestamp_list])
 
                 cts=self.local_counts
-
+                self.stop_list.append(time.time()-self._wavemeterlogic._acqusition_start_time)
                 #TODO get the real fmin,fmax,points
                 if not self.range_defined:
                     self.fmin=min(freqs)

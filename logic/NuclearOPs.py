@@ -71,8 +71,9 @@ class NuclearOPs(DataGeneration):
             size={'left': '1', 'right': ''},
             repeat=False,
         )
+        self.manual_pause=False
         self.hashed = False
-        self.pause_time = [0.0, 7.0] ## The minutes are in % of an hour.
+        self.pause_time = [3.0, 7.0] ## The minutes are not take care.
         self.do_ple_refocusA2 = False
         self.do_ple_refocusA1 = False
         self.do_ple_refocus = False
@@ -331,7 +332,8 @@ class NuclearOPs(DataGeneration):
         spm = int(60*(start_pause_time-int(start_pause_time)))
         idx = 0
         t=datetime.datetime.now()
-        while t.hour <= eph and t.hour >= sph and t.minute < epm and t.minute >= spm:
+        print(t,t.hour,eph,sph,t.minute,epm,spm)
+        while t.hour <= eph and t.hour >= sph :
             if abort.is_set(): break
             QtTest.QTest.qSleep(1000)
             #time.sleep(100) #FIXME #Does this help instead of qSleep?
@@ -339,10 +341,14 @@ class NuclearOPs(DataGeneration):
                 print('3 am pauseAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
                 idx +=1
             t = datetime.datetime.now()
-            print(t,t.hour,eph,sph,t.minute,epm,spm)
+            #print(t,t.hour,eph,sph,t.minute,epm,spm)
         if idx > 0:
             print('ContinueAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
 
+    def check_manual_pause(self,abort):
+        while self.manual_pause:
+            if abort.is_set(): break
+            QtTest.QTest.qSleep(1000)
 
     def run_measurement(self, abort, **kwargs):
         print('NuclearOps run_measurement')
@@ -373,6 +379,7 @@ class NuclearOPs(DataGeneration):
                 while True:
                     if abort.is_set(): break
                     self.checktime(abort) # Stops measurement during detector cycling # doesnt work yet.
+                    self.check_manual_pause(abort) #we can pause the mesurement by setting the variable self.manual_pause to True, setting it to False will continue the measurement
                     # Uncomment when on the setup #TODO
                     #if self.wavemeter_lock and self.queue.wavemeter.wm_id != 0:
                      #    freq = self.queue.wavemeter.get_current_frequency()

@@ -48,6 +48,7 @@ from core.connector import Connector
 from core.configoption import ConfigOption
 from logic.generic_logic import GenericLogic
 from core.util.mutex import Mutex
+import shutil
 
 ####################################################################################################################
 # single values
@@ -549,7 +550,7 @@ class Transition:
 # gui QMainWindow, transition_tracker_gui.Ui_window
 class TransitionTracker(GenericLogic):
     c13_list = []#'13c5']#['13c414', '13c90', '13c13', '13c6', '13c-5', '13c-6']
-    si29_list = ['29si2.2']
+    si29_list = [] ######          THIS MUST BE LOWERCASE !!!!!!!!!!!!!!!!!!!!!!!!
     transitions = misc.ret_property_array_like_typ('transitions', Transition)
     log_folder = r"C:\src\qudi\log\transition_tracker_log"
     g_factors = {'e': -2.0028 * 1.6021766208e-19 / (4 * np.pi * 9.10938356e-31) * 1e-6,
@@ -564,11 +565,13 @@ class TransitionTracker(GenericLogic):
     
     update_tt_nuclear_gui = pyqtSignal()
     update_tt_electron_gui = pyqtSignal() #is it connected?
+    Spin_Names_List=['14N', '13C414', '13C90','29Si8', '13C5','29Si8.00',"29Si2.2","29Si8.74"]
 
     def __init__(self,config, **kwargs):
         super().__init__(config=config, **kwargs)
 
     def on_activate(self):
+        self.load_current_spin()
         self._awg = self.mcas_holder()
         self._odmr_logic= self.odmr_logic()
         self._ple_logic= self.ple_logic()
@@ -603,9 +606,56 @@ class TransitionTracker(GenericLogic):
         self.update_stuff()
         pass
         #self._transition_tracker_gui = self.transition_tracker_gui()
-
+    
     def on_deactivate(self):
         pass
+
+    def load_current_spin(self):
+        File=r"log\transition_tracker_log\current_n_spins.csv"
+        spins=np.loadtxt(File,dtype=str)
+        for spin in [spins]:
+            spin=str(spin)
+            if "si" in spin.lower():
+                self.si29_list.append(spin.lower())
+            else:
+                self.c13_list.append(spin.lower())
+            self.Spin_Names_List.append(spin.replace("si","Si").replace("c","C"))
+
+    def create_spins(self,spin_names,P_Couplings,O_Couplings):
+        spins=[]
+        for spin_name in spin_names:
+            if "_" in spin_name:
+                print("warning: underscores are dangerous in spin names, prefer '.' or something similar,\n did not create any spin files.")
+                return
+            spins.append(spin_name.replace("si","Si").replace("c","C"))
+
+        folder=r"log\transition_tracker_log"
+        File=folder+r"\current_n_spins.csv"
+        np.savetxt(File,spin_names,fmt="%s")
+        for i,spin_name in enumerate(spins):
+            hf_p_file=folder+r"\hf_"+spin_name+".dat"
+            hf_o_file=folder+r"\hf_perp_"+spin_name+".dat"
+
+            t=str(datetime.datetime.now())
+            txt_o=t+"\t"+str(O_Couplings[i])
+            txt_p=t+"\t"+str(P_Couplings[i])
+
+            np.savetxt(hf_o_file,[txt_o],fmt="%s")
+            np.savetxt(hf_p_file,[txt_p],fmt="%s")
+
+            #create the nuclear rabi files, they are just copies of one example, so no real data
+            for i in np.arange(-1.5,2.5,1):
+                original=f"29si8.74 ms{i}_rabi.dat"
+                copy=f"{spin_name} ms{i}_rabi.dat"
+                if "ms-" not in original:
+                    original=original.replace("ms","ms+")
+                    copy=copy.replace("ms","ms+")
+
+                shutil.copy(os.join(folder,original),os.join(folder,copy))
+
+
+
+        print("you need to retart qudi for the transition tracker to update")
 
     def do_nothing(self,*args,**kwargs):
         print("done nothing\n", "args are:\n",args)
@@ -1325,9 +1375,9 @@ class TransitionTracker(GenericLogic):
                 td[key.replace('14n', '14N').replace('13c', '13C').replace('29si','29Si')] = val
         f = list()
         for key in td.keys():
-            if key not in ['14N', '13C414', '13C90','29Si8', '13C5','29Si8.00',"29Si2.2"]:
+            if key not in self.Spin_Names_List:
                 raise Exception("Key '{}' is not a valid nuclear spin".format(key))
-        for i in ['29Si2.2']:#why not put here all spin list?
+        for i in [ll.replace("si","Si").replace("c","C") for ll in [*self.c13_list,*self.si29_list]]:#why not put here all spin list?
         #for i in [*self.c13_list,*self.si29_list]:#why not put here all spin list?
             a = np.array(td.get(i, [])) * self.get_f("{}_hf".format(i.lower()))
             if np.size(a) > 0:

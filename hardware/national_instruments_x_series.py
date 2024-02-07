@@ -1365,7 +1365,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
 
         return 0
 
-    def scan_line(self, line_path=None, pixel_clock=False):
+    def scan_line(self, line_path=None, pixel_clock=False,caller=None): #caller was added to have the most precise timestamp for the wavemeter in PLE
         """ Scans a line and return the counts on that line.
 
         @param float[c][m] line_path: array of c-tuples defining the voltage points
