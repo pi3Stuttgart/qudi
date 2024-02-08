@@ -63,7 +63,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
     
     wavemeterlogic= Connector(interface="WavemeterLoggerLogic")
     
-    scan_range = StatusVar('scan_range', [-4, 4])
+    _scan_range_adjustment = StatusVar('scan_range_adjustment', 1)
+    scan_range = StatusVar('scan_range', [-3, 3])
     number_of_repeats = StatusVar(default=10)
     NumberOfPeaks = StatusVar('NumberOfPeaks', default=2)
     resolution = StatusVar('resolution', 100)
@@ -72,6 +73,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
     fc = StatusVar('fits', None)
     enable_A1 = StatusVar('enable_A1', False)
     enable_A2 = StatusVar('enable_A2', True)
+    enable_Repump = StatusVar('enable_Repump', False)
+    enable_PulsedRepump = StatusVar('enable_PulsedRepump', True)
     MW1_Freq = StatusVar('MW1_freq', 70)
     MW2_Freq = StatusVar('MW2_freq', 140)
     MW3_Freq = StatusVar('MW3_freq', 210)
@@ -94,7 +97,9 @@ class LaserScannerLogic(GenericLogic, ple_default):
     sigScanStarted = QtCore.Signal()
     sigFitPerformed =  QtCore.Signal(str)
     SigIonized = QtCore.Signal()
-
+    sigScanRangeAdjustment = QtCore.Signal(int)
+    sigScanRangeChanged = QtCore.Signal(float, float)
+    
     # to cut the scan line into smaller parts:
     slices=1
     mode=0
@@ -110,9 +115,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.threadlock = Mutex()
         self.stopRequested = False
         self.AbortRequested=False
-        # self.repump_on_during_retrace=True
-        # self.A2_on_during_retrace=0
-        # self.A1_on_during_retrace=0
         self.local_counts=[]
         self.slice_number=0
         self.MW1_Power=-21
@@ -138,10 +140,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self._save_logic = self.savelogic()
         self._awg = self.mcas_holder()
         self._wavemeterlogic = self.wavemeterlogic()
-        #self.ps=self._awg.mcas_dict.awgs["ps"]
         self._fit_logic = self.fitlogic()
-        # Reads in the maximal scanning range. The unit of that scan range is
-        # micrometer!
         self.a_range = self._scanning_device.get_position_range()[3]
 
         # Initialise the current position of all four scanner channels.
@@ -201,6 +200,29 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.stopRequested = True
         self.AbortRequested = False
 
+    
+    @property
+    def scan_range_adjustment(self):
+        return self._scan_range_adjustment
+    
+    @scan_range_adjustment.setter
+    def scan_range_adjustment(self, val):
+        try:
+            if val <=2:
+                self._scan_range_adjustment = int(val)
+            else:
+                self.log.error('Unkown input for scan range.')
+        except: 
+            if val == 'Single Peak':
+                self._scan_range_adjustment = 0
+            elif val == 'Double Peak':
+                self._scan_range_adjustment = 1
+            elif val == 'Selected Range':
+                self._scan_range_adjustment = 2
+            else:
+                self.log.error('Unkown input for scan range.')
+        self.sigScanRangeAdjustment.emit(self._scan_range_adjustment)
+    
     @QtCore.Slot(float)
     def goto_voltage(self, volts=None):
         """Forwarding the desired output voltage to the scanning device.
@@ -234,7 +256,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
             return 0
 
         self._initialise_scanner()
-        ignored_counts = self._scan_line(ramp_scan)
         self._close_scanner()
         self.sigVoltageChanged.emit(new_voltage)
         return 0
@@ -427,7 +448,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
         parts=[x[:,(i*propor<=arr) & (arr<(i+1)*propor)] for i in range(self.slices)]
         return parts
 
-# DOES THE ERROR, WHICH SHUTS DOWN MEASUREMENT COME FROM HERE???
     def stop_scanning(self):
         """Stops the scan
 
@@ -591,8 +611,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
 # Create sequence for upwards scan
 
     def check_if_ionized(self):
-        peak_min_counts=100
-        ionized=not(np.sum(np.asarray(self.local_counts)>peak_min_counts))
+        self.peak_min_counts=100
+        ionized=not(np.sum(np.asarray(self.local_counts)>self.peak_min_counts))
         if ionized:
             print("Ionized")
             self.SigIonized.emit()
@@ -782,11 +802,30 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 self._scanning_device.module_state.unlock()
         except:
             self.log.exception('Could not unlock scanning device.')
+            return -1
+        return 0
+
+    
+    def _stopScan_wait(self, timeout=30.0):
+        """
+        Stops the scanner and waits until it actually has stopped.
+
+        @param timeout: float, the max. time in seconds how long the method should wait for the
+                        process to stop.
+
+        @return: error code
+        """
+        self.kill_scanner()
+        start_time = time.time()
+        while self.module_state() == 'locked':
+            QtTest.QTest.qSleep(100)
+            if time.time() - start_time >= timeout:
+                self.log.warning('Stopping the counter takes already longer than {0}s'.format(timeout))
+                return -1
         return 0
 
     def goto_fitted_peak(self):
-        if self.Lock_laser:
-            #print("PLE going to fitted peak")
+        if self.lock_laser and self.module_state() != 'locked':
             freqs=np.array(self.Frequencies_Fit.split(";")[:-1]).astype(float)
             peak_volt=max(freqs)
             if peak_volt<self.scan_range[1] and peak_volt>self.scan_range[0]:
@@ -799,21 +838,30 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
                 # follow the defect PLE line by applying a voltage to the laser chamber
                 #Range=self.scan_range[1]-self.scan_range[0]
-                Range=0.4
 
-                self.scan_range[0],self.scan_range[1]=peak_volt-0.5*Range,peak_volt+0.5*Range
+                # select scan range depending on ComboBox scan_range_adjustment
+                if self.scan_range_adjustment == 0:
+                    self.scan_range[0],self.scan_range[1]=peak_volt-0.15,peak_volt+0.15
+                if self.scan_range_adjustment == 1:
+                    self.scan_range[0],self.scan_range[1]=peak_volt-0.45,peak_volt+0.15
+                if self.scan_range_adjustment == 2:
+                    pass
+                    #self.scan_range[0],self.scan_range[1]=peak_volt-0.5*range,peak_volt+0.5*range
+                self.sigScanRangeChanged.emit(self.scan_range[0],self.scan_range[1])
             else: 
                 # emit an error?
-                #retry with bigger scan range:
-                if self.scan_range[1]>=3 or self.scan_range[0]<=-3:
-                    print("No PLE found")
-                    return
-                    
-                #self.scan_range[0],self.scan_range[1]=self.scan_range[0]-1,self.scan_range[1]+1
-                #self.scan_range=list(np.clip(self.scan_range,-3,3))
+                print("No PLE found in range. Retry with bigger scan range...")
+                #if self.scan_range[1]>=3 or self.scan_range[0]<=-3:
+                #    print("No PLE found")
+                #    return
+                
+                #
+                self.scan_range[0],self.scan_range[1]=self.scan_range[0]-1,self.scan_range[1]+1
+                self.scan_range=list(np.clip(self.scan_range,-3,3))
+                self.sigScanRangeChanged.emit(self.scan_range[0],self.scan_range[1])
                 self.start_scanning()
         self.stopped=True
-        return
+        return 0
 
 
     def save_data(self, tag=None, colorscale_range=None, percentile_range=None):
@@ -1113,7 +1161,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         return self.interplolated_x_data,self.fit_data,result
     
     def convert_seq_params_to_string(self):
-        return str(self.MW1_Power)+str(self.MW2_Power)+str(self.MW3_Power)+str(self.MW1_Freq)+str(self.MW2_Freq)+str(self.MW3_Freq)+str(self.enable_MW1)+str(self.enable_MW2)+str(self.enable_MW3)+str(self.enable_A1)+str(self.enable_A2)+str(self.enable_Repump)+str(self.enable_PulsedRepump)+str(self.Lock_laser)+str(self.RepumpDuration)+str(self.RepumpDecay)
+        return str(self.MW1_Power)+str(self.MW2_Power)+str(self.MW3_Power)+str(self.MW1_Freq)+str(self.MW2_Freq)+str(self.MW3_Freq)+str(self.enable_MW1)+str(self.enable_MW2)+str(self.enable_MW3)+str(self.enable_A1)+str(self.enable_A2)+str(self.enable_Repump)+str(self.enable_PulsedRepump)+str(self.lock_laser)+str(self.RepumpDuration)+str(self.RepumpDecay)
     
 
     ### From here:
@@ -1176,3 +1224,13 @@ class LaserScannerLogic(GenericLogic, ple_default):
         if np.shape(freqlines)[0] > 0:
             freqmeanline = self.average_freqlines(freqlines)
             self.plot_x_frequency = freqmeanline
+
+    # def update_ProgressBar(self, scan_dur):
+    #     print("Update ProgressBar: ", scan_dur)
+    #     start = time.time()
+    #     while time.time() - start < scan_dur:
+    #         self.sigProgressBar.emit((time.time() - start)*100, scan_dur*100)
+    #         QtTest.QTest.qSleep(200)
+    #         #QtCore.QThread.msleep(200)
+    #     self.sigProgressBar.emit(100, 100)
+            
