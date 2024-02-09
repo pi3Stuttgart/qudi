@@ -7,7 +7,7 @@ class ple_default_values_and_widget_functions:
         RepumpDecay:float = 1000
 
         Filename:str = ''
-        Stoptime:float = 3600
+        stoptime:float = 0
         PerformFit:bool = False
 
         Contrast_Fit:str=''
@@ -28,6 +28,9 @@ class ple_default_values_and_widget_functions:
         def ple_PulsedRepump_CheckBox_StateChanged(self,value):
                 self.enable_PulsedRepump=value==2
 
+        def ple_RepumpWhenIonized_CheckBox_StateChanged(self,value):
+                self.RepumpWhenIonized=value==2
+
         def ple_MW2_CheckBox_StateChanged(self,value):
                 self.enable_MW2=value==2
 
@@ -45,9 +48,6 @@ class ple_default_values_and_widget_functions:
                         self.MW1_Power=float(text.replace(",","."))
                 except:
                         pass
-
-        def ple_Abort_Button_Clicked(self,on):
-                self.AbortRequested = True
 
         def ple_MW3_Power_LineEdit_textEdited(self,text):
                 try:
@@ -76,11 +76,11 @@ class ple_default_values_and_widget_functions:
         def ple_Lock_Laser_CheckBox_StateChanged(self,value):
                 self.lock_laser=value==2
 
-        def ple_RepumpDecay_LineEdit_textEdited(self,text):
-                try:
-                        self.RepumpDecay=float(text.replace(",","."))
-                except:
-                        pass
+        # def ple_RepumpDecay_LineEdit_textEdited(self,text):
+        #         try:
+        #                 self.RepumpDecay=float(text.replace(",","."))
+        #         except:
+        #                 pass
 
         def ple_MW1_Freq_LineEdit_textEdited(self,text):
                 try:
@@ -137,7 +137,7 @@ class ple_default_values_and_widget_functions:
 
         def ple_Stoptime_LineEdit_textEdited(self,text):
                 try:
-                        self.Stoptime=float(text.replace(",","."))
+                        self.stoptime=float(text.replace(",","."))
                 except:
                         pass
 

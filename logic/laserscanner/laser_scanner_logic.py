@@ -65,9 +65,10 @@ class LaserScannerLogic(GenericLogic, ple_default):
     
     _scan_range_adjustment = StatusVar('scan_range_adjustment', 1)
     scan_range = StatusVar('scan_range', [-3, 3])
+    resolution = StatusVar(default=100)
+    number_of_lines = StatusVar(default=10)
     number_of_repeats = StatusVar(default=10)
     NumberOfPeaks = StatusVar('NumberOfPeaks', default=2)
-    resolution = StatusVar('resolution', 100)
     _scan_speed = StatusVar('scan_speed', 0.1)
     _static_v = StatusVar('goto_voltage', 0)
     fc = StatusVar('fits', None)
@@ -75,6 +76,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
     enable_A2 = StatusVar('enable_A2', True)
     enable_Repump = StatusVar('enable_Repump', False)
     enable_PulsedRepump = StatusVar('enable_PulsedRepump', True)
+    RepumpWhenIonized = StatusVar('RepumpWhenIonized', False)
     MW1_Freq = StatusVar('MW1_freq', 70)
     MW2_Freq = StatusVar('MW2_freq', 140)
     MW3_Freq = StatusVar('MW3_freq', 210)
@@ -101,7 +103,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
     sigScanRangeChanged = QtCore.Signal(float, float)
     
     # to cut the scan line into smaller parts:
-    slices=1
     mode=0
     
     def __init__(self, **kwargs):
@@ -116,13 +117,14 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.stopRequested = False
         self.AbortRequested=False
         self.local_counts=[]
-        self.slice_number=0
         self.MW1_Power=-21
         self.volt_list=[] #track PLE
         self.timstap_list=[] #timestamp for PLE track
         self.accepted_list=[]
         self.happy=True
         self.hashed = False
+        self.ionized = False
+        self.stepsize = 0.05
  
         
 
@@ -131,7 +133,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.plot_x = []
         self.plot_x_frequency=[]
         self.plot_y = []
-        self.plot_y2 = []
 
     def on_activate(self):
         """ Initialisation performed during activation of the module.
@@ -160,7 +161,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         # Initialization of internal counter for scanning
         self._scan_counter_up = 0
-        self._scan_counter_down = 0
         # Keep track of scan direction
         self.upwards_scan = True
 
@@ -174,7 +174,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         # default values for clock frequency and slowness
         # slowness: steps during retrace line
-        self.set_resolution(self.resolution)
+        self.set_resolution(self.stepsize)
         self._goto_speed = 10  # 0.01  # volt / second
         self.set_scan_speed(self._scan_speed)
         self._smoothing_steps = 0  # steps to accelerate between 0 and scan_speed
@@ -193,6 +193,9 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         self.tmp_storage=[]
         self.measured_frequencies=[]
+
+        self.adv_mode = 'SING'
+        self.peak_min_counts=300
 
     def on_deactivate(self):
         """ Deinitialisation performed during deactivation of the module.
@@ -294,13 +297,25 @@ class LaserScannerLogic(GenericLogic, ple_default):
         else:
             return 0
 
-    def set_resolution(self, resolution):
+    def set_resolution(self, stepsize):
         """ Calculate clock rate from scan speed and desired number of pixels """
-        self.resolution = resolution
+        self.stepsize = stepsize
         scan_range = abs(self.scan_range[1] - self.scan_range[0])
+        if stepsize == 0:
+            print("Stepsize = 0 is invalid.")
+            stepsize = 0.01
+        self.resolution = int(scan_range/stepsize)
         duration = scan_range / self._scan_speed
-        new_clock = resolution / duration
+        new_clock = self.resolution / duration
         return self.set_clock_frequency(new_clock)
+
+    # def set_resolution(self, resolution):
+    #     """ Calculate clock rate from scan speed and desired number of pixels """
+    #     self.resolution = resolution
+    #     scan_range = abs(self.scan_range[1] - self.scan_range[0])
+    #     duration = scan_range / self._scan_speed
+    #     new_clock = resolution / duration
+    #     return self.set_clock_frequency(new_clock)
 
     def set_scan_range(self, scan_range):
         """ Set the scan range """
@@ -318,18 +333,19 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self._scan_speed = np.clip(scan_speed, 1e-9, 1e6)
         self._goto_speed = self._scan_speed
 
+    def set_show_lines(self, scan_lines):
+        self.number_of_lines = int(np.clip(scan_lines, 1, 1e6))
+    
     def set_scan_lines(self, scan_lines):
         self.number_of_repeats = int(np.clip(scan_lines, 1, 1e6))
 
     def _initialise_data_matrix(self, scan_length):
-        """ Initializing the ODMR matrix plot. """
+        """ Initializing the matrix plot. """
 
-        self.scan_matrix = np.zeros((self.number_of_repeats, scan_length))
-        self.scan_matrix2 = np.zeros((self.number_of_repeats, scan_length))
+        self.scan_matrix = np.zeros((self.number_of_lines, scan_length))
         self.plot_x = np.linspace(self.scan_range[0], self.scan_range[1], scan_length)
         self.plot_x_frequency=self.plot_x/0.30 #1000 MHz equals 0.22 V on the PLE x range with FeedForward on # 1000 MHz equals 0.30 V on the PLE x range without FeedForward
         self.plot_y = np.zeros(scan_length)
-        self.plot_y2 = np.zeros(scan_length)
         self.fit_x = np.linspace(self.scan_range[0], self.scan_range[1], scan_length)
         self.fit_y = np.zeros(scan_length)
         return
@@ -376,15 +392,15 @@ class LaserScannerLogic(GenericLogic, ple_default):
         # check if nidaq is not already used
         if not(self._scanning_device._scanner_counter_daq_tasks==[] or self._scanning_device._scanner_clock_daq_task==None):
         #if not(self._scanning_device._scanner_counter_daq_tasks==[] or self._scanning_device._scanner_analog_daq_task==None or self._scanning_device._scanner_clock_daq_task==None or self._scanning_device._clock_daq_task==[] or self._scanning_device._counter_daq_tasks ==None):
-            print("another scanner is running. You need to wait. i will continue with current scanner task")
+            print("Another scanner is running. Please try pressing 'Run' again. I will continue with current scanner task")
             return
 
-        self.currenttime = time.time()
-        self._awg.mcas_dict.stop_awgs()
+        #self._awg.mcas_dict.stop_awgs()
         self.trace_seq()
         if self.enable_PulsedRepump:
             #self.ps.stream(seq=[[int(self.RepumpDuration*1e3),["repump"],0,0],[int(self.RepumpDecay*1e3),[],0,0]],n_runs=1) #self.RepumpDuration is in µs
-            self._awg.mcas_dict['repump'].run()
+            self.setup_repump()
+            self._awg.mcas_dict['ple_repump'].run()
         self.current_position = self._scanning_device.get_scanner_position() #Never used
         print("PLE Logic current pos", self.current_position)
 
@@ -398,21 +414,13 @@ class LaserScannerLogic(GenericLogic, ple_default):
             v_max = self.scan_range[1]
 
         self._scan_counter_up = 0
-        self._scan_counter_down = 0
         self.upwards_scan = True
 
-        self.set_resolution(self.resolution)
+        self.set_resolution(self.stepsize)
         
         self._upwards_ramp = self._generate_ramp(v_min, v_max, self._scan_speed)
         self._downwards_ramp = self._generate_ramp(v_max, v_min, 0.75)
-        #print("passed time 3", time.time()-self.currenttime)
         
-        #this part is used to be able to abort the scanning process more rapidly
-        if self.resolution/self.slices<3: #avoid getting empty scan lines
-
-            self.slices=int(self.resolution/3)
-        self._upwards_ramp_slices=self.slice_array(self._upwards_ramp)
-        self.slice_number=0
         self.local_counts = []
         self.timestamp_list=[]
         self.f_start_end=[]
@@ -420,8 +428,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.range_defined=False
 
         self._initialise_data_matrix(len(self._upwards_ramp[3]))
-        
-        #print("passed time 4", time.time()-self.currenttime)
         
         # Lock and set up scanner
         returnvalue = self._initialise_scanner()
@@ -435,25 +441,24 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         # initialize wavemeter data
         #self._wavemeterlogic._hardware_pull._parentclass._wavelength_data=[]
+        self.starttime = time.time()
 
-
+        self.setup_seq(sequence_name=self.curr_sequence_name)
         self.sigScanNextLine.emit()
         self.sigScanStarted.emit()
-        #print("passed time 5", time.time()-self.currenttime)        
         return 0
 
-    def slice_array(self,x):
-        arr=np.arange(0,len(x[0]))
-        propor=(len(x[0])+1)/self.slices
-        parts=[x[:,(i*propor<=arr) & (arr<(i+1)*propor)] for i in range(self.slices)]
-        return parts
+    # def slice_array(self,x):
+    #     arr=np.arange(0,len(x[0]))
+    #     propor=(len(x[0])+1)/self.slices
+    #     parts=[x[:,(i*propor<=arr) & (arr<(i+1)*propor)] for i in range(self.slices)]
+    #     return parts
 
     def stop_scanning(self):
         """Stops the scan
 
         @return int: error code (0:OK, -1:error)
         """
-        #print("Stopping...")
         with self.threadlock:
             print("threadlock laserscanning")
             if self.module_state() == 'locked':
@@ -465,7 +470,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
         return 0
 
     def abort_scanning(self):
-        #print("Aborting...")
         with self.threadlock:
             if self.module_state() == 'locked':
                 self.AbortRequested = True
@@ -485,34 +489,32 @@ class LaserScannerLogic(GenericLogic, ple_default):
         """ If stopRequested then finish the scan, otherwise perform next repeat of the scan line
         """
         # stops scanning
-        if ((self.stopRequested and self.slice_number==0) or self._scan_counter_down >= self.number_of_repeats or self.AbortRequested):
-            #QtTest.QTest.qSleep(5000)
+        if (self.stopRequested or self._scan_counter_up >= self.number_of_repeats or ((time.time()-self.starttime) >= self.stoptime and self.stoptime!=0)):
             self._goto_during_scan(self._static_v)
             self._close_scanner()
             self.sigScanFinished.emit()
             self.local_counts=[]
-            self.slice_number=0
-            # self.ps.constant(pulse=(0,[],0,0)) # just for safety
             self._awg.mcas_dict.stop_awgs()
-            # self.stopped=True # I put the stopped = True into "goto_fitted_peak", since that is the last called method after scanning
-
+            
             self.measured_frequencies=self._wavemeterlogic._hardware_pull._parentclass._wavelength_data.copy()
             return
 
-        if self._scan_counter_up == 0 and self.slice_number==0:
+        if self._scan_counter_up == 0:
             # move from current voltage to start of scan range.
             self._goto_during_scan(self.scan_range[0])
-            #QtTest.QTest.qSleep(5000)
             self._wavemeterlogic._hardware_pull._parentclass._wavelength_data=[]
             
 
         if self.upwards_scan:
             # print("running seq: ", self.curr_sequence_name) # Does it affect the sequence if it is started repeatedly?
-            self._awg.mcas_dict.stop_awgs()
+            #self._awg.mcas_dict.stop_awgs()
+            if (self.enable_PulsedRepump and not self.RepumpWhenIonized) or (self.enable_PulsedRepump and self.RepumpWhenIonized and self.ionized): 
+                # only need to setup sequence again, if repump was used before.
+                self.setup_seq(sequence_name=self.curr_sequence_name)
             self._awg.mcas_dict[self.curr_sequence_name].run()
-
+            
             fstart=self._wavemeterlogic._wavemeter_device.get_current_wavelength2()
-            counts = self._scan_line(self._upwards_ramp_slices[self.slice_number])
+            counts = self._scan_line(self._upwards_ramp)
             fend=self._wavemeterlogic._wavemeter_device.get_current_wavelength2()
             self.f_start_end.append([fstart,fend,len(counts)])
 
@@ -523,98 +525,89 @@ class LaserScannerLogic(GenericLogic, ple_default):
             #print("PLElogic position during _do_next_line", self._scanning_device.get_scanner_position())
         
             self.local_counts=self.local_counts+list(counts)
-            self.slice_number+=1
-            if self.slice_number==self.slices:
-                if self.mode==0:
-                    freqs=np.concatenate([np.linspace(fstart,fend,length) for fstart,fend,length in self.f_start_end])
+            if self.mode==0:
+                freqs=np.concatenate([np.linspace(fstart,fend,length) for fstart,fend,length in self.f_start_end])
 
-                else:
-                    # calculate the frequencies from the wavelengths measured
-                    freq_data=self._wavemeterlogic._hardware_pull._parentclass._wavelength_data.copy()
+            else:
+                # calculate the frequencies from the wavelengths measured
+                freq_data=self._wavemeterlogic._hardware_pull._parentclass._wavelength_data.copy()
 
-                    wavelengths=np.array(freq_data)[:,1]
-                    times=np.array(freq_data)[:,0]
+                wavelengths=np.array(freq_data)[:,1]
+                times=np.array(freq_data)[:,0]
 
-                    freqs=np.concatenate([np.interp(Ts,xp=times,fp=wavelengths) for Ts in self.timestamp_list])
+                freqs=np.concatenate([np.interp(Ts,xp=times,fp=wavelengths) for Ts in self.timestamp_list])
 
-                cts=self.local_counts
+            cts=self.local_counts
 
-                #TODO get the real fmin,fmax,points
-                if not self.range_defined:
-                    self.fmin=min(freqs)
-                    self.fmax=max(freqs)
-                    self.range_defined=True
+            #TODO get the real fmin,fmax,points
+            if not self.range_defined:
+                self.fmin=min(freqs)
+                self.fmax=max(freqs)
+                self.range_defined=True
 
-                self.f_range=np.linspace(self.fmin,self.fmax,len(self.local_counts)) #this will be the x axis for all the scans #do not calculate it here, t least not fmin and fmax
+            self.f_range=np.linspace(self.fmin,self.fmax,len(self.local_counts)) #this will be the x axis for all the scans #do not calculate it here, t least not fmin and fmax
 
-                self.xy_data.append([freqs,cts])
+            self.xy_data.append([freqs,cts])
 
 
-                # because freqs might have a lesser span than fmin->fmax, we artificially create the two extrema data points for the interpolation to work
-                if min(freqs)>self.fmin:
-                    freqs=np.concatenate(([self.fmin],freqs))
-                    cts=np.concatenate(([0],cts))
-                    
-                if max(freqs)<self.fmax:
-                    freqs=np.concatenate((freqs,[self.fmax]))
-                    cts=np.concatenate((cts,[0]))
-
-
-                self.interpolated_cts=np.interp(self.f_range, 
-                                                xp=freqs,
-                                                fp=cts
-                                                )
+            # because freqs might have a lesser span than fmin->fmax, we artificially create the two extrema data points for the interpolation to work
+            if min(freqs)>self.fmin:
+                freqs=np.concatenate(([self.fmin],freqs))
+                cts=np.concatenate(([0],cts))
                 
-                #self.tmp_storage.append(self.f_start_end.copy())
+            if max(freqs)<self.fmax:
+                freqs=np.concatenate((freqs,[self.fmax]))
+                cts=np.concatenate((cts,[0]))
 
-                self.timestamp_list=[] #reinitialize the timestamp_list
-                self.f_start_end=[]
 
-                #old code
-                self.scan_matrix[self._scan_counter_up] =self.local_counts # Here occurs an error "cannot copy sequence with size 21 to array axis with dimension 20". This only occured, when variables where changed while the programm is running.
-                self.plot_y = self.plot_y + np.array(self.local_counts)
+            self.interpolated_cts=np.interp(self.f_range, 
+                                            xp=freqs,
+                                            fp=cts
+                                            )
+            
+            #self.tmp_storage.append(self.f_start_end.copy())
 
-                # # new code
-                # self.scan_matrix[self._scan_counter_up] =self.interpolated_cts
-                # self.plot_y = self.plot_y + np.array(self.interpolated_cts)
+            self.timestamp_list=[] #reinitialize the timestamp_list
+            self.f_start_end=[]
 
-                self.check_if_ionized()
-                self.local_counts=[]
-                self._scan_counter_up += 1
-                self.upwards_scan = False
-                self.slice_number=0 
+            #old code
+            if self.scan_matrix.shape[0]< self.number_of_lines:
+                add=np.zeros((int(self.number_of_lines-self.scan_matrix.shape[0]),self.scan_matrix.shape[1]))
+                self.scan_matrix=np.vstack((self.scan_matrix,add))
+            elif self.scan_matrix.shape[0]> self.number_of_lines and self.number_of_lines!=0:
+                self.scan_matrix=self.scan_matrix[:int(self.number_of_lines)]
+            self.scan_matrix[1:]=self.scan_matrix[0:-1]
+            self.scan_matrix[0]=self.local_counts
+        
+            
+            #self.scan_matrix[self._scan_counter_up] =self.local_counts # Here occurs an error "cannot copy sequence with size 21 to array axis with dimension 20". This only occured, when variables where changed while the programm is running.
+            
+            
+            self.plot_y = self.plot_y + np.array(self.local_counts)
+            
+            # # new code
+            # self.scan_matrix[self._scan_counter_up] =self.interpolated_cts
+            # self.plot_y = self.plot_y + np.array(self.interpolated_cts)
 
+            self.check_if_ionized(self.scan_matrix[0])
+            self.local_counts=[]
+            self._scan_counter_up += 1
+            self.upwards_scan = False
         
         else: #retrace
-            #self.measured_frequencies=np.concatenate(self._wavemeterlogic._hardware_pull._parentclass._wavelength_data.copy(), axis=0)[1::2]
-            #if len(self.measured_frequencies)!=0:
-            #    self.extract_freqlines() #updates plot_x_frequency
-            #print("X AXIS:")
-            #print(self.plot_x_frequency)
-            #print(np.shape(self.plot_x_frequency))
             self.sigUpdatePlots.emit()
-            if self.enable_PulsedRepump:
-                # self.ps.stream(seq=[[int(self.RepumpDuration*1e3),["repump"],0,0],[int(self.RepumpDecay*1e3),[],0,0]],n_runs=1) #self.RepumpDuration is in µs
-                self._awg.mcas_dict.stop_awgs()
-                self._awg.mcas_dict['repump'].run()
+            if (self.enable_PulsedRepump and not self.RepumpWhenIonized) or (self.enable_PulsedRepump and self.RepumpWhenIonized and self.ionized):
+                self.setup_repump()
+                self._awg.mcas_dict['ple_repump'].run()
             counts = self._scan_line(self._downwards_ramp)
-            counts = np.ones(self.scan_matrix2[self._scan_counter_down].shape[0])
-            self.scan_matrix2[self._scan_counter_down] = counts
-            self.plot_y2 += counts
-            self._scan_counter_down += 1
             self.upwards_scan = True
             self.start_stop_timestamps=[]
-
-
         self.sigScanNextLine.emit()
-# Create sequence which runs only once for repump pulse
-# Create sequence for upwards scan
 
-    def check_if_ionized(self):
-        self.peak_min_counts=100
-        ionized=not(np.sum(np.asarray(self.local_counts)>self.peak_min_counts))
-        if ionized:
-            print("Ionized")
+    def check_if_ionized(self, cts):
+        self.ionized=not(np.sum(np.asarray(cts)>self.peak_min_counts))
+        if self.ionized:
+            print("Ionized in PLE")
             self.SigIonized.emit()
 
     
@@ -627,6 +620,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self._MW1_Power=val
 
     def trace_seq(self):
+        self.setup_repump()
         hash = base64.b64encode(hashlib.sha1(self.convert_seq_params_to_string().encode()).digest())
         #Added self.queue._gated_counter.readout_duration such that the hash recognizes a change in readout duration and will update n_values in the sequence accordingly
         self.curr_sequence_name = "ple_trace_hash_{}".format(hash)
@@ -639,8 +633,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
             self._awg.mcas_dict.stop_awgs()
             self.curr_sequence_name = "ple_trace"
             self.setup_seq(sequence_name=self.curr_sequence_name)
-        #else:
-            #print("Dont need to set up new RF.")
         return
         
     def setup_seq(self, sequence_name):
@@ -681,17 +673,29 @@ class LaserScannerLogic(GenericLogic, ple_default):
         
         # if not "PLE_treace" in self._awg.mcas_dict.keys():
         self._awg.mcas_dict.stop_awgs()
-        QtTest.QTest.qSleep(200)
         self._awg.mcas_dict[sequence_name] = seq
         #self._awg.mcas_dict.print_info()
         return
+
+    def setup_repump(self):
+        seq = self._awg.mcas(name='ple_repump', ch_dict={"2g": [1, 2], "ps": [1]}, advance_mode=self.adv_mode)
+
+        seq.start_new_segment("Repump", loop_count = 1, advance_mode=self.adv_mode)
+        seq.asc(repump=self.enable_PulsedRepump, length_mus=self.RepumpDuration)
+        
+        # seq.start_new_segment("RepumpDec", advance_mode=self.adv_mode)
+        # seq.asc(length_mus=self.RepumpDecay)
+        
+        self._awg.mcas_dict.stop_awgs()
+        self._awg.mcas_dict['ple_repump'] = seq
         
     def power_to_amp(self, power_dBm, impedance=50):
         power_dBm = np.atleast_1d(power_dBm)
         P_watts = 10**(power_dBm / 10) * 1e-3
         V_rms = np.sqrt(P_watts * impedance)
         V_pp = V_rms * 2 * np.sqrt(2)
-        return V_pp / self._awg.mcas_dict.awgs['2g'].ch[1].output_amplitude
+        awg_amp = self._awg.mcas_dict.awgs['2g'].ch[1].output_amplitude
+        return V_pp / awg_amp
        
     def _generate_ramp(self, voltage1, voltage2, speed):
         """Generate a ramp vrom voltage1 to voltage2 that
@@ -703,7 +707,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         @param float voltage2: voltage at end of ramp.
         """
 
-        # It is much easier to calculate the smoothed ramp for just one direction (upwards),
+        # It is much easier to calculate the smoothed ramp for just one direction (upwards),‼
         # and then to reverse it if a downwards ramp is required.
 
         v_min = min(voltage1, voltage2)
@@ -776,7 +780,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
             return -1
         try:
             # scan of a single line
-            #print("PLE logic: line_to_scan", line_to_scan)
             counts_on_scan_line = self._scanning_device.scan_line(line_to_scan)
             return counts_on_scan_line.transpose()[0]
 
@@ -828,7 +831,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         if self.lock_laser and self.module_state() != 'locked':
             freqs=np.array(self.Frequencies_Fit.split(";")[:-1]).astype(float)
             peak_volt=max(freqs)
-            if peak_volt<self.scan_range[1] and peak_volt>self.scan_range[0]:
+            if (peak_volt<self.scan_range[1] and peak_volt>self.scan_range[0]) and (np.sum(self.xy_data[0][1])>self.peak_min_counts): # check if there was a peak within the scan range, and last scan was not ionized
                 self.volt_list.append(peak_volt)
                 self.timstap_list.append(time.time())
                 self.accepted_list.append(self.happy)
@@ -841,21 +844,15 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
                 # select scan range depending on ComboBox scan_range_adjustment
                 if self.scan_range_adjustment == 0:
-                    self.scan_range[0],self.scan_range[1]=peak_volt-0.15,peak_volt+0.15
+                    self.scan_range[0],self.scan_range[1]=peak_volt-0.2,peak_volt+0.2
                 if self.scan_range_adjustment == 1:
-                    self.scan_range[0],self.scan_range[1]=peak_volt-0.45,peak_volt+0.15
+                    self.scan_range[0],self.scan_range[1]=peak_volt-0.5,peak_volt+0.3
                 if self.scan_range_adjustment == 2:
                     pass
                     #self.scan_range[0],self.scan_range[1]=peak_volt-0.5*range,peak_volt+0.5*range
                 self.sigScanRangeChanged.emit(self.scan_range[0],self.scan_range[1])
             else: 
-                # emit an error?
                 print("No PLE found in range. Retry with bigger scan range...")
-                #if self.scan_range[1]>=3 or self.scan_range[0]<=-3:
-                #    print("No PLE found")
-                #    return
-                
-                #
                 self.scan_range[0],self.scan_range[1]=self.scan_range[0]-1,self.scan_range[1]+1
                 self.scan_range=list(np.clip(self.scan_range,-3,3))
                 self.sigScanRangeChanged.emit(self.scan_range[0],self.scan_range[1])
@@ -869,7 +866,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         @return int: error code (0:OK, -1:error)
         """
-        print("im am the save data of PLE")
         if tag is None:
             tag = ''
 
@@ -1052,7 +1048,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 np.min(freq_data),
                 np.max(freq_data),
                 0,
-                self.number_of_repeats
+                self.number_of_lines
                 ],
             aspect='auto',
             interpolation='nearest')
@@ -1100,7 +1096,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
         return fig
     
     def do_gaussian_fit(self):
-        #print("doing gaussian fit")
         x_data=self.plot_x.astype(np.float)
         #x_data=self.plot_x_frequency.astype(np.float)
         y_data=self.plot_y.astype(np.float)
@@ -1154,8 +1149,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 self.Contrast_Fit=self.Contrast_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"amplitude"].value,3))+"; " # because 1 peak and 2 peak gaussian fit dont give the same result keywords, we add the 'gi_' part (missing in the 1 peak case) by multiplying the string by 1 if paeks!=1 and remove it if peaks=1.
                 self.Frequencies_Fit=self.Frequencies_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"center"].value,7))+"; "
                 self.Linewidths_Fit=self.Linewidths_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"fwhm"].value,3))+"; " #TODO convert linewidth from V to MHz
-            except Exception as e:
-                print("an error occured:\n", e)
+            except:
+                self.log.warning('Error occured at fitting.')
 
         self.sigFitPerformed.emit(self.Frequencies_Fit)
         return self.interplolated_x_data,self.fit_data,result
@@ -1213,8 +1208,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
         frequencymean = np.zeros_like(freqlines)
         for i in freqlines:
             frequencymean += i
-        print("FREQLINES SHAPE:")
-        print(np.shape(freqlines)[0])
         frequencymean = frequencymean / np.shape(freqlines)[0]
         return (frequencymean[0])
         

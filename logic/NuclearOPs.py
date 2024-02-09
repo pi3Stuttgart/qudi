@@ -385,12 +385,12 @@ class NuclearOPs(DataGeneration):
                     #     #QtTest.QTest.qSleep(1) #safety.
                     #     time.sleep(0.1)
 
-                    while self.queue._counter.heating:
-                        now = datetime.datetime.now()
-                        current_time = now.strftime("%H:%M:%S")
-                        print("Current Time =", current_time)
-                        print("Countrate too high. Assuming hearting of photon detector. Going to sleep for 1min.")
-                        QtTest.QTest.qSleep(60000)
+                    # while self.queue._counter.heating:
+                    #     now = datetime.datetime.now()
+                    #     current_time = now.strftime("%H:%M:%S")
+                    #     print("Current Time =", current_time)
+                    #     print("Countrate too high. Assuming hearting of photon detector. Going to sleep for 1min.")
+                    #     QtTest.QTest.qSleep(60000)
 
                     if self.set_A1_power or self.set_A2_power:
                         self.set_laser_power(abort)

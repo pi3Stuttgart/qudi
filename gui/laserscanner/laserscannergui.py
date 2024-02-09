@@ -63,6 +63,7 @@ class VoltScanGui(GUIBase, ple_default_functions):
     sigChangeResolution = QtCore.Signal(float)
     sigChangeSpeed = QtCore.Signal(float)
     sigChangeLines = QtCore.Signal(int)
+    sigChangeMaxLines = QtCore.Signal(int)
     sigSaveMeasurement = QtCore.Signal(str, list, list)
 
     def __init__(self, config, **kwargs):
@@ -98,25 +99,9 @@ class VoltScanGui(GUIBase, ple_default_functions):
                 self._voltscan_logic.number_of_repeats)
         )
 
-        # self.scan_matrix_image2 = pg.ImageItem(
-        #     self._voltscan_logic.scan_matrix2,
-        #     axisOrder='row-major')
-
-        # self.scan_matrix_image2.setRect(
-        #     QtCore.QRectF(
-        #         self._voltscan_logic.scan_range[0],
-        #         0,
-        #         self._voltscan_logic.scan_range[1] - self._voltscan_logic.scan_range[0],
-        #         self._voltscan_logic.number_of_repeats)
-        # )
-
         self.scan_image = pg.PlotDataItem(
             self._voltscan_logic.plot_x,
             self._voltscan_logic.plot_y)
-
-        # self.scan_image2 = pg.PlotDataItem(
-        #     self._voltscan_logic.plot_x,
-        #     self._voltscan_logic.plot_y2)
 
         self.scan_fit_image = pg.PlotDataItem(
             self._voltscan_logic.plot_x,
@@ -134,7 +119,6 @@ class VoltScanGui(GUIBase, ple_default_functions):
         #self._mw.voltscan2_ViewWidget.addItem(self.scan_image2)
         #self._mw.voltscan2_ViewWidget.addItem(self.scan_fit_image)
         #self._mw.voltscan2_ViewWidget.showGrid(x=True, y=True, alpha=0.8)
-        #self._mw.voltscan_matrix2_ViewWidget.addItem(self.scan_matrix_image2)
 
         # Get the colorscales at set LUT
         my_colors = ColorScaleInferno()
@@ -205,7 +189,8 @@ class VoltScanGui(GUIBase, ple_default_functions):
         self.sigChangeVoltage.connect(self._voltscan_logic.set_voltage)
         self.sigChangeRange.connect(self._voltscan_logic.set_scan_range)
         self.sigChangeSpeed.connect(self._voltscan_logic.set_scan_speed)
-        self.sigChangeLines.connect(self._voltscan_logic.set_scan_lines)
+        self.sigChangeLines.connect(self._voltscan_logic.set_show_lines)
+        self.sigChangeMaxLines.connect(self._voltscan_logic.set_scan_lines)
         self.sigChangeResolution.connect(self._voltscan_logic.set_resolution)
         self.sigSaveMeasurement.connect(self._voltscan_logic.save_data)
 
@@ -301,8 +286,6 @@ class VoltScanGui(GUIBase, ple_default_functions):
             image=scan_image_data,
             levels=(cb_min, cb_max),
             axisOrder='row-major')
-
-        scan_image_data2 = self._voltscan_logic.scan_matrix2
  
         self.refresh_scan_colorbar()
 
@@ -347,6 +330,9 @@ class VoltScanGui(GUIBase, ple_default_functions):
 
     def change_lines(self,tmp=0):
         self.sigChangeLines.emit(self._mw.linesSpinBox.value())
+    
+    def change_maxlines(self,tmp=0):
+        self.sigChangeMaxLines.emit(self._mw.maxlinesSpinBox.value())
 
     def change_resolution(self,tmp=0):
         self.sigChangeResolution.emit(self._mw.resolutionSpinBox.value())
@@ -400,14 +386,10 @@ class VoltScanGui(GUIBase, ple_default_functions):
         self._mw.ple_Run_Button.setEnabled(False)
         self._mw.ple_Stop_Button.setEnabled(True)
         self._mw.ple_Continue_Button.setEnabled(False)
-        self._mw.ple_Abort_Button.setEnabled(False)
-        self._mw.ple_Save_Button.setEnabled(False)
         self._mw.ple_Load_Button.setEnabled(False)
     
     def enable_scan_actions(self):
         self._mw.ple_Run_Button.setEnabled(True)
         self._mw.ple_Stop_Button.setEnabled(False)
         self._mw.ple_Continue_Button.setEnabled(True)
-        self._mw.ple_Abort_Button.setEnabled(True)
-        self._mw.ple_Save_Button.setEnabled(True)
         self._mw.ple_Load_Button.setEnabled(True)
