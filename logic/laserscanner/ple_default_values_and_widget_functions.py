@@ -3,6 +3,7 @@ import time
 
 class ple_default_values_and_widget_functions:
         lock_laser:bool=False
+        _lock_laser:bool=False
         RepumpDuration:float = 10
         RepumpDecay:float = 1000
 

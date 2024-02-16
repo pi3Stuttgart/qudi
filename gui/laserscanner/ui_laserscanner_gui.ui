@@ -189,7 +189,7 @@
       <item row="9" column="1">
        <widget class="QSpinBox" name="linesSpinBox">
         <property name="maximum">
-         <number>999</number>
+         <number>99999</number>
         </property>
        </widget>
       </item>

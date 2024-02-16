@@ -44,6 +44,8 @@ import hashlib
 from scipy.signal import find_peaks
 from scipy.interpolate import UnivariateSpline
 
+from core.configoption import ConfigOption
+
 from logic.laserscanner.ple_default_values_and_widget_functions import ple_default_values_and_widget_functions as ple_default
 
 
@@ -66,6 +68,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
     _scan_range_adjustment = StatusVar('scan_range_adjustment', 1)
     scan_range = StatusVar('scan_range', [-3, 3])
     resolution = StatusVar(default=100)
+    stepsize = StatusVar(default=0.01)
     number_of_lines = StatusVar(default=10)
     number_of_repeats = StatusVar(default=10)
     NumberOfPeaks = StatusVar('NumberOfPeaks', default=2)
@@ -87,8 +90,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
     enable_MW2 = StatusVar('enable_MW2', True)
     enable_MW3 = StatusVar('enable_MW3', False)
 
-
-
+    _ch = ConfigOption('default_channel', default=1)
 
 
     sigChangeVoltage = QtCore.Signal(float)
@@ -101,6 +103,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
     SigIonized = QtCore.Signal()
     sigScanRangeAdjustment = QtCore.Signal(int)
     sigScanRangeChanged = QtCore.Signal(float, float)
+    sigLockLaserChanged = QtCore.Signal(bool)
     
     # to cut the scan line into smaller parts:
     mode=0
@@ -121,10 +124,9 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.volt_list=[] #track PLE
         self.timstap_list=[] #timestamp for PLE track
         self.accepted_list=[]
-        self.happy=True
         self.hashed = False
         self.ionized = False
-        self.stepsize = 0.05
+        self.laser_at_position = False
  
         
 
@@ -194,6 +196,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.tmp_storage=[]
         self.measured_frequencies=[]
 
+        self.interpolated_x_data=np.linspace(0,1,100)
+
         self.adv_mode = 'SING'
         self.peak_min_counts=300
 
@@ -226,6 +230,16 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 self.log.error('Unkown input for scan range.')
         self.sigScanRangeAdjustment.emit(self._scan_range_adjustment)
     
+    @property
+    def lock_laser(self):
+        return self._lock_laser
+    
+    @lock_laser.setter
+    def lock_laser(self, val):
+        self._lock_laser = val
+        print("sigLockLaserChanged emitted from logic")
+        #self.sigLockLaserChanged.emit(self.lock_laser)
+
     @QtCore.Slot(float)
     def goto_voltage(self, volts=None):
         """Forwarding the desired output voltage to the scanning device.
@@ -333,8 +347,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self._scan_speed = np.clip(scan_speed, 1e-9, 1e6)
         self._goto_speed = self._scan_speed
 
-    def set_show_lines(self, scan_lines):
-        self.number_of_lines = int(np.clip(scan_lines, 1, 1e6))
+    def set_show_lines(self, show_lines):
+        self.number_of_lines = int(np.clip(show_lines, 1, 1e6))
     
     def set_scan_lines(self, scan_lines):
         self.number_of_repeats = int(np.clip(scan_lines, 1, 1e6))
@@ -344,7 +358,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         self.scan_matrix = np.zeros((self.number_of_lines, scan_length))
         self.plot_x = np.linspace(self.scan_range[0], self.scan_range[1], scan_length)
-        self.plot_x_frequency=self.plot_x/0.30 #1000 MHz equals 0.22 V on the PLE x range with FeedForward on # 1000 MHz equals 0.30 V on the PLE x range without FeedForward
+        self.plot_x_frequency=self.plot_x*self._scanning_device._scanner_position_ranges[3][1] #1000 MHz equals 0.22 V on the PLE x range with FeedForward on # 1000 MHz equals 0.30 V on the PLE x range without FeedForward
         self.plot_y = np.zeros(scan_length)
         self.fit_x = np.linspace(self.scan_range[0], self.scan_range[1], scan_length)
         self.fit_y = np.zeros(scan_length)
@@ -381,6 +395,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         @return int: error code (0:OK, -1:error)
         """
+        self.laser_at_position = False
         # print(self._scanning_device.module_state()) #self._scanning_device.module_state() is not the same as _optimizer_logic.module_state.current! So _s_d.module_state is "idle" even when confocal refocus runs.
         # if self._scanning_device.module_state() == 'locked':
         #     logger.error('Nicard is in module state "locked".')
@@ -395,14 +410,16 @@ class LaserScannerLogic(GenericLogic, ple_default):
             print("Another scanner is running. Please try pressing 'Run' again. I will continue with current scanner task")
             return
 
-        #self._awg.mcas_dict.stop_awgs()
+        self._awg.mcas_dict.stop_awgs()
+        QtTest.QTest.qSleep(200)
         self.trace_seq()
         if self.enable_PulsedRepump:
             #self.ps.stream(seq=[[int(self.RepumpDuration*1e3),["repump"],0,0],[int(self.RepumpDecay*1e3),[],0,0]],n_runs=1) #self.RepumpDuration is in µs
+            self._awg.mcas_dict.stop_awgs()
+            QtTest.QTest.qSleep(200)
             self.setup_repump()
             self._awg.mcas_dict['ple_repump'].run()
         self.current_position = self._scanning_device.get_scanner_position() #Never used
-        print("PLE Logic current pos", self.current_position)
 
         if v_min is not None:
             self.scan_range[0] = v_min
@@ -438,21 +455,17 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         self.stopped=False
         self.start_stop_timestamps=[]
-
+        self.start_list=[]
+        self.stop_list=[]
         # initialize wavemeter data
         #self._wavemeterlogic._hardware_pull._parentclass._wavelength_data=[]
         self.starttime = time.time()
 
+        self._acqusition_start_time = time.time()
         self.setup_seq(sequence_name=self.curr_sequence_name)
         self.sigScanNextLine.emit()
         self.sigScanStarted.emit()
         return 0
-
-    # def slice_array(self,x):
-    #     arr=np.arange(0,len(x[0]))
-    #     propor=(len(x[0])+1)/self.slices
-    #     parts=[x[:,(i*propor<=arr) & (arr<(i+1)*propor)] for i in range(self.slices)]
-    #     return parts
 
     def stop_scanning(self):
         """Stops the scan
@@ -489,14 +502,17 @@ class LaserScannerLogic(GenericLogic, ple_default):
         """ If stopRequested then finish the scan, otherwise perform next repeat of the scan line
         """
         # stops scanning
-        if (self.stopRequested or self._scan_counter_up >= self.number_of_repeats or ((time.time()-self.starttime) >= self.stoptime and self.stoptime!=0)):
+        if (self.stopRequested or (self._scan_counter_up >= self.number_of_repeats and self.number_of_repeats!=0) or ((time.time()-self.starttime) >= self.stoptime and self.stoptime!=0)):
             self._goto_during_scan(self._static_v)
             self._close_scanner()
-            self.sigScanFinished.emit()
-            self.local_counts=[]
+            # self.sigScanFinished.emit()
+            # self.local_counts=[]
+            # self.slice_number=0
             self._awg.mcas_dict.stop_awgs()
+            self.local_counts=[]
             
             self.measured_frequencies=self._wavemeterlogic._hardware_pull._parentclass._wavelength_data.copy()
+            self.sigScanFinished.emit()
             return
 
         if self._scan_counter_up == 0:
@@ -513,9 +529,10 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 self.setup_seq(sequence_name=self.curr_sequence_name)
             self._awg.mcas_dict[self.curr_sequence_name].run()
             
-            fstart=self._wavemeterlogic._wavemeter_device.get_current_wavelength2()
+            fstart=self._wavemeterlogic._wavemeter_device.get_current_wavelength(kind ='air', ch = self._wavemeterlogic._wavemeter_device.channel1)
+            self.start_list.append(time.time()-self._acqusition_start_time)
             counts = self._scan_line(self._upwards_ramp)
-            fend=self._wavemeterlogic._wavemeter_device.get_current_wavelength2()
+            fend=self._wavemeterlogic._wavemeter_device.get_current_wavelength(kind ='air', ch = self._wavemeterlogic._wavemeter_device.channel1)
             self.f_start_end.append([fstart,fend,len(counts)])
 
             #get the timestamp from the wavemeter
@@ -538,7 +555,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 freqs=np.concatenate([np.interp(Ts,xp=times,fp=wavelengths) for Ts in self.timestamp_list])
 
             cts=self.local_counts
-
+            self.stop_list.append(time.time()-self._acqusition_start_time)
             #TODO get the real fmin,fmax,points
             if not self.range_defined:
                 self.fmin=min(freqs)
@@ -597,6 +614,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
         else: #retrace
             self.sigUpdatePlots.emit()
             if (self.enable_PulsedRepump and not self.RepumpWhenIonized) or (self.enable_PulsedRepump and self.RepumpWhenIonized and self.ionized):
+                self._awg.mcas_dict.stop_awgs()
+                QtTest.QTest.qSleep(200)
                 self.setup_repump()
                 self._awg.mcas_dict['ple_repump'].run()
             counts = self._scan_line(self._downwards_ramp)
@@ -627,10 +646,12 @@ class LaserScannerLogic(GenericLogic, ple_default):
         if self.hashed and not self.curr_sequence_name in self._awg.mcas_dict:
             print("hash in PLE: ", self.curr_sequence_name)
             self._awg.mcas_dict.stop_awgs()
+            QtTest.QTest.qSleep(200)
             self.setup_seq(sequence_name=self.curr_sequence_name)
 
         elif self.hashed == False: 
             self._awg.mcas_dict.stop_awgs()
+            QtTest.QTest.qSleep(200)
             self.curr_sequence_name = "ple_trace"
             self.setup_seq(sequence_name=self.curr_sequence_name)
         return
@@ -673,6 +694,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         
         # if not "PLE_treace" in self._awg.mcas_dict.keys():
         self._awg.mcas_dict.stop_awgs()
+        QtTest.QTest.qSleep(200)
         self._awg.mcas_dict[sequence_name] = seq
         #self._awg.mcas_dict.print_info()
         return
@@ -687,6 +709,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         # seq.asc(length_mus=self.RepumpDecay)
         
         self._awg.mcas_dict.stop_awgs()
+        QtTest.QTest.qSleep(200)
         self._awg.mcas_dict['ple_repump'] = seq
         
     def power_to_amp(self, power_dBm, impedance=50):
@@ -694,8 +717,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         P_watts = 10**(power_dBm / 10) * 1e-3
         V_rms = np.sqrt(P_watts * impedance)
         V_pp = V_rms * 2 * np.sqrt(2)
-        awg_amp = self._awg.mcas_dict.awgs['2g'].ch[1].output_amplitude
-        return V_pp / awg_amp
+        return V_pp / self._awg.mcas_dict.awgs['2g'].ch[1].output_amplitude
        
     def _generate_ramp(self, voltage1, voltage2, speed):
         """Generate a ramp vrom voltage1 to voltage2 that
@@ -808,33 +830,18 @@ class LaserScannerLogic(GenericLogic, ple_default):
             return -1
         return 0
 
-    
-    def _stopScan_wait(self, timeout=30.0):
-        """
-        Stops the scanner and waits until it actually has stopped.
-
-        @param timeout: float, the max. time in seconds how long the method should wait for the
-                        process to stop.
-
-        @return: error code
-        """
-        self.kill_scanner()
-        start_time = time.time()
-        while self.module_state() == 'locked':
-            QtTest.QTest.qSleep(100)
-            if time.time() - start_time >= timeout:
-                self.log.warning('Stopping the counter takes already longer than {0}s'.format(timeout))
-                return -1
-        return 0
-
     def goto_fitted_peak(self):
         if self.lock_laser and self.module_state() != 'locked':
             freqs=np.array(self.Frequencies_Fit.split(";")[:-1]).astype(float)
             peak_volt=max(freqs)
-            if (peak_volt<self.scan_range[1] and peak_volt>self.scan_range[0]) and (np.sum(self.xy_data[0][1])>self.peak_min_counts): # check if there was a peak within the scan range, and last scan was not ionized
+            print("max counts of last row: ", np.max(self.xy_data[0][1]))
+            # last scan ionized?
+            not_ionized = (np.max(self.xy_data[0][1])>self.peak_min_counts)
+            print("max counts", np.max(self.xy_data[0][1]))
+            print("peak_min_counts", self.peak_min_counts)
+            if (peak_volt<self.scan_range[1] and peak_volt>self.scan_range[0]):# and not_ionized: # check if there was a peak within the scan range, and last scan was not ionized
                 self.volt_list.append(peak_volt)
                 self.timstap_list.append(time.time())
-                self.accepted_list.append(self.happy)
                 self._static_v = peak_volt
                 self.goto_voltage(self._static_v)
                 #self._wavemeterlogic._wavemeter_device.get_reference_course(self.Frequencies_Fit[-1], channel=2)
@@ -846,11 +853,12 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 if self.scan_range_adjustment == 0:
                     self.scan_range[0],self.scan_range[1]=peak_volt-0.2,peak_volt+0.2
                 if self.scan_range_adjustment == 1:
-                    self.scan_range[0],self.scan_range[1]=peak_volt-0.5,peak_volt+0.3
+                    self.scan_range[0],self.scan_range[1]=peak_volt-0.5,peak_volt+0.4
                 if self.scan_range_adjustment == 2:
                     pass
                     #self.scan_range[0],self.scan_range[1]=peak_volt-0.5*range,peak_volt+0.5*range
                 self.sigScanRangeChanged.emit(self.scan_range[0],self.scan_range[1])
+                self.laser_at_position = True
             else: 
                 print("No PLE found in range. Retry with bigger scan range...")
                 self.scan_range[0],self.scan_range[1]=self.scan_range[0]-1,self.scan_range[1]+1
@@ -923,7 +931,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
             self.scan_matrix,
             self.plot_x,
             self.plot_y,
-            self.interplolated_x_data,
+            self.interpolated_x_data,
             self.fit_data,
             cbar_range=colorscale_range,
             percentile_range=percentile_range)
@@ -1131,29 +1139,32 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
             logger.warning("function 3 gaussian peaks not implemeted")
 
-        self.interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*5)
-        self.fit_data = model.eval(x=self.interplolated_x_data, params=result.params)
+        self.interpolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*5)
+        self.fit_data = model.eval(x=self.interpolated_x_data, params=result.params)
         
         #using own fitlogic
         # fit_func=self._fit_logic.make_n_gauss_function(self.NumberOfPeaks)
         # result=fit_func.fit(x_data,y_data)
-        # self.fit_data=fit_func(interplolated_x_data,*result["result"].x)
+        # self.fit_data=fit_func(interpolated_x_data,*result["result"].x)
 
         self.Contrast_Fit:str=''
         self.Frequencies_Fit:str=''
         self.Linewidths_Fit:str=''
 
+        factor_V_to_GHz = self._scanning_device._scanner_position_ranges[3][1] 
 
         for i in range(self.NumberOfPeaks):
             try:
                 self.Contrast_Fit=self.Contrast_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"amplitude"].value,3))+"; " # because 1 peak and 2 peak gaussian fit dont give the same result keywords, we add the 'gi_' part (missing in the 1 peak case) by multiplying the string by 1 if paeks!=1 and remove it if peaks=1.
                 self.Frequencies_Fit=self.Frequencies_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"center"].value,7))+"; "
                 self.Linewidths_Fit=self.Linewidths_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"fwhm"].value,3))+"; " #TODO convert linewidth from V to MHz
+                self.Frequencies_Fit_GHz=self.Frequencies_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"center"].value,3)*factor_V_to_GHz)+"; "
+                self.Linewidths_Fit_GHz=self.Linewidths_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"fwhm"].value,3)*factor_V_to_GHz)+"; " #TODO convert linewidth from V to MHz
             except:
                 self.log.warning('Error occured at fitting.')
 
         self.sigFitPerformed.emit(self.Frequencies_Fit)
-        return self.interplolated_x_data,self.fit_data,result
+        return self.interpolated_x_data,self.fit_data,result
     
     def convert_seq_params_to_string(self):
         return str(self.MW1_Power)+str(self.MW2_Power)+str(self.MW3_Power)+str(self.MW1_Freq)+str(self.MW2_Freq)+str(self.MW3_Freq)+str(self.enable_MW1)+str(self.enable_MW2)+str(self.enable_MW3)+str(self.enable_A1)+str(self.enable_A2)+str(self.enable_Repump)+str(self.enable_PulsedRepump)+str(self.lock_laser)+str(self.RepumpDuration)+str(self.RepumpDecay)

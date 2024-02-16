@@ -96,7 +96,9 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
 
     # config options
     _measurement_timing = ConfigOption('measurement_timing', default=10.)
-
+    dll_path = ConfigOption('dll_path', default='C:\Windows\System32\wlmData.dll')
+    channel1 = ConfigOption('default_channel', default=1)
+    
     # signals
     sig_handle_timer = QtCore.Signal(bool)
 
@@ -121,7 +123,7 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
         # the current wavelength read by the wavemeter in nm (vac)
         self._current_wavelength = 0.0
         self._current_wavelength2 = 0.0
-
+        self._dll_path = self.dll_path
 
     def on_activate(self):
         #############################################
@@ -129,8 +131,7 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
         #############################################
         try:
             # imports the spectrometer specific function from dll
-            #self._wavemeterdll = ctypes.windll.LoadLibrary(r'C:\Windows\System32\wlmData_backup.dll')
-            self._wavemeterdll = ctypes.windll.LoadLibrary(r'C:\Windows\System32\wlmData_backup.dll')
+            self._wavemeterdll = ctypes.windll.LoadLibrary(self._dll_path)
             
         except:
             self.log.critical('There is no Wavemeter installed on this '
@@ -249,7 +250,7 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
 
         return 0
 
-    def get_current_wavelength(self, kind="air",ch=1):
+    def get_current_wavelength(self, kind="air",ch=channel1):
         """ This method returns the current wavelength.
 
         @param string kind: can either be "air" or "vac" for the wavelength in air or vacuum, respectively.
@@ -258,22 +259,8 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
         """
         factor = {"vac": 0, "air": 1, "freq": 2, "wavenumber": 3, "energy": 4}[kind]
         self._wavemeterdll.GetWavelengthNum.restype = ctypes.c_double
-        self._current_wavelength = self._wavemeterdll.GetWavelengthNum(ch, ctypes.c_double(0))
-        return float(self._wavemeterdll.ConvertUnit(self._current_wavelength,0,factor))
-    
-
-
-    def get_current_wavelength2(self, kind="air", ch=2):
-        """ This method returns the current wavelength of the second input channel.
-
-        @param string kind: can either be "air" or "vac" for the wavelength in air or vacuum, respectively.
-
-        @return float: wavelength (or negative value for errors)
-        """
-        factor = {"vac": 0, "air": 1, "freq": 2, "wavenumber": 3, "energy": 4}[kind]
-        self._wavemeterdll.GetWavelengthNum.restype = ctypes.c_double
-        self._current_wavelength2 = self._wavemeterdll.GetWavelengthNum(ch, ctypes.c_double(0))
-        return float(self._wavemeterdll.ConvertUnit(self._current_wavelength2,0,factor))
+        self._current_wavelength = self._wavemeterdll.GetWavelengthNum(ctypes.c_int(ch), ctypes.c_double(0))
+        return float(self._wavemeterdll.ConvertUnit(self._current_wavelength,0,ctypes.c_int(factor)))
         
     def get_timing(self):
         """ Get the timing of the internal measurement thread.
@@ -323,7 +310,7 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
         return state
     
     #Get PID reference course, channel num for multi switches, in case of SiC-LT 2 its channel 2
-    def get_reference_course(self,channel=2): # Reads current aimed frequency
+    def get_reference_course(self,channel=channel1): # Reads current aimed frequency
         """
         Arguments: channel
         Returns: the string corresponing to the reference set on the WLM.
@@ -340,7 +327,7 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
 
 
 	#Sets the desired PID lock Frequency
-    def set_reference_course(self,function, channel=2):
+    def set_reference_course(self,function, channel=channel1):
         """
         Arguments: the string corresponing to the reference set on the WLM.
         For example, constant reference: '619.1234'
@@ -359,7 +346,9 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
         self._wavemeterdll.SetPIDCourseNum(channel, string_buffer)
 
     def stop_control(port = 2, signal = 0):
+        print("FIXME") #FIXME
         WaveMeter.set_deviation_channel(port, signal)
     
     def start_control(port = 2, signal = 2):
+        print("FIXME") #FIXME
         WaveMeter.set_deviation_channel(port, signal)

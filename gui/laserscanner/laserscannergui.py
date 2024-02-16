@@ -182,6 +182,7 @@ class VoltScanGui(GUIBase, ple_default_functions):
         self._voltscan_logic.sigScanStarted.connect(self.scan_started)
         self._voltscan_logic.sigScanRangeAdjustment.connect(self.update_scan_range_ComboBox)
         self._voltscan_logic.sigScanRangeChanged.connect(self.update_scan_range_DoubleSpinBox)
+        self._voltscan_logic.sigLockLaserChanged.connect(self.update_ple_Lock_Laser_CheckBox)
         #self._voltscan_logic.sigProgressBar.connect(self.update_ProgressBar)
 
         #self.sigStartScan.connect(self._voltscan_logic.start_scanning)
@@ -201,6 +202,9 @@ class VoltScanGui(GUIBase, ple_default_functions):
 
         self._mw.ple_ScanRanges_ComboBox.activated.connect(self.select_scan_range)
         self._mw.ple_Stop_Button.setEnabled(False)
+
+        self._mw.resolutionSpinBox.setValue(self._voltscan_logic.stepsize)
+
 
         self._mw.show()
 
@@ -231,13 +235,15 @@ class VoltScanGui(GUIBase, ple_default_functions):
 
     def scan_stopped(self):
         self.enable_scan_actions()
-        saved_performfit=self._voltscan_logic.PerformFit
-        self._voltscan_logic.PerformFit=True
+        if self._voltscan_logic.lock_laser:
+            perform_fit = self._voltscan_logic.PerformFit
+            self._voltscan_logic.PerformFit = True
         self.refresh_plot()
         self.refresh_matrix()
         self.refresh_lines()
-        self._voltscan_logic.PerformFit=saved_performfit
-
+        if self._voltscan_logic.lock_laser:
+            self._voltscan_logic.PerformFit = perform_fit
+        
     def refresh_plot(self):
         """ Refresh the xy-plot image """
         self.scan_image.setData(self._voltscan_logic.plot_x_frequency, self._voltscan_logic.plot_y)
@@ -246,12 +252,12 @@ class VoltScanGui(GUIBase, ple_default_functions):
             self._mw.ple_data_PlotWidget.addItem(self.scan_fit_image)
             print("PLE GUI PERFOMING GAUSSIAN FIT")
             try:
-                interplolated_x_data,fit_data,result = self._voltscan_logic.do_gaussian_fit()
+                interpolated_x_data, fit_data, result = self._voltscan_logic.do_gaussian_fit()
                 self._mw.ple_Contrast_Fit_Label.setText(self._voltscan_logic.Contrast_Fit)
-                self._mw.ple_Frequencies_Fit_Label.setText(self._voltscan_logic.Frequencies_Fit)
-                self._mw.ple_Linewidths_Fit_Label.setText(self._voltscan_logic.Linewidths_Fit)
-                #self.scan_fit_image.setData(interplolated_x_data*1000*1e6/0.30, fit_data) # 0.22 if FeedForward in turned on
-                self.scan_fit_image.setData(interplolated_x_data/0.30, fit_data) # 0.22 if FeedForward in turned on
+                self._mw.ple_Frequencies_Fit_Label.setText(self._voltscan_logic.Frequencies_Fit_GHz)
+                self._mw.ple_Linewidths_Fit_Label.setText(self._voltscan_logic.Linewidths_Fit_GHz)
+
+                self.scan_fit_image.setData(interpolated_x_data*self._voltscan_logic._scanning_device._scanner_position_ranges[3][1] , fit_data) # 0.22 if FeedForward in turned on
             except:
                 self.log.warning('Gaussian fit not successful...')
 
@@ -375,6 +381,9 @@ class VoltScanGui(GUIBase, ple_default_functions):
     def update_scan_range_DoubleSpinBox(self, value_min, value_max):
         self._mw.startDoubleSpinBox.setValue(value_min)
         self._mw.stopDoubleSpinBox.setValue(value_max)
+    
+    def update_ple_Lock_Laser_CheckBox(self, val):
+        self._mw.ple_Lock_Laser_CheckBox.setChecked(val)
 
     def update_ProgressBar(self, val, scan_dur):
         print("Update ProgressBar: ", val)

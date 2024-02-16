@@ -36,13 +36,11 @@ from core.util.mutex import Mutex
 
 
 class HardwarePull(QtCore.QObject):
-
     """ Helper class for running the hardware communication in a separate thread. """
-
     def __init__(self, parentclass):
         super().__init__()
 
-        # remember the reference to the parent class to access functions ad settings
+        # remember the reference to the parent class to access functions and settings
         self._parentclass = parentclass
 
     def handle_timer(self, state_change):
@@ -66,7 +64,8 @@ class HardwarePull(QtCore.QObject):
         """
 
         hardware = self._parentclass._wavemeter_device
-        self._parentclass.current_wavelength = 1.0 * hardware.get_current_wavelength2(kind="freq")
+        self._parentclass.current_wavelength = 1.0 * hardware.get_current_wavelength(kind='freq', ch = int(self._parentclass._wavemeter_device.channel1))
+        #self._parentclass.current_wavelength = 1.0 * hardware.get_current_wavelength()
 
         time_stamp = time.time() - self._parentclass._acqusition_start_time
 
