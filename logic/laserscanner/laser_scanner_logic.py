@@ -203,6 +203,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         self.tmp_storage=[]
         self.measured_frequencies=[]
+        self.start_list=[]
+        self.stop_list=[]
 
         self.interpolated_x_data=np.linspace(0,1,100)
 
@@ -447,7 +449,12 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.set_resolution(self.stepsize)
         
         self._upwards_ramp = self._generate_ramp(v_min, v_max, self._scan_speed)
+<<<<<<< HEAD
         self._downwards_ramp = self._generate_ramp(v_max, v_min, 0.75)
+=======
+        self._downwards_ramp = self._generate_ramp(v_max, v_min, self._scan_speed)
+        #print("passed time 3", time.time()-self.currenttime)
+>>>>>>> upstream/Erik_setup_2
         
         self.local_counts = []
         self.timestamp_list=[]
@@ -541,15 +548,22 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 self.setup_seq(sequence_name=self.curr_sequence_name)
             self._awg.mcas_dict[self.curr_sequence_name].run()
             
+<<<<<<< HEAD
             fstart=self._wavemeterlogic._wavemeter_device.get_current_wavelength(kind ='air', ch = self._wavemeterlogic._wavemeter_device.channel1)
             self.start_list.append(time.time()-self._acqusition_start_time)
             counts = self._scan_line(self._upwards_ramp)
             fend=self._wavemeterlogic._wavemeter_device.get_current_wavelength(kind ='air', ch = self._wavemeterlogic._wavemeter_device.channel1)
+=======
+            fstart=self._wavemeterlogic._wavemeter_device.get_current_wavelength2()
+            self.start_list.append(time.time()-self._wavemeterlogic._acqusition_start_time)
+            counts = self._scan_line(self._upwards_ramp_slices[self.slice_number])
+            fend=self._wavemeterlogic._wavemeter_device.get_current_wavelength2()
+>>>>>>> upstream/Erik_setup_2
             self.f_start_end.append([fstart,fend,len(counts)])
 
             #get the timestamp from the wavemeter
             self.timestamp_list.append(self._scanning_device.timestamp_list)
-
+            
 
             #print("PLElogic position during _do_next_line", self._scanning_device.get_scanner_position())
         
@@ -566,6 +580,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
                 freqs=np.concatenate([np.interp(Ts,xp=times,fp=wavelengths) for Ts in self.timestamp_list])
 
+<<<<<<< HEAD
             cts=self.local_counts
             self.stop_list.append(time.time()-self._acqusition_start_time)
             #TODO get the real fmin,fmax,points
@@ -575,6 +590,15 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 self.range_defined=True
 
             self.f_range=np.linspace(self.fmin,self.fmax,len(self.local_counts)) #this will be the x axis for all the scans #do not calculate it here, t least not fmin and fmax
+=======
+                cts=self.local_counts
+                self.stop_list.append(time.time()-self._wavemeterlogic._acqusition_start_time)
+                #TODO get the real fmin,fmax,points
+                if not self.range_defined:
+                    self.fmin=min(freqs)
+                    self.fmax=max(freqs)
+                    self.range_defined=True
+>>>>>>> upstream/Erik_setup_2
 
             self.xy_data.append([freqs,cts])
 
@@ -1256,4 +1280,3 @@ class LaserScannerLogic(GenericLogic, ple_default):
     #         QtTest.QTest.qSleep(200)
     #         #QtCore.QThread.msleep(200)
     #     self.sigProgressBar.emit(100, 100)
-            

@@ -55,7 +55,7 @@ class multifunction():
     def __init__(self,function=None):
         self.peak_pos=[]
         self.freq_pos=[]
-        #logger.info("hi")
+        ##logger.info("hi")
         if function==None:
             self.function_list=[]
             self.arg_length=0
@@ -63,20 +63,20 @@ class multifunction():
             self.function_list=[function]
             sig=self.inspect.signature(function).parameters
             #print(sig)
-            #logger.info(sig)
+            ##logger.info(sig)
             sub=0
             for i,param in enumerate(sig.keys()):
                 param=param.lower()
                 if param=="self": # take into account that the function may silently pass self to itself
                     sub=1
-                #logger.info(f"{param}, {i}")
+                ##logger.info(f"{param}, {i}")
 
                 if "mean" == param or "mu" == param or "x0" == param: #some parameter names may give hints on what is meant with this parameter
                     self.peak_pos.append(i-1-sub)
                 elif "freq" == param or "omega" == param:
                     self.freq_pos.append(i-1-sub)
             #print("i=",i)
-            #logger.info(self.)
+            ##logger.info(self.)
             self.arg_length=i # len(args)-1 because x is assumed to part of the arguments
         
         
@@ -267,28 +267,28 @@ class FitLogic(GenericLogic):
 
             anylysis_time=time.time()
             peaks,dips,freqs=self.analyse_data(y_data,**self.analyse_kwargs)
-            #logger.info(f"annalysing data took {time.time()-anylysis_time} s")
+            ##logger.info(f"annalysing data took {time.time()-anylysis_time} s")
             #print(f"annalysing data took {time.time()-anylysis_time} s")
 
             Peaks=self.sort_by_prominence(peaks)
             Dips=self.sort_by_prominence(dips)
             Freqs=self.sort_by_prominence(freqs)
 
-            #logger.info(f"peaks:{len(Peaks)}, dips:{len(Dips)},freqs:{len(Freqs)}")
+            ##logger.info(f"peaks:{len(Peaks)}, dips:{len(Dips)},freqs:{len(Freqs)}")
             #print(f"peaks:{len(Peaks)}, dips:{len(Dips)},freqs:{len(Freqs)}")
 
             #the frequencies given by fft are symetric around the middle of the freqs list, we remove them
             #Freqs=Freqs[:int(len(Freqs)/2)]
 
 
-            #logger.info(peak_pos_arguments)
-            #logger.info(dip_pos_arguments)
-            #logger.info(sine_freq_arguments)
-            #logger.info(peaks)
-            #logger.info(dips)
-            #logger.info(freqs)
-            #logger.info(self.x_data)
-            #logger.info(x0)
+            ##logger.info(peak_pos_arguments)
+            ##logger.info(dip_pos_arguments)
+            ##logger.info(sine_freq_arguments)
+            ##logger.info(peaks)
+            ##logger.info(dips)
+            ##logger.info(freqs)
+            ##logger.info(self.x_data)
+            ##logger.info(x0)
 
             # set the initial guesses arguments at their calculated position
             if len(peak_pos_arguments)>0:
@@ -355,10 +355,10 @@ class FitLogic(GenericLogic):
             init_guess=np.asarray(init_guess)
             x0[init_guess!=None]=init_guess[init_guess!=None]
 
-        #logger.info(f"x0={x0}")
+        ##logger.info(f"x0={x0}")
         # print(f"x0={x0}")
 
-        # logger.info(f"setting x0 took {time.time()-fit_time} s")
+        # #logger.info(f"setting x0 took {time.time()-fit_time} s")
         # print(f"setting x0 took {time.time()-fit_time} s")
         
         opt_time=time.time()
@@ -374,7 +374,7 @@ class FitLogic(GenericLogic):
             res_list=[]
             mini=self.function_to_optimize(tuple(x0)) # as initial minimum value we take the function result for x0
             for method in methods:
-                # logger.info("trying with "+method+" method.")
+                # #logger.info("trying with "+method+" method.")
                 # print("trying with "+method+" method.")
                 if time.time()-start_time>self.optimize_time: # do not exceed the given time
                     break
@@ -388,7 +388,7 @@ class FitLogic(GenericLogic):
                         holded_res=res
                         retained_method=method
 
-            #logger.info("retained_method: "+retained_method)
+            ##logger.info("retained_method: "+retained_method)
             #print("retained_method: "+retained_method)
 
         if not holded_res.success:
@@ -399,8 +399,8 @@ class FitLogic(GenericLogic):
                 
         self.next_init_guess=holded_res.x
         self.res=holded_res
-        #logger.info(f"optimizing took {time.time()-opt_time} s")
-        #logger.info(f"total fit time was: {time.time()-fit_time}")
+        ##logger.info(f"optimizing took {time.time()-opt_time} s")
+        ##logger.info(f"total fit time was: {time.time()-fit_time}")
         #print(f"optimizing took {time.time()-opt_time} s")
         #print(f"total fit time was: {time.time()-fit_time}")
         return self.res

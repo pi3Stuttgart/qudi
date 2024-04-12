@@ -26,12 +26,17 @@ class streamUSBnidaq(Base, StreamUSBNidaqInterface): #Hardware file
     chan_A1 = ConfigOption('chan_A1', False, missing='warn') #test if readout from config file works
     chan_A2 = ConfigOption('chan_A2', False, missing='warn') #test if readout from config file works
     voltagerange = ConfigOption('voltagerange', False, missing='warn') #test if readout from config file works
+    _buffer_in_size = ConfigOption('buffer_size', 100, missing='warn')
+    _sampling_freq_in = ConfigOption('sampling_frequency', 42, missing='warn')
+
 
     def on_activate(self):
         # Parameters
         print("Init USB Nidaq...")
-        self.sampling_freq_in = 42  # in Hz
-        self.buffer_in_size = 10
+        self.sampling_freq_in = int(self._sampling_freq_in)  # in Hz
+        self.buffer_in_size = int(self._buffer_in_size)
+        print("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD",self.buffer_in_size,self.sampling_freq_in,int(self.buffer_in_size),int(self.sampling_freq_in))
+        
         self.bufsize_callback = self.buffer_in_size
         self.buffer_in_size_cfg = round(self.buffer_in_size * 1)  # clock configuration
         self.crop = 10  # number of seconds to drop at acquisition start before saving #What does this do?
