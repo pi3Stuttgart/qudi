@@ -28,7 +28,8 @@ class SetupControlLogic(GenericLogic):
 
     read_power:str='-'
 
-    _AOM_volt = StatusVar('_AOM_volt', 1)
+    _AOM_A1_volt = StatusVar('_AOM_A1_volt', 1)
+    _AOM_A2_volt = StatusVar('_AOM_A2_volt', 1)
     MW1_freq = StatusVar('MW1_freq', 70)
     MW2_freq = StatusVar('MW2_freq', 140)
     MW3_freq = StatusVar('MW3_freq', 210)
@@ -74,7 +75,8 @@ class SetupControlLogic(GenericLogic):
         self.enable_A2:bool=False
         self.enable_Repump:bool=False
         self.enable_Green:bool=False
-        self.AOM_volt=0
+        self.AOM_A1_volt=0
+        self.AOM_A2_volt=0
         self._awg.mcas_dict.stop_awgs()
         self.write_to_pulsestreamer()
         
@@ -83,12 +85,16 @@ class SetupControlLogic(GenericLogic):
         return
 
     @property
-    def AOM_volt(self):
+    def AOM_A1_volt(self):
         #print("getting AOM Volt")
-        return self._AOM_volt
-
-    @AOM_volt.setter
-    def AOM_volt(self,val):
+        return self._AOM_A1_volt
+    @property
+    def AOM_A2_volt(self):
+        #print("getting AOM Volt")
+        return self._AOM_A2_volt
+    
+    @AOM_A1_volt.setter
+    def AOM_A1_volt(self,val):
         #print("setting AOM Volt", val)
         if val>1:
             val=1
@@ -96,14 +102,32 @@ class SetupControlLogic(GenericLogic):
         elif val<0:
             val=0
             print("Correcting AOM analog Amplitude to 0")
-        self._AOM_volt=val
-        self.ps.analog_volt=self._AOM_volt
+        self._AOM_A1_volt=val
+        self.ps.analog_A1_volt=self._AOM_A1_volt
         #self.write_to_pulsestreamer()
 
-    @AOM_volt.deleter
-    def AOM_volt(self):
+    @AOM_A2_volt.setter
+    def AOM_A2_volt(self,val):
+        #print("setting AOM Volt", val)
+        if val>1:
+            val=1
+            print("Correcting AOM analog Amplitude to 1")
+        elif val<0:
+            val=0
+            print("Correcting AOM analog Amplitude to 0")
+        self._AOM_A2_volt=val
+        self.ps.analog_A2_volt=self._AOM_A2_volt
+        #self.write_to_pulsestreamer()
+
+    @AOM_A1_volt.deleter
+    def AOM_A1_volt(self):
         #print("deleting OAM Volt")
-        del self._AOM_volt
+        del self._AOM_A1_volt
+    
+    @AOM_A2_volt.deleter
+    def AOM_A2_volt(self):
+        #print("deleting OAM Volt")
+        del self._AOM_A2_volt
 
     def power_to_amp(self, power_dBm, impedance=50):
         power_dBm = np.atleast_1d(power_dBm)
@@ -180,7 +204,8 @@ class SetupControlLogic(GenericLogic):
                     A1=self.enable_A1,
                     A2=self.enable_A2,
                     repump=self.enable_Repump,
-                    green=self.enable_Green,
+                    #green=self.enable_Green,
+                    CTL=self.enable_Green,
                     length_mus=50
                     )
         else:
@@ -189,7 +214,8 @@ class SetupControlLogic(GenericLogic):
                     A2=self.enable_A2,
                     gateMW=True,
                     repump=self.enable_Repump,
-                    green=self.enable_Green,
+                    #green=self.enable_Green,
+                    CTL=self.enable_Green,
                     length_mus=50
                     )
 
@@ -199,9 +225,9 @@ class SetupControlLogic(GenericLogic):
         return
     
     def write_to_pulsestreamer(self):
-        self.active_channels=list(filter(("").__ne__, ["A1"*self.enable_A1,"A2"*self.enable_A2,"green"*self.enable_Green,"repump"*self.enable_Repump,'FlipMirror'*self.flip_mirror]))
+        self.active_channels=list(filter(("").__ne__, ["A1"*self.enable_A1,"A2"*self.enable_A2,"CTL"*self.enable_Green,"repump"*self.enable_Repump,'FlipMirror'*self.flip_mirror]))
         #self.active_channels=list(filter(("").__ne__, [])) #This turns off all lasers when adjusting the AOM power
-        self.ps.constant(pulse=(0,self.active_channels,self.AOM_volt,0)) #Ok this is actually not the power we set but the analog input on the A2 AOM
+        self.ps.constant(pulse=(0,self.active_channels,self.AOM_A2_volt,self.AOM_A1_volt)) #Ok this is actually not the power we set but the analog input on the A2 AOM
 
     def MW_on(self):
         return self.enable_MW1 or self.enable_MW2 or self.enable_MW3
@@ -299,11 +325,23 @@ class SetupControlLogic(GenericLogic):
     def Autofocus_Button_Clicked(self,on):
         print('done something with Autofocus_Button')
 
-    def Read_Power_Button_Clicked(self,on):
+    def Read_A1Power_Button_Clicked(self,on):
+        #self.read_power = str(self._powercontrol._laser_power._Read_Power_button_fired()) + " nW"
+        self.SigReadPower.emit()
+    
+    def Read_A2Power_Button_Clicked(self,on):
         #self.read_power = str(self._powercontrol._laser_power._Read_Power_button_fired()) + " nW"
         self.SigReadPower.emit()
 
-    def Set_Power_Button_Clicked(self,on):
+    def Set_A1Power_Button_Clicked(self,on):
+        #self._powercontrol._laser_power.power_target = self.set_power
+        #self._powercontrol._laser_power._run()
+        #self.read_power = str(self._powercontrol._laser_power._Read_Power_button_fired()) + " nW"
+        #print('Set power to: ', self.read_power)
+        self.SigReadPower.emit()
+        self.write_to_pulsestreamer()
+    
+    def Set_A2Power_Button_Clicked(self,on):
         #self._powercontrol._laser_power.power_target = self.set_power
         #self._powercontrol._laser_power._run()
         #self.read_power = str(self._powercontrol._laser_power._Read_Power_button_fired()) + " nW"
@@ -311,9 +349,13 @@ class SetupControlLogic(GenericLogic):
         self.SigReadPower.emit()
         self.write_to_pulsestreamer()
 
-    def Set_Power_DoubleSpinBox_Edited(self,value):
+    def Set_A2Power_DoubleSpinBox_Edited(self,value):
         #print('done something with set_power_DoubleSpinBox. Value=',value)
-        self.AOM_volt=value
+        self.AOM_A2_volt=value
+    
+    def Set_A1Power_DoubleSpinBox_Edited(self,value):
+        #print('done something with set_power_DoubleSpinBox. Value=',value)
+        self.AOM_A1_volt=value
         
     def StartAutoMeas_Button_Clicked(self,on):
         # save current POIs

@@ -227,6 +227,15 @@ class SaveLogic(GenericLogic):
         else:
             self._daily_loghandler = None
 
+        self.current_setup_parameters = {
+            "current_path" : self.get_daily_directory(),
+            "power": "",
+            "laser": "",
+            "sample": "",
+            "region": "",
+            "other_info": ""
+        }
+
     def on_deactivate(self):
         if self._daily_loghandler is not None:
             # removes the log handler logging into the daily directory

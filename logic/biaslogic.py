@@ -22,11 +22,11 @@ class BiasLogic(GenericLogic):
         self._streaming_device = self.USBnidaq()
         self._laser_scanner_logic = self.laserscannerlogic()
         
-        self._streaming_device.start_acquisition()
+        self._streaming_device.start_ao_task()
         
         self._laser_scanner_logic.sigScanNextLine.connect(self.change_voltage)
 
-        self.voltages = [0,0.1,0.2,0.3,0.4,0.5,0.4,.3, 2., .1, 0, -.1, -.2, -.3, -.4]
+        self.voltages = [0,0]# [0,0.1,0.2,0.3,0.4,0.5,0.4,.3, 2., .1, 0, -.1, -.2, -.3, -.4]
         self.step_line = 1
 
         self.set_voltage(0)

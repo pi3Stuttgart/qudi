@@ -1800,6 +1800,7 @@ class ConfocalGui(GUIBase):
         """ Run the save routine from the logic to save the xy confocal data."""
         # printdebug(self.debug, 'confocalgui: save_xy_scan_data called')
         params = self._save_logic.current_setup_parameters
+        params['current_path'] = self._save_logic.get_path_for_module(module_name='Confocal')
         self._save_dialog.axis = "XY"
         self._save_dialog.load_params(params)
         

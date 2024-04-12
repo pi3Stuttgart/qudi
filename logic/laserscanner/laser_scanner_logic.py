@@ -48,6 +48,10 @@ from core.configoption import ConfigOption
 
 from logic.laserscanner.ple_default_values_and_widget_functions import ple_default_values_and_widget_functions as ple_default
 
+from logic.confocal_logic import ConfocalLogic
+from logic.save_logic import SaveLogic
+from logic.biaslogic import BiasLogic
+from logic.fit_logic import FitLogic
 
 
 class LaserScannerLogic(GenericLogic, ple_default):
@@ -65,6 +69,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
     
     wavemeterlogic= Connector(interface="WavemeterLoggerLogic")
     
+    Filename = StatusVar('Filename', "Filename")
     _scan_range_adjustment = StatusVar('scan_range_adjustment', 1)
     scan_range = StatusVar('scan_range', [-3, 3])
     resolution = StatusVar(default=100)
@@ -136,14 +141,17 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.plot_x_frequency=[]
         self.plot_y = []
 
+        self.adv_mode = 'SING'
+        self.peak_min_counts=300
+
     def on_activate(self):
         """ Initialisation performed during activation of the module.
         """
         self._scanning_device = self.confocalscanner1()
-        self._save_logic = self.savelogic()
+        self._save_logic: SaveLogic = self.savelogic()
         self._awg = self.mcas_holder()
         self._wavemeterlogic = self.wavemeterlogic()
-        self._fit_logic = self.fitlogic()
+        self._fit_logic: FitLogic = self.fitlogic()
         self.a_range = self._scanning_device.get_position_range()[3]
 
         # Initialise the current position of all four scanner channels.
@@ -197,9 +205,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.measured_frequencies=[]
 
         self.interpolated_x_data=np.linspace(0,1,100)
-
-        self.adv_mode = 'SING'
-        self.peak_min_counts=300
 
     def on_deactivate(self):
         """ Deinitialisation performed during deactivation of the module.
@@ -266,13 +271,18 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         @return int: error code (0:OK, -1:error)
         """
+        print(new_voltage)
         ramp_scan = self._generate_ramp(self.get_current_voltage(), new_voltage, 0.75)
+        print("changed _change_voltage in laserscannerlogic" )
+        print(ramp_scan)
         if len(ramp_scan[0])==1:
             ramp_scan=np.hstack((ramp_scan,ramp_scan))
         elif len(ramp_scan[0])<1:
+            print("Ramp not corrently initialized. Maybe laser is not at desired position.")
             return 0
 
         self._initialise_scanner()
+        ignored_counts = self._scan_line(ramp_scan) # was removed from original code once. But why? We try to just put back.
         self._close_scanner()
         self.sigVoltageChanged.emit(new_voltage)
         return 0
@@ -360,6 +370,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.plot_x = np.linspace(self.scan_range[0], self.scan_range[1], scan_length)
         self.plot_x_frequency=self.plot_x*self._scanning_device._scanner_position_ranges[3][1] #1000 MHz equals 0.22 V on the PLE x range with FeedForward on # 1000 MHz equals 0.30 V on the PLE x range without FeedForward
         self.plot_y = np.zeros(scan_length)
+        self.fit_data = np.zeros(scan_length)
         self.fit_x = np.linspace(self.scan_range[0], self.scan_range[1], scan_length)
         self.fit_y = np.zeros(scan_length)
         return
@@ -395,6 +406,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         @return int: error code (0:OK, -1:error)
         """
+        self._awg.mcas_dict.stop_awgs()
         self.laser_at_position = False
         # print(self._scanning_device.module_state()) #self._scanning_device.module_state() is not the same as _optimizer_logic.module_state.current! So _s_d.module_state is "idle" even when confocal refocus runs.
         # if self._scanning_device.module_state() == 'locked':
@@ -410,7 +422,6 @@ class LaserScannerLogic(GenericLogic, ple_default):
             print("Another scanner is running. Please try pressing 'Run' again. I will continue with current scanner task")
             return
 
-        self._awg.mcas_dict.stop_awgs()
         QtTest.QTest.qSleep(200)
         self.trace_seq()
         if self.enable_PulsedRepump:
@@ -512,6 +523,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
             self.local_counts=[]
             
             self.measured_frequencies=self._wavemeterlogic._hardware_pull._parentclass._wavelength_data.copy()
+            print("PLE, sigScanFinished emit")
             self.sigScanFinished.emit()
             return
 
@@ -700,6 +712,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         return
 
     def setup_repump(self):
+        self.adv_mode = 'SING'
         seq = self._awg.mcas(name='ple_repump', ch_dict={"2g": [1, 2], "ps": [1]}, advance_mode=self.adv_mode)
 
         seq.start_new_segment("Repump", loop_count = 1, advance_mode=self.adv_mode)
@@ -717,7 +730,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
         P_watts = 10**(power_dBm / 10) * 1e-3
         V_rms = np.sqrt(P_watts * impedance)
         V_pp = V_rms * 2 * np.sqrt(2)
-        return V_pp / self._awg.mcas_dict.awgs['2g'].ch[1].output_amplitude
+        ou = self._awg.mcas_dict.awgs['2g'].ch[1].output_amplitude
+        return V_pp / ou
        
     def _generate_ramp(self, voltage1, voltage2, speed):
         """Generate a ramp vrom voltage1 to voltage2 that
@@ -729,7 +743,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         @param float voltage2: voltage at end of ramp.
         """
 
-        # It is much easier to calculate the smoothed ramp for just one direction (upwards),‼
+        # It is much easier to calculate the smoothed ramp for just one direction (upwards),
         # and then to reverse it if a downwards ramp is required.
 
         v_min = min(voltage1, voltage2)
@@ -762,8 +776,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 ramp = np.linspace(v_min, v_max, num_of_linear_steps)
 
             else:
-                num_of_linear_steps = int(np.rint((v_max_linear - v_min_linear) / linear_v_step))
                 #num_of_linear_steps = int(num_of_linear_steps) # FIXME. This was not needed before 13.10.2022. Should be already handled by np.rint
+                num_of_linear_steps = int(np.rint((v_max_linear - v_min_linear) / linear_v_step))
 
                 # Calculate voltage step values for smooth acceleration part of ramp
                 smooth_curve = np.array(
@@ -776,6 +790,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 decel_part = v_max - smooth_curve[::-1]
 
                 linear_part = np.linspace(v_min_linear, v_max_linear, num_of_linear_steps)
+
                 ramp = np.hstack((accel_part, linear_part, decel_part))
 
         # Reverse if downwards ramp is required
@@ -784,6 +799,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         # Put the voltage ramp into a scan line for the hardware (4-dimension)
         spatial_pos = self._scanning_device.get_scanner_position()
+        print("generate ramp in laserscannerlogic", spatial_pos)
 
         scan_line = np.vstack((
             np.ones((len(ramp), )) * spatial_pos[0],
@@ -791,6 +807,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
             np.ones((len(ramp), )) * spatial_pos[2],
             ramp
             ))
+
         return scan_line
 
     def _scan_line(self, line_to_scan=None):
@@ -866,6 +883,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 self.sigScanRangeChanged.emit(self.scan_range[0],self.scan_range[1])
                 self.start_scanning()
         self.stopped=True
+        print('goto_fitted_peak done')
         return 0
 
 
@@ -879,27 +897,28 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         self._saving_stop_time = time.time()
 
-        filepath = self._save_logic.get_path_for_module(module_name='LaserScanning')
+        filepath  = self._save_logic.get_path_for_module(module_name='LaserScanning')
         filepath2 = self._save_logic.get_path_for_module(module_name='LaserScanning')
         filepath3 = self._save_logic.get_path_for_module(module_name='LaserScanning')
         filepath4 = self._save_logic.get_path_for_module(module_name='LaserScanning')
         timestamp = datetime.datetime.now()
 
         if len(tag) > 0:
-            filelabel = tag + '_PLE_data'
+            filelabel  = tag + '_PLE_data'
             filelabel2 = tag + '_PLE_data_raw_trace'
             filelabel3 = tag + '_PLE_data_raw freqs vs cts'
             filelabel4 = tag + '_PLE_data_raw freqs'
         else:
-            filelabel = 'PLE_data'
+            filelabel  = 'PLE_data'
             filelabel2 = 'PLE_data_raw_trace'
             filelabel3 = 'PLE_data_raw freqs vs cts'
-            filelabel4 = '_PLE_data_raw freqs'
+            filelabel4 = 'PLE_data_raw freqs'
         
         # prepare the data in a dict or in an OrderedDict:
         data = OrderedDict()
         data['frequency (Hz)'] = self.plot_x_frequency
         data['trace count data (counts/s)'] = self.plot_y
+        data['scanvoltage (V)'] = self.plot_x
 
         data2 = OrderedDict()
         data2['count data (counts/s)'] = self.scan_matrix[:self._scan_counter_up, :]

@@ -7,7 +7,7 @@ class ple_default_values_and_widget_functions:
         RepumpDuration:float = 10
         RepumpDecay:float = 1000
 
-        Filename:str = ''
+        
         stoptime:float = 0
         PerformFit:bool = False
 

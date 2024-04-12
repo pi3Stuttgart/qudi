@@ -33,15 +33,16 @@ restore_awg_settings = True
 #                 'tt_trigger':['ps', 1, 'tt_trigger', '7'], # Currently unused
 #                 }
 marker_alias = {
+                'gateAWG':   ['2g', 1, 'smpl', None], # To TT ch5
                 'gate':      ['2g', 1, 'smpl', None], # To TT ch5
                 'gateMW':    ['2g', 2, 'smpl', None],
-                #'trigger':    ['2g', 1, 'sync', None], # Back to Pulsestreamer as trigger
                 'memory':    ['2g', 2, 'sync', None], # To TT ch8
                 'A1':        ['ps', 1, 'A1', '0'],
                 #'A1':        ['ps', 1, 'A1', '1'],
                 #'A1':        ['ps', 1, 'A1', '2'],
                 #'A1':        ['ps', 1, 'A1', '3'],
                 # PS CHANNEL 4 IS CLOCK
+                'CTL':    ['ps', 1, 'CTL', '3'],
                 'A2':    ['ps', 1, 'A2', '5'],
                 #'repump':    ['ps', 1, 'repump', '6'],
                 'repump':    ['ps', 1, 'repump', '7'],
