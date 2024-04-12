@@ -207,14 +207,14 @@ def write_awg_seq(queue,**kwargs):
     queue._awg.mcas_dict[kwargs['name']] = ret_awg_seq(**kwargs)
 
 def write_awg_standards(queue):
-    write_awg_seq(queue, name='green')
+    #write_awg_seq(queue, name='green')
     write_awg_seq(queue, name='RepumpAndA1AndA2')
     write_awg_seq(queue,name='repump')
     write_awg_seq(queue,name='A1')
     write_awg_seq(queue,name='A2')
-    write_awg_seq(queue,name='red_Ex')
-    write_awg_seq(queue,name='red_A1')
-    write_awg_seq(queue,name='Ex_RO')
+    #write_awg_seq(queue,name='red_Ex')
+    #write_awg_seq(queue,name='red_A1')
+    #write_awg_seq(queue,name='Ex_RO')
 
     #write_awg_seq(name='red')
     #write_awg_seq(name='orange')

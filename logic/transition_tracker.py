@@ -549,8 +549,9 @@ class Transition:
 
 # gui QMainWindow, transition_tracker_gui.Ui_window
 class TransitionTracker(GenericLogic):
-    c13_list = []#'13c5']#['13c414', '13c90', '13c13', '13c6', '13c-5', '13c-6']
-    si29_list = [] ######          THIS MUST BE LOWERCASE !!!!!!!!!!!!!!!!!!!!!!!!
+
+    c13_list = ConfigOption('c13_list', default=[])
+    si29_list = ConfigOption('si29_list', default=[])
     transitions = misc.ret_property_array_like_typ('transitions', Transition)
     log_folder = r"C:\src\qudi\log\transition_tracker_log"
     g_factors = {'e': -2.0028 * 1.6021766208e-19 / (4 * np.pi * 9.10938356e-31) * 1e-6} # why again? it is already in qutip enhanced.

@@ -38,6 +38,7 @@ def ptrepack(file, folder, tempfile=None, lock=None):
     tempfile = 'temp.hdf' if tempfile is None else tempfile
     ptrepack = r"{}\Scripts\ptrepack.exe".format(os.path.dirname(sys.executable)) ##C:\Users\SiC_LT2\anaconda3\Scripts\ptrepack.exe
     #ptrepack = r'C:\Users\SiC_LT2\anaconda3\Scripts\ptrepack.exe'
+    #ptrepack = r'C:\Users\yy3\anaconda3\Scripts\ptrepack.exe'
     command = [ptrepack, "-o", "--chunkshape=auto", "--propindexes", "--complevel=9", "--complib=blosc", file, tempfile]
     _ = subprocess.call(command, cwd=folder)
     if _ != 0:
@@ -417,6 +418,7 @@ class Data:
         return os.stat(filepath).st_mtime - time.time()
 
     def save(self, filepath, notify=False):
+        # uses pandas version 0.23.4
         if filepath.endswith('.csv'):
             t0 = time.time()
             self.df.to_csv(filepath, index=False)

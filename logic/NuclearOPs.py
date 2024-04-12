@@ -387,12 +387,12 @@ class NuclearOPs(DataGeneration):
                     #     #QtTest.QTest.qSleep(1) #safety.
                     #     time.sleep(0.1)
 
-                    while self.queue._counter.heating:
-                        now = datetime.datetime.now()
-                        current_time = now.strftime("%H:%M:%S")
-                        print("Current Time =", current_time)
-                        print("Countrate too high. Assuming hearting of photon detector. Going to sleep for 1min.")
-                        QtTest.QTest.qSleep(60000)
+                    # while self.queue._counter.heating:
+                    #     now = datetime.datetime.now()
+                    #     current_time = now.strftime("%H:%M:%S")
+                    #     print("Current Time =", current_time)
+                    #     print("Countrate too high. Assuming hearting of photon detector. Going to sleep for 1min.")
+                    #     QtTest.QTest.qSleep(60000)
 
                     if self.set_A1_power or self.set_A2_power:
                         self.set_laser_power(abort)
@@ -641,12 +641,9 @@ class NuclearOPs(DataGeneration):
                 if abort.is_set(): break
                
                 self.save()
-               
-                #end of for
-                # print("end of for")
                 
         except Exception as e:
-            print('ERROR: Nuclear op failed in run measuremt',e)
+            print('ERROR: Nuclear op failed in "run_measurement".', e)
             abort.set()
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb)
@@ -656,6 +653,7 @@ class NuclearOPs(DataGeneration):
             self.data._df = data_handling.df_take_duplicate_rows(self.data.df, self.iterator_df_done) #drops unfinished measurements,
             self.pld.new_data_arrived()
             #self.queue.multi_channel_awg_sequence.stop_awgs(self.queue.awgs)
+            self._md.stop_awgs()
             
             self.update_current_str()
 
@@ -670,7 +668,7 @@ class NuclearOPs(DataGeneration):
 
             # if self.wavemeter_lock and self.queue.wavemeter.wm_id != 0:
             #     self.queue.wavemeter.unlock_frequency()
-            #     time.sleep(0.1)
+            #     QtTest.QTest.qSleep(100)
 
     @property
     def session_meas_count(self):
@@ -749,8 +747,9 @@ class NuclearOPs(DataGeneration):
 
             self.last_ple_refocus = time.time()
             self.queue._awg.mcas_dict.stop_awgs()
-            while self.queue._PLE_logic.happy:
-                QtTest.QTest.qSleep(1000)
+            while not self.queue._PLE_logic.laser_at_position:
+                print("LASER NOT AT POSITION, NUCLEAR OPS")
+                QtTest.QTest.qSleep(100)
         return
 
     def set_laser_power(self, abort):
@@ -805,23 +804,8 @@ class NuclearOPs(DataGeneration):
         return
 
     def do_refocus_pleA2(self, abort): #CHANGED! commented what belonged to wavemeter
-        #if self.wavemeter_lock and self.queue.wavemeter.wm_id!=0:
-        #    self.queue.wavemeter.unlock_frequency()
-        #    time.sleep(0.1)
-        print("voltage before PLE: ", self.queue._PLE_logic._scanning_device.get_scanner_position()[3])
-        # Check that countrate after refocus is not worse than before.
-        #self.queue._awg.mcas_dict['RepumpAndA1AndA2'].run()
-        #QtTest.QTest.qSleep(3000)
-        #counts_before = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
-        #counts_after = 0
-        #print('average counts before refocus')
-        #print(counts_before)
-        repetitions =0
-        self.queue._PLE_logic.Lock_laser=True
-        volt_before=self.queue._PLE_logic._static_v
-        self.queue._PLE_logic.happy=True
+        self.queue._PLE_logic.lock_laser=True
 
-        #while counts_before * 0.5 > counts_after: #This is keeping refocusing forever! if ple moved e.g.?
         # TODO - this should be in PLE ITSELF!!!! not a buisness of Nops whatever happens in ple refocus.
         with self.queue._threadlock:
 
@@ -834,18 +818,6 @@ class NuclearOPs(DataGeneration):
         QtTest.QTest.qSleep(1000)
 
         self.queue._awg.mcas_dict.stop_awgs()
-        self.queue._PLE_logic.happy = False
-        # if repetitions > 1:
-        #     print("*********************************************PLE REFOCUS WAS NOT SUCCESSFUL AFTER 5 ITERATIONS ******************************************")
-        #         if self.mode==1: # what does this mean?
-        #             self.queue._PLE_logic._static_v=volt_before
-        #             self.queue._PLE_logic.goto_voltage(max(volt_before-0.5,-3))
-        #             self.queue._PLE_logic.goto_voltage(self.queue._PLE_logic._static_v)
-            #
-            # break
-
-        #repetitions +=1
-            
 
 
         # self.queue.ple_A2.syncFlag = False
@@ -957,9 +929,6 @@ class NuclearOPs(DataGeneration):
             #except:
             caller_tag = 'NuclearOps_'
 
-            #counts_before = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
-            #repetitions = 0
-            #while counts_before * 0.5 > counts_after: #What if PLE is misaligned?
             with self._thread_lock:
                 self.queue._optimizer.start_refocus(initial_pos = self.queue._confocal.get_position(), caller_tag = caller_tag)
                 while self.queue._optimizer.module_state() =='locked':

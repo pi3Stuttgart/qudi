@@ -1,0 +1,892 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1104</width>
+    <height>844</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>qudi: ArbSeq</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
+     <layout class="QGridLayout" name="gridLayout_7">
+      <item row="4" column="2">
+       <widget class="QLabel" name="label_121">
+        <property name="text">
+         <string>Power (dBm):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="arbseq_Stop_Button">
+        <property name="text">
+         <string>Stop</string>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="8">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>Binning (ns):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="6">
+       <widget class="QLabel" name="label_52">
+        <property name="text">
+         <string>Integration Time (ns):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="3">
+       <widget class="QCheckBox" name="arbseq_A1_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="4">
+       <widget class="QLabel" name="label_117">
+        <property name="text">
+         <string>Frequency (MHz):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="10">
+       <widget class="QLabel" name="label_114">
+        <property name="text">
+         <string>Runtime:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="2">
+       <widget class="QLabel" name="label_137">
+        <property name="text">
+         <string>A1 Readout:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="4">
+       <widget class="QLabel" name="label_126">
+        <property name="text">
+         <string>Frequency (MHz):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="7">
+       <widget class="QLineEdit" name="arbseq_IntegrationTime_lineEdit">
+        <property name="text">
+         <string>Integration Time</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="5">
+       <widget class="QLineEdit" name="arbseq_Tau_Step_lineEdit">
+        <property name="text">
+         <string>Tau step</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="3">
+       <widget class="QLineEdit" name="arbseq_RepumpDuration_LineEdit">
+        <property name="text">
+         <string>Repump Duration</string>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="3">
+       <widget class="QLineEdit" name="arbseq_ReadoutTime_LineEdit">
+        <property name="text">
+         <string>Readout Time</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="12">
+       <widget class="QLineEdit" name="arbseq_Stoptime_LineEdit">
+        <property name="text">
+         <string>Stoptime</string>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="2">
+       <widget class="QLabel" name="label_133">
+        <property name="text">
+         <string>Init Time (µs):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="1">
+       <widget class="QLineEdit" name="arbseq_AOMDelay_LineEdit">
+        <property name="text">
+         <string>AOM Delay</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2" colspan="5">
+       <widget class="QLineEdit" name="arbseq_Filename_LineEdit">
+        <property name="text">
+         <string>Filename</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="2">
+       <widget class="QLabel" name="label_124">
+        <property name="text">
+         <string>Power (dBm):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="5">
+       <widget class="QLineEdit" name="arbseq_MW3_Freq_LineEdit">
+        <property name="text">
+         <string>MW3 Frequency</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="3">
+       <widget class="QLineEdit" name="arbseq_MW1_Power_LineEdit">
+        <property name="text">
+         <string>MW1 Power</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1">
+       <widget class="QCheckBox" name="arbseq_MW2_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QCheckBox" name="arbseq_MW3_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="3">
+       <widget class="QLineEdit" name="arbseq_MW2_Power_LineEdit">
+        <property name="text">
+         <string>MW2 Power</string>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="8" colspan="5">
+       <widget class="Line" name="line_5">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="15" column="0" colspan="12">
+       <widget class="PlotWidget" name="arbseq_matrix_PlotWidget">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>1</horstretch>
+          <verstretch>1</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="5">
+       <widget class="QLineEdit" name="arbseq_MW2_Freq_LineEdit">
+        <property name="text">
+         <string>MW2 Frequency</string>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="2">
+       <widget class="QLabel" name="label_139">
+        <property name="text">
+         <string>Readout Time (ns):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="5">
+       <widget class="QCheckBox" name="arbseq_A2_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="0">
+       <widget class="QLabel" name="label_129">
+        <property name="text">
+         <string>CW Repump:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="0">
+       <widget class="QLabel" name="label_107">
+        <property name="text">
+         <string>Pulsed Repump:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="5">
+       <widget class="QLineEdit" name="arbseq_RepumpDecay_LineEdit">
+        <property name="text">
+         <string>Repump Decay</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QLabel" name="label_136">
+        <property name="text">
+         <string>Tau max (ns):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="3">
+       <widget class="QCheckBox" name="arbseq_A1Readout_checkBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="4">
+       <widget class="QLabel" name="label_138">
+        <property name="text">
+         <string>A2 Readout:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="6">
+       <widget class="QLabel" name="label_51">
+        <property name="text">
+         <string>Tau decay(ns):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="label_130">
+        <property name="text">
+         <string>MW3 during Init::</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLineEdit" name="arbseq_Tau_Min_lineEdit">
+        <property name="text">
+         <string>Tau min</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="4">
+       <widget class="QLabel" name="label_50">
+        <property name="text">
+         <string>Tau step (ns):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="2">
+       <widget class="QLabel" name="label_122">
+        <property name="text">
+         <string>Repump Duration (µs):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="10">
+       <widget class="QCheckBox" name="arbseq_PeriodicSaving_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="13">
+       <widget class="Line" name="line_16">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0" colspan="13">
+       <widget class="Line" name="line_15">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="9">
+       <widget class="QLabel" name="label_112">
+        <property name="text">
+         <string>Periodic Saving:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QPushButton" name="arbseq_Run_Button">
+        <property name="text">
+         <string>Run</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="3">
+       <widget class="QLineEdit" name="arbseq_MW3_Power_LineEdit">
+        <property name="text">
+         <string>MW3 Power</string>
+        </property>
+       </widget>
+      </item>
+      <item row="16" column="0" colspan="12">
+       <widget class="PlotWidget" name="arbseq_detect_PlotWidget">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>1</horstretch>
+          <verstretch>1</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="5">
+       <widget class="QLineEdit" name="arbseq_ReadoutDecay_LineEdit">
+        <property name="text">
+         <string>Readout Decay</string>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="4">
+       <widget class="QLabel" name="label_134">
+        <property name="text">
+         <string>Init Decay (µs):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="label_109">
+        <property name="text">
+         <string>MW1 (Tau pulse):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="4">
+       <widget class="QLabel" name="label_118">
+        <property name="text">
+         <string>Repump Decay (µs):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="4">
+       <widget class="QLabel" name="label_140">
+        <property name="text">
+         <string>Readout Decay (ns):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QCheckBox" name="arbseq_MW1_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
+       <widget class="QLabel" name="label_115">
+        <property name="text">
+         <string>MW2 during Init:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="1">
+       <widget class="QCheckBox" name="arbseq_PulsedRepump_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="7">
+       <widget class="QLineEdit" name="arbseq_Tau_Decay_lineEdit">
+        <property name="text">
+         <string>Tau decay </string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="4">
+       <widget class="QLabel" name="label_111">
+        <property name="text">
+         <string>Frequency (MHz):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="7" rowspan="4">
+       <widget class="Line" name="line_17">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="4">
+       <widget class="QLabel" name="label_123">
+        <property name="text">
+         <string>A2 Init:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="11">
+       <widget class="QLabel" name="arbseq_Runtime_Label">
+        <property name="frameShape">
+         <enum>QFrame::Box</enum>
+        </property>
+        <property name="text">
+         <string>Runtime</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="2">
+       <widget class="QLabel" name="label_132">
+        <property name="text">
+         <string>Power (dBm):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="2">
+       <widget class="QLabel" name="label_119">
+        <property name="text">
+         <string>A1 Init:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_135">
+        <property name="text">
+         <string>Tau min (ns):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="5">
+       <widget class="QCheckBox" name="arbseq_A2Readout_checkBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="arbseq_Save_Button">
+        <property name="text">
+         <string>Save</string>
+        </property>
+       </widget>
+      </item>
+      <item row="13" column="0" colspan="13">
+       <widget class="Line" name="line_18">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="5">
+       <widget class="QLineEdit" name="arbseq_DecayInit_LineEdit">
+        <property name="text">
+         <string>Init Decay</string>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="9">
+       <widget class="QLineEdit" name="arbseq_Binning_LineEdit">
+        <property name="text">
+         <string>100</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="3">
+       <widget class="QLineEdit" name="arbseq_Tau_Max_lineEdit">
+        <property name="text">
+         <string>Tau max</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="arbseq_Continue_Button">
+        <property name="text">
+         <string>Continue</string>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="3">
+       <widget class="QLineEdit" name="arbseq_InitTime_LineEdit">
+        <property name="text">
+         <string>Init Time</string>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="0">
+       <widget class="QLabel" name="label_141">
+        <property name="text">
+         <string>AOM Delay (ns):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="arbseq_Load_Button">
+        <property name="text">
+         <string>Load</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="11">
+       <widget class="QLineEdit" name="arbseq_Interval_LineEdit">
+        <property name="text">
+         <string>Saving Interval</string>
+        </property>
+       </widget>
+      </item>
+      <item row="14" column="12" rowspan="3">
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QComboBox" name="arbseq_odmr_channel_ComboBox"/>
+        </item>
+        <item>
+         <widget class="ScienDSpinBox" name="arbseq_cb_max_DoubleSpinBox">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="suffix">
+           <string>c/s</string>
+          </property>
+          <property name="minimum">
+           <double>-10.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>1000000000.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>100000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="ScienDSpinBox" name="arbseq_cb_high_percentile_DoubleSpinBox">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="suffix">
+           <string>%</string>
+          </property>
+          <property name="minimum">
+           <double>0.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>100.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>100.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="PlotWidget" name="arbseq_cb_PlotWidget">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>80</width>
+            <height>16777215</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="ScienDSpinBox" name="arbseq_cb_low_percentile_DoubleSpinBox">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="suffix">
+           <string>%</string>
+          </property>
+          <property name="minimum">
+           <double>0.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>100.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>1.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="ScienDSpinBox" name="arbseq_cb_min_DoubleSpinBox">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="suffix">
+           <string>c/s</string>
+          </property>
+          <property name="minimum">
+           <double>-10.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>1000000000.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>1000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="arbseq_cb_centiles_RadioButton">
+          <property name="text">
+           <string>Per&amp;centiles</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="arbseq_cb_manual_RadioButton">
+          <property name="text">
+           <string>Man&amp;ual</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="4" column="5">
+       <widget class="QLineEdit" name="arbseq_MW1_Freq_LineEdit">
+        <property name="text">
+         <string>MW1 Frequency</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="1">
+       <widget class="QCheckBox" name="arbseq_CWRepump_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="14" column="0" colspan="12">
+       <widget class="PlotWidget" name="arbseq_data_PlotWidget">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>1</horstretch>
+          <verstretch>1</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="10" rowspan="3" colspan="2">
+       <widget class="QTextBrowser" name="arbseq_FitResults_TextBrowser"/>
+      </item>
+      <item row="9" column="8" colspan="2">
+       <widget class="QComboBox" name="arbseq_SelectFit_ComboBox">
+        <item>
+         <property name="text">
+          <string>Cosinus</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Cosinus+Phase</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="8" column="8">
+       <widget class="QLabel" name="label_131">
+        <property name="text">
+         <string>Perform Fit:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="9">
+       <widget class="QCheckBox" name="arbseq_PerformFit_CheckBox">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="10">
+       <widget class="QLineEdit" name="arbseq_MW5_Duration_LineEdit">
+        <property name="text">
+         <string>Duration</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="10">
+       <widget class="QLineEdit" name="arbseq_MW4_Duration_LineEdit">
+        <property name="text">
+         <string>Duration</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="10">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Duration (ns)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="9">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Frequency (MHz)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="8">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Power (dBm)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="9">
+       <widget class="QLineEdit" name="arbseq_MW4_Freq_LineEdit">
+        <property name="text">
+         <string>Frequency</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="9">
+       <widget class="QLineEdit" name="arbseq_MW5_Freq_LineEdit">
+        <property name="text">
+         <string>Frequency</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="8">
+       <widget class="QLineEdit" name="arbseq_MW5_Power_LineEdit">
+        <property name="text">
+         <string>MW 5 Power</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="8">
+       <widget class="QLineEdit" name="arbseq_MW4_Power_LineEdit">
+        <property name="text">
+         <string>MW 4 Power</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="7">
+       <widget class="QCheckBox" name="arbseq_MW4_CheckBox">
+        <property name="text">
+         <string>MW 4 Pi pulse</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="7">
+       <widget class="QCheckBox" name="arbseq_MW5_CheckBox">
+        <property name="text">
+         <string>MW 5 Pi pulse</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1104</width>
+     <height>21</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PlotWidget</class>
+   <extends>QGraphicsView</extends>
+   <header>pyqtgraph</header>
+  </customwidget>
+  <customwidget>
+   <class>ScienDSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>qtwidgets.scientific_spinbox.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>arbseq_Run_Button</tabstop>
+  <tabstop>arbseq_Stop_Button</tabstop>
+  <tabstop>arbseq_Continue_Button</tabstop>
+  <tabstop>arbseq_Save_Button</tabstop>
+  <tabstop>arbseq_Load_Button</tabstop>
+  <tabstop>arbseq_Filename_LineEdit</tabstop>
+  <tabstop>arbseq_PeriodicSaving_CheckBox</tabstop>
+  <tabstop>arbseq_Interval_LineEdit</tabstop>
+  <tabstop>arbseq_Stoptime_LineEdit</tabstop>
+  <tabstop>arbseq_Tau_Min_lineEdit</tabstop>
+  <tabstop>arbseq_Tau_Max_lineEdit</tabstop>
+  <tabstop>arbseq_Tau_Step_lineEdit</tabstop>
+  <tabstop>arbseq_Tau_Decay_lineEdit</tabstop>
+  <tabstop>arbseq_MW1_CheckBox</tabstop>
+  <tabstop>arbseq_MW1_Power_LineEdit</tabstop>
+  <tabstop>arbseq_MW1_Freq_LineEdit</tabstop>
+  <tabstop>arbseq_MW2_CheckBox</tabstop>
+  <tabstop>arbseq_MW2_Power_LineEdit</tabstop>
+  <tabstop>arbseq_MW2_Freq_LineEdit</tabstop>
+  <tabstop>arbseq_MW3_CheckBox</tabstop>
+  <tabstop>arbseq_MW3_Power_LineEdit</tabstop>
+  <tabstop>arbseq_MW3_Freq_LineEdit</tabstop>
+  <tabstop>arbseq_PulsedRepump_CheckBox</tabstop>
+  <tabstop>arbseq_RepumpDuration_LineEdit</tabstop>
+  <tabstop>arbseq_RepumpDecay_LineEdit</tabstop>
+  <tabstop>arbseq_CWRepump_CheckBox</tabstop>
+  <tabstop>arbseq_A1_CheckBox</tabstop>
+  <tabstop>arbseq_A2_CheckBox</tabstop>
+  <tabstop>arbseq_InitTime_LineEdit</tabstop>
+  <tabstop>arbseq_DecayInit_LineEdit</tabstop>
+  <tabstop>arbseq_A1Readout_checkBox</tabstop>
+  <tabstop>arbseq_A2Readout_checkBox</tabstop>
+  <tabstop>arbseq_AOMDelay_LineEdit</tabstop>
+  <tabstop>arbseq_ReadoutTime_LineEdit</tabstop>
+  <tabstop>arbseq_ReadoutDecay_LineEdit</tabstop>
+  <tabstop>arbseq_IntegrationTime_lineEdit</tabstop>
+  <tabstop>arbseq_Binning_LineEdit</tabstop>
+  <tabstop>arbseq_odmr_channel_ComboBox</tabstop>
+  <tabstop>arbseq_cb_max_DoubleSpinBox</tabstop>
+  <tabstop>arbseq_cb_high_percentile_DoubleSpinBox</tabstop>
+  <tabstop>arbseq_cb_PlotWidget</tabstop>
+  <tabstop>arbseq_cb_low_percentile_DoubleSpinBox</tabstop>
+  <tabstop>arbseq_cb_min_DoubleSpinBox</tabstop>
+  <tabstop>arbseq_cb_centiles_RadioButton</tabstop>
+  <tabstop>arbseq_cb_manual_RadioButton</tabstop>
+  <tabstop>arbseq_data_PlotWidget</tabstop>
+  <tabstop>arbseq_matrix_PlotWidget</tabstop>
+  <tabstop>arbseq_detect_PlotWidget</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
