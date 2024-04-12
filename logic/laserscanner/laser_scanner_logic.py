@@ -385,7 +385,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.set_resolution(self.resolution)
         
         self._upwards_ramp = self._generate_ramp(v_min, v_max, self._scan_speed)
-        self._downwards_ramp = self._generate_ramp(v_max, v_min, 0.75)
+        self._downwards_ramp = self._generate_ramp(v_max, v_min, self._scan_speed)
         #print("passed time 3", time.time()-self.currenttime)
         
         #this part is used to be able to abort the scanning process more rapidly
