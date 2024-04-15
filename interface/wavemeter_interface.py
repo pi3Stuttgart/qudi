@@ -50,12 +50,22 @@ class WavemeterInterface(metaclass=InterfaceMetaclass):
         pass
 
     @abstract_interface_method
-    def get_current_wavelength(self):
+    def get_current_wavelength(self, kind="air"):
         """ This method returns the current wavelength.
 
         @param (str) kind: can either be "air" or "vac" for the wavelength in air or vacuum, respectively.
 
         @return (float): wavelength (or negative value for errors)
+        """
+        pass
+
+    @abstract_interface_method
+    def get_current_wavelength2(self, kind="air"):
+        """ This method returns the current wavelength of the second input channel.
+
+        @param (str) kind: can either be "air" or "vac" for the wavelength in air or vacuum, respectively.
+
+        @return float: wavelength (or negative value for errors)
         """
         pass
 

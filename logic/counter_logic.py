@@ -33,6 +33,7 @@ from core.util.mutex import Mutex
 
 from PyQt5 import QtTest
 
+
 class CounterLogic(GenericLogic):
     """ This logic module gathers data from a hardware counting device.
 
@@ -46,7 +47,6 @@ class CounterLogic(GenericLogic):
     sigCounterUpdated = QtCore.Signal()
 
     sigCountDataNext = QtCore.Signal()
-    sigCountCorrNext = QtCore.Signal()
 
     sigGatedCounterFinished = QtCore.Signal()
     sigGatedCounterContinue = QtCore.Signal(bool)
@@ -56,8 +56,6 @@ class CounterLogic(GenericLogic):
     sigSavingStatusChanged = QtCore.Signal(bool)
     sigCountStatusChanged = QtCore.Signal(bool)
     sigCountingModeChanged = QtCore.Signal(CountingMode)
-
-    sigCorrUpdated = QtCore.Signal()
 
     # declare connectors
     counter1 = Connector(interface='SlowCounterInterface')
@@ -89,23 +87,23 @@ class CounterLogic(GenericLogic):
             self.log.debug('{0}: {1}'.format(key, config[key]))
 
         # in bins
-        self._count_length = 300
-        self._smooth_window_length = 10
+        self._count_length = 1000
+        self._smooth_window_length = 20
         self._counting_samples = 1      # oversampling
         # in hertz
-        self._count_frequency = 50
+        self._count_frequency = 121
 
         # self._binned_counting = True  # UNUSED?
         self._counting_mode = CountingMode['CONTINUOUS']
 
         self._saving = False
-        self.corr_x, self.corr_y = None, None
         return
 
     def on_activate(self):
         """ Initialisation performed during activation of the module.
         """
         # Connect to hardware and save logic
+        
         self._counting_device = self.counter1()
         self._save_logic = self.savelogic()
 
@@ -123,7 +121,9 @@ class CounterLogic(GenericLogic):
         self._already_counted_samples = 0  # For gated counting
         self._data_to_save = []
         self.countdata_avg=0
-        
+        self.threshold=50000
+        self.heating=False
+
         # Flag to stop the loop
         self.stopRequested = False
 
@@ -131,9 +131,7 @@ class CounterLogic(GenericLogic):
 
         # connect signals
         self.sigCountDataNext.connect(self.count_loop_body, QtCore.Qt.QueuedConnection)
-        self.sigCountCorrNext.connect(self.count_corr_loop, QtCore.Qt.QueuedConnection)
-
-        self.startCount()
+        self.start_saving()
         return
 
     def on_deactivate(self):
@@ -147,7 +145,6 @@ class CounterLogic(GenericLogic):
             self._stopCount_wait()
 
         self.sigCountDataNext.disconnect()
-        self.sigCountCorrNext.disconnect()
         return
 
     def get_hardware_constraints(self):
@@ -168,7 +165,6 @@ class CounterLogic(GenericLogic):
         @return int: oversampling in units of bins.
         """
         # Determine if the counter has to be restarted after setting the parameter
-
         if self.module_state() == 'locked':
             restart = True
         else:
@@ -186,6 +182,7 @@ class CounterLogic(GenericLogic):
         return self._counting_samples
 
     def set_count_length(self, length=300):
+        print("counter logic: setting count length to ", length)
         """ Sets the time trace in units of bins.
 
         @param int length: time trace in units of bins (positive int).
@@ -210,7 +207,7 @@ class CounterLogic(GenericLogic):
         self.sigCountLengthChanged.emit(self._count_length)
         return self._count_length
 
-    def set_count_frequency(self, frequency=50):
+    def set_count_frequency(self, frequency=121):
         """ Sets the frequency with which the data is acquired.
 
         @param float frequency: the desired frequency of counting in Hz
@@ -322,7 +319,7 @@ class CounterLogic(GenericLogic):
             data = {header: self._data_to_save}
             filepath = self._save_logic.get_path_for_module(module_name='Counter')
 
-            if save_figure and len(self._data_to_save) > 0:
+            if save_figure:
                 fig = self.draw_figure(data=np.array(self._data_to_save))
             else:
                 fig = None
@@ -441,7 +438,7 @@ class CounterLogic(GenericLogic):
             self.countdata_smoothed = np.zeros([len(self.get_channels()), self._count_length])
             self._sampling_data = np.empty([len(self.get_channels()), self._counting_samples])
             self.countdata_avg=0
-
+            
             # the sample index for gated counting
             self._already_counted_samples = 0
 
@@ -449,117 +446,6 @@ class CounterLogic(GenericLogic):
             self.sigCountStatusChanged.emit(True)
             self.sigCountDataNext.emit()
             return
-    
-    def startCorr(self, bw, n):
-        """ 
-            @return error: 0 is OK, -1 is error
-        """
-        # Sanity checks
-        constraints = self.get_hardware_constraints()
-        if self._counting_mode not in constraints.counting_mode:
-            self.log.error('Unknown counting mode "{0}". Cannot start the counter.'
-                           ''.format(self._counting_mode))
-            return -1
-
-        with self.threadlock:
-            # Lock module
-            if self.module_state() != 'locked':
-                self.module_state.lock()
-            else:
-                self.log.warning('Counter already running. Method call ignored.')
-                return 0
-
-            self._counting_device.start_corr(bw/1e9*1e12, n)
-            self.corr_x, self.corr_y = self._counting_device.get_corr()
-            self._timeout = time.monotonic()
-            self.corr_y = np.full_like(self.corr_y, 0)
-            self.corr_stopRequested = False
-            self.sigCorrUpdated.emit()
-            self.sigCountCorrNext.emit()
-            return
-
-    def pause_resume_corr(self):
-        with self.threadlock:
-            # check for aborts of the thread in break if necessary
-            if self.corr_stopRequested:
-                # switch the state variable off again
-                self._counting_device.corr.stop()
-                self.corr_stopRequested = False
-                if self.module_state() == 'locked':
-                    self.module_state.unlock()
-                return
-
-            self._counting_device.corr.start()
-            self.module_state.lock()
-        self.sigCountCorrNext.emit()
-        return
-
-    def count_corr_loop(self):
-        if self.module_state() == 'locked':
-            with self.threadlock:
-                # check for aborts of the thread in break if necessary
-                if self.corr_stopRequested:
-                    # switch the state variable off again
-                    self.corr_stopRequested = False
-                    self.module_state.unlock()
-                    self.sigCorrUpdated.emit()
-                    return
-
-                # read the current corr value
-                self.corr_x, self.corr_y = self._counting_device.get_corr()
-            # call this again from event loop; qudi can't plot so fast so give a timeout
-            if (time.monotonic() - self._timeout)>0.2:
-                self.sigCorrUpdated.emit()
-                self._timeout = time.monotonic()
-            self.sigCountCorrNext.emit()
-        return
-
-    def draw_corr(self, data):
-        """ Draw figure to save with data file.
-
-        @param: nparray data: a numpy array containing counts vs time for all detectors
-
-        @return: fig fig: a matplotlib figure object to be saved to file.
-        """
-        # Use qudi style
-        plt.style.use(self._save_logic.mpl_qd_style)
-
-        # Create figure
-        fig, ax = plt.subplots()
-        ax.plot(data[0]/1e3, data[1], linestyle=':', linewidth=0.5)
-        ax.set_xlabel('$\\tau$ (ns)')
-        ax.set_ylabel('$g^{(2)}(\\tau)$')
-        return fig
-    
-    def save_corr(self, bin_width, n_bins, run_time):
-        # write the parameters:
-        if self.corr_y is None:
-            return
-        parameters = OrderedDict()
-        parameters['Runtime(s)'] = run_time
-        parameters['Bin width(ns)'] = bin_width
-        parameters['No. of bins'] = n_bins
-
-        filelabel = 'correlation_hist'
-
-        # prepare the data in a dict or in an OrderedDict:
-        header = 'T(ps), g(2)(T)'
-        data = {header: np.array([self.corr_x, self.corr_y]).T}
-        filepath = self._save_logic.get_path_for_module(module_name='Counter')
-
-        fig = self.draw_corr(data=(self.corr_x, self.corr_y))
-        self._save_logic.save_data(data, filepath=filepath, parameters=parameters,
-                                    filelabel=filelabel, plotfig=fig, delimiter='\t')
-        self.log.info('Correlation data saved to:\n{0}'.format(filepath))
-        return 
-    
-    def stopCorr(self):
-        """ Set a flag to request stopping counting.
-        """
-        if self.module_state() == 'locked':
-            with self.threadlock:
-                self.corr_stopRequested = True
-        return
 
     def stopCount(self):
         """ Set a flag to request stopping counting.
@@ -580,10 +466,10 @@ class CounterLogic(GenericLogic):
                 # check for aborts of the thread in break if necessary
                 if self.stopRequested:
                     # close off the actual counter
-                    # cnt_err = self._counting_device.close_counter()
-                    # clk_err = self._counting_device.close_clock()
-                    # if cnt_err < 0 or clk_err < 0:
-                    #     self.log.error('Could not even close the hardware, giving up.')
+                    cnt_err = self._counting_device.close_counter()
+                    clk_err = self._counting_device.close_clock()
+                    if cnt_err < 0 or clk_err < 0:
+                        self.log.error('Could not even close the hardware, giving up.')
                     # switch the state variable off again
                     self.stopRequested = False
                     self.module_state.unlock()
@@ -681,16 +567,19 @@ class CounterLogic(GenericLogic):
             self.countdata[i, 0] = np.average(self.rawdata[i])
         # move the array to the left to make space for the new data
         self.countdata = np.roll(self.countdata, -1, axis=1)
+        if np.mean(self.countdata[0][-5:])>self.threshold:
+            self.heating=True
+        else:
+            self.heating=False
 
         # also move the smoothing array
         self.countdata_smoothed = np.roll(self.countdata_smoothed, -1, axis=1)
         # calculate the median and save it
         window = -int(self._smooth_window_length / 2) - 1
         for i, ch in enumerate(self.get_channels()):
-            self.countdata_smoothed[i, window:] = np.median(self.countdata[i,
-                                                            -self._smooth_window_length:])
+            self.countdata_smoothed[i, window:] = np.median(self.countdata[i,-self._smooth_window_length:])
             self.countdata_avg = np.mean(self.countdata[i,:])
-
+            
         # save the data if necessary
         if self._saving:
              # if oversampling is necessary
@@ -776,6 +665,7 @@ class CounterLogic(GenericLogic):
         start_time = time.time()
         while self.module_state() == 'locked':
             QtTest.QTest.qSleep(100)
+            #time.sleep(0.1)
             if time.time() - start_time >= timeout:
                 self.log.error('Stopping the counter timed out after {0}s'.format(timeout))
                 return -1

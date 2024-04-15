@@ -92,7 +92,7 @@ def nuclear_settings(nuclear, ret_mcas, analyze_sequence, meas_code, pdc=None, *
         pdc = {}
     nuclear.reset_settings()
     if 'script_path' in kwargs:
-        nuclear.make_save_location_params(script_path=kwargs['script_path'], folder=r"E:/NuclearOps", sub_folder_kw="UserScripts")
+        nuclear.make_save_location_params(script_path=kwargs['script_path'], folder=r"D:/data/NuclearOps", sub_folder_kw="UserScripts")
     for key, val in pdc.items():
         if hasattr(val, '__iter__'):
             nuclear.file_name += "_{}{}".format(key, "_".join([str(i) for i in val]))
@@ -133,7 +133,7 @@ def create_nuclear(script_path):
         raise Exception('Error: ', script_path)
     nuclear = logic.NuclearOPs.NuclearOPs()#TODO fill config here
     nuclear.make_save_location_params(script_path=script_path,
-                                      folder= r"E:/NuclearOps",
+                                      folder= r"D:/Data/NuclearOps",
                                       sub_folder_kw="UserScripts")
     nuclear_name = "NuclearOPs{}_{}".format(nuclear.file_name, datetime.datetime.strftime(nuclear.date_of_creation, nuclear.__TITLE_DATE_FORMAT__))
     nuclear.pld = data_handling.PlotData(title=nuclear_name, gui=True)

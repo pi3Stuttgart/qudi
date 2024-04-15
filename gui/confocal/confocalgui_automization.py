@@ -192,7 +192,7 @@ class ConfocalGui(GUIBase):
     confocallogic1 = Connector(interface='ConfocalLogic')
     savelogic = Connector(interface='SaveLogic')
     optimizerlogic1 = Connector(interface='OptimizerLogic')
-    #automizedmeasurementlogic = Connector(interface='Automatedmeasurement')
+    automizedmeasurementlogic = Connector(interface='Automatedmeasurement')
 
     # config options for gui
     fixed_aspect_ratio_xy = ConfigOption('fixed_aspect_ratio_xy', True)
@@ -227,7 +227,7 @@ class ConfocalGui(GUIBase):
         self._save_logic = self.savelogic()
         self._optimizer_logic = self.optimizerlogic1()
         self._scanning_logic.pois = np.array([])
-        #self._automized_measurement_logic = self.automizedmeasurementlogic()
+        self._automized_measurement_logic = self.automizedmeasurementlogic()
         # connecting signals from logic
         self._scanning_logic.sigLimitsChanged.connect(self.limits_changed)
 
@@ -365,10 +365,6 @@ class ConfocalGui(GUIBase):
             (self._optimizer_logic.refocus_XY_size, self._optimizer_logic.refocus_XY_size))
         # connect the drag event of the crosshair with a change in scanner position:
         self._mw.xy_ViewWidget.sigCrosshairDraggedPosChanged.connect(self.update_from_roi_xy)
-
-        
-        self.scan_pos_line=pg.InfiniteLine(pos=(self._scanning_logic.get_position()[1]),angle=0)
-        self._mw.xy_ViewWidget.addItem(self.scan_pos_line)
         
         # Set up and connect xy channel combobox
         scan_channels = self._scanning_logic.get_scanner_count_channels()
@@ -609,7 +605,7 @@ class ConfocalGui(GUIBase):
         self._scanning_logic.signal_depth_data_saved.connect(self.logic_finished_save)
         self._scanning_logic.signal_continue_scanning.connect(self.logic_continued_scanning)
         self._optimizer_logic.sigRefocusStarted.connect(self.logic_started_refocus)
-        self._scanning_logic.signal_stop_scanning.connect(self.enable_scan_actions)
+        # self._scanning_logic.signal_stop_scanning.connect()
 
         # Connect the tracker
         self.sigStartOptimizer.connect(self._optimizer_logic.start_refocus)
@@ -639,7 +635,7 @@ class ConfocalGui(GUIBase):
         self._mw.actionBlink_correction_view.triggered.connect(self.blink_correction_clicked)
 
         # Connect refocus for automized spectrometer measurement
-        #self._automized_measurement_logic.sigAutomizedRefocus.connect(self.refocus_clicked)
+        self._automized_measurement_logic.sigAutomizedRefocus.connect(self.refocus_clicked)
 
         ###################################################################
         #               Icons for the scan actions                        #
@@ -982,15 +978,7 @@ class ConfocalGui(GUIBase):
         Also, if the refocus was initiated here in confocalgui then we need to handle the
         "returned" optimal position.
         """
-        if caller_tag in ['confocalgui', 'NuclearOps']:
-            self._scanning_logic.set_position(
-                'optimizer',
-                x=optimal_pos[0],
-                y=optimal_pos[1],
-                z=optimal_pos[2],
-                a=0.0
-            )
-        if caller_tag.startswith('NuclearOps_'): #Is this needed?
+        if caller_tag == 'confocalgui':
             self._scanning_logic.set_position(
                 'optimizer',
                 x=optimal_pos[0],
@@ -1581,10 +1569,6 @@ class ConfocalGui(GUIBase):
         # Now update image with new color scale, and update colorbar
         self.xy_image.setImage(image=xy_image_data, levels=(cb_range[0], cb_range[1]))
         self.refresh_xy_colorbar()
-
-        mini,maxi=self._scanning_logic.image_y_range
-        mu_scanned_line=mini+((self._scanning_logic._scan_counter)/(xy_image_data.shape[0]-1))*(maxi-mini) # if you find the variable giving the scanned line in its µ position, PUT IT HERE !!!! avoid this terrible conversion!
-        self.scan_pos_line.setValue(mu_scanned_line)
 
         # Unlock state widget if scan is finished
         if self._scanning_logic.module_state() != 'locked':

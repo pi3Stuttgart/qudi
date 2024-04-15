@@ -30,10 +30,8 @@ class TT(Base, TimeTaggerInterface):
         #self.tagger.setTriggerLevel(1,0.7)
         #self.tagger.setTriggerLevel(2,0.7)
         #print("Hello, im using the wrong hardware file.")
-        self.tagger.setTriggerLevel(0,self._channels_params['zero']['trigger_level'])
-        self.tagger.setTriggerLevel(1,self._channels_params['one']['trigger_level'])
-        self.tagger.setTriggerLevel(2,self._channels_params['two']['trigger_level'])
-        self.tagger.setDeadtime(0,70000) #70000, to avoid a trigger on the desceding side of the click signal from de SNSPD
+        self.tagger.setTriggerLevel(1,0.05)
+        self.tagger.setTriggerLevel(2,0.05)
         self.tagger.setDeadtime(1,70000) #70000, to avoid a trigger on the desceding side of the click signal from de SNSPD
 
     def on_deactivate(self):
@@ -43,7 +41,7 @@ class TT(Base, TimeTaggerInterface):
         try:
             self.tagger = createTimeTagger()
             # self.tagger.reset()
-            print(f"timetagger initialization successful: {self.tagger.getSerial()}")
+            print(f"Tagger initialization successful: {self.tagger.getSerial()}")
         except:
             self.log.error(f"\nCheck if the TimeTagger device is being used by another instance.")
             Exception(f"\nCheck if the TimeTagger device is being used by another instance.")
@@ -144,7 +142,6 @@ class TT(Base, TimeTaggerInterface):
         refresh_rate - number of samples per second:
 
         """
-        self.tagger.setTriggerLevel(0,0.05)
         self.tagger.setTriggerLevel(1,0.05)
         self.tagger.setTriggerLevel(2,0.05)
         for key, value in kwargs.items():

@@ -145,8 +145,7 @@ class PowerStabilizationGui(GUIBase, powerstab_default_gui):
         #data_y=self._odmr_logic.ODMRLogic.data
         self._mw.PowerValue_Label.setText(str(round(self._power_stabilization.current_power,2))[:5]+"nW")
         self._mw.VoltageValue_Label.setText(str(round(self._power_stabilization.feedback_voltage-self._power_stabilization.voltage_offset,4))+"V")
-        self._mw.AOM_1_Volt_label.setText(str(round(self._power_stabilization._setupcontrol_logic.AOM_A1_volt,2))+"V to AOM A1")
-        self._mw.AOM_2_Volt_label.setText(str(round(self._power_stabilization._setupcontrol_logic.AOM_A2_volt,2))+"V to AOM A2")
+        self._mw.AOM_Volt_label.setText(str(round(self._power_stabilization._setupcontrol_logic.AOM_volt,2))+"V to AOM")
         data_y = np.asarray(self._power_stabilization.power_list)[-self._power_stabilization.datapoints:]*1e-9
         data_x = np.arange(len(data_y))*self._power_stabilization.sleep_time
         self.laserpower_image.setData(data_x, data_y)

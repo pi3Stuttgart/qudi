@@ -90,8 +90,6 @@ class RabiLogic(GenericLogic,rabi_default):
         self.Phase_Fit:str=''
         self.tau_pulse:float=0 #ns
         self.SigCheckReady_Beacon.connect(self.get_data)
-        self.readout_loops = 1
-        
    
         self.syncing=False
 
@@ -173,9 +171,9 @@ class RabiLogic(GenericLogic,rabi_default):
         parameters['Microwave1 CW Power (dBm)'] = self.rabi_MW1_Power
         parameters['Microwave2 CW Power (dBm)'] = self.rabi_MW2_Power
         parameters['Microwave3 CW Power (dBm)'] = self.rabi_MW3_Power
-        parameters['Microwave1 Frequency (MHz)'] = self.rabi_MW1_Freq
-        parameters['Microwave2 Frequency (MHz)'] = self.rabi_MW2_Freq
-        parameters['Microwave3 Frequency (MHz)'] = self.rabi_MW3_Freq
+        parameters['Microwave1 CW Power (dBm)'] = self.rabi_MW1_Freq
+        parameters['Microwave2 CW Power (dBm)'] = self.rabi_MW2_Freq
+        parameters['Microwave3 CW Power (dBm)'] = self.rabi_MW3_Freq
         parameters['Tau min (ns)'] = self.rabi_Tau_Min
         parameters['Tau max (ns)'] = self.rabi_Tau_Max
         parameters['Tau Step (ns)'] = self.rabi_Tau_Step
@@ -601,14 +599,14 @@ class RabiLogic(GenericLogic,rabi_default):
     
         # Setup list of all frequencies which the sequence should output.
         self.tau_duration = np.unique(E.round_length_mus_to_x_multiple_ps(
-            np.arange(self.rabi_Tau_Min, self.rabi_Tau_Max + self.rabi_Tau_Step, self.rabi_Tau_Step) / 1000,16)) #FIXME just uncomment when using normal rabi again
-        # self.tau_duration = np.unique(np.arange(self.rabi_Tau_Min, self.rabi_Tau_Max + self.rabi_Tau_Step, self.rabi_Tau_Step)) #FIXME just uncomment when using normal rabi again
+            np.arange(self.rabi_Tau_Min, self.rabi_Tau_Max + self.rabi_Tau_Step, self.rabi_Tau_Step) / 1000))
         self.time_differences.stop()
         time.sleep(0.02)  # maybe the timetagger would get too much commands at the same time
+    
         self.time_differences = self.setup_time_tagger(n_histograms=len(self.tau_duration),
                                                         binwidth=int(self.rabi_Binning * 1000),
                                                         # rabi_Binning input is in ns.
-                                                        n_bins=int(self.rabi_ReadoutTime*self.readout_loops / self.rabi_Binning)
+                                                        n_bins=int(self.rabi_ReadoutTime / self.rabi_Binning)
                                                         )
     
         self.power = []
@@ -690,12 +688,11 @@ class RabiLogic(GenericLogic,rabi_default):
                 logger.warning("No Laser assigned for Init Sequence.")
     
             seq.asc(name="gateMW", gateMW=True, length_mus=E.round_length_mus_to_x_multiple_ps(gateMW_dur, 64))
-            if self.rabi_MW1:
-                seq.asc(name="Tau_pulse" + str(duration),
-                        pd2g1={"type": "sine", "frequencies": [self.rabi_MW1_Freq],
-                                "amplitudes": self.power_to_amp(self.rabi_MW1_Power)},
-                        length_mus=duration,
-                        gateMW=True)  # self.rabi_piPulseDuration is divided by 1000 to be in µs
+            seq.asc(name="Tau_pulse" + str(duration),
+                    pd2g1={"type": "sine", "frequencies": [self.rabi_MW1_Freq],
+                            "amplitudes": self.power_to_amp(self.rabi_MW1_Power)},
+                    length_mus=duration,
+                    gateMW=True)  # self.rabi_piPulseDuration is divided by 1000 to be in µs
     
             if self.rabi_MW4 or self.rabi_MW5:
                 seq.start_new_segment("Projecting_Pulse")
@@ -715,60 +712,13 @@ class RabiLogic(GenericLogic,rabi_default):
                     A1=False,
                     A2=False)  # self.rabi_Tau_Decay is divided by 1000 to be in µs
     
-            seq.start_new_segment("Readout", loop_count = self.readout_loops)
+            seq.start_new_segment("Readout")
             seq.asc(name='readout' + str(duration),
                     length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_ReadoutTime / 1000, 64),
                     A1=self.rabi_A1Readout, A2=self.rabi_A2Readout, gate=True)
-            seq.start_new_segment("ReadoutDeacy")
             seq.asc(name='readout_decay' + str(duration),
                     length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_ReadoutDecay / 1000, 64), A1=False,
                     A2=False, gate=True)
-        # meas_time = (self.rabi_RepumpDuration+self.rabi_InitTime+self.rabi_Tau_Max+self.rabi_ReadoutTime+self.rabi_Tau_Decay)*int(self.rabi_MW1_Freq)*1000
-        # self.time_differences = self.setup_time_tagger(n_histograms=len(self.tau_duration),
-        #                                         binwidth=int(self.rabi_Binning * 1000),
-        #                                         n_bins=int(meas_time / self.rabi_Binning)
-        #                                         )
-    
-        
-        # seq = self._awg.mcas(name="CustomSeq", ch_dict={"2g": [1, 2], "ps": [1]})
-        # seq.start_new_segment("Startup", loop_count=1)
-        # seq.asc(name='tt_sync1', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to),
-        #         memory=True)
-        # seq.asc(name='wait', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to))
-        # # short pulses to SYNC and TRIGGER the timedifferences module of TimeTagger.
-        # seq.asc(name='tt_sync2', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to),
-        #         gate=True)
-        # seq.asc(name='wait', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to))
-        
-        # for tau in self.tau_duration:
-        #     seq.start_new_segment("wait", loop_count=1)
-        #     seq.asc(name='wait', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to))
-        
-        #     seq.start_new_segment("Repump", loop_count=int(self.rabi_MW1_Freq))
-        #     seq.asc(name='repumpOn', length_mus=self.rabi_RepumpDuration, repump=True, gate=True)
-            
-        #     seq.start_new_segment("Res", loop_count=int(self.rabi_MW1_Freq))
-        #     seq.asc(name='OnlyResonant', length_mus=self.rabi_InitTime, A2=True, A1=True, gate=True)
-            
-        #     seq.start_new_segment("Ionization", loop_count=int(self.rabi_MW1_Freq))
-        #     seq.asc(name='AddCTL', length_mus=tau, A2=True, A1=True, CTL=True, gate=True)
-            
-        #     seq.start_new_segment("Readout", loop_count=int(self.rabi_MW1_Freq))
-        #     seq.asc(name='OnlyResonant', length_mus=self.rabi_ReadoutTime, A2=True, A1=True, gate=True)
-            
-        #     seq.start_new_segment("Readout2", loop_count=int(self.rabi_MW1_Freq))
-        #     seq.asc(name='OnlyResonant', length_mus=self.rabi_Tau_Max-tau, A2=True, A1=True, gate=True)
-
-        #     seq.start_new_segment("CTLBG", loop_count=int(self.rabi_MW1_Freq))
-        #     seq.asc(name='allOff', length_mus=self.rabi_Tau_Decay, gate=True)
-        
-        #     seq.start_new_segment("wait", loop_count=1)
-        #     seq.asc(name='wait', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to))
-
-        # self._awg.mcas_dict.stop_awgs()
-        # self._awg.mcas_dict['CustomSeq']=seq
-        # self._awg.mcas_dict.print_info()
-        # self._awg.mcas_dict['CustomSeq'].run()
     
         # self.awg.mcas.status = 1
         self._awg.mcas_dict.stop_awgs()
