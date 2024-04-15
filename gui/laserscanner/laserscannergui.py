@@ -33,6 +33,8 @@ from qtpy import QtCore
 from qtpy import QtGui
 from qtpy import QtWidgets
 from qtpy import uic
+import time 
+from PyQt5 import QtTest
 
 from gui.laserscanner.connectors_and_set_default import initialize_connections_and_defaultvalue as ple_default_functions
 
@@ -61,6 +63,7 @@ class VoltScanGui(GUIBase, ple_default_functions):
     sigChangeResolution = QtCore.Signal(float)
     sigChangeSpeed = QtCore.Signal(float)
     sigChangeLines = QtCore.Signal(int)
+    sigChangeMaxLines = QtCore.Signal(int)
     sigSaveMeasurement = QtCore.Signal(str, list, list)
 
     def __init__(self, config, **kwargs):
@@ -96,25 +99,9 @@ class VoltScanGui(GUIBase, ple_default_functions):
                 self._voltscan_logic.number_of_repeats)
         )
 
-        # self.scan_matrix_image2 = pg.ImageItem(
-        #     self._voltscan_logic.scan_matrix2,
-        #     axisOrder='row-major')
-
-        # self.scan_matrix_image2.setRect(
-        #     QtCore.QRectF(
-        #         self._voltscan_logic.scan_range[0],
-        #         0,
-        #         self._voltscan_logic.scan_range[1] - self._voltscan_logic.scan_range[0],
-        #         self._voltscan_logic.number_of_repeats)
-        # )
-
         self.scan_image = pg.PlotDataItem(
             self._voltscan_logic.plot_x,
             self._voltscan_logic.plot_y)
-
-        # self.scan_image2 = pg.PlotDataItem(
-        #     self._voltscan_logic.plot_x,
-        #     self._voltscan_logic.plot_y2)
 
         self.scan_fit_image = pg.PlotDataItem(
             self._voltscan_logic.plot_x,
@@ -132,7 +119,6 @@ class VoltScanGui(GUIBase, ple_default_functions):
         #self._mw.voltscan2_ViewWidget.addItem(self.scan_image2)
         #self._mw.voltscan2_ViewWidget.addItem(self.scan_fit_image)
         #self._mw.voltscan2_ViewWidget.showGrid(x=True, y=True, alpha=0.8)
-        #self._mw.voltscan_matrix2_ViewWidget.addItem(self.scan_matrix_image2)
 
         # Get the colorscales at set LUT
         my_colors = ColorScaleInferno()
@@ -194,15 +180,31 @@ class VoltScanGui(GUIBase, ple_default_functions):
         self._voltscan_logic.sigUpdatePlots.connect(self.refresh_lines)
         self._voltscan_logic.sigScanFinished.connect(self.scan_stopped)
         self._voltscan_logic.sigScanStarted.connect(self.scan_started)
+        self._voltscan_logic.sigScanRangeAdjustment.connect(self.update_scan_range_ComboBox)
+        self._voltscan_logic.sigScanRangeChanged.connect(self.update_scan_range_DoubleSpinBox)
+        self._voltscan_logic.sigLockLaserChanged.connect(self.update_ple_Lock_Laser_CheckBox)
+        #self._voltscan_logic.sigProgressBar.connect(self.update_ProgressBar)
 
         #self.sigStartScan.connect(self._voltscan_logic.start_scanning)
         #self.sigStopScan.connect(self._voltscan_logic.stop_scanning)
         self.sigChangeVoltage.connect(self._voltscan_logic.set_voltage)
         self.sigChangeRange.connect(self._voltscan_logic.set_scan_range)
         self.sigChangeSpeed.connect(self._voltscan_logic.set_scan_speed)
-        self.sigChangeLines.connect(self._voltscan_logic.set_scan_lines)
+        self.sigChangeLines.connect(self._voltscan_logic.set_show_lines)
+        self.sigChangeMaxLines.connect(self._voltscan_logic.set_scan_lines)
         self.sigChangeResolution.connect(self._voltscan_logic.set_resolution)
         self.sigSaveMeasurement.connect(self._voltscan_logic.save_data)
+
+        # Set up ScanRange combobox
+        scan_ranges = ['Single Peak', 'Double Peak', 'Selected Range']
+        for n, ch in enumerate(scan_ranges):
+            self._mw.ple_ScanRanges_ComboBox.addItem(str(ch), n)
+
+        self._mw.ple_ScanRanges_ComboBox.activated.connect(self.select_scan_range)
+        self._mw.ple_Stop_Button.setEnabled(False)
+
+        self._mw.resolutionSpinBox.setValue(self._voltscan_logic.stepsize)
+
 
         self._mw.show()
 
@@ -229,15 +231,19 @@ class VoltScanGui(GUIBase, ple_default_functions):
     #         self.sigStopScan.emit()
 
     def scan_started(self):
-       pass
+        self.disable_scan_actions()
+
     def scan_stopped(self):
-        saved_performfit=self._voltscan_logic.PerformFit
-        self._voltscan_logic.PerformFit=True
+        self.enable_scan_actions()
+        if self._voltscan_logic.lock_laser:
+            perform_fit = self._voltscan_logic.PerformFit
+            self._voltscan_logic.PerformFit = True
         self.refresh_plot()
         self.refresh_matrix()
         self.refresh_lines()
-        self._voltscan_logic.PerformFit=saved_performfit
-
+        if self._voltscan_logic.lock_laser:
+            self._voltscan_logic.PerformFit = perform_fit
+        
     def refresh_plot(self):
         """ Refresh the xy-plot image """
         self.scan_image.setData(self._voltscan_logic.plot_x_frequency, self._voltscan_logic.plot_y)
@@ -245,12 +251,15 @@ class VoltScanGui(GUIBase, ple_default_functions):
         if self._voltscan_logic.PerformFit:
             self._mw.ple_data_PlotWidget.addItem(self.scan_fit_image)
             print("PLE GUI PERFOMING GAUSSIAN FIT")
-            interplolated_x_data,fit_data,result = self._voltscan_logic.do_gaussian_fit()
-            self._mw.ple_Contrast_Fit_Label.setText(self._voltscan_logic.Contrast_Fit)
-            self._mw.ple_Frequencies_Fit_Label.setText(self._voltscan_logic.Frequencies_Fit)
-            self._mw.ple_Linewidths_Fit_Label.setText(self._voltscan_logic.Linewidths_Fit)
-            #self.scan_fit_image.setData(interplolated_x_data*1000*1e6/0.30, fit_data) # 0.22 if FeedForward in turned on
-            self.scan_fit_image.setData(interplolated_x_data/0.30, fit_data) # 0.22 if FeedForward in turned on
+            try:
+                interpolated_x_data, fit_data, result = self._voltscan_logic.do_gaussian_fit()
+                self._mw.ple_Contrast_Fit_Label.setText(self._voltscan_logic.Contrast_Fit)
+                self._mw.ple_Frequencies_Fit_Label.setText(self._voltscan_logic.Frequencies_Fit_GHz)
+                self._mw.ple_Linewidths_Fit_Label.setText(self._voltscan_logic.Linewidths_Fit_GHz)
+
+                self.scan_fit_image.setData(interpolated_x_data*self._voltscan_logic._scanning_device._scanner_position_ranges[3][1] , fit_data) # 0.22 if FeedForward in turned on
+            except:
+                self.log.warning('Gaussian fit not successful...')
 
     def refresh_matrix(self):
         """ Refresh the xy-matrix image """
@@ -283,8 +292,6 @@ class VoltScanGui(GUIBase, ple_default_functions):
             image=scan_image_data,
             levels=(cb_min, cb_max),
             axisOrder='row-major')
-
-        scan_image_data2 = self._voltscan_logic.scan_matrix2
  
         self.refresh_scan_colorbar()
 
@@ -329,6 +336,9 @@ class VoltScanGui(GUIBase, ple_default_functions):
 
     def change_lines(self,tmp=0):
         self.sigChangeLines.emit(self._mw.linesSpinBox.value())
+    
+    def change_maxlines(self,tmp=0):
+        self.sigChangeMaxLines.emit(self._mw.maxlinesSpinBox.value())
 
     def change_resolution(self,tmp=0):
         self.sigChangeResolution.emit(self._mw.resolutionSpinBox.value())
@@ -358,3 +368,37 @@ class VoltScanGui(GUIBase, ple_default_functions):
         cb_range = [cb_min, cb_max]
         return cb_range
 
+    def select_scan_range(self, index):
+        """ The automated scan range adjustment was changed.
+
+            @param index int: index of selected channel item in combo box
+        """
+        self._voltscan_logic.scan_range_adjustment = int(self._mw.ple_ScanRanges_ComboBox.itemData(index, QtCore.Qt.UserRole))
+        
+    def update_scan_range_ComboBox(self, value):
+        self._mw.ple_ScanRanges_ComboBox.setCurrentIndex(value)
+    
+    def update_scan_range_DoubleSpinBox(self, value_min, value_max):
+        self._mw.startDoubleSpinBox.setValue(value_min)
+        self._mw.stopDoubleSpinBox.setValue(value_max)
+    
+    def update_ple_Lock_Laser_CheckBox(self, val):
+        self._mw.ple_Lock_Laser_CheckBox.setChecked(val)
+
+    def update_ProgressBar(self, val, scan_dur):
+        print("Update ProgressBar: ", val)
+        self._mw.ple_ProgressBar.setRange(0, scan_dur)
+        self._mw.ple_ProgressBar.setValue(val)
+
+    
+    def disable_scan_actions(self):
+        self._mw.ple_Run_Button.setEnabled(False)
+        self._mw.ple_Stop_Button.setEnabled(True)
+        self._mw.ple_Continue_Button.setEnabled(False)
+        self._mw.ple_Load_Button.setEnabled(False)
+    
+    def enable_scan_actions(self):
+        self._mw.ple_Run_Button.setEnabled(True)
+        self._mw.ple_Stop_Button.setEnabled(False)
+        self._mw.ple_Continue_Button.setEnabled(True)
+        self._mw.ple_Load_Button.setEnabled(True)

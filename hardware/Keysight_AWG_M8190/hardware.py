@@ -1534,7 +1534,7 @@ class PulseStreamer():
     # def __init__(self, ip='192.168.1.100', channel_map={'ch0':0,'ch1':1,'ch2':2,'ch3':3,'ch4':4,'ch5':5,'ch6':6,'ch7':7}):
     def __init__(self, ip='192.168.0.54',channel_map={'ch0': 0, 'ch1': 1, 'ch2': 2, 'ch3': 3, 'ch4': 4, 'ch5': 5, 'ch6': 6, 'ch7': 7}):
         # 00:26:32:F0:92:23 serial number of our new ps 169.254.8.2
-        ps = pulsestreamer.PulseStreamer('129.69.46.36')
+        ps = pulsestreamer.PulseStreamer('169.254.8.2')
         ps.setSquareWave125MHz([4])
         
         # print("start pulsestreamer...")
@@ -1548,7 +1548,7 @@ class PulseStreamer():
 
         self.channel_map = channel_map
 
-        url = 'http://'+'129.69.46.36'+':8050/json-rpc'
+        url = 'http://'+'169.254.8.2'+':8050/json-rpc'
         client = RPCClient(
             JSONRPCProtocol(),
             HttpPostClientTransport(url)
@@ -1558,11 +1558,13 @@ class PulseStreamer():
         self.getUnderflow()
 
     def stream(self, seq, n_runs=0, initial=(0,[],0,0), final=(0,[],0,0), underflow=(0,[],0,0), start='IMMEDIATE'):
-        initial=(initial[0],initial[1],self.analog_volt,initial[3])
-        final=(final[0],final[1],self.analog_volt,final[3])
-        underflow=(underflow[0],underflow[1],self.analog_volt,underflow[3])
-        #print("using stream")
-
+        initial=(initial[0],initial[1],self.analog_A2_volt,self.analog_A1_volt)
+        final=(final[0],final[1],self.analog_A2_volt,self.analog_A1_volt)
+        underflow=(underflow[0],underflow[1],self.analog_A2_volt,self.analog_A1_volt)
+        # initial=(initial[0],initial[1],self.analog_A2_volt,initial[3])
+        # final=(final[0],final[1],self.analog_A2_volt,final[3])
+        # underflow=(underflow[0],underflow[1],self.analog_A2_volt,underflow[3])
+        
         initial = self.convert_pulse(initial)
         final = self.convert_pulse(final)
         underflow = self.convert_pulse(underflow)
@@ -1610,7 +1612,8 @@ class PulseStreamerPGProxy(PulseStreamer):
         self._triggered = None
         self._sequence  = None
         self.t_prepolarize = None
-        self.analog_volt=1 #1234 change the A2 AOM voltage here
+        self.analog_A1_volt=1
+        self.analog_A2_volt=1
 
 
     def missing_smpl(self,ls):
@@ -1678,10 +1681,10 @@ class PulseStreamerPGProxy(PulseStreamer):
         """Convert a pg style sequence to ps style for wide field use (incl. ccd)"""
         #return [(int(t), channels + ['ccd'], 0, 0) for channels, t in sequence]
         #print("converted")
-        return [(int(t), channels, self.analog_volt, 0) for channels, t in sequence]
+        return [(int(t), channels, self.analog_A2_volt, self.analog_A1_volt) for channels, t in sequence]
 
     def setContinuous(self, channels=[]):
-        self.constant(pulse=(0, channels, self.analog_volt, 0))
+        self.constant(pulse=(0, channels, self.analog_A2_volt, self.analog_A1_volt))
 
     def checkUnderflow(self):
         return self.getUnderflow()
@@ -1690,7 +1693,7 @@ class PulseStreamerPGProxy(PulseStreamer):
         self.constant()
 
     def Light(self):
-        self.constant(pulse=(0, ['repump'], self.analog_volt, 0))
+        self.constant(pulse=(0, ['repump'], self.analog_A2_volt, self.analog_A1_volt))
 
     # compatibility:
     Sequence = setSequence

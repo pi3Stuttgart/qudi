@@ -58,7 +58,7 @@ class streamUSBnidaq(Base, StreamUSBNidaqInterface): #Hardware file
        
     def start_acquisition(self):
         # Configure and setup the tasks
-        self.task_in = nidaqmx.Task()
+        self.task_in = nidaqmx.Task(new_task_name="AnalogInTask_Dev2ai0")
         self.cfg_read_task(self.task_in)
         self.stream_in = AnalogMultiChannelReader(self.task_in.in_stream)
         self.task_in.register_every_n_samples_acquired_into_buffer_event(self.bufsize_callback, self.reading_task_callback) 
@@ -67,6 +67,7 @@ class streamUSBnidaq(Base, StreamUSBNidaqInterface): #Hardware file
         #self.reading_task_callback()
         self.task_in.start()
 
+    def start_ao_task(self):
         self.task_out = nidaqmx.Task()
         self.cfg_write_task(self.task_out)
         self.task_out.start()

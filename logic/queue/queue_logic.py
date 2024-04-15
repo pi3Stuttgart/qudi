@@ -495,6 +495,7 @@ class queue_logic(GenericLogic):
         return self._mcas_dict[key].dl(*args, **kwargs)
 
     def save_pi3diamond(self, destination_dir):
+        print("Save_pi3diamond")
         src = os.getcwd()
         f = '{}/qudi.zip'.format(destination_dir)
         if not os.path.isfile(f):

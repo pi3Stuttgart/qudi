@@ -2,28 +2,13 @@ import numpy as np
 import time
 
 class ple_default_values_and_widget_functions:
-        MW1_Power:float=-21
-        MW2_Power:float=-21
-        MW3_Power:float=-21
-        MW1_Freq:float=70
-        MW2_Freq:float=140
-        MW3_Freq:float=210
-        enable_MW1:bool=True
-        enable_MW2:bool=False
-        enable_MW3:bool=False
-        enable_A1:bool=False
-        enable_A2:bool=True
-        enable_Repump:bool=False
-        enable_PulsedRepump:bool=True
-        Lock_laser:bool=False
+        lock_laser:bool=False
+        _lock_laser:bool=False
         RepumpDuration:float = 10
         RepumpDecay:float = 1000
 
-        Filename:str = ''
-        PeriodicSaving:bool = False
-        NumberOfPeaks:int = 2
-        Stoptime:float = 3600
-        Interval:float = 180
+        
+        stoptime:float = 0
         PerformFit:bool = False
 
         Contrast_Fit:str=''
@@ -41,17 +26,20 @@ class ple_default_values_and_widget_functions:
         def ple_Load_Button_Clicked(self,on):
                 print('done something with ple_Load_Button')
 
-        def ple_PulsedRepump_CheckBox_StateChanged(self,on):
-                self.enable_PulsedRepump=on==2
+        def ple_PulsedRepump_CheckBox_StateChanged(self,value):
+                self.enable_PulsedRepump=value==2
 
-        def ple_MW2_CheckBox_StateChanged(self,on):
-                self.enable_MW2=on==2
+        def ple_RepumpWhenIonized_CheckBox_StateChanged(self,value):
+                self.RepumpWhenIonized=value==2
+
+        def ple_MW2_CheckBox_StateChanged(self,value):
+                self.enable_MW2=value==2
 
         def ple_Continue_Button_Clicked(self,on):
                 print('done something with ple_Continue_Button')
 
-        def ple_MW1_CheckBox_StateChanged(self,on):
-                self.enable_MW1=on==2
+        def ple_MW1_CheckBox_StateChanged(self,value):
+                self.enable_MW1=value==2
 
         def ple_Save_Button_Clicked(self,on):
                 self.save_data(tag=self.Filename)
@@ -61,9 +49,6 @@ class ple_default_values_and_widget_functions:
                         self.MW1_Power=float(text.replace(",","."))
                 except:
                         pass
-
-        def ple_Abort_Button_Clicked(self,on):
-                self.AbortRequested = True
 
         def ple_MW3_Power_LineEdit_textEdited(self,text):
                 try:
@@ -83,20 +68,20 @@ class ple_default_values_and_widget_functions:
                 except:
                         pass
 
-        def ple_A1_CheckBox_StateChanged(self,on):
-                self.enable_A1=on==2
+        def ple_A1_CheckBox_StateChanged(self,value):
+                self.enable_A1=value==2
 
-        def ple_A2_CheckBox_StateChanged(self,on):
-                self.enable_A2=on==2
+        def ple_A2_CheckBox_StateChanged(self,value):
+                self.enable_A2=value==2
 
-        def ple_Lock_Laser_CheckBox_StateChanged(self,on):
-                self.Lock_laser=on==2
+        def ple_Lock_Laser_CheckBox_StateChanged(self,value):
+                self.lock_laser=value==2
 
-        def ple_RepumpDecay_LineEdit_textEdited(self,text):
-                try:
-                        self.RepumpDecay=float(text.replace(",","."))
-                except:
-                        pass
+        # def ple_RepumpDecay_LineEdit_textEdited(self,text):
+        #         try:
+        #                 self.RepumpDecay=float(text.replace(",","."))
+        #         except:
+        #                 pass
 
         def ple_MW1_Freq_LineEdit_textEdited(self,text):
                 try:
@@ -113,8 +98,8 @@ class ple_default_values_and_widget_functions:
         def ple_Run_Button_Clicked(self,on):
                 self.start_scanning()
 
-        def ple_MW3_CheckBox_StateChanged(self,on):
-                self.enable_MW3=on==2
+        def ple_MW3_CheckBox_StateChanged(self,value):
+                self.enable_MW3=value==2
 
         def ple_MW2_Power_LineEdit_textEdited(self,text):
                 try:
@@ -137,23 +122,14 @@ class ple_default_values_and_widget_functions:
                 except:
                         pass
 
-        def ple_CWrepump_CheckBox_StateChanged(self,on):
-                self.enable_Repump=on==2
+        def ple_CWrepump_CheckBox_StateChanged(self,value):
+                self.enable_Repump=value==2
 
-        def ple_PerformFit_CheckBox_StateChanged(self,on):
-                self.PerformFit=on==2
+        def ple_PerformFit_CheckBox_StateChanged(self,value):
+                self.PerformFit=value==2
                 if self.PerformFit:
                         self.sigUpdatePlots.emit()
-
-        def ple_PeriodicSaving_CheckBox_StateChanged(self,on):
-                self.PeriodicSaving=on==2
-
-        def ple_Interval_LineEdit_textEdited(self,text):
-                try:
-                        self.Interval=float(text.replace(",","."))
-                except:
-                        pass
-
+   
         def ple_MaxIterations_LineEdit_textEdited(self,text):
                 try:
                         self.MaxIterations=float(text.replace(",","."))
@@ -162,9 +138,13 @@ class ple_default_values_and_widget_functions:
 
         def ple_Stoptime_LineEdit_textEdited(self,text):
                 try:
-                        self.Stoptime=float(text.replace(",","."))
+                        self.stoptime=float(text.replace(",","."))
                 except:
                         pass
 
         def fit_methods_ComboBox_StateChanged(self):
+                print("Selected new Fitmethod Need to connect the data via ,,initialize_connections_and_defaultvalues,, of the gui. In line 61 or so.")
+
+        def select_scan_range(self, index):
+                print(index)
                 print("Selected new Fitmethod Need to connect the data via ,,initialize_connections_and_defaultvalues,, of the gui. In line 61 or so.")
