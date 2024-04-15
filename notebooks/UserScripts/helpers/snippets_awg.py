@@ -213,55 +213,6 @@ def set_init_seq(mcas, state, init_time = 10, segment_length = 1, **kwargs):
     gateMW = False
     mcas.asc(**kwargs, length_mus = correction_mus)
 
-def init_state_drive(state,freqs):
-    '''
-    State could be "+(-)0(1).5", example "+1.5" or "-0.5".
-    '''
-    transitions_num = len(freqs)
-    zeros = np.zeros(transitions_num // 2)
-    ones = np.ones(transitions_num // 2)
-    amplitude = 0.99 / transitions_num
-    if '+' in state:
-        amps=np.append(ones * amplitude, zeros)
-    elif '-' in state:
-        amps=np.append(zeros, ones * amplitude)
-    pd2g1 = {
-        'type': 'sine',
-        'phases': [0],
-        'amplitudes': amps,        
-        'frequencies': freqs
-    }
-    
-    return pd2g1
-
-def electron_init(mcas, state, dur, freqs_all_L, freqs_all_R, segment_length = 10):
-    '''
-    State could be "+(-)0(1).5", example "+1.5" or "-0.5".
-    Duration (µs) will be used to calculate loop_count (int) depending on segment_length (10µs standard).
-    Duration which doesn't fit into >> loop_counts * segment_length << will be corrected for at the end.
-    Initialization segment ends with 1024ns of decay to ensure all lasers are off.
-    '''
-    
-    loops, correction_mus  = shared.calculate_loop_count(dur,segment_length)
-    mcas.start_new_segment(name='init', loop_count = loops)
-    mcas.asc(
-        A1= '1.5' in state,
-        A2 = '0.5' in state,
-        gateMW = True,
-        length_mus=E.round_length_mus_to_x_multiple_ps(segment_length), 
-        name='resonant_init',
-        pd2g1 = init_state_drive(state, np.append(freqs_all_L, freqs_all_R))
-    ) 
-    mcas.start_new_segment(name='init_correction', loop_count = 1)
-    mcas.asc(
-        A1= '1.5' in state,
-        A2 = '0.5' in state,
-        gateMW = True,
-        length_mus=E.round_length_mus_to_x_multiple_ps(correction_mus), 
-        name='resonant_init',
-        pd2g1 = init_state_drive(state, np.append(freqs_all_L, freqs_all_R))
-    ) 
-    mcas.asc(length_mus=E.round_length_mus_to_x_multiple_ps(1.024), name = 'Init Decay')  
 
 # def single_robust_electron_pi(mcas, nuc, **kwargs):
 #     if 'mixer_deg' in kwargs:
@@ -288,14 +239,6 @@ def electron_init(mcas, state, dur, freqs_all_L, freqs_all_R, segment_length = 1
 #     else:
 #         raise Exception('Nuc does not exist!')
 #     electron_rabi(mcas, **kwargs)
-
-def repump(mcas, dur):
-    mcas.start_new_segment('Repump', loop_count = 5)
-    mcas.asc(length_mus=E.round_length_mus_to_x_multiple_ps(dur/5,64), repump=True, name='Repump')
-    mcas.start_new_segment('Decay', loop_count = 1)
-    mcas.asc(length_mus=E.round_length_mus_to_x_multiple_ps(1.0,64), name='RepumpDecay')
-            
-
 
 def polarize_red(mcas, new_segment=False, length_mus=__T_POL_RED__, red_laserdelay =__RED_LASER__DELAY__, **kwargs):
     if new_segment:
@@ -580,7 +523,7 @@ class SSR(object):
 
         elif 'mixer_deg' in kwargs:
             if 'ms_transition' in kwargs.keys():
-                ms_transition = {'right': 'R', 'left': 'L', 'center': 'C'}[kwargs['ms_transition']]
+                ms_transition = {'right': 'R', 'left': 'L'}[kwargs['ms_transition']]
             else:
                 ms_transition = 'L'
 
@@ -654,15 +597,7 @@ class SSR(object):
             if 'amplitudes' in kwargs:
                 amps = kwargs['amplitudes']
                 if isinstance(amps,list):
-                    if isinstance(amps[0],list) or isinstance(amps[0],np.ndarray):
-                        self.amplitudes = kwargs['amplitudes']
-                    
-                    
-                    else:
-                        self.amplitudes = [kwargs['amplitudes'] for i in self.length_mus_mw] # basically for eawch length mus there will be an iteration?
-                
-                
-                
+                    self.amplitudes = [kwargs['amplitudes'] for i in self.length_mus_mw] # basically for eawch length mus there will be an iteration?
                 else:
                     self.amplitudes = [[kwargs['amplitudes']] for i in self.length_mus_mw] # basically for eawch length mus there will be an iteration?
                 #print('SSR MW amps: ', self.amplitudes,'SSR MW dur: ', self.length_mus_mw)
@@ -761,8 +696,6 @@ class SSR(object):
             #if self.number_of_alternating_steps!= 1:
             #    pass
                 #raise Warning('most probably something is wrong with PulseStreamer - AWG syncronization')
-            
-            #print(self.number_of_alternating_steps)
             for alt_step in range(self.number_of_alternating_steps):
                 d = self.pd2g_dict(alt_step)
                 #if 'cw_mw' in self.kwargs.keys():
@@ -781,15 +714,9 @@ class SSR(object):
                 
                 for idx,freq in enumerate(d[1][2]['frequencies']): #d[1][2] means awg, ch2?
                     #print("compileMW in snippets_awg")
-                    #print(d[1][2]['frequencies'])
                     #print(d[1][2]['frequencies'][idx])
-                    #print(d[1][2]['amplitudes'])
-                    #print(d[1][2]['amplitudes'][idx])
-                    
-                    ## Here the frequencies are written separately :(((
-                    pd2g1 = {'frequencies': [d[1][2]['frequencies'][idx]], 'type': 'sine', 
-                             'amplitudes': [d[1][2]['amplitudes'][idx]], 'length_mus': d[1][2]['length_mus']}
-                    self.mcas.asc(pd2g1=pd2g1, gateMW=True, name='MW', **aa) #Each pi pulse will be writte separately.
+                    pd2g1 = {'frequencies': [d[1][2]['frequencies'][idx]], 'type': 'sine', 'amplitudes': [d[1][2]['amplitudes'][idx]], 'length_mus': d[1][2]['length_mus']}
+                    self.mcas.asc(pd2g1=pd2g1, gateMW=True, name='MW', **aa)
 
                 ### ===============================
                 ### Conventional repetitive readout

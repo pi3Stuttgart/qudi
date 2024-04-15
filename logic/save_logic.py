@@ -132,7 +132,7 @@ class SaveLogic(GenericLogic):
         save_png: True
     """
 
-    _win_data_dir = ConfigOption('win_data_directory', 'D:/Data/')
+    _win_data_dir = ConfigOption('win_data_directory', 'C:/Data/')
     _unix_data_dir = ConfigOption('unix_data_directory', 'Data')
     log_into_daily_directory = ConfigOption('log_into_daily_directory', False, missing='warn')
     save_pdf = ConfigOption('save_pdf', False)

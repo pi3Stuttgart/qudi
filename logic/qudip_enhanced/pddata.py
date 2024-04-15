@@ -19,7 +19,6 @@ import threading
 from .util import ret_property_array_like_types
 import time
 import logging
-import re
 
 if sys.version_info.major == 2:
     import __builtin__
@@ -342,26 +341,6 @@ class Data:
         else:
             df = store.get('/a')
         store.close()
-
-
-        for column in df.keys():
-            try:
-                df[column]=df[column].astype(float)
-            except Exception as e:
-                # print(column)
-                # print(e)
-                pass
-
-        for i,trace in enumerate(df.trace):
-            try:
-                liste=list(map(int, re.findall(r'\d+', trace)))
-                df.trace[i]=np.array(liste,dtype=np.int16)
-            except Exception as e:
-                #print(e)
-                pass
-
-
-
         return df
 
     def read_csv(self, init_from_file):
@@ -423,10 +402,6 @@ class Data:
             print("csv data saved ({:.2f}s).\n If speed is an issue, use hdf."
                   " csv format is useful ony for py2-py3-compatibility.".format(time.time() - t0))
         elif filepath.endswith('.hdf'):
-            df_save=self.df.copy()
-            columns = df_save.columns
-            df_save.loc[:,columns] = df_save[columns].applymap(str) #Modified 
-
             t0 = time.time()
             t = []
             if not self.hdf_lock.acquire(False):
@@ -436,7 +411,7 @@ class Data:
                 print('Ok.. hdf_lock acquired.')
             t.append(time.time() - t0)
             store = pd.HDFStore(filepath)
-            store.put('df', df_save, table=True)
+            store.put('df', self.df, table=True)
             for key in ["parameter_names", 'observation_names', 'dtypes']:
                 setattr(store.get_storer('df').attrs, key, getattr(self, key))
             store.close()

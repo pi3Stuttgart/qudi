@@ -8,7 +8,7 @@ from scipy.constants import mu_0, hbar
 import sys
 np.set_printoptions(suppress=True, linewidth=500, threshold=sys.maxsize)#np.nan)
 from logic.qudip_enhanced.qutip_enhanced import *
-print('I am here)')
+
 gamma = {'e': -2.0028 * 1.6021766208e-19 / (4 * np.pi * 9.10938356e-31) * 1e-6,
          '13c': 10.705, '29si':-8.465,
          '14n': +3.0766,
@@ -74,7 +74,7 @@ class NVHam:
         self._qp = {'14n': -4.945745, '15n': 0.0, '13c': 0, '29si':0}
         self._hf_para_n = {'14n': -2.165, '15n': +3.03}
         self._hf_perp_n = {'14n': -2.7, '15n': +3.65}
-        self.D = 34.95
+        self.D = 34.9
         self.dims = [4]# 3 for NV was
         self.magnet_field_cart = coordinates.Coord().coord(magnet_field, 'cart')  # magnet field in cartesian coordinates
         self.n_type = n_type #'14n', '15n', None
@@ -170,7 +170,7 @@ class NVHam:
             total spin quantum number, i.e. 1/2, 1, 3/2, ..
         :return: zeeman splitting. However be careful with gyromagnetic ratios of electron spin. Use their negative
         """
-        return  qsum([gamma * self.magnet_field_cart[axis] * jmat(j, axis) for axis in coordinates.Coord().cart_coord])
+        return - qsum([gamma * self.magnet_field_cart[axis] * jmat(j, axis) for axis in coordinates.Coord().cart_coord])
 
     def h_electron(self):
         """

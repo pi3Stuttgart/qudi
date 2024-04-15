@@ -385,8 +385,7 @@ class OptimizerLogic(GenericLogic):
 
         return_line_counts = self._scanning_device.scan_line(return_line)
         if np.any(return_line_counts == -1):
-            #self.log.error('The scan went wrong, killing the scanner.')
-            print('The scan went wrong, killing the scanner.')
+            self.log.error('The scan went wrong, killing the scanner.')
             self.stop_refocus()
             self._sigScanNextXyLine.emit()
             return
@@ -421,7 +420,7 @@ class OptimizerLogic(GenericLogic):
 
 
             if result_2D_gaus.success is False:
-                #self.log.error('Error: 2D Gaussian Fit was not successfull!.')
+                self.log.error('Error: 2D Gaussian Fit was not successfull!.')
                 print('2D gaussian fit not successfull')
                 self.optim_pos_x = self._initial_pos_x
                 self.optim_pos_y = self._initial_pos_y
@@ -442,11 +441,10 @@ class OptimizerLogic(GenericLogic):
                     self.optim_sigma_x = 0.
                     self.optim_sigma_y = 0.
         except Exception as e:
-            print(e)
-            #self.log.error('Error: 2D Gaussian Fit was not successfull!')
+            self.log.error('Error: 2D Gaussian Fit was not successfull!')
         try:
             if result_2D_gaus.success is False:
-                #self.log.error('Error: 2D Gaussian Fit was not successfull2!.')
+                self.log.error('Error: 2D Gaussian Fit was not successfull2!.')
                 print('2D gaussian fit not successfull')
                 self.optim_pos_x = self._initial_pos_x
                 self.optim_pos_y = self._initial_pos_y
@@ -494,8 +492,7 @@ class OptimizerLogic(GenericLogic):
             self.z_params = result.params
 
             if result.success is False:
-                #self.log.error('error in 1D Gaussian Fit.')
-                print("error in 1D Gaussian fit")
+                self.log.error('error in 1D Gaussian Fit.')
                 self.optim_pos_z = self._initial_pos_z
                 self.optim_sigma_z = 0.
                 # interrupt here?
@@ -526,8 +523,7 @@ class OptimizerLogic(GenericLogic):
                             else:
                                 self.optim_pos_z = self.z_range[0]  # moves to lowest possible value
         except Exception as e:
-            #self.log.error('Error: 2D Gaussian Fit was not successfull!. Error is',e)
-            print('Error: 2D Gaussian Fit was not successfull!. Error is',e)
+            self.log.error('Error: 2D Gaussian Fit was not successfull!. Error is',e)
         
         self.sigImageUpdated.emit()
         self._sigDoNextOptimizationStep.emit()
@@ -537,15 +533,16 @@ class OptimizerLogic(GenericLogic):
         #print('1killing')
         self._kill_res = self.kill_scanner()
         #QtTest.QTest.qSleep(500)
-        # self.log.info(
-        #         'Optimised from ({0:.3e},{1:.3e},{2:.3e}) to local '
-        #         'maximum at ({3:.3e},{4:.3e},{5:.3e}).'.format(
-        #             self._initial_pos_x,
-        #             self._initial_pos_y,
-        #             self._initial_pos_z,
-        #             self.optim_pos_x,
-        #             self.optim_pos_y,
-        #             self.optim_pos_z))
+        print('2kiliing',self._kill_res)
+        self.log.info(
+                'Optimised from ({0:.3e},{1:.3e},{2:.3e}) to local '
+                'maximum at ({3:.3e},{4:.3e},{5:.3e}).'.format(
+                    self._initial_pos_x,
+                    self._initial_pos_y,
+                    self._initial_pos_z,
+                    self.optim_pos_x,
+                    self.optim_pos_y,
+                    self.optim_pos_z))
 
         # Signal that the optimization has finished, and "return" the optimal position along with
         # caller_tag
