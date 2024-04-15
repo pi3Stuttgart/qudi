@@ -170,7 +170,7 @@ class NVHam:
             total spin quantum number, i.e. 1/2, 1, 3/2, ..
         :return: zeeman splitting. However be careful with gyromagnetic ratios of electron spin. Use their negative
         """
-        return - qsum([gamma * self.magnet_field_cart[axis] * jmat(j, axis) for axis in coordinates.Coord().cart_coord])
+        return  qsum([gamma * self.magnet_field_cart[axis] * jmat(j, axis) for axis in coordinates.Coord().cart_coord])
 
     def h_electron(self):
         """

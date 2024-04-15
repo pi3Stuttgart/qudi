@@ -50,6 +50,8 @@ from logic.generic_logic import GenericLogic
 from core.util.mutex import Mutex
 import shutil
 
+import lmfit
+
 ####################################################################################################################
 # single values
 ####################################################################################################################
@@ -149,7 +151,6 @@ def get_last_values_from_file(filename, flg_out_date=False, full_path=None):
     if flg_out_date is True:
         date = datetime.datetime.strptime(line_str_list[0], '%Y%m%d-h%Hm%Ms%S')
         return val, date
-    print(val)
     return val
 
 def get_values_time_span(filename, start_date_str, end_date_str=None):
@@ -553,8 +554,7 @@ class TransitionTracker(GenericLogic):
     si29_list = [] ######          THIS MUST BE LOWERCASE !!!!!!!!!!!!!!!!!!!!!!!!
     transitions = misc.ret_property_array_like_typ('transitions', Transition)
     log_folder = r"C:\src\qudi\log\transition_tracker_log"
-    g_factors = {'e': -2.0028 * 1.6021766208e-19 / (4 * np.pi * 9.10938356e-31) * 1e-6,
-                 'C':10.78,'Si':-8.4} # why again? it is already in qutip enhanced.
+    g_factors = {'e': -2.0028 * 1.6021766208e-19 / (4 * np.pi * 9.10938356e-31) * 1e-6} # why again? it is already in qutip enhanced.
 
     #transition_tracker_gui = Connector(interface="transition_tracker_gui")
     mcas_holder = Connector(interface='McasDictHolderInterface') #why?
@@ -612,14 +612,16 @@ class TransitionTracker(GenericLogic):
 
     def load_current_spin(self):
         File=r"log\transition_tracker_log\current_n_spins.csv"
-        spins=np.loadtxt(File,dtype=str)
-        for spin in [spins]:
-            spin=str(spin)
-            if "si" in spin.lower():
-                self.si29_list.append(spin.lower())
-            else:
-                self.c13_list.append(spin.lower())
-            self.Spin_Names_List.append(spin.replace("si","Si").replace("c","C"))
+        spins= np.loadtxt(File,dtype=str).tolist()
+        if len(spins)>0:
+            for spin in spins.split(','):
+                spin=str(spin)
+                if "si" in spin.lower():
+                    self.si29_list.append(spin.lower())
+                else:
+                    self.c13_list.append(spin.lower())
+                self.Spin_Names_List.append(spin.replace("si","Si").replace("c","C"))
+
 
     def create_spins(self,spin_names,P_Couplings,O_Couplings):
         spins=[]
@@ -627,23 +629,23 @@ class TransitionTracker(GenericLogic):
             if "_" in spin_name:
                 print("warning: underscores are dangerous in spin names, prefer '.' or something similar,\n did not create any spin files.")
                 return
-            spins.append(spin_name.replace("si","Si").replace("c","C"))
+            spins.append(spin_name.replace("si","Si").replace("c","C").replace("MHz",""))
 
         folder=r"log\transition_tracker_log"
         File=folder+r"\current_n_spins.csv"
-        np.savetxt(File,spin_names,fmt="%s")
+        np.savetxt(File,spins,fmt="%s")
         for i,spin_name in enumerate(spins):
             hf_p_file=folder+r"\hf_"+spin_name+".dat"
             hf_o_file=folder+r"\hf_perp_"+spin_name+".dat"
 
-            t=str(datetime.datetime.now())
+            t=nowstr()
             txt_o=t+"\t"+str(O_Couplings[i])
             txt_p=t+"\t"+str(P_Couplings[i])
 
             np.savetxt(hf_o_file,[txt_o],fmt="%s")
             np.savetxt(hf_p_file,[txt_p],fmt="%s")
 
-            #create the nuclear rabi files, they are just copies of one example, so no real data
+            #create the nuclear rabi files, they are just copies of one example, in order to not get an error on startup of qudi, so no real data
             for i in np.arange(-1.5,2.5,1):
                 original=f"29si8.74 ms{i}_rabi.dat"
                 copy=f"{spin_name} ms{i}_rabi.dat"
@@ -651,9 +653,10 @@ class TransitionTracker(GenericLogic):
                     original=original.replace("ms","ms+")
                     copy=copy.replace("ms","ms+")
 
-                shutil.copy(os.join(folder,original),os.join(folder,copy))
-
-
+                shutil.copy(os.path.join(folder,original),os.path.join(folder,copy))
+        
+        script_folder=r"C:\src\qudi\notebooks\UserScripts"
+        shutil.copytree(os.path.join(script_folder,"8MHz"),os.path.join(script_folder,f"{str(spin_names).replace('.',',')}"[2:-2]))
 
         print("you need to retart qudi for the transition tracker to update")
 
@@ -663,7 +666,6 @@ class TransitionTracker(GenericLogic):
 
     def update_ple(self,freqs=""):
         print("Updating PLE freq in TT...")
-        print(freqs)
         if len(freqs.split(';')) == 3: # when PLE data has two peaks
             self.ple_A2 = float(freqs.split(';')[1])
             self.ple_A1 = float(freqs.split(';')[0])
@@ -677,7 +679,6 @@ class TransitionTracker(GenericLogic):
 
     def update_ODMR(self,freqs='', tag = ''):
         print("Updating MW freqs in TT...")
-        print(tag)
         # print(freqs)
         freq_list = []
         for freq in freqs.split(';')[:-1]: # last entry in none
@@ -689,6 +690,93 @@ class TransitionTracker(GenericLogic):
         elif (len(tag) != 0) and (tag[-1] == 'R'):
             print("updating right trans",np.mean(freq_list))
             self.mw_mixing_frequency_R=np.mean(freq_list)
+
+    def fit_nuc_transitions(self,trans_list,correct_nuc_trans, use_electron_trans=True):
+        def transitions(All=None,Aperp=None,trans_list=[]):
+            """Works only if you use the subspace transitions of one spin"""
+            
+            l=[]
+            Spins=[]
+            for trans in trans_list:
+                spin=trans.split(" ")[0]
+                if spin in Spins:
+                    continue
+                else:
+                    Spins.append(spin)
+                if All!= None and Aperp!= None:
+                    self.hf_para_n[spin]=All
+                    self.hf_perp_n[spin]=Aperp
+                
+            self.update_stuff()
+            for trans in trans_list: 
+                l.append(self.t(trans).current_frequency)
+
+            if use_electron_trans:    
+                transit={i:[-0.5, .5] for i in [*self.si29_list,*self.c13_list]}
+
+                L_trans=list(self.mfl(transit, ms_trans='L')) 
+                R_trans=list(self.mfl(transit, ms_trans='R'))
+            
+                l.extend(L_trans)
+                l.extend(R_trans)
+            #print(l)
+            
+            return l
+        
+        def to_minimize(params,trans_list):
+            Aperp=params["Aperp"]
+            All=params["All"]
+            t=transitions(All,Aperp,trans_list)
+            
+            return np.array(t)-np.array(Transitions)
+            
+
+        #trans_list=['29si8 ms+1.5','29si8 ms-1.5','29si8 ms+0.5','29si8 ms-0.5']
+        electron_trans=transitions()
+        #correct_nuc_trans=[
+        #-14.155565538125302+0.252,
+        #11.824924117495357-0.238,
+        #-5.474830544320412+0.079,
+        #3.185657792474558-0.081]
+        if use_electron_trans:  
+            Transitions=correct_nuc_trans+electron_trans
+        else:
+            Transitions=correct_nuc_trans
+
+        
+
+        spin=trans_list[0].split(" ")[0]
+        params = lmfit.Parameters()
+        params.add("All", value=self.hf_para_n[spin], min=-90, max=90)
+        params.add("Aperp", value=self.hf_perp_n[spin], min=-90, max=90)
+
+        res=lmfit.minimize(to_minimize,params=params,kws={"trans_list":trans_list})
+        #print(res.params)
+
+        folder=r"log\transition_tracker_log"
+
+        hf_p_file=folder+r"\hf_"+spin+".dat"
+        hf_o_file=folder+r"\hf_perp_"+spin+".dat"
+
+        P_Couplings,O_Couplings=[res.params[i].value for i in res.params]
+
+        t=nowstr()#str(datetime.datetime.now())
+        #print(P_Couplings,O_Couplings)
+
+        txt_p=np.loadtxt(hf_p_file,dtype=str,delimiter=",")
+        txt_o=np.loadtxt(hf_o_file,dtype=str,delimiter=",")
+
+        txt_o=np.append(txt_o,t+"\t"+str(O_Couplings))
+        txt_p=np.append(txt_p,t+"\t"+str(P_Couplings))
+
+        np.savetxt(hf_o_file,[txt_o],fmt="%s",delimiter="\n")
+        np.savetxt(hf_p_file,[txt_p],fmt="%s",delimiter="\n")
+
+        print("before")
+        print(Transitions)
+        print("after")
+        print(trans_list)
+        print(transitions(None,None,trans_list=trans_list))
 
     def update_rabi(self,pi_dur):
         # pi_dur is already a float
@@ -749,6 +837,10 @@ class TransitionTracker(GenericLogic):
                                                            full_path=os.path.join(self.log_folder,'hf_14n.dat'))[0]
                           }#r"{}\hf_14n.dat".format(self.log_folder))[0]}
         self.hf_perp_n = {'14n': get_last_values_from_file(filename='hf_perp_14n.dat', full_path=os.path.join(self.log_folder,'hf_perp_14n.dat'))[0]}#r"{}\hf_perp_14n.dat".format(self.log_folder))[0]}
+        for key in self.c13_list:
+            print(key)
+        for key in self.si29_list:
+            print(key)
         self.hf_para_n.update(dict([(key, 
                                      get_last_values_from_file(filename='hf_{}.dat'.format(key),
                                                                full_path=os.path.join(
@@ -1292,19 +1384,18 @@ class TransitionTracker(GenericLogic):
 
     @property
     def current_magnetic_field(self): #z field
-        return -(self.current_local_oscillator_freq - self.mw_mixing_frequency_L + 
-                 2*self.zero_field_splitting) / self.g_factors['e']
+        return self.current_magnetic_field_vector[0]
 
     @property
     def current_magnetic_field_vector(self):  # z and x field
         sx, sy, sz = jmat(1.5)
         print('B field calculator')
-        f1 = self.mw_mixing_frequency_L
-        f2 = self.mw_mixing_frequency_R
+        f1 = self.mw_mixing_frequency_L #MHz
         f3 = self.mw_mixing_frequency_C
+        f2 = self.mw_mixing_frequency_R
         def H(B_z, B_x):
-            D = 34.9
-            gamma_e = 2.804
+            D = 34.9 #MHz
+            gamma_e = 2.0028 * 1.6021766208e-19 / (4 * np.pi * 9.10938356e-31) * 1e-6
             return D * sz ** 2 + gamma_e * B_z * sz + gamma_e * B_x * sx
 
         def odmr(B_z, B_x):
@@ -1318,7 +1409,7 @@ class TransitionTracker(GenericLogic):
             bx = params[1]
             return (odmr(bz, bx)[0] - f1) ** 2 + (odmr(bz, bx)[1] - f2) ** 2 + (odmr(bz, bx)[2] - f3) ** 2 
 
-        return minimize(fun =func,x0 = np.array([1.,0.])).x
+        return minimize(fun =func,x0 = np.array([0.13,0.])).x
 
 
 

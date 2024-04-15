@@ -73,7 +73,8 @@ class NuclearOPs(DataGeneration):
         )
         self.manual_pause=False
         self.hashed = False
-        self.pause_time = [3.0, 7.0] ## The minutes are not take care.
+        self.start_pause_time = 2.75 
+        self.end_pause_time = 6.1 
         self.do_ple_refocusA2 = False
         self.do_ple_refocusA1 = False
         self.do_ple_refocus = False
@@ -324,26 +325,19 @@ class NuclearOPs(DataGeneration):
     #def run_iteration(self, current_iterator):
 
     def checktime(self, abort):
-        start_pause_time = self.pause_time[0]
-        end_pause_time = self.pause_time[1]
-        sph = int(start_pause_time)
-        eph = int(end_pause_time)
-        epm = int(60*(end_pause_time-int(end_pause_time)))
-        spm = int(60*(start_pause_time-int(start_pause_time)))
         idx = 0
         t=datetime.datetime.now()
-        print(t,t.hour,eph,sph,t.minute,epm,spm)
-        while t.hour <= eph and t.hour >= sph :
+        current_time = int(t.hour)+int(t.minute)/60
+        while current_time > self.start_pause_time and current_time < self.end_pause_time:
             if abort.is_set(): break
             QtTest.QTest.qSleep(1000)
-            #time.sleep(100) #FIXME #Does this help instead of qSleep?
             if idx==0:
-                print('3 am pauseAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+                print('3 am pause. Good night, rest well.')
                 idx +=1
             t = datetime.datetime.now()
-            #print(t,t.hour,eph,sph,t.minute,epm,spm)
+            current_time = int(t.hour)+int(t.minute)/60
         if idx > 0:
-            print('ContinueAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+            print('Continue after sleeping')
 
     def check_manual_pause(self,abort):
         while self.manual_pause:
@@ -837,8 +831,7 @@ class NuclearOPs(DataGeneration):
                 #print(self.queue._PLE_logic.module_state())
                 QtTest.QTest.qSleep(500)
         QtTest.QTest.qSleep(1000)
-        #print("huuuuuuuuuuuuuuuuuuuuuuuuuuuray")
-
+        
         self.queue._awg.mcas_dict.stop_awgs()
         self.queue._PLE_logic.happy = False
         # if repetitions > 1:
@@ -971,7 +964,6 @@ class NuclearOPs(DataGeneration):
                 while self.queue._optimizer.module_state() =='locked':
                     QtTest.QTest.qSleep(500)
             self.queue._awg.mcas_dict.stop_awgs()
-            print("huuuuuuuuuuuuuuuuuuuuuuuuuuuray confocal")
             QtTest.QTest.qSleep(2000) #TODO find a better synchro tool.
             #    counts_after = np.mean(self.queue._counter.countdata_smoothed[0][-20:])
             #    print('average counts after refocus No'+str(repetitions))
