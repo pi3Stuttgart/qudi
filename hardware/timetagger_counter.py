@@ -30,8 +30,6 @@ from interface.slow_counter_interface import SlowCounterInterface
 from interface.slow_counter_interface import SlowCounterConstraints
 from interface.slow_counter_interface import CountingMode
 
-from PyQt5 import QtTest
-
 
 class TimeTaggerCounter(Base, SlowCounterInterface):
     """ Using the TimeTagger as a slow counter.
@@ -50,26 +48,14 @@ class TimeTaggerCounter(Base, SlowCounterInterface):
     _channel_apd_1 = ConfigOption('timetagger_channel_apd_1', None, missing='warn')
     _sum_channels = ConfigOption('timetagger_sum_channels', False)
     _count_frequency = ConfigOption('timetagger_count_frequency', 53)
-    _trigger_level_0 = ConfigOption('_trigger_level_0', 0.11)
-    _trigger_level_1 = ConfigOption('_trigger_level_0', 0.11)
-    _trigger_level_2= ConfigOption('_trigger_level_0', 0.11)
 
     def on_activate(self):
         """ Start up TimeTagger interface
         """
-        try:
-            self._tagger = tt.createTimeTagger()
-            # self.tagger.reset()
-            print(f"timetagger_counter initialization successful: {self._tagger.getSerial()}")
-        except:
-            self.log.error(f"\nCheck if the TimeTagger device is being used by another instance.")
-            Exception(f"\nCheck if the TimeTagger device is being used by another instance.")
-
-        #self._tagger = tt.createTimeTagger()
+        self._tagger = tt.createTimeTagger()
         #self._count_frequency = 100  # Hz
-        self._tagger.setTriggerLevel(0, 0.11)
-        self._tagger.setTriggerLevel(1, 0.11)
-        self._tagger.setTriggerLevel(2, 0.11)
+        self._tagger.setTriggerLevel(1, 0.05)
+        self._tagger.setTriggerLevel(2, 0.05)
 
         if self._sum_channels and self._channel_apd_1 is None:
             self.log.error('Cannot sum channels when only one apd channel given')
@@ -194,8 +180,8 @@ class TimeTaggerCounter(Base, SlowCounterInterface):
 
         @return numpy.array(uint32): the photon counts per second
         """
-        QtTest.QTest.qSleep(1000 / self._count_frequency)
-        #time.sleep(2 / self._count_frequency)
+
+        time.sleep(2 / self._count_frequency)
         if self._mode < 2:
             return self.counter.getData() * self._count_frequency
         else:

@@ -43,11 +43,3 @@ log/single_values/ple_A1/202211ple_A1.dat
 log/single_values/ple_A1_fit_params/202211ple_A1_fit_params.dat
 log/single_values/ple_A2/202211ple_A2.dat
 log/single_values/ple_A2_fit_params/202211ple_A2_fit_params.dat
-hardware/Keysight_AWG_M8190/settings.py
-hardware/Keysight_AWG_M8190/hardware.py
-log/single_values/memory_mb/201606memory_mb.dat
-log/single_values/memory_mb/201706memory_mb.dat
-log/single_values/memory_mb/201707memory_mb.dat
-log/transition_tracker_log/n14transitionfrequency/.ipynb_checkpoints/Untitled-checkpoint.ipynb
-log/transition_tracker_log/n14transitionfrequency/n14transitionfrequency.ipynb
-log/transition_tracker_log/Untitled.ipynb

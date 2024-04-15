@@ -33,9 +33,6 @@ class StreamUSBNidaqInterface(metaclass=InterfaceMetaclass):
     def start_acquisition(self):
         pass
 
-    def start_ao_task(self):
-        pass
-
     def cfg_read_task(self, acquisition):
        pass
 

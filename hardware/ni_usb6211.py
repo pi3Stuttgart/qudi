@@ -27,7 +27,7 @@ class NI_USB6211(Base, LaserPowerInterface):
 
         try:
             self.photodiode = Photodiode(
-                AIChannel="dev2/ai0", volt_to_power=0.0717, volt_offset=-0.0096, sample_freq=1000, time_acquire=1
+                AIChannel="dev3/ai5", volt_to_power=0.0717, volt_offset=-0.0096, sample_freq=1000, time_acquire=1
             )
             print('photodiode connected')
         except:

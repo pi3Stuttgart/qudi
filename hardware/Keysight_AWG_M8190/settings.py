@@ -12,40 +12,46 @@ ch_dict_full = {'2g': [1, 2],'ps':[1]}
 ch_dict_awgs = {'2g': [1, 2]}
 awg_instrument_adress = {'2g': 'TCPIP0::localhost::inst0::INSTR',
                          # 'ps':'http://169.254.8.2:8050/json-rpc'}
-                          'ps':'169.254.8.2'}
+                          'ps':'129.69.46.36'}
 master_awg = '2g'
 master_trigger_channel = 1
 restore_awg_settings = True
 
 # optional settings
-# marker_alias = {
-#                 'gateAWG':   ['2g', 1, 'smpl', None],
-#                 'gate':      ['2g', 1, 'smpl', None],
-#                 'gateMW':    ['2g', 2, 'smpl', None],
-#                 'memory':    ['2g', 2, 'sync', None],
-#                 'FlipMirror':['ps', 1, 'FlipMirror', '0'],
-#                 'A2':        ['ps', 1, 'A2', '1'],
-#                 'repump':    ['ps', 1, 'repump', '2'],
-#                 'green':     ['ps', 1, 'green', '3'],
-#                 # PS CHANNEL 4 IS CLOCK
-#                 'A1':        ['ps', 1, 'A1', '5'],
-#                 'gateRF':   ['ps', 1, 'gateRF', '6'],
-#                 'tt_trigger':['ps', 1, 'tt_trigger', '7'], # Currently unused
+#marker_alias = {'memory': ['2g', 1, 'smpl'], 'green': ['2g', 2, 'smpl'], 'gate': ['2g', 2, 'sync'], 'red': ['128m', 1, 'sync'], 'infrared': ['128m', 1, 'smpl']}
+# marker_alias = {'memory': ['2g', 1, 'smpl',None],
+#                 'green': ['2g', 2, 'smpl',None],
+#                 'gate': ['2g', 2, 'sync',None],
+#                 'ple_trigger':['ps',1,'ple_trigger','0'],
+#                 'aom_Ex': ['ps',1,'aom_Ex','3'],
+#                 'aom_A1': ['ps',1,'aom_A1','6'],
+#                 'repump': ['ps',1,'repump','7'],
+#                 'sync_tt': ['ps',1,'sync_tt','5']
 #                 }
+
+# marker_alias = {'memory': ['2g', 2, 'sync',None],
+#                 'green': ['2g', 2, 'smpl',None],
+#                 'gate': ['2g', 1, 'smpl',None],
+#                 'ple_trigger':['ps',1,'ple_trigger','0'],
+#                 'aom_Ex': ['ps',1,'aom_Ex','3'],
+#                 'aom_A1': ['ps',1,'aom_A1','6'],
+#                 'repump': ['ps',1,'repump','7'],
+#                 'sync_tt': ['ps',1,'sync_tt','5']
+#                 }
+
 marker_alias = {
-                'gateAWG':   ['2g', 1, 'smpl', None], # To TT ch5
-                'gate':      ['2g', 1, 'smpl', None], # To TT ch5
+                'gateAWG':   ['2g', 1, 'smpl', None],
+                'gate':      ['2g', 1, 'smpl', None],
                 'gateMW':    ['2g', 2, 'smpl', None],
-                'memory':    ['2g', 2, 'sync', None], # To TT ch8
-                'A1':        ['ps', 1, 'A1', '0'],
-                #'A1':        ['ps', 1, 'A1', '1'],
-                #'A1':        ['ps', 1, 'A1', '2'],
-                #'A1':        ['ps', 1, 'A1', '3'],
+                'memory':    ['2g', 2, 'sync', None],
+                'FlipMirror':['ps', 1, 'FlipMirror', '0'],
+                'A2':        ['ps', 1, 'A2', '1'],
+                'repump':    ['ps', 1, 'repump', '2'],
+                'green':     ['ps', 1, 'green', '3'],
                 # PS CHANNEL 4 IS CLOCK
-                'CTL':    ['ps', 1, 'CTL', '3'],
-                'A2':    ['ps', 1, 'A2', '5'],
-                #'repump':    ['ps', 1, 'repump', '6'],
-                'repump':    ['ps', 1, 'repump', '7'],
+                'A1':        ['ps', 1, 'A1', '5'],
+                'gateRF':   ['ps', 1, 'gateRF', '6'],
+                'tt_trigger':['ps', 1, 'tt_trigger', '7'], # Currently unused
                 }
 
 

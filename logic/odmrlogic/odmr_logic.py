@@ -790,10 +790,10 @@ class ODMRLogic(cw_default):
 
         self.time_differences = self.holder.setup_time_tagger(
             #tagger = self.holder._time_tagger,
-            click_channel=self.holder._time_tagger._time_diff['click_channel'],
-            start_channel=self.holder._time_tagger._time_diff['start_channel'], #negative slope of channel 4
-            next_channel=self.holder._time_tagger._time_diff['next_channel'], 
-            sync_channel=self.holder._time_tagger._time_diff['sync_channel'],
+            click_channel=1,
+            start_channel=12, #negative slope of channel 4
+            next_channel=4, 
+            sync_channel=7,
             #binwidth=int(self.cw_SecondsPerPoint*1e12),
             binwidth=int(self.cw_SecondsPerPoint*1e12),
             n_bins=1,
