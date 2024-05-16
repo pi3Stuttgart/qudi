@@ -229,11 +229,11 @@ class RabiGUI(GUIBase,rabi_default_functions):
     def update_plots(self):
         if self._rabi_logic.measurement_running or self._rabi_logic.update_after_stop:
             #print(rabi_data_x, rabi_data_y, rabi_matrix)
-            rabi_data_x=self._rabi_logic.tau_duration*1e-9
-            rabi_data_y=self._rabi_logic.data
-            rabi_matrix=self._rabi_logic.scanmatrix
-            rabi_detect_x=self._rabi_logic.measured_times
-            rabi_detect_y=self._rabi_logic.data_detect
+            rabi_data_x=np.array(self._rabi_logic.tau_duration*1e-9, dtype=float)
+            rabi_data_y=np.array(self._rabi_logic.data, dtype=float)
+            rabi_matrix=np.array(self._rabi_logic.scanmatrix, dtype=float)
+            rabi_detect_x=np.array(self._rabi_logic.measured_times, dtype=float)
+            rabi_detect_y=np.array(self._rabi_logic.data_detect, dtype=float)
             self.rabi_data_image.setData(rabi_data_x[:len(rabi_data_y)], rabi_data_y)# UNFUG
             #self.rabi_data_image.setData(rabi_data_x, rabi_data_y)
 
@@ -245,7 +245,7 @@ class RabiGUI(GUIBase,rabi_default_functions):
                 self._rabi_logic.do_fit(self._rabi_logic.tau_duration,self._rabi_logic.data,self._rabi_logic.rabi_FitFunction)
                 self._mw.rabi_FitResults_TextBrowser.setText(self._rabi_logic.rabi_FitParams)
                 self._mw.rabi_data_PlotWidget.addItem(self.rabi_data_image_fit)
-                self.rabi_data_image_fit.setData(self._rabi_logic.interpolated_x_data/1e9,self._rabi_logic.fit_data)
+                self.rabi_data_image_fit.setData(np.array(self._rabi_logic.interpolated_x_data/1e9, dtype=float),np.array(self._rabi_logic.fit_data, dtype=float))
 
             self.rabi_matrix_image.setRect(
                 QtCore.QRectF(

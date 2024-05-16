@@ -121,12 +121,12 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
 		self.sig_handle_timer.disconnect()
 		#self._hardware_pull.sig_wavelength.disconnect()
 
-		try:
-			 # clean up by removing reference to the ctypes library object
-			del self._wavemeterdll
-			return 0
-		except:
-			self.log.error('Could not unload the wlmData.dll of the wavemeter.')
+		# try:
+		# 	 # clean up by removing reference to the ctypes library object
+		# 	del self._wavemeterdll
+		# 	return 0
+		# except:
+		# 	self.log.error('Could not unload the wlmData.dll of the wavemeter.')
 
 
 	#Start a measurement.

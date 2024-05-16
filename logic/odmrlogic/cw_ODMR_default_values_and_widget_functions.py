@@ -144,12 +144,12 @@ class cw_ODMR_default_values_and_widget_functions:
                 self.continuing=True
                 self.setup_seq()
                 self.starting_time+=time.time()-self.stoping_time
-                self.time_differences = self.holder.setup_time_tagger(n_histograms=self.number_of_points_per_line,
+                self.time_differences_cw = self.holder.setup_time_tagger(n_histograms=self.number_of_points_per_line,
                 binwidth=int(self.cw_SecondsPerPoint*1e12),
                 n_bins=1
                 )
                 #self.holder.SigCheckReady_Beacon.connect(self.data_readout)
-                self.time_differences.start()
+                self.time_differences_cw.start()
                 self.measurement_running=True
                 
 
@@ -182,7 +182,7 @@ class cw_ODMR_default_values_and_widget_functions:
                 #self.holder.SigCheckReady_Beacon.disconnect()
                 self.holder.stop_awg()
                 self.stoping_time=time.time()
-                self.time_differences.stop()
+                self.time_differences_cw.stop()
                 self.measurement_running=False
                 self.cw_odmr_refocus_running=False
                 # if 'cwODMR' in self.holder._awg.mcas_dict:
@@ -212,11 +212,11 @@ class cw_ODMR_default_values_and_widget_functions:
                 self.setup_seq()
                 print("setting up cw seq done")
                 self.scanmatrix=np.zeros((int(self.cw_NumberOfLines),self.number_of_points_per_line))
-                self.ancient_data=np.array(self.time_differences.getData(),dtype=object)
+                self.ancient_data=np.array(self.time_differences_cw.getData(),dtype=object)
                 self.data=0
                 #self.holder.SigCheckReady_Beacon.connect(self.data_readout)
-                self.time_differences.clear()
-                self.time_differences.start()
+                self.time_differences_cw.clear()
+                self.time_differences_cw.start()
                 self.starting_time=time.time()
                 self.measurement_running=True
                 print("starting")

@@ -438,7 +438,6 @@ class ODMRLogic_holder(GenericLogic):
 
         @return: fig fig: a matplotlib figure object to be saved to file.
         """
-        #key = 'range: {1}'.format(frequencies)
         fit_freq_vals = fit_freq_vals/1e6
         # If no colorbar range was given, take full range of data
         if cbar_range is None:
@@ -520,7 +519,7 @@ class ODMRLogic_holder(GenericLogic):
 
         # Draw colorbar
         cbar = fig.colorbar(matrixplot, cax=cbar_ax)
-        cbar.set_label('Fluorescence (' + cbar_prefix + 'c/s)')
+        cbar.set_label('Fluorescence (' + cbar_prefix + 'counts)')
 
         # remove ticks from colorbar for cleaner image
         cbar.ax.tick_params(which=u'both', length=0)
@@ -643,13 +642,12 @@ class ODMRLogic(cw_default):
         self.now = time.time()
         self.measurement_running=False
         self.holder=holder
-        #self.counter=self.holder._time_tagger.counter()
-        self.time_differences = self.holder._time_tagger.time_differences()
+        self.time_differences_cw = self.holder._time_tagger.time_differences()
         self.number_of_points_per_line=self.holder._time_tagger._time_diff["n_histograms"]
         self.scanmatrix=np.zeros((self.cw_NumberOfLines,self.number_of_points_per_line))
         self.data=0
         self.holder.SigCheckReady_Beacon.connect(self.data_readout,type=QtCore.Qt.QueuedConnection)
-        self.ancient_data=np.array(self.time_differences.getData(),dtype=object)
+        self.ancient_data=np.array(self.time_differences_cw.getData(),dtype=object)
         self.syncing=False
         self.cw_odmr_refocus_running=False
 
@@ -665,14 +663,11 @@ class ODMRLogic(cw_default):
         self.histogram_rollover = 0
 
     def data_readout(self):
-        #print("dur ", time.time()-self.now)
         self.current_runtime = time.time()-self.starting_time
         if (self.current_runtime>self.cw_Stoptime and self.cw_Stoptime!=0) and self.measurement_running:
             self.cw_Stop_Button_Clicked(True)
-        #print("checkready:",self.measurement_running)
         if not(self.measurement_running or self.syncing):
-            #if not(self.syncing):
-                return
+            return
 
         if self.continuing:
             self.ancient_data=self.time_differences_cw.getData()
@@ -691,14 +686,14 @@ class ODMRLogic(cw_default):
 
         else:
             ## Checks if the histogram index was reset (i.e. if a full ODMR line was measured in the time tagger)
-            rollover_recent = self.time_differences.getCounts()
+            rollover_recent = self.time_differences_cw.getCounts()
             if rollover_recent == self.histogram_rollover:
                 return
             
             #print(self.time_differences.getCounts())  ## Test print of the read out rollover number: If printed it should go up in steps of one
             
             self.histogram_rollover +=1
-            data=self.time_differences.getData()-self.ancient_data
+            data=self.time_differences_cw.getData()-self.ancient_data
             data=np.array(data,dtype=object)           
             self.ancient_data += data          # update already recorded data
             data=np.sum(data,axis=1)           # because data initially is a list of lists. something like [[432],[444],[123],[432],[542]]
@@ -788,16 +783,15 @@ class ODMRLogic(cw_default):
         self.number_of_points_per_line=len(self.mw1_freq)
 
 
-        self.time_differences = self.holder.setup_time_tagger(
-            #tagger = self.holder._time_tagger,
+        self.time_differences_cw = self.holder.setup_time_tagger(
             click_channel=1,
             start_channel=12, #negative slope of channel 4
             next_channel=4, 
             sync_channel=7,
             #binwidth=int(self.cw_SecondsPerPoint*1e12),
+            n_histograms=self.number_of_points_per_line,
             binwidth=int(self.cw_SecondsPerPoint*1e12),
             n_bins=1,
-            n_histograms=self.number_of_points_per_line,
         )
 
         # Setup list which contains the mw-powers of all the active microwaves
@@ -859,6 +853,7 @@ class ODMRLogic(cw_default):
                 gate = False,
                 length_mus=E.round_length_mus_to_x_multiple_ps(50)
                 )  
+            seq.asc(name='gate decay', length_mus=E.round_length_mus_to_x_multiple_ps(0.016))  
             
 
         seq.start_new_segment("Sequence call",loop_count=1)
@@ -893,20 +888,19 @@ class ODMRLogic(cw_default):
         self.holder._awg.mcas_dict['cwODMR'].run()        
         print("running sequence cwODMR")
 
-        self.holder.CheckReady_Beacon = RepeatedTimer(0.01, self.holder.CheckReady)
+        self.holder.CheckReady_Beacon = RepeatedTimer(0.1, self.holder.CheckReady)
                 
 
 class pulsedODMRLogic(pulsed_default):
     def __init__(self,holder):
         self.measurement_running=False
         self.holder=holder
-        #self.counter=self.holder._time_tagger.counter()
         self.time_differences = self.holder._time_tagger.time_differences()
         self.number_of_points_per_line=self.holder._time_tagger._time_diff["n_histograms"]
         self.scanmatrix=np.zeros((self.pulsed_NumberOfLines,self.number_of_points_per_line))
-        self.holder.SigCheckReady_Beacon.connect(self.data_readout, type=QtCore.Qt.QueuedConnection)
         self.data=0
         self.data_detect=0
+        self.holder.SigCheckReady_Beacon.connect(self.data_readout, type=QtCore.Qt.QueuedConnection)
         self.ancient_data=np.array(self.time_differences.getData(),dtype=object)
         self.syncing=False
 
@@ -928,9 +922,8 @@ class pulsedODMRLogic(pulsed_default):
             self.holder.update_TT = True
             self.holder.sigOdmrPlotsUpdated.emit()
             self.pulsed_Stop_Button_Clicked(True)
-        #print("checkready:",self.measurement_running)
         if not(self.measurement_running or self.syncing):
-                return
+            return
 
 
         if self.continuing:
@@ -1022,7 +1015,8 @@ class pulsedODMRLogic(pulsed_default):
         self.time_differences.stop()
         time.sleep(0.02) #maybe the timetagger would get too much commands at the same time
 
-        self.time_differences=self.holder.setup_time_tagger(n_histograms=self.number_of_points_per_line,
+        self.time_differences=self.holder.setup_time_tagger(
+            n_histograms=self.number_of_points_per_line,
             binwidth=int(self.pulsed_Binning*1000), #pulsed_Binning input is in ns.
             n_bins=int(self.pulsed_ReadoutTime*1e6/(self.pulsed_Binning*1000))
         )
@@ -1134,6 +1128,7 @@ class pulsedODMRLogic(pulsed_default):
             seq.start_new_segment("Readout")
             seq.asc(name='readout'+str(freq), length_mus=E.round_length_mus_to_x_multiple_ps(self.pulsed_ReadoutTime, self.round_to), A1=self.pulsed_A1Readout, A2=self.pulsed_A2Readout, repump = self.pulsed_CWRepump, gate=True)
             seq.asc(name='readout_decay'+str(freq), length_mus=E.round_length_mus_to_x_multiple_ps(self.pulsed_ReadoutDecay, self.round_to), A1=False, A2=False, gate=True)
+            seq.asc(name='gate decay', length_mus=E.round_length_mus_to_x_multiple_ps(0.016))
 
         #self.holder.awg.mcas.status = 1
         self.holder._awg.mcas_dict.stop_awgs()

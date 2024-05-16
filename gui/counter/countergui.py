@@ -31,6 +31,9 @@ from qtpy import QtCore
 from qtpy import QtWidgets
 from qtpy import uic
 
+import matplotlib
+matplotlib.use('agg') # Removes Warning: "UserWarning: Starting a Matplotlib GUI outside of the main thread will likely fail."
+
 
 
 class CounterMainWindow(QtWidgets.QMainWindow):

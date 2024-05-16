@@ -636,7 +636,8 @@ class ConfocalLogic(GenericLogic):
             self.module_state.unlock()
             self.set_position('scanner')
             return -1
-
+        
+        print("Start scanner: \nEstimated Time: ", int(len(self._XL)*len(self._YL)/self._clock_frequency),"s")
         self.signal_scan_lines_next.emit()
 
         return 0
@@ -892,7 +893,8 @@ class ConfocalLogic(GenericLogic):
                 self.module_state.unlock()
                 self.signal_xy_image_updated.emit()
                 self.signal_depth_image_updated.emit()
-                time.sleep(0.2) # avoid that the emitted thread sees the scanner locked
+                QtTest.QTest.qSleep(200)
+                #time.sleep(0.2) # avoid that the emitted thread sees the scanner locked 
                 self.set_position('scanner')
                 if self._zscan:
                     self._depth_line_pos = self._scan_counter

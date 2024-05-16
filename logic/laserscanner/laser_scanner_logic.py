@@ -122,10 +122,10 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.happy=True
         self.hashed = False
  
-        
-
         self.fit_x = []
         self.fit_y = []
+        self.interpolated_x_data=np.linspace(0,10,10)
+        self.fit_data=np.ones(10)
         self.plot_x = []
         self.plot_x_frequency=[]
         self.plot_y = []
@@ -883,7 +883,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
             self.scan_matrix,
             self.plot_x,
             self.plot_y,
-            self.interplolated_x_data,
+            self.interpolated_x_data,
             self.fit_data,
             cbar_range=colorscale_range,
             percentile_range=percentile_range)
@@ -1092,13 +1092,13 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
             logger.warning("function 3 gaussian peaks not implemeted")
 
-        self.interplolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*5)
-        self.fit_data = model.eval(x=self.interplolated_x_data, params=result.params)
+        self.interpolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*5)
+        self.fit_data = model.eval(x=self.interpolated_x_data, params=result.params)
         
         #using own fitlogic
         # fit_func=self._fit_logic.make_n_gauss_function(self.NumberOfPeaks)
         # result=fit_func.fit(x_data,y_data)
-        # self.fit_data=fit_func(interplolated_x_data,*result["result"].x)
+        # self.fit_data=fit_func(interpolated_x_data,*result["result"].x)
 
         self.Contrast_Fit:str=''
         self.Frequencies_Fit:str=''
@@ -1114,7 +1114,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 print("an error occured:\n", e)
 
         self.sigFitPerformed.emit(self.Frequencies_Fit)
-        return self.interplolated_x_data,self.fit_data,result
+        self.happy=True # Grober Unfug
+        return self.interpolated_x_data,self.fit_data,result
     
     def convert_seq_params_to_string(self):
         return str(self.MW1_Power)+str(self.MW2_Power)+str(self.MW3_Power)+str(self.MW1_Freq)+str(self.MW2_Freq)+str(self.MW3_Freq)+str(self.enable_MW1)+str(self.enable_MW2)+str(self.enable_MW3)+str(self.enable_A1)+str(self.enable_A2)+str(self.enable_Repump)+str(self.enable_PulsedRepump)+str(self.Lock_laser)+str(self.RepumpDuration)+str(self.RepumpDecay)

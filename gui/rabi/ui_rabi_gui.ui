@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1104</width>
+    <width>1137</width>
     <height>844</height>
    </rect>
   </property>
@@ -706,6 +706,12 @@
       </item>
       <item row="9" column="8" colspan="2">
        <widget class="QComboBox" name="rabi_SelectFit_ComboBox">
+        <property name="currentText">
+         <string>Cosinus</string>
+        </property>
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
         <item>
          <property name="text">
           <string>Cosinus</string>
@@ -713,7 +719,7 @@
         </item>
         <item>
          <property name="text">
-          <string>Cosinus+Phase</string>
+          <string>Cosinus+Decay</string>
          </property>
         </item>
        </widget>
@@ -818,7 +824,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1104</width>
+     <width>1137</width>
      <height>21</height>
     </rect>
    </property>

@@ -313,19 +313,22 @@ class ODMRGUI(GUIBase):
 
     def update_plots(self,odmr_data_x=None, odmr_data_y=None, odmr_matrix=None, odmr_detect_x=None, odmr_detect_y=None):
         if self._odmr_logic.ODMRLogic.measurement_running or self._odmr_logic.ODMRLogic.cw_update_after_stop:
-            odmr_data_x=self._odmr_logic.ODMRLogic.mw1_freq*1e6
-            odmr_data_y=self._odmr_logic.ODMRLogic.data
-            odmr_matrix=self._odmr_logic.ODMRLogic.scanmatrix
-            #print(odmr_data_x, odmr_data_y, odmr_matrix)
-            self.cw_odmr_image.setData(odmr_data_x, odmr_data_y)
+            odmr_data_x=np.array(self._odmr_logic.ODMRLogic.mw1_freq, dtype=float)
+            odmr_data_y=np.array(self._odmr_logic.ODMRLogic.data, dtype=float)
+            odmr_matrix=np.array(self._odmr_logic.ODMRLogic.scanmatrix, dtype=float)
+            
+            self.cw_odmr_image.setData(odmr_data_x*1e6, odmr_data_y)
             self._mw.cw_odmr_PlotWidget.removeItem(self.cw_odmr_image_fit)
             self._odmr_logic.ODMRLogic.cw_update_after_stop=False
             if self._odmr_logic.ODMRLogic.cw_PerformFit:
                 self._mw.cw_odmr_PlotWidget.addItem(self.cw_odmr_image_fit)
 
-                self._odmr_logic.ODMRLogic.x_fit,self._odmr_logic.ODMRLogic.y_fit,self._odmr_logic.ODMRLogic.fit_result=self._odmr_logic.do_fit(self._odmr_logic.ODMRLogic.mw1_freq*1e6,self._odmr_logic.ODMRLogic.data)
+                self._odmr_logic.ODMRLogic.x_fit,self._odmr_logic.ODMRLogic.y_fit,self._odmr_logic.ODMRLogic.fit_result=self._odmr_logic.do_fit(odmr_data_x,odmr_data_y)
 
-                self.cw_odmr_image_fit.setData(self._odmr_logic.ODMRLogic.x_fit, self._odmr_logic.ODMRLogic.y_fit)
+                self.cw_odmr_image_fit.setData(np.array(self._odmr_logic.ODMRLogic.x_fit*1e6, dtype=float), np.array(self._odmr_logic.ODMRLogic.y_fit, dtype=float))
+                print(self._odmr_logic.Contrast_Fit)
+                print(self._odmr_logic.Linewidths_Fit)
+                print(self._odmr_logic.Frequencies_Fit)
                 self._mw.cw_Contrast_Fit_Label.setText(str(self._odmr_logic.Contrast_Fit))
                 self._mw.cw_Linewidths_Fit_Label.setText(str(self._odmr_logic.Linewidths_Fit))
                 self._mw.cw_Frequencies_Fit_Label.setText(str(self._odmr_logic.Frequencies_Fit))
@@ -346,24 +349,23 @@ class ODMRGUI(GUIBase):
 
 
         elif self._odmr_logic.pulsedODMRLogic.measurement_running or self._odmr_logic.pulsedODMRLogic.pulsed_PerformFit:# or self._odmr_logic.pulsedODMRLogic.pulsed_update_after_stop:
-            odmr_data_x=self._odmr_logic.pulsedODMRLogic.mw1_freq*1e6
-            odmr_data_y=self._odmr_logic.pulsedODMRLogic.data
-            odmr_matrix=self._odmr_logic.pulsedODMRLogic.scanmatrix
-            odmr_detect_x=self._odmr_logic.pulsedODMRLogic.indexes/1e12
-            odmr_detect_y= self._odmr_logic.pulsedODMRLogic.data_detect
+            odmr_data_x = np.array(self._odmr_logic.pulsedODMRLogic.mw1_freq, dtype=float)
+            odmr_data_y = np.array(self._odmr_logic.pulsedODMRLogic.data, dtype=float)
+            odmr_matrix = np.array(self._odmr_logic.pulsedODMRLogic.scanmatrix, dtype=float)
+            odmr_detect_x = np.array(self._odmr_logic.pulsedODMRLogic.indexes/1e12, dtype=float)
+            odmr_detect_y = np.array(self._odmr_logic.pulsedODMRLogic.data_detect, dtype=float)
 
-            #print(odmr_data_x, odmr_data_y, odmr_matrix)
-            self.pulsed_odmr_data_image.setData(odmr_data_x, odmr_data_y)
+            self.pulsed_odmr_data_image.setData(odmr_data_x*1e6, odmr_data_y)
             self._mw.pulsed_odmr_data_PlotWidget.removeItem(self.pulsed_odmr_data_image_fit)
             self._odmr_logic.pulsedODMRLogic.pulsed_update_after_stop=False
 
             self.pulsed_odmr_detect_image.setData(odmr_detect_x, odmr_detect_y)
-            if self._odmr_logic.pulsedODMRLogic.pulsed_PerformFit: #TODO Only when checkbox
+            if self._odmr_logic.pulsedODMRLogic.pulsed_PerformFit:
                 self._mw.pulsed_odmr_data_PlotWidget.addItem(self.pulsed_odmr_data_image_fit)
 
-                self._odmr_logic.pulsedODMRLogic.x_fit,self._odmr_logic.pulsedODMRLogic.y_fit,self._odmr_logic.pulsedODMRLogic.fit_result=self._odmr_logic.do_fit(self._odmr_logic.pulsedODMRLogic.mw1_freq,self._odmr_logic.pulsedODMRLogic.data)
+                self._odmr_logic.pulsedODMRLogic.x_fit,self._odmr_logic.pulsedODMRLogic.y_fit,self._odmr_logic.pulsedODMRLogic.fit_result=self._odmr_logic.do_fit(odmr_data_x,odmr_data_y)
 
-                self.pulsed_odmr_data_image_fit.setData(self._odmr_logic.pulsedODMRLogic.x_fit*1e6, self._odmr_logic.pulsedODMRLogic.y_fit)
+                self.pulsed_odmr_data_image_fit.setData(np.array(self._odmr_logic.pulsedODMRLogic.x_fit*1e6, dtype=float), np.array(self._odmr_logic.pulsedODMRLogic.y_fit, dtype=float))
                 self._mw.pulsed_Contrast_Fit_Label.setText(str(self._odmr_logic.Contrast_Fit))
                 self._mw.pulsed_Linewidths_Fit_Label.setText(str(self._odmr_logic.Linewidths_Fit))
                 self._mw.pulsed_Frequencies_Fit_Label.setText(str(self._odmr_logic.Frequencies_Fit))

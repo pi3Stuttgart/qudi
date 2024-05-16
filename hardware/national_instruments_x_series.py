@@ -167,9 +167,12 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
     _RWTimeout = ConfigOption('read_write_timeout', default=10)
     _counting_edge_rising = ConfigOption('counting_edge_rising', default=True)
 
-    _rotation_correction = ConfigOption('rotation_correction', 0)
+    _trapezoid_rotation_correction = ConfigOption('rotation_correction', 0)
     _scaling_correction_a = ConfigOption('scaling_correction_a', 1)
     _scaling_correction_b = ConfigOption('scaling_correction_b', 1)
+    _rotation_correction = ConfigOption('rotation_correction', 0)
+    _scaling_correction_x = ConfigOption('scaling_correction_x', 1)
+    _scaling_correction_y = ConfigOption('scaling_correction_y', 1)
     
     def on_activate(self):
         """ Starts up the NI Card at activation.
@@ -200,9 +203,12 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
         self._scanner_ai_channels = self._scanner_ai_channels if self._scanner_ai_channels is not None else list()
 
 
-        self._rotation_correction = eval(self._rotation_correction)
+        self._trapezoid_rotation_correction = eval(self._trapezoid_rotation_correction)
         self._scaling_correction_a = eval(self._scaling_correction_a)
         self._scaling_correction_b = eval(self._scaling_correction_b)
+        self._rotation_correction = eval(self._rotation_correction)
+        self._scaling_correction_x = eval(self._scaling_correction_x)
+        self._scaling_correction_y = eval(self._scaling_correction_y)
 
         self.timestamp_list=[] # this list contains the timestaps of the data value assignment of the _scan_data list in the scan_line method
 
@@ -1230,14 +1236,7 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
                 + self._scanner_voltage_ranges[i][0]
             )
 
-        # Used for rescaling, because confocal scan is distorted
-        rot_mat = lambda rot: np.asarray([[np.cos(rot), -np.sin(rot), 0,0], [np.sin(rot), np.cos(rot),0,0],[0,0,1,0],[0,0,0,1]])
-        scaling_mat= lambda a,b: np.asarray([[a,0, 0,0], [0, b ,0,0],[0,0,1,0],[0,0,0,1]])
-        Vlist=np.asarray(vlist)
-        Vlist=rot_mat(-self._rotation_correction) @ scaling_mat(self._scaling_correction_a,self._scaling_correction_b) @ rot_mat(self._rotation_correction) @ Vlist
-        vlist=Vlist.copy()
-        volts = np.vstack(vlist)
-        # End of rescaling
+        volts = self.scale_and_rotation_correction(vlist)
 
         for i, v in enumerate(volts):
             if v.min() < self._scanner_voltage_ranges[i][0] or v.max() > self._scanner_voltage_ranges[i][1]:
@@ -1246,6 +1245,31 @@ class NationalInstrumentsXSeries(Base, SlowCounterInterface, ConfocalScannerInte
                     'be adjusted to stay in the given range.'.format(v.min(), v.max()))
                 return np.array([np.NaN])
         return volts
+    
+    def scale_and_rotation_correction(self, vlist):
+        """ Used for rescaling when confocal scan is distorted.
+
+        @return float[][n]: array of n-part tuples of corresponing voltages
+        """
+        rot_mat = lambda rot: np.asarray([[np.cos(rot), -np.sin(rot), 0,0], [np.sin(rot), np.cos(rot),0,0],[0,0,1,0],[0,0,0,1]])
+        scaling_mat= lambda a,b: np.asarray([[a,0, 0,0], [0, b ,0,0],[0,0,1,0],[0,0,0,1]])
+        
+        Vlist=np.asarray(vlist)
+        
+        # Lastly correct for any deformation in x/y:
+        Vlist= scaling_mat(self._scaling_correction_x,self._scaling_correction_y) @ Vlist
+        
+        # then a rotated image:
+        Vlist= rot_mat(self._rotation_correction) @ Vlist
+        
+        # First correct trapezoid deformation:
+        Vlist=rot_mat(-self._trapezoid_rotation_correction) @ scaling_mat(self._scaling_correction_a,self._scaling_correction_b) @ rot_mat(self._trapezoid_rotation_correction) @ Vlist
+        
+        vlist=Vlist.copy()
+        volts = np.vstack(vlist)
+        return volts
+        
+
 
     def get_scanner_position(self):
         """ Get the current position of the scanner hardware.

@@ -53,6 +53,8 @@ class SetupControlLogic(GenericLogic):
         super().__init__(config=config, **kwargs)
     
     def on_activate(self):
+        from PyQt5.QtCore import QT_VERSION_STR, PYQT_VERSION_STR
+        print("Qt: v", QT_VERSION_STR, "\tPyQt: v", PYQT_VERSION_STR)
         """ Prepare logic module for work.
         """
 
