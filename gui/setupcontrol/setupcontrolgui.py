@@ -100,6 +100,7 @@ class SetupControlGUI(GUIBase):
         self._mw.MW3_freq_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW3_freq_DoubleSpinBox_Edited)
         self._mw.MW3_power_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW3_power_DoubleSpinBox_Edited)
         self._mw.Set_Power_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.Set_Power_DoubleSpinBox_Edited)
+        self._mw.repump_power_doubleSpinBox.valueChanged.connect(self._setupcontrol_logic.repump_power_doubleSpinBox_Edited)
         self._mw.Set_Power_Button.clicked.connect(self._setupcontrol_logic.Set_Power_Button_Clicked)
         self._mw.Read_Power_Button.clicked.connect(self._setupcontrol_logic.Read_Power_Button_Clicked)
         self._mw.Autofocus_Button.clicked.connect(self._setupcontrol_logic.Autofocus_Button_Clicked)
@@ -116,6 +117,7 @@ class SetupControlGUI(GUIBase):
         self._mw.MW2_freq_DoubleSpinBox.setValue(self._setupcontrol_logic.MW2_freq)
         self._mw.MW1_freq_DoubleSpinBox.setValue(self._setupcontrol_logic.MW1_freq)
         self._mw.Set_Power_DoubleSpinBox.setValue(self._setupcontrol_logic.AOM_volt)
+        self._mw.repump_power_doubleSpinBox.setValue(self._setupcontrol_logic.Repump_power)
 
         # self._mw.Read_Power_Label.setText(str(self._setupcontrol_logic.read_power))
         
@@ -140,6 +142,8 @@ class SetupControlGUI(GUIBase):
         self._mw.MW3_power_DoubleSpinBox.valueChanged.disconnect()
         self._mw.MW3_freq_DoubleSpinBox.valueChanged.disconnect()
         self._mw.Set_Power_DoubleSpinBox.valueChanged.disconnect()
+        self._mw.repump_power_doubleSpinBox.valueChanged.disconnect()
+
         self._mw.Set_Power_Button.clicked.disconnect()
         self._mw.Read_Power_Button.clicked.disconnect()
         self._mw.Autofocus_Button.clicked.disconnect()

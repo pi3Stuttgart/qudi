@@ -24,15 +24,15 @@ class BiasLogic(GenericLogic):
         
         self._streaming_device.start_ao_task()
         
-        self._laser_scanner_logic.sigScanNextLine.connect(self.change_voltage)
+        #self._laser_scanner_logic.sigScanNextLine.connect(self.change_voltage)
 
-        self.voltages = [0,0]# [0,0.1,0.2,0.3,0.4,0.5,0.4,.3, 2., .1, 0, -.1, -.2, -.3, -.4]
+        self.voltages =[0,0] # np.append(np.arange(0,-0.6,-0.005),np.arange(0,-0.6,-0.005)[::-1])#[0,0.01,0.2,0.3,0.4,0.5,0.4,.3, 2., .1, 0, -.1, -.2, -.3, -.4]#[0,0]
         self.step_line = 1
 
         self._streaming_device.start_acquisition()
 
         self.set_voltage(0)
-
+        
     def on_deactivate(self):
         self._streaming_device.on_deactivate()
     
@@ -50,3 +50,5 @@ class BiasLogic(GenericLogic):
         v_list.extend(np.round(np.arange(start,stop+step,step),3))
         v_list.extend(np.round(np.arange(start,stop,step)[::-1][:-1],3))
         self.voltages = v_list
+
+        

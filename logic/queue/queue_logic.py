@@ -443,6 +443,7 @@ class queue_logic(GenericLogic):
             self.q.put({'module_name': module_name, 'pd': pd})
             self.script_queue.append(ScriptQueueStep(module_name[10:], self.user_script_params))
         except Exception:
+            print("Queuelogic: Could not add script to queue.")
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb)
 

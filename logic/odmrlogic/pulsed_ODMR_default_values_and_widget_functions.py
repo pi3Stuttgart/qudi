@@ -379,10 +379,10 @@ class pulsed_ODMR_default_values_and_widget_functions:
 
         def pulsed_Save_Button_Clicked(self,on):
                 self.holder.save_pulsed_odmr_data(tag=self.pulsed_Filename)
-                       
                         # pulsed_StartFreq
                         # pulsed_StopFreq
                         # pulsed_MW2_Freq
+                        
         def pulsed_Run_Button_Clicked(self,on, tag = [None]):
                 if tag==[None]:
                         tag=self.CallerTag

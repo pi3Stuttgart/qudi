@@ -27,6 +27,7 @@ from logic.setup_control_logic import SetupControlLogic
 from logic.counter_logic import CounterLogic
 from logic.laserscanner.laser_scanner_logic import LaserScannerLogic
 from logic.powerstabilization.powerstabilizationlogic import PowerStabilizationLogic
+from logic.odmrlogic.odmr_logic import ODMRLogic_holder
 #from logic.biaslogic import BiasLogic
 from hardware.toptica_laser_control import TopticaLaserControl
 
@@ -56,6 +57,7 @@ class AutomatedMeasurementLogic(GenericLogic):
     laserscannerlogic = Connector(interface = 'LaserScannerLogic')
     powerstabilizationlogic= Connector(interface='PowerStabilizationLogic')
     repump = Connector(interface='TopticaLaserControlInterface')
+    odmrlogicholder = Connector(interface='ODMRLogic_holder')
     
     # internal signals
     sigNextPoi = QtCore.Signal()
@@ -87,7 +89,7 @@ class AutomatedMeasurementLogic(GenericLogic):
     #steps= ['resonant_optimize', 'next_laser_power_A1', 'ple']*len(_laser_power_A1_list)
     #steps= ['move', 'optimize', 'spectrum', 'spectrum']
 
-    steps= ['confocal']
+    steps= ['move','ple','ple', 'optimize', 'odmr']
     #steps= ['move','optimize', 'ple' ,'offresonant_saturation']
     #steps= ['nextV','ple_refocus','arbseq']*len(_bias_voltages)  
     # steps= ['move']+['CTL_OFF','change_wavelength','ple_refocus', 'resonant_optimize','CTL_ON','arbseq']*len(_ctl_wavelengths)  #arbseq with res. confocal while CTL off
@@ -112,6 +114,7 @@ class AutomatedMeasurementLogic(GenericLogic):
             'resonant_optimize' : self.resonant_optimize_on_poi,
             'spectrum' : self.take_spectrum,
             'ple' : self.take_PLE,
+            'odmr': self.take_odmr,
             'ple_refocus' : self.refocus_PLE,
             'arbseq' : self.start_arbseq,
             'change_wavelength' : self.ctl_wavelength,
@@ -143,6 +146,7 @@ class AutomatedMeasurementLogic(GenericLogic):
         self._setupcontrol_logic: SetupControlLogic = self.setupcontrollogic()
         self._powerstabilization_logic: PowerStabilizationLogic = self.powerstabilizationlogic()
         self._repump: TopticaLaserControl = self.repump()
+        self._odmr_logic_holder: ODMRLogic_holder = self.odmrlogicholder()
         #self._bias_logic: BiasLogic = self.biaslogic()
 
         # self._poimanagerlogic = self.poimanagerlogic() # is already included in confocal gui
@@ -483,7 +487,7 @@ class AutomatedMeasurementLogic(GenericLogic):
         return
 
     def take_PLE(self):
-        
+        self._laser_scanner_logic.set_scan_range([-2,2])
         self._repump.set_power(0.0005)
         QtTest.QTest.qSleep(5000)
         self._laser_scanner_logic.happy = False # Grober Unfug hier 
@@ -678,8 +682,14 @@ class AutomatedMeasurementLogic(GenericLogic):
         myfile.close()
         self.sigStepDone.emit()
         
-
-
+    @QtCore.Slot()
+    def take_odmr(self):
+        self._odmr_logic_holder.pulsedODMRLogic.pulsed_Run_Button_Clicked(True)
+        while self._odmr_logic_holder.pulsedODMRLogic.measurement_running:
+            QtTest.QTest.qSleep(2000)
+        self._odmr_logic_holder.pulsedODMRLogic.pulsed_Save_Button_Clicked(str(self._current_poi_name))
+        self.sigStepDone.emit()
+        
     @QtCore.Slot() #what is this?   
     def save_ple(self):
         print("Saving PLE")

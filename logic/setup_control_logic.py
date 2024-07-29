@@ -25,6 +25,8 @@ class SetupControlLogic(GenericLogic):
     mcas_holder = Connector(interface='McasDictHolderInterface')
     # powercontrol = Connector(interface='LaserPowerHolder')
     savelogic = Connector(interface = 'SaveLogic')
+    topticalaser = Connector(interface='TopticaLaserControl')
+
 
     _AOM_volt:float=1
     read_power:str='-'
@@ -35,6 +37,7 @@ class SetupControlLogic(GenericLogic):
     MW1_power = StatusVar('MW1_Power', -21)
     MW2_power = StatusVar('MW2_Power', -21)
     MW3_power = StatusVar('MW3_Power', -21)
+    Repump_power = StatusVar('Repump_power', 0)
     enable_MW1: bool = False
     enable_MW2: bool = False
     enable_MW3: bool = False
@@ -65,6 +68,9 @@ class SetupControlLogic(GenericLogic):
         self.flipmirror_sequence_created = False
         self.ps=self._awg.mcas_dict.awgs["ps"]
 
+        self._topticalaser=self.topticalaser()
+        self.actual_repump_power=self.Repump_power/1000
+        self._topticalaser.set_power(self.actual_repump_power)
 
     def on_deactivate(self):
         """ Deactivate module.
@@ -79,6 +85,7 @@ class SetupControlLogic(GenericLogic):
         self.AOM_volt=0
         self._awg.mcas_dict.stop_awgs()
         self.write_to_pulsestreamer()
+        self._topticalaser.set_power(0)
         
         del self._awg
         #del self._powercontrol
@@ -314,10 +321,21 @@ class SetupControlLogic(GenericLogic):
         self.SigReadPower.emit()
         self.write_to_pulsestreamer()
 
+    
+
+
     def Set_Power_DoubleSpinBox_Edited(self,value):
         #print('done something with set_power_DoubleSpinBox. Value=',value)
         self.AOM_volt=value
+
+    def repump_power_doubleSpinBox_Edited(self,value): 
+        self.Repump_power=value
+        self.actual_repump_power=value/1000
+
+        self._topticalaser.set_power(self.actual_repump_power)
         
+
+
     def StartAutoMeas_Button_Clicked(self,on):
         # save current POIs
         print("nothing happens")

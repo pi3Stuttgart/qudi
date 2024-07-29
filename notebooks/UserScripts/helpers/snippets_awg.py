@@ -213,35 +213,35 @@ def set_init_seq(mcas, state, init_time = 10, segment_length = 1, **kwargs):
     gateMW = False
     mcas.asc(**kwargs, length_mus = correction_mus)
 
-def init_state_drive(state,freqs):
+def init_state_drive(state,freqs, max_amp):
     '''
     State could be "+(-)0(1).5", example "+1.5" or "-0.5".
     '''
     transitions_num = len(freqs)
     zeros = np.zeros(transitions_num // 2)
     ones = np.ones(transitions_num // 2)
-    amplitude = 0.99 / transitions_num
+    amplitude = min(0.99 / transitions_num,max_amp)
     if '+' in state:
         amps=np.append(ones * amplitude, zeros)
     elif '-' in state:
         amps=np.append(zeros, ones * amplitude)
     pd2g1 = {
         'type': 'sine',
-        'phases': [0],
+        'phases': [0], #*transitions_num ?
         'amplitudes': amps,        
         'frequencies': freqs
     }
     
     return pd2g1
 
-def electron_init(mcas, state, dur, freqs_all_L, freqs_all_R, segment_length = 10):
+def electron_init(mcas, state, dur, freqs_all_L, freqs_all_R, segment_length = 10, max_amp = 0.5):
     '''
     State could be "+(-)0(1).5", example "+1.5" or "-0.5".
     Duration (µs) will be used to calculate loop_count (int) depending on segment_length (10µs standard).
     Duration which doesn't fit into >> loop_counts * segment_length << will be corrected for at the end.
     Initialization segment ends with 1024ns of decay to ensure all lasers are off.
     '''
-    
+    state = state.replace('p', '+').replace('m', '-').replace('32', '1.5').replace('12', '0.5')
     loops, correction_mus  = shared.calculate_loop_count(dur,segment_length)
     mcas.start_new_segment(name='init', loop_count = loops)
     mcas.asc(
@@ -250,7 +250,7 @@ def electron_init(mcas, state, dur, freqs_all_L, freqs_all_R, segment_length = 1
         gateMW = True,
         length_mus=E.round_length_mus_to_x_multiple_ps(segment_length), 
         name='resonant_init',
-        pd2g1 = init_state_drive(state, np.append(freqs_all_L, freqs_all_R))
+        pd2g1 = init_state_drive(state, np.append(freqs_all_L, freqs_all_R), max_amp)
     ) 
     mcas.start_new_segment(name='init_correction', loop_count = 1)
     mcas.asc(
@@ -259,7 +259,7 @@ def electron_init(mcas, state, dur, freqs_all_L, freqs_all_R, segment_length = 1
         gateMW = True,
         length_mus=E.round_length_mus_to_x_multiple_ps(correction_mus), 
         name='resonant_init',
-        pd2g1 = init_state_drive(state, np.append(freqs_all_L, freqs_all_R))
+        pd2g1 = init_state_drive(state, np.append(freqs_all_L, freqs_all_R), max_amp)
     ) 
     mcas.asc(length_mus=E.round_length_mus_to_x_multiple_ps(1.024), name = 'Init Decay')  
 
@@ -763,13 +763,13 @@ class SSR(object):
                 #   laser = False
 
                 #if self.gate_or_trigger == 'trigger':
-                self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, gateMW = True, name = 'triggerTrue_gate') # Gated counter
+                self.mcas.asc(name = 'triggerTrue_gate', length_mus=__TT_TRIGGER_LENGTH__, gate=True, gateMW = True) # Gated counter
                 #else:
                     #self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True, name = 'triggerFalse_memory') # ODMR... ORABI
                     #self.mcas.asc(length_mus=2.1, name = 'wait_after_memory')
 
                 # self.mcas.asc(pd2g1=d[1][2], pd2g2=d[2][2], name='MW', **aa) # CNOT(s) #ORIGINAL VERSION
-                self.mcas.asc(gateMW=True, name='MW', length_mus=0.256-__TT_TRIGGER_LENGTH__)
+                self.mcas.asc(name='MW', length_mus=0.256-__TT_TRIGGER_LENGTH__, gateMW=True)
                 
                 for idx,freq in enumerate(d[1][2]['frequencies']): #d[1][2] means awg, ch2?
                     #print("compileMW in snippets_awg")

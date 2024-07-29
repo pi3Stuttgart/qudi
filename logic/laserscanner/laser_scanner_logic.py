@@ -648,6 +648,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         frequencies = np.array([self.MW1_Freq, self.MW2_Freq, self.MW3_Freq])[[self.enable_MW1, self.enable_MW2, self.enable_MW3]]
         seq.start_new_segment("Microwaves"+str(frequencies), loop_count=500)
         if len(self.power) == 0:
+            print('Sequence without MW')
             seq.asc(name="without MW",
                     A1=self.enable_A1,
                     A2=self.enable_A2,
@@ -655,6 +656,51 @@ class LaserScannerLogic(GenericLogic, ple_default):
                     length_mus=10
                     )
         else:
+            # L1_freq = 5762.234
+            # L2_freq = 5763.535
+            # R1_freq = 5901.730
+            # R2_freq = 5903.030
+            
+            # seq.asc(name="with MW", length_mus=.256, gateMW = True)
+            # seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": [L1_freq], "amplitudes": [0.22]},
+            #         length_mus=.333, gateMW=True
+            #         )
+            # seq.asc(name="with MW",
+            #         A1=self.enable_A1,
+            #         A2=self.enable_A2,
+            #         repump=self.enable_Repump,
+            #         length_mus=2.048
+            #         )
+            # seq.asc(name="with MW", length_mus=.256, gateMW = True)
+            # seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": [L2_freq], "amplitudes": [0.22]},
+            #         length_mus=.333, gateMW=True
+            #         )
+            # seq.asc(name="with MW",
+            #         A1=self.enable_A1,
+            #         A2=self.enable_A2,
+            #         repump=self.enable_Repump,
+            #         length_mus=2.048
+            #         )
+            # seq.asc(name="with MW", length_mus=.256, gateMW = True)
+            # seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": [R1_freq], "amplitudes": [0.24]},
+            #         length_mus=.333, gateMW=True
+            #         )
+            # seq.asc(name="with MW",
+            #         A1=self.enable_A1,
+            #         A2=self.enable_A2,
+            #         repump=self.enable_Repump,
+            #         length_mus=2.048
+            #         )
+            # seq.asc(name="with MW", length_mus=.256, gateMW = True)
+            # seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": [R2_freq], "amplitudes": [0.24]},
+            #         length_mus=.333, gateMW=True
+            #         )
+            # seq.asc(name="with MW",
+            #         A1=self.enable_A1,
+            #         A2=self.enable_A2,
+            #         repump=self.enable_Repump,
+            #         length_mus=2.048
+            #         )
             seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": frequencies, "amplitudes": self.power},
                     A1=self.enable_A1,
                     A2=self.enable_A2,
@@ -803,8 +849,9 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
                 # follow the defect PLE line by applying a voltage to the laser chamber
                 #Range=self.scan_range[1]-self.scan_range[0]
-                Range=0.4
+                Range=0.3
 
+                #self.scan_range[0],self.scan_range[1]=peak_volt-0.5*Range,peak_volt+0.05
                 self.scan_range[0],self.scan_range[1]=peak_volt-0.5*Range,peak_volt+0.5*Range
             else: 
                 # emit an error?
@@ -840,18 +887,18 @@ class LaserScannerLogic(GenericLogic, ple_default):
         if len(tag) > 0:
             filelabel = tag + '_PLE_data'
             filelabel2 = tag + '_PLE_data_raw_trace'
-            filelabel3 = tag + '_PLE_data_raw freqs vs cts'
-            filelabel4 = tag + '_PLE_data_raw freqs'
+            filelabel3 = tag + '_PLE_data_raw_freqs_vs_cts'
+            filelabel4 = tag + '_PLE_data_raw_freqs'
         else:
             filelabel = 'PLE_data'
             filelabel2 = 'PLE_data_raw_trace'
-            filelabel3 = 'PLE_data_raw freqs vs cts'
-            filelabel4 = '_PLE_data_raw freqs'
+            filelabel3 = 'PLE_data_raw_freqs_vs_cts'
+            filelabel4 = '_PLE_data_raw_freqs'
         
         # prepare the data in a dict or in an OrderedDict:
         data = OrderedDict()
-        data['frequency (Hz)'] = self.plot_x_frequency
-        data['trace count data (counts/s)'] = self.plot_y
+        data['Applied Voltage (V)'] = self.plot_x_frequency #frequency (Hz)
+        data['trace count data (counts)'] = self.plot_y # counts/s
 
         data2 = OrderedDict()
         data2['count data (counts/s)'] = self.scan_matrix[:self._scan_counter_up, :]
@@ -1109,7 +1156,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
             try:
                 self.Contrast_Fit=self.Contrast_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"amplitude"].value,3))+"; " # because 1 peak and 2 peak gaussian fit dont give the same result keywords, we add the 'gi_' part (missing in the 1 peak case) by multiplying the string by 1 if paeks!=1 and remove it if peaks=1.
                 self.Frequencies_Fit=self.Frequencies_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"center"].value,7))+"; "
-                self.Linewidths_Fit=self.Linewidths_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"fwhm"].value,3))+"; " #TODO convert linewidth from V to MHz
+                self.Linewidths_Fit=self.Linewidths_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"fwhm"].value,3)*2*np.sqrt(2*np.log(2)))+"; " #TODO convert linewidth from V to MHz
             except Exception as e:
                 print("an error occured:\n", e)
 

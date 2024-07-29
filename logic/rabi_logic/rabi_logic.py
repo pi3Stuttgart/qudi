@@ -603,12 +603,12 @@ class RabiLogic(GenericLogic,rabi_default):
         self.time_differences.stop()
         time.sleep(0.02)  # maybe the timetagger would get too much commands at the same time
     
-        self.time_differences = self.setup_time_tagger(n_histograms=len(self.tau_duration),
-                                                        binwidth=int(self.rabi_Binning * 1000),
-                                                        # rabi_Binning input is in ns.
-                                                        n_bins=int(self.rabi_ReadoutTime / self.rabi_Binning)
-                                                        )
-    
+        self.time_differences = self.setup_time_tagger(
+            n_histograms=len(self.tau_duration),
+            binwidth=int(self.rabi_Binning * 1000), # rabi_Binning input is in ns.
+            n_bins=int(self.rabi_ReadoutTime / self.rabi_Binning)
+            )
+
         self.power = []
         if self.rabi_MW2:
             self.power += [self.rabi_MW2_Power]
@@ -625,6 +625,10 @@ class RabiLogic(GenericLogic,rabi_default):
     
         seq = self._awg.mcas(name="Rabi", ch_dict={"2g": [1, 2], "ps": [1]})
         # generate segment of repump which starts at each repetition of the sequence.
+        seq.start_new_segment("SYNCING")
+        seq.asc(name='tt_sync1', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, self.round_to), memory=True)        
+        seq.asc(name='tt_sync2', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, self.round_to), gate=True)
+        
         seq.start_new_segment("Start")
         if self.rabi_PulsedRepump:
             print("Rabi Pulsed Repump: ", self.rabi_PulsedRepump)
@@ -657,7 +661,7 @@ class RabiLogic(GenericLogic,rabi_default):
         else:
             rabi_DecayInit = self.rabi_DecayInit
     
-        for idx, duration in enumerate(self.tau_duration):
+        for duration in self.tau_duration:
             seq.start_new_segment("Init")
     
             if (self.rabi_A1 or self.rabi_A2 or self.rabi_CWRepump) and (self.rabi_MW2 or self.rabi_MW3):
@@ -707,23 +711,13 @@ class RabiLogic(GenericLogic,rabi_default):
                     A1=False,
                     A2=False)  # self.rabi_Tau_Decay is divided by 1000 to be in µs
             
-            if idx == 0:
-                    # short pulses to SYNC and TRIGGER the timedifferences module of TimeTagger.
-                seq.asc(name='tt_sync1', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to),
-                        memory=True)  # Set histogram index to 0
-                seq.asc(name='wait', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to))
-                seq.asc(name='tt_sync2', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to),
-                        gateAWG=True)  # increment histogram index
-                seq.asc(name='wait', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, round_to))
-
-            
             seq.start_new_segment("Readout")
             seq.asc(name='readout',
                     length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_ReadoutTime / 1000, 64),
-                    A1=self.rabi_A1Readout, A2=self.rabi_A2Readout, repump = self.rabi_CWRepump, gateAWG=True)
+                    A1=self.rabi_A1Readout, A2=self.rabi_A2Readout, repump = self.rabi_CWRepump, gate=True)
             seq.asc(name='readout_decay',
                     length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_ReadoutDecay / 1000, 64), A1=False,
-                    A2=False)
+                    A2=False, gate=True)
     
         # self.awg.mcas.status = 1
         self._awg.mcas_dict.stop_awgs()

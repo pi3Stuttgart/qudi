@@ -628,7 +628,7 @@ class ODMRLogic_holder(GenericLogic):
             try:
                 self.Contrast_Fit=self.Contrast_Fit+str(round(self.fit_result[("ampl_"+str(i))],2))+"; " # because 1 peak and 2 peak gaussian fit dont give the same self.fit_result keywords, we add the 'gi_' part (missing in the 1 peak case) by multiplying the string by 1 if paeks!=1 and remove it if peaks=1.
                 self.Frequencies_Fit=self.Frequencies_Fit+str(round(self.fit_result[("mu_"+str(i))],2))+"; "
-                self.Linewidths_Fit=self.Linewidths_Fit+str(round(self.fit_result[("gam_"+str(i))],2))+"; " 
+                self.Linewidths_Fit=self.Linewidths_Fit+str(round(self.fit_result[("gam_"+str(i))]*2*np.sqrt(2*np.log(2)),3))+"; " # convert sigma to linewidth
             except Exception as e:
                 print("an error occured:\n", e)
         if self.update_TT:
@@ -1008,7 +1008,10 @@ class pulsedODMRLogic(pulsed_default):
 
         # Setup list of all frequencies which the sequence should output.
         self.mw1_freq = np.arange(self.pulsed_StartFreq,self.pulsed_StopFreq+self.pulsed_Stepsize,self.pulsed_Stepsize)
-
+        if len(self.mw1_freq)>400:
+            error_text=f"More than 400 freqs to upload, if you want to continue please uncomment me in ODMR_logic. Otherwise MCAS will be killed because the sequence is too long."
+            logger.error(error_text)
+            raise Warning(error_text)
         #setting up the measurement data
         self.number_of_points_per_line=len(self.mw1_freq)
 
