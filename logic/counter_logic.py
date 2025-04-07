@@ -60,6 +60,8 @@ class CounterLogic(GenericLogic):
     # declare connectors
     counter1 = Connector(interface='SlowCounterInterface')
     savelogic = Connector(interface='SaveLogic')
+    #scannerlogic1 = Connector(interface="ConfocalLogic")
+    #laserscannerlogic2 = Connector(interface='LaserScannerLogic')
 
     # status vars
     _count_length = StatusVar('count_length', 300)
@@ -97,6 +99,45 @@ class CounterLogic(GenericLogic):
         self._counting_mode = CountingMode['CONTINUOUS']
 
         self._saving = False
+
+        self.correcting=False
+        self.count_objective=2000 # counter is gonna try to get the average counts above count_objective
+        self.window=int(self._smooth_window_length*1.1)
+        self.counter_up=0
+        self.correction_counter=0
+        self.max_correction_counter=200
+        self.safety_wait_counter=0
+        self.safety_wait= 30 # wait some iterations before actually starting to correct (avoid fluctuations) needs to be short enough that in one measurement series, we can change the voltage
+        self.fitted_V=0
+        #creates the search pattern:
+        slope=0.01/2
+        num=50
+        other_lines=4
+        space=10
+        x=np.linspace(1,num,num)
+        x=np.repeat(x,other_lines,axis=0).reshape((num,other_lines))
+        y=(x-np.linspace(0,other_lines-1,other_lines)*space)*slope
+        factor=np.repeat(np.array([1,-1]*(num//2)),other_lines,axis=0).reshape((num,other_lines))
+        Y=y*factor
+        y=y.flatten()
+        Y=Y.flatten()
+        x=x.flatten()
+
+        msk=y>=0
+        #y=y*np.array([1,-1]*(len(x)//2))
+        x=x[msk]
+        y=Y[msk]
+
+        self.direction=y.copy()#[*[1]*(self.max_correction_counter//2),*[-1]*(self.max_correction_counter//2)]
+        self.min_corrction_counts=10   # min threshold below which correction is inactive
+        self.type=0
+        #this is used for type 1 correction
+        self.old_mean=0
+        self.Direction=1
+        self.last_means=[0]
+        self.voltage_list=[]
+        self.slope=0.005
+
         return
 
     def on_activate(self):
@@ -106,6 +147,7 @@ class CounterLogic(GenericLogic):
         
         self._counting_device = self.counter1()
         self._save_logic = self.savelogic()
+        #self._laserscanner_logic=None
 
         # Recall saved app-parameters
         if 'counting_mode' in self._statusVariables:
@@ -494,6 +536,69 @@ class CounterLogic(GenericLogic):
             # call this again from event loop
             self.sigCounterUpdated.emit()
             self.sigCountDataNext.emit()
+
+            # TRYING TO CORRECT FOR THE PLE DRIFT BY USING THE COUNTER
+            if self.correcting:
+                mean=int(self.countdata_smoothed[1, -1])
+                if self._laserscanner_logic.happy: #PLE started => reset
+                    self.correction_counter=0 #reset the index of the corrction
+                    self.counter_up=0
+                    self.safety_wait_counter=0
+                    self.last_means=[0]
+                    #self.fitted_V=self._laserscanner_logic._static_v
+                
+                elif mean>self.min_corrction_counts and mean<self.count_objective and self.window<self.counter_up:# and self.correction_counter<self.max_correction_counter:
+                    """
+                    mean<self.count_objective -> try to correct when counts are falling
+                    mean>100 -> if the lasers are off, do not try to correct 
+                    self.window<self.counter_up -> give some time for the mean to react
+                    self.correction_counter<self.max_correction_counter # not used
+                    """
+                    #print("correcting triggered")
+                    if self.safety_wait<self.safety_wait_counter: #do not trigger at random fluctuations
+                        
+                        try: # using a try in order not to fail the program when refocussing confocal and correcting is on
+                            
+
+                            if self.type==0:
+                                add=self.direction[self.correction_counter % len(self.direction)]#if you want to use an alternating approach
+                                volt=self.fitted_V+add
+                            elif self.type==1:
+                                new_mean=np.mean(self.last_means)
+                                print(new_mean,self.old_mean,self.Direction)
+                                if new_mean<self.old_mean:
+                                    self.Direction=self.Direction*(-1)
+                                add=self.slope*self.Direction
+                                volt= self._laserscanner_logic._static_v+add
+                                self.old_mean=new_mean
+
+                            print("change voltage to:",volt)
+                            self._laserscanner_logic.goto_voltage(volt)
+                            self.voltage_list.append(volt)
+                            self.correction_counter+=1
+                            self.counter_up=0
+
+                        except Exception as e:
+                            print(e)
+
+                        
+                        
+                    else:
+                        self.safety_wait_counter+=1
+                else:
+                    self.counter_up+=1
+                    self.safety_wait_counter=0
+                    if mean>self.min_corrction_counts:
+                        self.last_means.append(mean)
+                        if len(self.last_means)>20:
+                            self.last_means=self.last_means[-20:]
+
+                if (not (self.fitted_V==self._laserscanner_logic._static_v)) and ((mean>self.count_objective and self.counter_up>20) or (mean>self.count_objective*1.5)):# we are on a good spot
+                    print("setting fitted_v to",self._laserscanner_logic._static_v)
+                    self.fitted_V=self._laserscanner_logic._static_v
+                    self.correction_counter=0
+            
+
         return
 
     def save_current_count_trace(self, name_tag=''):
@@ -579,7 +684,9 @@ class CounterLogic(GenericLogic):
         for i, ch in enumerate(self.get_channels()):
             self.countdata_smoothed[i, window:] = np.median(self.countdata[i,-self._smooth_window_length:])
             self.countdata_avg = np.mean(self.countdata[i,:])
-            
+        
+
+
         # save the data if necessary
         if self._saving:
              # if oversampling is necessary

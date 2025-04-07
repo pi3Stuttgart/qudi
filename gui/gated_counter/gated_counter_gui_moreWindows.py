@@ -41,7 +41,7 @@ class GatedCounterMainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         # Get the path to the *.ui file
         this_dir = os.path.dirname(__file__)
-        ui_file = os.path.join(this_dir, 'ui_gated_counter_gui_layout.ui')
+        ui_file = os.path.join(this_dir, 'ui_gated_counter_gui_layout2.ui')
 
         # Load it
         super(GatedCounterMainWindow, self).__init__()
@@ -104,12 +104,12 @@ class GatedCounterGui(GUIBase):
         # Show our layout holding multiple subplots
         # Create an empty plot curve to be filled later, set its pen
         self._trace1=[]
-        colors = [palette.c2,palette.c4,palette.c6]
+        colors = [palette.c2,palette.c4,palette.c6,palette.c5]
         for i in range(3):
             self._trace1.append(self._gp.plot())
             self._trace1[i].setPen(colors[i])
 
-        self._hp_l = [self._mw.histogram_PlotWidget_2,self._mw.histogram_PlotWidget_3,self._mw.histogram_PlotWidget_4,]
+        self._hp_l = [self._mw.histogram_PlotWidget_2,self._mw.histogram_PlotWidget_3,self._mw.histogram_PlotWidget_5,self._mw.histogram_PlotWidget_4,]
         for hp in self._hp_l:
             hp.setLabel('left', 'Occurrences', units='#')
             hp.setLabel('bottom', 'Counts', units='counts/s')
@@ -117,7 +117,7 @@ class GatedCounterGui(GUIBase):
 
         self._histoplot1=[]
         self.colors_fill=[pg.mkColor(102, 94, 252, 100), pg.mkColor(255, 175, 43,100), pg.mkColor(255, 81, 152,100)]
-        for i in range(3):
+        for i in range(len(self._hp_l)):
             self._histoplot1.append(pg.PlotCurveItem())
             self._histoplot1[i].setPen(colors[i])
             self._hp_l[i].addItem(self._histoplot1[i])

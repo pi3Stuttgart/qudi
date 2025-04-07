@@ -1,0 +1,250 @@
+sine|a * np.sin(b * x) + c|sine
+cosine|a * np.cos(b * x) + c|cosine
+exp_decay|d * np.exp(-e * x)|exp_decay
+2d_contour|a * x ** 2 + b * y ** 2 + c * x * y + d * x + e * y + f|2d_contour
+exponential|a * np.exp(b * x) + c|exponential
+logarithmic|a * np.log(b * x) + c|logarithmic
+linear|a * x + b|linear
+quadratic|a * x**2 + b * x + c|quadratic
+cubic|a * x**3 + b * x**2 + c * x + d|cubic
+gaussian|a * np.exp(-((x - b)**2) / (2 * c**2))|gaussian
+lorentzian|a / (1 + ((x - b) / c)**2)|lorentzian
+power_law|a * x**b + c|power_law
+sigmoid|a / (1 + np.exp(-b * (x - c)))|sigmoid
+hyperbolic_tangent|a * np.tanh(b * x) + c|hyperbolic_tangent
+rectangular|a * (np.abs(x) <= b)|rectangular
+heaviside|a * (x >= b)|heaviside
+step|a * (x >= b) + c|step
+damped_sine|a * np.exp(-b * x) * np.sin(c * x + d)|damped_sine
+fourier_series|a0 + a1 * np.cos(omega * x) + b1 * np.sin(omega * x)|fourier_series
+logistic_growth|L / (1 + np.exp(-k * (x - x0)))|logistic_growth
+weibull|(a / b) * (x / b)**(a - 1) * np.exp(-(x / b)**a)|weibull
+gamma|(x**(a - 1) * np.exp(-x / b)) / (b**a * gamma(a))|gamma
+polynomial_4th|a*x**4 + b*x**3 + c*x**2 + d*x + e|polynomial_4th
+double_exponential|a * np.exp(-b * x) + c * np.exp(-d * x)|double_exponential
+softplus|a * np.log(1 + np.exp(b * x)) + c|softplus
+sine|a * np.sin(b * x) + c|sine
+cosine|a * np.cos(b * x) + c|cosine
+exp_decay|d * np.exp(-e * x)|exp_decay
+2d_contour|a * x ** 2 + b * y ** 2 + c * x * y + d * x + e * y + f|2d_contour
+exponential|a * np.exp(b * x) + c|exponential
+logarithmic|a * np.log(b * x) + c|logarithmic
+linear|a * x + b|linear
+quadratic|a * x**2 + b * x + c|quadratic
+cubic|a * x**3 + b * x**2 + c * x + d|cubic
+gaussian|a * np.exp(-((x - b)**2) / (2 * c**2))|gaussian
+lorentzian|a / (1 + ((x - b) / c)**2)|lorentzian
+power_law|a * x**b + c|power_law
+sigmoid|a / (1 + np.exp(-b * (x - c)))|sigmoid
+hyperbolic_tangent|a * np.tanh(b * x) + c|hyperbolic_tangent
+rectangular|a * (np.abs(x) <= b)|rectangular
+heaviside|a * (x >= b)|heaviside
+step|a * (x >= b) + c|step
+damped_sine|a * np.exp(-b * x) * np.sin(c * x + d)|damped_sine
+fourier_series|a0 + a1 * np.cos(omega * x) + b1 * np.sin(omega * x)|fourier_series
+logistic_growth|L / (1 + np.exp(-k * (x - x0)))|logistic_growth
+weibull|(a / b) * (x / b)**(a - 1) * np.exp(-(x / b)**a)|weibull
+gamma|(x**(a - 1) * np.exp(-x / b)) / (b**a * gamma(a))|gamma
+polynomial_4th|a*x**4 + b*x**3 + c*x**2 + d*x + e|polynomial_4th
+double_exponential|a * np.exp(-b * x) + c * np.exp(-d * x)|double_exponential
+softplus|a * np.log(1 + np.exp(b * x)) + c|softplus
+sine|a * np.sin(b * x) + c|sine
+cosine|a * np.cos(b * x) + c|cosine
+exp_decay|d * np.exp(-e * x)|exp_decay
+2d_contour|a * x ** 2 + b * y ** 2 + c * x * y + d * x + e * y + f|2d_contour
+exponential|a * np.exp(b * x) + c|exponential
+logarithmic|a * np.log(b * x) + c|logarithmic
+linear|a * x + b|linear
+quadratic|a * x**2 + b * x + c|quadratic
+cubic|a * x**3 + b * x**2 + c * x + d|cubic
+gaussian|a * np.exp(-((x - b)**2) / (2 * c**2))|gaussian
+lorentzian|a / (1 + ((x - b) / c)**2)|lorentzian
+power_law|a * x**b + c|power_law
+sigmoid|a / (1 + np.exp(-b * (x - c)))|sigmoid
+hyperbolic_tangent|a * np.tanh(b * x) + c|hyperbolic_tangent
+rectangular|a * (np.abs(x) <= b)|rectangular
+heaviside|a * (x >= b)|heaviside
+step|a * (x >= b) + c|step
+damped_sine|a * np.exp(-b * x) * np.sin(c * x + d)|damped_sine
+fourier_series|a0 + a1 * np.cos(omega * x) + b1 * np.sin(omega * x)|fourier_series
+logistic_growth|L / (1 + np.exp(-k * (x - x0)))|logistic_growth
+weibull|(a / b) * (x / b)**(a - 1) * np.exp(-(x / b)**a)|weibull
+gamma|(x**(a - 1) * np.exp(-x / b)) / (b**a * gamma(a))|gamma
+polynomial_4th|a*x**4 + b*x**3 + c*x**2 + d*x + e|polynomial_4th
+double_exponential|a * np.exp(-b * x) + c * np.exp(-d * x)|double_exponential
+softplus|a * np.log(1 + np.exp(b * x)) + c|softplus
+sine|a * np.sin(b * x) + c|sine
+cosine|a * np.cos(b * x) + c|cosine
+exp_decay|d * np.exp(-e * x)|exp_decay
+2d_contour|a * x ** 2 + b * y ** 2 + c * x * y + d * x + e * y + f|2d_contour
+exponential|a * np.exp(b * x) + c|exponential
+logarithmic|a * np.log(b * x) + c|logarithmic
+linear|a * x + b|linear
+quadratic|a * x**2 + b * x + c|quadratic
+cubic|a * x**3 + b * x**2 + c * x + d|cubic
+gaussian|a * np.exp(-((x - b)**2) / (2 * c**2))|gaussian
+lorentzian|a / (1 + ((x - b) / c)**2)|lorentzian
+power_law|a * x**b + c|power_law
+sigmoid|a / (1 + np.exp(-b * (x - c)))|sigmoid
+hyperbolic_tangent|a * np.tanh(b * x) + c|hyperbolic_tangent
+rectangular|a * (np.abs(x) <= b)|rectangular
+heaviside|a * (x >= b)|heaviside
+step|a * (x >= b) + c|step
+damped_sine|a * np.exp(-b * x) * np.sin(c * x + d)|damped_sine
+fourier_series|a0 + a1 * np.cos(omega * x) + b1 * np.sin(omega * x)|fourier_series
+logistic_growth|L / (1 + np.exp(-k * (x - x0)))|logistic_growth
+weibull|(a / b) * (x / b)**(a - 1) * np.exp(-(x / b)**a)|weibull
+gamma|(x**(a - 1) * np.exp(-x / b)) / (b**a * gamma(a))|gamma
+polynomial_4th|a*x**4 + b*x**3 + c*x**2 + d*x + e|polynomial_4th
+double_exponential|a * np.exp(-b * x) + c * np.exp(-d * x)|double_exponential
+softplus|a * np.log(1 + np.exp(b * x)) + c|softplus
+sine|a * np.sin(b * x) + c|sine
+cosine|a * np.cos(b * x) + c|cosine
+exp_decay|d * np.exp(-e * x)|exp_decay
+2d_contour|a * x ** 2 + b * y ** 2 + c * x * y + d * x + e * y + f|2d_contour
+exponential|a * np.exp(b * x) + c|exponential
+logarithmic|a * np.log(b * x) + c|logarithmic
+linear|a * x + b|linear
+quadratic|a * x**2 + b * x + c|quadratic
+cubic|a * x**3 + b * x**2 + c * x + d|cubic
+gaussian|a * np.exp(-((x - b)**2) / (2 * c**2))|gaussian
+lorentzian|a / (1 + ((x - b) / c)**2)|lorentzian
+power_law|a * x**b + c|power_law
+sigmoid|a / (1 + np.exp(-b * (x - c)))|sigmoid
+hyperbolic_tangent|a * np.tanh(b * x) + c|hyperbolic_tangent
+rectangular|a * (np.abs(x) <= b)|rectangular
+heaviside|a * (x >= b)|heaviside
+step|a * (x >= b) + c|step
+damped_sine|a * np.exp(-b * x) * np.sin(c * x + d)|damped_sine
+fourier_series|a0 + a1 * np.cos(omega * x) + b1 * np.sin(omega * x)|fourier_series
+logistic_growth|L / (1 + np.exp(-k * (x - x0)))|logistic_growth
+weibull|(a / b) * (x / b)**(a - 1) * np.exp(-(x / b)**a)|weibull
+gamma|(x**(a - 1) * np.exp(-x / b)) / (b**a * gamma(a))|gamma
+polynomial_4th|a*x**4 + b*x**3 + c*x**2 + d*x + e|polynomial_4th
+double_exponential|a * np.exp(-b * x) + c * np.exp(-d * x)|double_exponential
+softplus|a * np.log(1 + np.exp(b * x)) + c|softplus
+sine|a * np.sin(b * x) + c|sine
+cosine|a * np.cos(b * x) + c|cosine
+exp_decay|d * np.exp(-e * x)|exp_decay
+2d_contour|a * x ** 2 + b * y ** 2 + c * x * y + d * x + e * y + f|2d_contour
+exponential|a * np.exp(b * x) + c|exponential
+logarithmic|a * np.log(b * x) + c|logarithmic
+linear|a * x + b|linear
+quadratic|a * x**2 + b * x + c|quadratic
+cubic|a * x**3 + b * x**2 + c * x + d|cubic
+gaussian|a * np.exp(-((x - b)**2) / (2 * c**2))|gaussian
+lorentzian|a / (1 + ((x - b) / c)**2)|lorentzian
+power_law|a * x**b + c|power_law
+sigmoid|a / (1 + np.exp(-b * (x - c)))|sigmoid
+hyperbolic_tangent|a * np.tanh(b * x) + c|hyperbolic_tangent
+rectangular|a * (np.abs(x) <= b)|rectangular
+heaviside|a * (x >= b)|heaviside
+step|a * (x >= b) + c|step
+damped_sine|a * np.exp(-b * x) * np.sin(c * x + d)|damped_sine
+fourier_series|a0 + a1 * np.cos(omega * x) + b1 * np.sin(omega * x)|fourier_series
+logistic_growth|L / (1 + np.exp(-k * (x - x0)))|logistic_growth
+weibull|(a / b) * (x / b)**(a - 1) * np.exp(-(x / b)**a)|weibull
+gamma|(x**(a - 1) * np.exp(-x / b)) / (b**a * gamma(a))|gamma
+polynomial_4th|a*x**4 + b*x**3 + c*x**2 + d*x + e|polynomial_4th
+double_exponential|a * np.exp(-b * x) + c * np.exp(-d * x)|double_exponential
+softplus|a * np.log(1 + np.exp(b * x)) + c|softplus
+sine|a * np.sin(b * x) + c|sine
+cosine|a * np.cos(b * x) + c|cosine
+exp_decay|d * np.exp(-e * x)|exp_decay
+2d_contour|a * x ** 2 + b * y ** 2 + c * x * y + d * x + e * y + f|2d_contour
+exponential|a * np.exp(b * x) + c|exponential
+logarithmic|a * np.log(b * x) + c|logarithmic
+linear|a * x + b|linear
+quadratic|a * x**2 + b * x + c|quadratic
+cubic|a * x**3 + b * x**2 + c * x + d|cubic
+gaussian|a * np.exp(-((x - b)**2) / (2 * c**2))|gaussian
+lorentzian|a / (1 + ((x - b) / c)**2)|lorentzian
+power_law|a * x**b + c|power_law
+sigmoid|a / (1 + np.exp(-b * (x - c)))|sigmoid
+hyperbolic_tangent|a * np.tanh(b * x) + c|hyperbolic_tangent
+rectangular|a * (np.abs(x) <= b)|rectangular
+heaviside|a * (x >= b)|heaviside
+step|a * (x >= b) + c|step
+damped_sine|a * np.exp(-b * x) * np.sin(c * x + d)|damped_sine
+fourier_series|a0 + a1 * np.cos(omega * x) + b1 * np.sin(omega * x)|fourier_series
+logistic_growth|L / (1 + np.exp(-k * (x - x0)))|logistic_growth
+weibull|(a / b) * (x / b)**(a - 1) * np.exp(-(x / b)**a)|weibull
+gamma|(x**(a - 1) * np.exp(-x / b)) / (b**a * gamma(a))|gamma
+polynomial_4th|a*x**4 + b*x**3 + c*x**2 + d*x + e|polynomial_4th
+double_exponential|a * np.exp(-b * x) + c * np.exp(-d * x)|double_exponential
+softplus|a * np.log(1 + np.exp(b * x)) + c|softplus
+sine|a * np.sin(b * x) + c|sine
+cosine|a * np.cos(b * x) + c|cosine
+exp_decay|d * np.exp(-e * x)|exp_decay
+2d_contour|a * x ** 2 + b * y ** 2 + c * x * y + d * x + e * y + f|2d_contour
+exponential|a * np.exp(b * x) + c|exponential
+logarithmic|a * np.log(b * x) + c|logarithmic
+linear|a * x + b|linear
+quadratic|a * x**2 + b * x + c|quadratic
+cubic|a * x**3 + b * x**2 + c * x + d|cubic
+gaussian|a * np.exp(-((x - b)**2) / (2 * c**2))|gaussian
+lorentzian|a / (1 + ((x - b) / c)**2)|lorentzian
+power_law|a * x**b + c|power_law
+sigmoid|a / (1 + np.exp(-b * (x - c)))|sigmoid
+hyperbolic_tangent|a * np.tanh(b * x) + c|hyperbolic_tangent
+rectangular|a * (np.abs(x) <= b)|rectangular
+heaviside|a * (x >= b)|heaviside
+step|a * (x >= b) + c|step
+damped_sine|a * np.exp(-b * x) * np.sin(c * x + d)|damped_sine
+fourier_series|a0 + a1 * np.cos(omega * x) + b1 * np.sin(omega * x)|fourier_series
+logistic_growth|L / (1 + np.exp(-k * (x - x0)))|logistic_growth
+weibull|(a / b) * (x / b)**(a - 1) * np.exp(-(x / b)**a)|weibull
+gamma|(x**(a - 1) * np.exp(-x / b)) / (b**a * gamma(a))|gamma
+polynomial_4th|a*x**4 + b*x**3 + c*x**2 + d*x + e|polynomial_4th
+double_exponential|a * np.exp(-b * x) + c * np.exp(-d * x)|double_exponential
+softplus|a * np.log(1 + np.exp(b * x)) + c|softplus
+sine|a * np.sin(b * x) + c|sine
+cosine|a * np.cos(b * x) + c|cosine
+exp_decay|d * np.exp(-e * x)|exp_decay
+2d_contour|a * x ** 2 + b * y ** 2 + c * x * y + d * x + e * y + f|2d_contour
+exponential|a * np.exp(b * x) + c|exponential
+logarithmic|a * np.log(b * x) + c|logarithmic
+linear|a * x + b|linear
+quadratic|a * x**2 + b * x + c|quadratic
+cubic|a * x**3 + b * x**2 + c * x + d|cubic
+gaussian|a * np.exp(-((x - b)**2) / (2 * c**2))|gaussian
+lorentzian|a / (1 + ((x - b) / c)**2)|lorentzian
+power_law|a * x**b + c|power_law
+sigmoid|a / (1 + np.exp(-b * (x - c)))|sigmoid
+hyperbolic_tangent|a * np.tanh(b * x) + c|hyperbolic_tangent
+rectangular|a * (np.abs(x) <= b)|rectangular
+heaviside|a * (x >= b)|heaviside
+step|a * (x >= b) + c|step
+damped_sine|a * np.exp(-b * x) * np.sin(c * x + d)|damped_sine
+fourier_series|a0 + a1 * np.cos(omega * x) + b1 * np.sin(omega * x)|fourier_series
+logistic_growth|L / (1 + np.exp(-k * (x - x0)))|logistic_growth
+weibull|(a / b) * (x / b)**(a - 1) * np.exp(-(x / b)**a)|weibull
+gamma|(x**(a - 1) * np.exp(-x / b)) / (b**a * gamma(a))|gamma
+polynomial_4th|a*x**4 + b*x**3 + c*x**2 + d*x + e|polynomial_4th
+double_exponential|a * np.exp(-b * x) + c * np.exp(-d * x)|double_exponential
+softplus|a * np.log(1 + np.exp(b * x)) + c|softplus
+sine|a * np.sin(b * x) + c|sine
+cosine|a * np.cos(b * x) + c|cosine
+exp_decay|d * np.exp(-e * x)|exp_decay
+2d_contour|a * x ** 2 + b * y ** 2 + c * x * y + d * x + e * y + f|2d_contour
+exponential|a * np.exp(b * x) + c|exponential
+logarithmic|a * np.log(b * x) + c|logarithmic
+linear|a * x + b|linear
+quadratic|a * x**2 + b * x + c|quadratic
+cubic|a * x**3 + b * x**2 + c * x + d|cubic
+gaussian|a * np.exp(-((x - b)**2) / (2 * c**2))|gaussian
+lorentzian|a / (1 + ((x - b) / c)**2)|lorentzian
+power_law|a * x**b + c|power_law
+sigmoid|a / (1 + np.exp(-b * (x - c)))|sigmoid
+hyperbolic_tangent|a * np.tanh(b * x) + c|hyperbolic_tangent
+rectangular|a * (np.abs(x) <= b)|rectangular
+heaviside|a * (x >= b)|heaviside
+step|a * (x >= b) + c|step
+damped_sine|a * np.exp(-b * x) * np.sin(c * x + d)|damped_sine
+fourier_series|a0 + a1 * np.cos(omega * x) + b1 * np.sin(omega * x)|fourier_series
+logistic_growth|L / (1 + np.exp(-k * (x - x0)))|logistic_growth
+weibull|(a / b) * (x / b)**(a - 1) * np.exp(-(x / b)**a)|weibull
+gamma|(x**(a - 1) * np.exp(-x / b)) / (b**a * gamma(a))|gamma
+polynomial_4th|a*x**4 + b*x**3 + c*x**2 + d*x + e|polynomial_4th
+double_exponential|a * np.exp(-b * x) + c * np.exp(-d * x)|double_exponential
+softplus|a * np.log(1 + np.exp(b * x)) + c|softplus

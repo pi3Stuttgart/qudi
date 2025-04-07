@@ -132,6 +132,9 @@ def initialize_connections_and_defaultvalues(self):
         self._mw.pulsed_MW3_CheckBox.stateChanged.connect(self._odmr_logic.pulsedODMRLogic.pulsed_MW3_CheckBox_StateChanged)
         self._mw.pulsed_MW4_CheckBox.stateChanged.connect(self._odmr_logic.pulsedODMRLogic.pulsed_MW4_CheckBox_StateChanged)
         self._mw.pulsed_MW5_CheckBox.stateChanged.connect(self._odmr_logic.pulsedODMRLogic.pulsed_MW5_CheckBox_StateChanged)
+        
+        self._mw.pulsed_Toggle_unit_CheckBox.stateChanged.connect(self._odmr_logic.pulsedODMRLogic.pulsed_Toggle_units_CheckBox_StateChanged)
+        self._mw.pulsed_Toggle_unit_CheckBox.stateChanged.connect(self.pulsed_Toggle_units_CheckBox_StateChanged)
         self._mw.pulsed_MW2_Power_LineEdit.textEdited.connect(self._odmr_logic.pulsedODMRLogic.pulsed_MW2_Power_LineEdit_textEdited)
         self._mw.pulsed_MW3_Power_LineEdit.textEdited.connect(self._odmr_logic.pulsedODMRLogic.pulsed_MW3_Power_LineEdit_textEdited)
         self._mw.pulsed_MW4_Power_LineEdit.textEdited.connect(self._odmr_logic.pulsedODMRLogic.pulsed_MW4_Power_LineEdit_textEdited)
@@ -265,6 +268,7 @@ def disconnect_all(self):
         self._mw.pulsed_CallerTag_LineEdit.textEdited.disconnect()
         self._mw.pulsed_SelectGaussianFit_RadioButton.clicked.disconnect()
         self._mw.pulsed_SelectLorentzianFit_RadioButton.clicked.disconnect()
+        self._mw.pulsed_Toggle_unit_CheckBox.stateChanged.disconnect()
         
         self._mw.pulsed_MW4_Power_LineEdit.textEdited.disconnect()
         self._mw.pulsed_MW4_CheckBox.stateChanged.disconnect()

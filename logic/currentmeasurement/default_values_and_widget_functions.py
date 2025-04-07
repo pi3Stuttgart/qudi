@@ -5,8 +5,27 @@ import threading
 
 class currentmeasurement_default():
         Data_Points:float = 500
-        applied_voltage:float = 0
-        safe_limits:int = 1
+        _applied_voltage:float = 0
+        safe_limits:int = 1 #True of 1 if we use safe limits
+        nidaq_voltage=0
+
+        @property
+        def applied_voltage(self):
+                return self._applied_voltage
+
+        @applied_voltage.setter
+        def applied_voltage(self,value):
+                if self.safe_limits:
+                        if (value < self.Safe_Limits[0]) | (value > self.Safe_Limits[1]):
+                                print(f"Given value exceded safe limits, turn off safe limits to allow to get to {value} V")
+                                return
+                        
+                self._applied_voltage=value
+                return
+
+        @applied_voltage.deleter
+        def applied_voltage(self):
+                del self._applied_voltage
 
         @QtCore.pyqtSlot(str)
         def Data_Points_LineEdit_textEdited(self,text):
@@ -20,7 +39,7 @@ class currentmeasurement_default():
         def applied_voltage_doubleSpinBox_Edited(self,value):
                 #print('done something with applied_voltage_doubleSpinBox. Value=',value)
                 if self.safe_limits:
-                        if (value <= self.Safe_Limits[0]) | (value >= self.Safe_Limits[1]):
+                        if (value < self.Safe_Limits[0]) | (value > self.Safe_Limits[1]):
                                 print(f"Given value exceded safe limits, turn off safe limits to allow to get to {value} V")
                                 return
                         
@@ -51,7 +70,7 @@ class currentmeasurement_default():
         def scan_stop_V_doubleSpinBox_Edited(self,value):
                 #print('done something with scan_stop_V_doubleSpinBox. Value=',value)
                 if self.safe_limits:
-                        if (value <= self.Safe_Limits[0]) | (value >= self.Safe_Limits[1]):
+                        if (value < self.Safe_Limits[0]) | (value > self.Safe_Limits[1]):
                                 print(f"Given value exceded safe limits, turn off safe limits to allow to get to {value} V")
                                 return
 
@@ -66,7 +85,7 @@ class currentmeasurement_default():
         def scan_start_V_doubleSpinBox_Edited(self,value):
                 #print('done something with scan_start_V_doubleSpinBox. Value=',value)
                 if self.safe_limits:
-                        if (value <= self.Safe_Limits[0]) | (value >= self.Safe_Limits[1]):
+                        if (value < self.Safe_Limits[0]) | (value > self.Safe_Limits[1]):
                                 print(f"Given value exceded safe limits, turn off safe limits to allow to get to {value} V")
                                 return
                 self.scan_start_V=value
@@ -81,7 +100,7 @@ class currentmeasurement_default():
         def step_doubleSpinBox_Edited(self,value):
                 #print('done something with step_doubleSpinBox. Value=',value)
                 if self.safe_limits:
-                        if (value <= self.Safe_Limits[0]) | (value >= self.Safe_Limits[1]):
+                        if (value < self.Safe_Limits[0]) | (value > self.Safe_Limits[1]):
                                 print(f"Given value exceded safe limits, turn off safe limits to allow to get to {value} V")
                                 return
                 self.step=value
@@ -108,8 +127,8 @@ class currentmeasurement_default():
                 #print('done something with safe_limits_checkBox')
                 self.safe_limits=on==2
                 if self.safe_limits:
-                        if (self.applied_voltage <= self.Safe_Limits[0]):
+                        if (self.applied_voltage < self.Safe_Limits[0]):
                                 self.applied_voltage_doubleSpinBox_Edited(self.Safe_Limits[0])
                                 
-                        elif (self.applied_voltage >= self.Safe_Limits[1]):
+                        elif (self.applied_voltage > self.Safe_Limits[1]):
                                 self.applied_voltage_doubleSpinBox_Edited(self.Safe_Limits[1])

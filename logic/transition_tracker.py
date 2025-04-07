@@ -216,6 +216,15 @@ def plot_single_values(filename, start_date_str, end_date_str=None, grating='m')
 #     with open(pypath, 'w') as f:
 #         compileUi(uipath, f)
 #     reload(transition_tracker_gui)
+class Wrapper():# this is there because our rabi is slightly offseted by a phase
+    def __init__(self,rp):
+        self.pi=rp.pi-rp.phi/(2*np.pi*rp.period*2) #pi in µs -> f in MHz
+        self.pi2=rp.pi2-rp.phi/(2*np.pi*rp.period*2)
+        self.amp=rp.amp
+        self.omega=rp.omega
+        self.period=rp.period
+        self.phi=rp.phi
+        self.rp=rp
 
 class RabiParametersStatic:
     def __init__(self, filepath, transition_name=None):
@@ -284,18 +293,31 @@ class RabiParametersStatic:
             os.mkdir(fil)
         shutil.copy(self.filepath, r'C:\src\qudi\log\transition_tracker_log\rabi_parameters_archive\{}\{}-{}_{}.dat'.format(filename, date, nowstr(), filename))
 
-    def file_header(self, tnf):
-        return ["amp{}".format(i) for i in range(tnf)] + ['transition', 'omega', 'date']
+    def file_header(self, tnf,add_phi=False):
+        if add_phi:
+            return ["amp{}".format(i) for i in range(tnf)] + ['transition', 'omega',"phi", 'date']
+        else:
+            return ["amp{}".format(i) for i in range(tnf)] + ['transition', 'omega', 'date']
 
     def data_dataframe(self, fp=None):
         fp = self.filepath if fp is None else fp
         fd = self.read_file_data(fp=fp)
         self.tnf = len([i for i in list(fd[0]) if 'amp' in i])
-        ecn = self.file_header(self.tnf)
+        ecn = self.file_header(self.tnf,add_phi=True)
         cn = list(fd[0])
         if cn != ecn:
-            raise Exception('File column names not allowed. expected {}, found{}'.format(ecn, cn))
-        return pd.DataFrame(data=fd[1:, :], columns=fd[0, :])
+            ecn = self.file_header(self.tnf,add_phi=False)
+            if cn != ecn:
+                raise Exception('File column names not allowed. expected {}, found{}'.format(ecn, cn))
+            
+        df=pd.DataFrame(data=fd[1:, :], columns=fd[0, :])
+        if "phi" in df.columns:
+            print("new phi")
+            self.phi=np.mean(float(df.phi.unique())) #I know this is a terrible way to solve the problem of getting access to phi in the rabi parameter file. If you know a better way, do it! (and tell me)
+        else:
+            self.phi=0
+        print("DF_______________",df)
+        return df
 
     def set_data_array(self):
         out = self.data_dataframe().values
@@ -474,6 +496,10 @@ class RabiParametersSingle(object):
             kwargs[key] = val
         amp = getattr(self.rp, 'amplitude')(tni=tni, **kwargs)
         omega = getattr(self.rp, 'omega')(tni=tni, **kwargs)
+        try:
+            self.phi=self.rp.phi
+        except Exception as e:
+            print("Not Working!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",e)
         if zero_d_input:
             amp = amp[0]
             omega = omega[0]
@@ -549,6 +575,38 @@ class Transition:
 
 
 # gui QMainWindow, transition_tracker_gui.Ui_window
+
+class Register():
+    def __init__(self):
+        #super().__init__()
+        #self.df = df
+        reg = {'name': ['C1', 'Si1'],'azz': ['20', '4820']}
+        self.df = pd.DataFrame(pd.DataFrame.from_dict(reg))  # Empty initial DataFrame
+    
+
+    def get_nuc(self, name, state):
+        """ Return all data of a single nuclear spin in a certain electron state."""
+        return self.df[(self.df["name"] == name) & (self.df["state"] == state)]
+    
+    def get_freqs_in_subspace(self, state):
+        """ Return absolute freqs of all nuclei of a certain electron state"""
+        return self.df.loc[self.df.state == state].trans_freq.unique()
+    
+    def val(self, key, name, state = None):
+        """ Return arbitrary entry."""
+        if key in ['name' 'atom' 'azz' 'azx']:
+            return self.df[(self.df["name"] == name)][key].iloc[0]
+        try:
+            return self.df[(self.df["name"] == name) & (self.df["state"] == state)][key].iloc[0]
+        except:
+            print("For this state no match was found in the register.")
+
+    def reload_register(self, folder = r"C:\src\qudi\log\transition_tracker_log"):
+        self.df = pd.read_hdf(folder + r'\register.hdf', 'df')
+        
+    def keys(self):
+        return self.df.columns.values
+    
 class TransitionTracker(GenericLogic):
     c13_list = []#'13c5']#['13c414', '13c90', '13c13', '13c6', '13c-5', '13c-6']
     si29_list = [] ######          THIS MUST BE LOWERCASE !!!!!!!!!!!!!!!!!!!!!!!!
@@ -567,6 +625,7 @@ class TransitionTracker(GenericLogic):
     update_tt_electron_gui = pyqtSignal() #is it connected?
     Spin_Names_List=['14N', '13C414', '13C90','29Si8', '13C5','29Si8.00',"29Si2.2","29Si8.74"]
 
+    register = Register()
     def __init__(self,config, **kwargs):
         super().__init__(config=config, **kwargs)
 
@@ -604,7 +663,6 @@ class TransitionTracker(GenericLogic):
         if not self._awg.mcas_dict.debug_mode:
             self.load_rabi_parameters()
         self.update_stuff()
-        pass
         #self._transition_tracker_gui = self.transition_tracker_gui()
     
     def on_deactivate(self):
@@ -624,6 +682,7 @@ class TransitionTracker(GenericLogic):
 
 
     def create_spins(self,spin_names,P_Couplings,O_Couplings):
+
         spins=[]
         for spin_name in spin_names:
             if "_" in spin_name:
@@ -647,7 +706,7 @@ class TransitionTracker(GenericLogic):
 
             #create the nuclear rabi files, they are just copies of one example, in order to not get an error on startup of qudi, so no real data
             for i in np.arange(-1.5,2.5,1):
-                original=f"29si8.74 ms{i}_rabi.dat"
+                original=f"13c5 ms{i}_rabi.dat"
                 copy=f"{spin_name} ms{i}_rabi.dat"
                 if "ms-" not in original:
                     original=original.replace("ms","ms+")
@@ -656,9 +715,9 @@ class TransitionTracker(GenericLogic):
                 shutil.copy(os.path.join(folder,original),os.path.join(folder,copy))
         
         script_folder=r"C:\src\qudi\notebooks\UserScripts"
-        shutil.copytree(os.path.join(script_folder,"8MHz"),os.path.join(script_folder,f"{str(spin_names).replace('.',',')}"[2:-2]))
+        shutil.copytree(os.path.join(script_folder,"13C5MHz"),os.path.join(script_folder,f"{str(spin_names).replace('.',',')}"[2:-2]))
 
-        print("you need to retart qudi for the transition tracker to update")
+        print("you need to restart qudi for the transition tracker to update")
 
     def do_nothing(self,*args,**kwargs):
         print("done nothing\n", "args are:\n",args)
@@ -772,11 +831,11 @@ class TransitionTracker(GenericLogic):
         np.savetxt(hf_o_file,[txt_o],fmt="%s",delimiter="\n")
         np.savetxt(hf_p_file,[txt_p],fmt="%s",delimiter="\n")
 
-        print("before")
-        print(Transitions)
-        print("after")
-        print(trans_list)
-        print(transitions(None,None,trans_list=trans_list))
+        #print("before")
+        #print(Transitions)
+        #print("after")
+        #print(trans_list)
+        #print(transitions(None,None,trans_list=trans_list))
 
     def update_rabi(self,pi_dur):
         # pi_dur is already a float
@@ -958,8 +1017,8 @@ class TransitionTracker(GenericLogic):
 
     @mw_mixing_frequency_L.setter
     def mw_mixing_frequency_L(self, val):
-        print("TT:")
-        print(val)
+        #print("TT:")
+        #print(val)
         self._mw_mixing_frequency_L = misc.check_type(val, '_mw_mixing_frequency_L', Number)
         if getattr(self, '_mw_mixing_frequency_L', 0.0) != 0.0:
             save_value_to_file(self.mw_mixing_frequency_L, 'mw_mixing_frequency_L')
@@ -989,8 +1048,8 @@ class TransitionTracker(GenericLogic):
 
     @mw_mixing_frequency_C.setter
     def mw_mixing_frequency_C(self, val):
-        print("TT:")
-        print(val)
+        #print("TT:")
+        #print(val)
         self._mw_mixing_frequency_C = misc.check_type(val, '_mw_mixing_frequency_C', Number)
         if getattr(self, '_mw_mixing_frequency_L', 0.0) != 0.0:
             save_value_to_file(self.mw_mixing_frequency_C, 'mw_mixing_frequency_C')
@@ -1002,12 +1061,12 @@ class TransitionTracker(GenericLogic):
         if getattr(self, '_mw_mixing_frequency_R', 0.0) != 0.0:
             save_value_to_file(self.mw_mixing_frequency_R, 'mw_mixing_frequency_R')
         self.update_stuff()
-        print('Field vector', self.current_magnetic_field_vector)
+        #print('Field vector', self.current_magnetic_field_vector)
         angle = np.arctan(
             self.current_magnetic_field_vector[1]/self.current_magnetic_field_vector[0]) * 57.3248 # radian to degrees
 
-        print('Field angle in degrees:',
-              angle)
+        #print('Field angle in degrees:',
+        #      angle)
 
 
     @property
@@ -1360,10 +1419,10 @@ class TransitionTracker(GenericLogic):
                           '\nBy default left transition will be used')
         if '_left' in name:
             tni = [0]
-            name = name.replace('_left', '')
+            name = name.replace('_left', 'L')
         elif '_right' in name:
             tni = [1]
-            name = name.replace('_right', '')
+            name = name.replace('_right', 'R')
         else:
             tni = None
         if 'e_rabi' in name and not '_ou' in name:
@@ -1381,6 +1440,11 @@ class TransitionTracker(GenericLogic):
                 kwargs['mixer_deg'])]
         else:
             return self.get_rabi_parameter(name, **kwargs)
+        
+    def RP(self,name,**kwargs):
+        rp=self.rp(name,**kwargs)
+        wrapped=Wrapper(rp)
+        return wrapped
 
     @property
     def current_magnetic_field(self): #z field
@@ -1389,7 +1453,6 @@ class TransitionTracker(GenericLogic):
     @property
     def current_magnetic_field_vector(self):  # z and x field
         sx, sy, sz = jmat(1.5)
-        print('B field calculator')
         f1 = self.mw_mixing_frequency_L #MHz
         f3 = self.mw_mixing_frequency_C
         f2 = self.mw_mixing_frequency_R
@@ -1409,7 +1472,7 @@ class TransitionTracker(GenericLogic):
             bx = params[1]
             return (odmr(bz, bx)[0] - f1) ** 2 + (odmr(bz, bx)[1] - f2) ** 2 + (odmr(bz, bx)[2] - f3) ** 2 
 
-        return minimize(fun =func,x0 = np.array([0.13,0.])).x
+        return minimize(fun =func,x0 = np.array([0.2,0.])).x
 
 
 

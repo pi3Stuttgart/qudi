@@ -1550,6 +1550,13 @@
             </property>
            </widget>
           </item>
+          <item row="0" column="4">
+           <widget class="QCheckBox" name="pulsed_Toggle_unit_CheckBox">
+            <property name="text">
+             <string>Toggle unit(dBm/Amp)</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </item>
        </layout>
@@ -2533,7 +2540,7 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="cwSelectFitRadioButtonGroup"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="cwSelectFitRadioButtonGroup"/>
  </buttongroups>
 </ui>

@@ -32,7 +32,7 @@ from PyQt5 import QtWidgets
 from PyQt5 import uic
 
 from gui.currentmeasurement.connectors_and_setdefault import current_measurement_default_gui as current_measurement_default_gui
-
+from logic.currentmeasurement.current_measurement import CurrentMeasurementLogic
 
 class PowerControlMainWindow(QtWidgets.QMainWindow):
 
@@ -59,7 +59,7 @@ class CurrentMeasurementGui(GUIBase, current_measurement_default_gui):
 
 
     # declare connectors
-    biaslogic = Connector(interface='CurrentMeasurementLogic')
+    currentmeasurementlogic = Connector(interface='CurrentMeasurementLogic')
     
 
 
@@ -75,7 +75,7 @@ class CurrentMeasurementGui(GUIBase, current_measurement_default_gui):
         # Use the inherited class 'CounterMainWindow' to create the GUI window
         
         self._mw = PowerControlMainWindow()
-        self._current_measurement = self.biaslogic()
+        self._current_measurement:CurrentMeasurementLogic = self.currentmeasurementlogic()
         self._current_measurement.SigUpdatePlots.connect(self.update_plots,type=QtCore.Qt.QueuedConnection)
         self._current_measurement.SigStabilized.connect(self.set_stabilization_to_off,type=QtCore.Qt.QueuedConnection)
         self._current_measurement.SigUpdateVoltageLabels.connect(self.update_labels,type=QtCore.Qt.QueuedConnection)

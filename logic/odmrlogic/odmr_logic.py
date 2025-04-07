@@ -225,7 +225,7 @@ class ODMRLogic_holder(GenericLogic):
         data_raw['Frequency (MHz)'] = self.pulsedODMRLogic.mw1_freq
         data_detection['Detection Time (ns)'] = self.pulsedODMRLogic.indexes/1e3 #save data in [ns]
         data_detection['Detection Counts (counts)'] = self.pulsedODMRLogic.data_detect
-        data_matrix['Frequency (MHz) + Scanline'] = self.pulsedODMRLogic.scanmatrix
+        data_matrix['Frequency (MHz) + Scanline'] = self.pulsedODMRLogic.scanmatrix #full_
 
         parameters = OrderedDict()
         parameters['runtime (s)'] = self.pulsedODMRLogic.current_runtime
@@ -847,6 +847,7 @@ class ODMRLogic(cw_default):
             seq.asc(name="MW_readout"+str(frequencies)[:32],pd2g1 = {"type":"sine", "frequencies":frequencies, "amplitudes":self.power},
                 A1=self.cw_A1,
                 A2=self.cw_A2,
+                laser = True,
                 gateMW=True,
                 repump=self.cw_CWRepump,
                 green=enable_green,
@@ -860,6 +861,7 @@ class ODMRLogic(cw_default):
         seq.asc(name='tt_sync1', length_mus=E.round_length_mus_to_x_multiple_ps(0.064), 
                 A1=self.cw_A1,
                 A2=self.cw_A2,
+                laser = True,
                 gateMW=True,
                 repump=self.cw_CWRepump,
                 green=enable_green,
@@ -871,6 +873,7 @@ class ODMRLogic(cw_default):
         seq.asc(name="MW_readout"+str(frequencies)[:32],pd2g1 = {"type":"sine", "frequencies":frequencies, "amplitudes":self.power},
             A1=self.cw_A1,
             A2=self.cw_A2,
+            laser = True,
             gateMW=True,
             repump=self.cw_CWRepump,
             green=enable_green,
@@ -898,6 +901,7 @@ class pulsedODMRLogic(pulsed_default):
         self.time_differences = self.holder._time_tagger.time_differences()
         self.number_of_points_per_line=self.holder._time_tagger._time_diff["n_histograms"]
         self.scanmatrix=np.zeros((self.pulsed_NumberOfLines,self.number_of_points_per_line))
+        self.full_scanmatrix=[]
         self.data=0
         self.data_detect=0
         self.holder.SigCheckReady_Beacon.connect(self.data_readout, type=QtCore.Qt.QueuedConnection)
@@ -950,8 +954,10 @@ class pulsedODMRLogic(pulsed_default):
 
             self.scanmatrix[1:]=self.scanmatrix[0:-1]
             self.scanmatrix[0]=data
+            self.full_scanmatrix.append(data)
             self.data=self.data+data
             self.data_detect=self.data_detect+data_detect
+            
         
         self.holder.sigOdmrPlotsUpdated.emit()
             
@@ -963,6 +969,13 @@ class pulsedODMRLogic(pulsed_default):
         V_pp = V_rms * 2 * np.sqrt(2)
         return V_pp / self.holder._awg.mcas_dict.awgs['2g'].ch[1].output_amplitude
         
+    def amp_to_power(self, power_amp, impedance=50):
+        power_amp = np.atleast_1d(power_amp)
+        V_pp= power_amp* self.holder._awg.mcas_dict.awgs['2g'].ch[1].output_amplitude
+        V_rms=V_pp/(2 * np.sqrt(2))
+        P_watts=V_rms**2/impedance
+        power_dBm=np.log10(P_watts/1e-3)*10
+        return power_dBm
 
 
     def setup_seq(
@@ -1024,6 +1037,7 @@ class pulsedODMRLogic(pulsed_default):
             n_bins=int(self.pulsed_ReadoutTime*1e6/(self.pulsed_Binning*1000))
         )
 
+        #might not be usefull anymore
         self.power = []
         if self.pulsed_MW2:
             self.power += [self.pulsed_MW2_Power]
@@ -1031,9 +1045,19 @@ class pulsedODMRLogic(pulsed_default):
             self.power += [self.pulsed_MW3_Power]
         
         self.power = np.asarray(self.power)
-        self.power=self.power_to_amp(self.power)
-        if np.sum(self.power)>1:
-            logger.error("Combined Microwavepower of all active channels too high! Need value below 1. Value of {} was given.", np.sum(self.power))
+        if not self.pulsed_unit:
+            self.power=self.power_to_amp(self.power)
+        #until here
+
+        Powers={}
+        MWes=["MW1","MW2","MW3","MW4","MW5"]
+        _powers=[self.pulsed_MW1_Power,self.pulsed_MW2_Power,self.pulsed_MW3_Power,self.pulsed_MW4_Power,self.pulsed_MW5_Power]
+        if not self.pulsed_unit:
+            _powers=self.power_to_amp(_powers)
+        Powers.update(zip(MWes,_powers))
+
+        if np.sum(_powers[1:3])>1:
+            logger.error("Combined Microwavepower of all active channels too high! Need value below 1. Value of {} was given.", np.sum(_powers))
             raise Exception
         
         seq = self.holder._awg.mcas(name="pulsedODMR", ch_dict={"2g": [1,2],"ps": [1]})
@@ -1050,7 +1074,8 @@ class pulsedODMRLogic(pulsed_default):
         seq.asc(name='tt_sync2', length_mus=E.round_length_mus_to_x_multiple_ps(0.016, self.round_to), gate=True)
 
         freq_init = np.array([self.pulsed_MW2_Freq, self.pulsed_MW3_Freq])[[self.pulsed_MW2, self.pulsed_MW3]]
-        power_init = self.power_to_amp(np.array([self.pulsed_MW2_Power, self.pulsed_MW3_Power])[[self.pulsed_MW2, self.pulsed_MW3]])
+
+        power_init=np.array(_powers[1:3])[[self.pulsed_MW2, self.pulsed_MW3]]
         
         for freq in self.mw1_freq:
             if self.pulsed_PulsedRepump:
@@ -1072,6 +1097,7 @@ class pulsedODMRLogic(pulsed_default):
                         repump = self.pulsed_CWRepump,
                         A1=self.pulsed_A1,
                         A2=self.pulsed_A2,
+                        laser = True,
                         length_mus=E.round_length_mus_to_x_multiple_ps(self.pulsed_InitTime, self.round_to)
                         )  
                 seq.asc(name='Init_decay'+str(freq), length_mus=E.round_length_mus_to_x_multiple_ps(pulsed_DecayInit,self.round_to), A1=False, A2=False)
@@ -1081,6 +1107,7 @@ class pulsedODMRLogic(pulsed_default):
                         repump = self.pulsed_CWRepump,
                         A1=self.pulsed_A1,
                         A2=self.pulsed_A2,
+                        laser = True,
                         length_mus=E.round_length_mus_to_x_multiple_ps(self.pulsed_InitTime, self.round_to)
                         )  
                 seq.asc(name='Init_decay'+str(freq), length_mus=E.round_length_mus_to_x_multiple_ps(pulsed_DecayInit,self.round_to), A1=False, A2=False)
@@ -1092,6 +1119,7 @@ class pulsedODMRLogic(pulsed_default):
                         repump = self.pulsed_CWRepump,
                         A1=self.pulsed_A1,
                         A2=self.pulsed_A2,
+                        laser = True,
                         length_mus=E.round_length_mus_to_x_multiple_ps(self.pulsed_InitTime, self.round_to)
                         )  
                 seq.asc(name='Init_decay'+str(freq), length_mus=E.round_length_mus_to_x_multiple_ps(pulsed_DecayInit, self.round_to), A1=False, A2=False)
@@ -1100,6 +1128,7 @@ class pulsedODMRLogic(pulsed_default):
                         repump = self.pulsed_CWRepump,
                         A1=self.pulsed_A1,
                         A2=self.pulsed_A2,
+                        laser = True,
                         length_mus=E.round_length_mus_to_x_multiple_ps(self.pulsed_InitTime, self.round_to)
                         )  
                 seq.asc(name='Init_decay'+str(freq), length_mus=E.round_length_mus_to_x_multiple_ps(pulsed_DecayInit, self.round_to), A1=False, A2=False)
@@ -1107,20 +1136,22 @@ class pulsedODMRLogic(pulsed_default):
                 logger.warning("No Laser assigned for Init Sequence.")
             seq.start_new_segment("Pi_pulse")
             seq.asc(name='gateMW', length_mus=E.round_length_mus_to_x_multiple_ps(gateMW_dur,self.round_to), gateMW=True)
-            seq.asc(name="Pi_pulse"+str(freq),pd2g1 = {"type":"sine", "frequencies":[freq], "amplitudes":self.power_to_amp(self.pulsed_MW1_Power)},gateMW = True,
+
+
+            seq.asc(name="Pi_pulse"+str(freq),pd2g1 = {"type":"sine", "frequencies":[freq], "amplitudes":[Powers["MW1"]]},gateMW = True,
                 length_mus = E.round_length_mus_to_x_multiple_ps(self.pulsed_piPulseDuration/1000, self.round_to), #self.pulsed_piPulseDuration is divided by 1000 to be in µs
                 )
             
             if self.pulsed_MW4 or self.pulsed_MW5:
                 freqs=np.asarray([self.pulsed_MW4_Freq,self.pulsed_MW5_Freq])[[self.pulsed_MW4 , self.pulsed_MW5]]
-                powers=self.power_to_amp([self.pulsed_MW4_Power,self.pulsed_MW5_Power])[[self.pulsed_MW4 , self.pulsed_MW5]]
+                powers=np.array(_powers[3:])[[self.pulsed_MW4 , self.pulsed_MW5]]
 
                 seq.asc(name="flip",pd2g1 = {"type":"sine", "frequencies":freqs, "amplitudes":powers}, gateMW=True,
                         length_mus=E.round_length_mus_to_x_multiple_ps(min(self.pulsed_MW4_piPulseDuration,self.pulsed_MW5_piPulseDuration)/1000, self.round_to)
                         )
                 if self.pulsed_MW4_piPulseDuration!=self.pulsed_MW5_piPulseDuration:
                     freqs=np.asarray([self.pulsed_MW4_Freq,self.pulsed_MW5_Freq])[[self.pulsed_MW4 and self.pulsed_MW4_piPulseDuration>self.pulsed_MW5_piPulseDuration, self.pulsed_MW5 and self.pulsed_MW4_piPulseDuration<self.pulsed_MW5_piPulseDuration]]
-                    powers=self.power_to_amp([self.pulsed_MW4_Power,self.pulsed_MW5_Power])[[self.pulsed_MW4 and self.pulsed_MW4_piPulseDuration>self.pulsed_MW5_piPulseDuration, self.pulsed_MW5 and self.pulsed_MW4_piPulseDuration<self.pulsed_MW5_piPulseDuration]]
+                    powers=powers=np.array(_powers[3:])[[self.pulsed_MW4 and self.pulsed_MW4_piPulseDuration>self.pulsed_MW5_piPulseDuration, self.pulsed_MW5 and self.pulsed_MW4_piPulseDuration<self.pulsed_MW5_piPulseDuration]]
 
                     seq.asc(name="flip",pd2g1 = {"type":"sine", "frequencies":freqs,"amplitudes":powers}, gateMW=True,
                             length_mus=E.round_length_mus_to_x_multiple_ps(abs(self.pulsed_MW4_piPulseDuration-self.pulsed_MW5_piPulseDuration)/1000, self.round_to)
@@ -1129,7 +1160,7 @@ class pulsedODMRLogic(pulsed_default):
             seq.asc(name='pi_pulse_decay'+str(freq), length_mus=E.round_length_mus_to_x_multiple_ps(self.pulsed_PiDecay/1000, self.round_to), A1=False, A2=False) #self.pulsed_PiDecay is divided by 1000 to be in µs
 
             seq.start_new_segment("Readout")
-            seq.asc(name='readout'+str(freq), length_mus=E.round_length_mus_to_x_multiple_ps(self.pulsed_ReadoutTime, self.round_to), A1=self.pulsed_A1Readout, A2=self.pulsed_A2Readout, repump = self.pulsed_CWRepump, gate=True)
+            seq.asc(name='readout'+str(freq), length_mus=E.round_length_mus_to_x_multiple_ps(self.pulsed_ReadoutTime, self.round_to), A1=self.pulsed_A1Readout, A2=self.pulsed_A2Readout, repump = self.pulsed_CWRepump, gate=True,laser = True)
             seq.asc(name='readout_decay'+str(freq), length_mus=E.round_length_mus_to_x_multiple_ps(self.pulsed_ReadoutDecay, self.round_to), A1=False, A2=False, gate=True)
             seq.asc(name='gate decay', length_mus=E.round_length_mus_to_x_multiple_ps(0.016))
 

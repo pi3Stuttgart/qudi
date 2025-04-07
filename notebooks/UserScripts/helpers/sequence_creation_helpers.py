@@ -16,6 +16,7 @@ import collections
 from logic.qudip_enhanced import data_handling
 import datetime
 from importlib import reload as reload
+from scipy import special
 
 # def full_wavelength(flf, target_length_mus):
 #     """
@@ -47,6 +48,79 @@ from importlib import reload as reload
     #     raise Exception("The chosen 'target_length_mus' is too short or the given frequencies are too odd or too many decimal places have been given. \nSuggested procedure is either reducing num_digits or enlengthening 'num_digits'.")
     # length_mus = round(target_length_mus/min_lm)*min_lm
     # return length_mus
+
+    
+def envelope(t0, t_space, pulse_dur, rise_time = .256):
+    # hermite envelope after Bradley et al.
+    a = 0.5*special.erf(2*(rise_time-t_space+t0)/rise_time)
+    b = 0.5*special.erf(2*(rise_time+t_space-(pulse_dur+t0))/rise_time)
+    return 1-a-b-1
+    
+def sin_envelope(t0, t_space, pulse_dur, phase, rf_freq, rise_time = .256/4):
+    # sine signal under envelope
+    sin = np.sin(2*np.pi*rf_freq*t_space+phase)
+    return sin*envelope(t0, t_space, pulse_dur, rise_time)
+
+
+def check_shift(t0, t_space, pulse_dur, phase, rf_freq, rise_time = .001):
+    # t0: start of pulse
+    # t_space: sample list
+    # rise_time: rise time of error function for envelope. When no envelope is used, rectangular is approximated by rise time of 1ns.
+    # shifts beginning of rf pulse by maximum of rf-period/2 to minimize the area under the rf signal.
+    time_steps = t_space[1]-t_space[0]
+    area_up = np.abs(np.sum(sin_envelope(t0, t_space, pulse_dur, rf_freq, phase, rise_time)))
+    area_down = area_up
+    n_up = 0
+    n_down = 0
+    while time_steps * n_up < 1/rf_freq/2:
+        n_up+=1
+        next_area_up = np.abs(np.sum(sin_envelope(t0 + time_steps * n_up, t_space, pulse_dur, phase, rf_freq, rise_time)))
+        if next_area_up > area_up:
+            n_up -= 1
+            break
+        else:
+            area_up = next_area_up
+    while time_steps * n_down < 1/rf_freq/2:
+        n_down-=1
+        next_area_down = np.abs(np.sum(sin_envelope(t0 + time_steps * n_down, t_space, pulse_dur, phase, rf_freq, rise_time)))
+        if next_area_down > area_down:
+            n_down += 1
+            break
+        else:
+            area_down = next_area_down
+    if area_up < area_down:
+        n = n_up
+    elif area_up > area_down:
+        n = n_down
+    else:
+        n = 0
+    return time_steps * n
+
+
+def shift_pulse(seq, t_space, rf_freq):
+    # Shift RF Pulse to be aligned with start of period of sine wave.
+    total_time = 0
+    for key in seq.column_dict.keys():
+        total_time += np.sum(seq.times_fields_aphi(key), axis = 0)[0]
+    mw = seq.times_fields_aphi('mw')
+    rf = seq.times_fields_aphi('rf')
+    wait = seq.times_fields_aphi('wait')
+    shifts = []
+    current_time = 0
+    # loop over all sequence steps
+    # if step is an rf pulse, check by how much it needs to be shifted to be aligned with the rotating frame.
+    for step in seq.sequence_steps:
+        idx = int(step[1])-1
+        if step[0] == 'mw':
+            current_time += mw[idx, 0]
+        if step[0] == 'rf':
+            shifts.append(check_shift(current_time, t_space, rf[idx, 0], rf[idx, 2], rf_freq))
+            current_time += rf[idx, 0]
+        elif step[0] == 'wait':
+            current_time += wait[idx, 0]
+    #print(shifts)
+    return shifts
+
 
 def full_wavelength_improved(frequency_list, target_length_mus, num_digits=3, sampling_frequency=12):
     fl = copy.deepcopy(frequency_list)

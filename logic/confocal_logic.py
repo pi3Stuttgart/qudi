@@ -1524,3 +1524,4 @@ class ConfocalLogic(GenericLogic):
         self.image_z_range = self.z_range
 
         self.sigLimitsChanged.emit()
+

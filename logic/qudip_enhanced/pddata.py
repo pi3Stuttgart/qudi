@@ -421,6 +421,7 @@ class Data:
                   " csv format is useful ony for py2-py3-compatibility.".format(time.time() - t0))
         elif filepath.endswith('.hdf'):
             df_save=self.df.copy()
+            df_save
             columns = df_save.columns
             df_save.loc[:,columns] = df_save[columns].applymap(str) #Modified 
             t0 = time.time()
@@ -433,8 +434,10 @@ class Data:
             t.append(time.time() - t0)
             store = pd.HDFStore(filepath)
             store.put('df', df_save, table=True)
+            #store.get_storer('df').attrs.metadata = {"Datatypes":list(self.df.dtypes)}
             for key in ["parameter_names", 'observation_names', 'dtypes']:
                 setattr(store.get_storer('df').attrs, key, getattr(self, key))
+            setattr(store.get_storer('df').attrs, "Datatypes", dict(self.df.dtypes))
             store.close()
             t.append(time.time() - t0)
             self.hdf_lock.release()

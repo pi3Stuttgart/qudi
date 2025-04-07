@@ -39,6 +39,8 @@ import importlib
 import logic.ODMR_nops as odmr; importlib.reload(odmr)
 from core.util.mutex import Mutex
 
+from logic.currentmeasurement.current_measurement import CurrentMeasurementLogic
+# from logic.biaslogic import BiasLogic
 class ScriptQueueStep:
     def __init__(self, name, pd):
         self.name = name
@@ -128,6 +130,8 @@ class queue_logic(GenericLogic):
     fastcounter = Connector(interface='TimeTaggerInterface')
     PLE_logic= Connector("LaserScannerLogic")
     odmr_logic= Connector("ODMRLogic_holder")
+    currentmeasurementlogic= Connector("CurrentMeasurementLogic")
+    # biaslogic= Connector("BiasLogic")
     poimanagerlogic = Connector('PoiManagerLogic')
     powerstabilization_logic = Connector("PowerStabilizationLogic")
     counterlogic1=Connector("CounterLogic")
@@ -161,6 +165,8 @@ class queue_logic(GenericLogic):
         self._optimizer = self.optimizer()
         self._PLE_logic = self.PLE_logic()
         self._ODMR_logic = self.odmr_logic()
+        self._currentmeasurementlogic:CurrentMeasurementLogic = self.currentmeasurementlogic()
+        # self._biaslogic:BiasLogic = self.biaslogic()
         self._powerstabilization_logic = self.powerstabilization_logic()
         self._poimanagerlogic = self.poimanagerlogic()
         self._counter=self.counterlogic1()

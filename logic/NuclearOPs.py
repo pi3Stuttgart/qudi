@@ -74,7 +74,8 @@ class NuclearOPs(DataGeneration):
         self.manual_pause=False
         self.hashed = False
         self.start_pause_time = 2.75 
-        self.end_pause_time = 6.1 
+        self.end_pause_time = 5.25#6.1 
+        #self.end_pause_time = 6.1 
         self.do_ple_refocusA2 = False
         self.do_ple_refocusA1 = False
         self.do_ple_refocus = False
@@ -85,6 +86,7 @@ class NuclearOPs(DataGeneration):
         self.check_A2_power = False
         self.set_A1_power = False
         self.set_A2_power = False
+        self.follow_resonnance_by_counts=False
         self.A1LaserPower = 1 #nW
         self.A2LaserPower = 1 #nW
         #
@@ -392,7 +394,8 @@ class NuclearOPs(DataGeneration):
                         print("Current Time =", current_time)
                         print("Countrate too high. Assuming hearting of photon detector. Going to sleep for 1min.")
                         QtTest.QTest.qSleep(60000)
-
+                    if 'applied_voltage' in self.current_iterator_df.keys():
+                        self.set_bias_voltage(abort)
                     if self.set_A1_power or self.set_A2_power:
                         self.set_laser_power(abort)
 
@@ -522,24 +525,27 @@ class NuclearOPs(DataGeneration):
                         self._md.stop_awgs()
                     if self.check_A2_power:
                         self.queue._awg.mcas_dict['A2'].run()
-                        QtTest.QTest.qSleep(1000)
+                        QtTest.QTest.qSleep(1500)
                         self.data.set_observations([OrderedDict(A2_Power=self.queue._powerstabilization_logic.current_power)]*self.number_of_simultaneous_measurements)
                         self.queue._awg.mcas_dict.stop_awgs()
-                        QtTest.QTest.qSleep(1000)
+                        #QtTest.QTest.qSleep(1000)
                     if self.do_repump:
                         self.queue._awg.mcas_dict['repump'].run()
                         # self.data.set_observations([OrderedDict(aom_A1_power_measured=self.queue.power_calibration.pd_list['pd_A1_power'].get_data())]*self.number_of_simultaneous_measurements)
                         QtTest.QTest.qSleep(100)
                         self.queue._awg.mcas_dict.stop_awgs()
-                        QtTest.QTest.qSleep(1000)
+                        #QtTest.QTest.qSleep(1000)
                     
                     #TODO add laser power meters to the df
                     #if self.yellow_repump_compensation:
                         #self.data.set_observations([OrderedDict(yellow_freq_measured=self.queue.wavemeter.dll.GetFrequencyNum(3, 0))] * self.number_of_simultaneous_measurements)
                     # Thread1=threading.Thread(target=self.get_trace, args=(abort), kwargs={'delay_ps_list': self.delay_ps_list ,'window_ps_list' : self.window_ps_list})
                     # Thread1.start()
+                    if self.follow_resonnance_by_counts: #needs to set the values in counterlogic correctly to work properly
+                        self.queue._counter.correcting=True
                     self.get_trace(abort,delay_ps_list = self.delay_ps_list ,window_ps_list = self.window_ps_list) #Start AWGs...
-                    
+                    self.queue._counter.correcting=False
+
                     if abort.is_set(): break
 
                     self.data.set_observations([OrderedDict(end_time=datetime.datetime.now())]*self.number_of_simultaneous_measurements)
@@ -650,7 +656,9 @@ class NuclearOPs(DataGeneration):
             exc_type, exc_value, exc_tb = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_tb)
             self.update_current_str()
+            
         finally:
+            self.queue._counter.correcting=False
             self.state = 'idle'
             self.data._df = data_handling.df_take_duplicate_rows(self.data.df, self.iterator_df_done) #drops unfinished measurements,
             self.pld.new_data_arrived()
@@ -802,6 +810,18 @@ class NuclearOPs(DataGeneration):
             # print("Done stabilizing. Turning laser off now...")
             self.queue._awg.mcas_dict.stop_awgs()
         return
+    
+    def set_bias_voltage(self, abort):
+        if 'applied_voltage' in self.current_iterator_df:
+            volt = float(max(self.current_iterator_df['applied_voltage']))/self.queue._currentmeasurementlogic.Multiplier
+        else:
+            volt = 0
+            print("No bias voltage in Iterator. Check for bugs.")
+
+        self.queue._currentmeasurementlogic.set_voltage(volt)
+        self.queue._currentmeasurementlogic.voltages = [volt,volt]
+        QtTest.QTest.qSleep(1000)
+        return
 
     def do_refocus_pleA2(self, abort): #CHANGED! commented what belonged to wavemeter
         #if self.wavemeter_lock and self.queue.wavemeter.wm_id!=0:
@@ -909,8 +929,24 @@ class NuclearOPs(DataGeneration):
             self.queue._awg.mcas_dict.stop_awgs()
             if self.do_confocal_A1A2_refocus:
                 print("NuclearOPs: Turn on repump +a1+a2 for confocal refocus")
-                self.queue._awg.mcas_dict['RepumpAndA1AndA2'].run()
-                
+                #self.queue._awg.mcas_dict['RepumpAndA1AndA2'].run()
+                seq = self.queue._awg.mcas(name='Confocal', ch_dict={"2g": [1, 2], "ps": [1]})
+                seq.start_new_segment("Conf")
+                seq.asc(name="lasers",
+                        A2=True,
+                        A1=True,
+                        laser=True,
+                        repump=True,
+                        length_mus=50
+                        )
+
+                self.queue._awg.mcas_dict['Confocal'] = seq
+
+                while self.mcas=='':
+                    #process_events() #TODO gui process events.
+                    QtTest.QTest.qSleep(10)
+                self.queue._awg.mcas_dict['Confocal'].run()
+        
             elif self.do_confocal_A2MW_refocus:
                 sequence_name="A2MW_confocal_refocus"
                 MW1_freq = 33.6
@@ -1351,19 +1387,18 @@ class NuclearOPs(DataGeneration):
             # has to switch to qudi log. logging.getLogger().info("saved nuclear to '{} ({:.3f})".format(self.save_dir, time.time() - t0))
 
     def save_sequence_file(self):
-        pass
         seq_message = []
-        for k in self._md[self.mcas.name].sequences.keys():
-            for ch in [1,2]:
-                try:
-                    
-                    seq_message.append(self._md[self.mcas.name].sequences[k][ch].ret_info())
-                    seq_message.append("\n") 
-                except:
-                    
-                    pass
-
-        seq_message.append(str(self._md[self.mcas.name].sequences['ps'][1]))
+        for key in self._md[self.mcas.name].sequences.keys():
+            if key == '2g':
+                for ch in [1,2]:
+                    try:
+                        seq_message.append(self._md[self.mcas.name].sequences[key][ch].ret_info())
+                        seq_message.append("\n") 
+                    except Exception as e:
+                        print("Error in NuclearOps while reading sequence for awg-file:",e) #local variable 'l' referenced before assignment
+                        pass
+            elif key == 'ps':
+                seq_message.append(str(self._md[self.mcas.name].sequences[key][1]))
         awg_file_name = 'awg-file.txt'
         awg_fp = os.path.join(self.save_dir, awg_file_name)
 

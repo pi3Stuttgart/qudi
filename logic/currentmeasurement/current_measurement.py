@@ -1,5 +1,4 @@
 import time
-from . import PID
 from core.connector import Connector
 from logic.generic_logic import GenericLogic
 from PyQt5 import QtCore
@@ -12,6 +11,10 @@ from scipy.ndimage.interpolation import shift
 from scipy.interpolate import InterpolatedUnivariateSpline
 from logic.currentmeasurement.default_values_and_widget_functions import currentmeasurement_default as currentmeasurement_default
 import datetime
+
+from hardware.USBNidaq6211 import streamUSBnidaq
+from logic.laserscanner.laser_scanner_logic import LaserScannerLogic
+from logic.save_logic import SaveLogic
 
 class CurrentMeasurementLogic(GenericLogic, currentmeasurement_default):
     
@@ -50,10 +53,11 @@ class CurrentMeasurementLogic(GenericLogic, currentmeasurement_default):
     scan_start_V:float= StatusVar('scan_start_V',0)
     save_after_scan:bool= StatusVar('save_after_scan',0)
     applied_voltage:float= StatusVar('applied_voltage',0)
+    nidaq_voltage:float=StatusVar('nidaq_voltage',0)
     step:float= StatusVar('step',0.1)
     name:str= StatusVar('name',"")
 
-    Safe_Limits=[-30,10] #V
+    Safe_Limits=[-30,0] #V
 
     # Implement Config options for voltage_offset and voltage_to_power_ratio
     USBnidaq = Connector(interface='StreamUSBNidaqInterface')
@@ -61,15 +65,14 @@ class CurrentMeasurementLogic(GenericLogic, currentmeasurement_default):
     savelogic = Connector(interface='SaveLogic')
 
     def on_activate(self):
-        self._streaming_device = self.USBnidaq()
-        self._laser_scanner_logic = self.laserscannerlogic()
-        self._savelogic=self.savelogic()
-        
+        self._streaming_device:streamUSBnidaq = self.USBnidaq()
+        self._laser_scanner_logic:LaserScannerLogic = self.laserscannerlogic()
+        self._savelogic:SaveLogic=self.savelogic()
         self._streaming_device.start_ao_task()
 
         self.stabilization_wait_time=self.stabilization_wait_time/1000
         
-        self._laser_scanner_logic.sigScanNextLine.connect(self.change_voltage)
+        #self._laser_scanner_logic.sigScanNextLine.connect(self.change_voltage)
 
         self.voltages = [0,0]# [0,0.1,0.2,0.3,0.4,0.5,0.4,.3, 2., .1, 0, -.1, -.2, -.3, -.4]
         self.step_line = 1
@@ -84,11 +87,11 @@ class CurrentMeasurementLogic(GenericLogic, currentmeasurement_default):
         self._streaming_device.start_acquisition()
         self.SigPidProc.emit()
 
-        self.set_voltage(0)
+        self.set_voltage(self.nidaq_voltage)
         print("Started")
 
     def on_deactivate(self):
-        self.set_voltage(0)
+        self.set_voltage(self.nidaq_voltage)
         self._streaming_device.on_deactivate()
     
     def set_voltage(self, volt):

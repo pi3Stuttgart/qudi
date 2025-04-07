@@ -24,7 +24,7 @@ class BiasLogic(GenericLogic):
         
         self._streaming_device.start_ao_task()
         
-        #self._laser_scanner_logic.sigScanNextLine.connect(self.change_voltage)
+        self._laser_scanner_logic.sigScanNextLine.connect(self.change_voltage)
 
         self.voltages =[0,0] # np.append(np.arange(0,-0.6,-0.005),np.arange(0,-0.6,-0.005)[::-1])#[0,0.01,0.2,0.3,0.4,0.5,0.4,.3, 2., .1, 0, -.1, -.2, -.3, -.4]#[0,0]
         self.step_line = 1

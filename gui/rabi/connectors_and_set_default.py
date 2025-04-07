@@ -1,5 +1,7 @@
 class initialize_connections_and_defaultvalue:
     def initialize_connections_and_defaultvalues(self):
+        self._mw.rabi_Toggle_unit_CheckBox.stateChanged.connect(self._rabi_logic.rabi_Toggle_units_CheckBox_StateChanged)
+        self._rabi_logic.sigUnits.connect(self.Toggle_units_CheckBox_StateChanged)
         self._mw.rabi_InitTime_LineEdit.textEdited.connect(self._rabi_logic.rabi_InitTime_LineEdit_textEdited)
         self._mw.rabi_Continue_Button.clicked.connect(self._rabi_logic.rabi_Continue_Button_Clicked)
         self._mw.rabi_Load_Button.clicked.connect(self._rabi_logic.rabi_Load_Button_Clicked)
@@ -155,4 +157,6 @@ class initialize_connections_and_defaultvalue:
         self._mw.rabi_Binning_LineEdit.textEdited.disconnect()
         self._mw.rabi_IntegrationTime_lineEdit.textEdited.disconnect()
         self._mw.rabi_SelectFit_ComboBox.currentTextChanged.disconnect()
+        self._mw.rabi_Toggle_unit_CheckBox.stateChanged.disconnect()
+        self._rabi_logic.sigUnits.disconnect()
         

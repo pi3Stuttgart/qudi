@@ -63,6 +63,7 @@ class pulsed_ODMR_default_values_and_widget_functions:
 
         pulsed_NumberOfLines:int=20
         CallerTag:str=''
+        pulsed_unit:bool=False
         #pulsed_update_after_stop:bool=T
 
         
@@ -192,6 +193,22 @@ class pulsed_ODMR_default_values_and_widget_functions:
         def pulsed_PulsedRepump_CheckBox_StateChanged(self,on):
                 #print('done something with pulsed_PulsedRepump_CheckBox')
                 self.pulsed_PulsedRepump=on==2
+
+        def pulsed_Toggle_units_CheckBox_StateChanged(self,on):
+                self.pulsed_unit=on==2
+                if self.pulsed_unit:
+                        self.pulsed_MW1_Power=round(self.power_to_amp(self.pulsed_MW1_Power)[0],10)
+                        self.pulsed_MW2_Power=round(self.power_to_amp(self.pulsed_MW2_Power)[0],10)
+                        self.pulsed_MW3_Power=round(self.power_to_amp(self.pulsed_MW3_Power)[0],10)
+                        self.pulsed_MW4_Power=round(self.power_to_amp(self.pulsed_MW4_Power)[0],10)
+                        self.pulsed_MW5_Power=round(self.power_to_amp(self.pulsed_MW5_Power)[0],10)
+                else:
+                        self.pulsed_MW1_Power=round(self.amp_to_power(self.pulsed_MW1_Power)[0],10)
+                        self.pulsed_MW2_Power=round(self.amp_to_power(self.pulsed_MW2_Power)[0],10)
+                        self.pulsed_MW3_Power=round(self.amp_to_power(self.pulsed_MW3_Power)[0],10)
+                        self.pulsed_MW4_Power=round(self.amp_to_power(self.pulsed_MW4_Power)[0],10)
+                        self.pulsed_MW5_Power=round(self.amp_to_power(self.pulsed_MW5_Power)[0],10)
+                        
 
         def pulsed_Stop_Button_Clicked(self,on):
                 #print('done something with pulsed_Stop_Button')
@@ -399,6 +416,7 @@ class pulsed_ODMR_default_values_and_widget_functions:
                 self.time_differences.clear()
                 self.time_differences.start()
                 self.scanmatrix=np.zeros((self.pulsed_NumberOfLines,self.number_of_points_per_line))
+                self.full_scanmatrix=[]
                 self.ancient_data=np.array(self.time_differences.getData(),dtype=object)
                 self.starting_time=time.time()
                 self.measurement_running=True

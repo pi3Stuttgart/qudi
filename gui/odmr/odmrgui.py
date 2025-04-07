@@ -380,7 +380,26 @@ class ODMRGUI(GUIBase):
                     )
             )
             self.update_pulsed_colorbar()
+    
+    def pulsed_Toggle_units_CheckBox_StateChanged(self,on):
+        if on==2:#Amp
+            self._mw.label_121.setText("Power (Amp)")
+            self._mw.label_124.setText("Power (Amp)")
+            self._mw.label_132.setText("Power (Amp)")
+            self._mw.label_65.setText("Powers (Amp)")
+        else:
+            self._mw.label_121.setText("Power (dBm)")
+            self._mw.label_124.setText("Power (dBm)")
+            self._mw.label_132.setText("Power (dBm)")
+            self._mw.label_65.setText("Powers (dBm)") 
 
+        
+        self._mw.pulsed_MW1_Power_LineEdit.setText(str(self._odmr_logic.pulsedODMRLogic.pulsed_MW1_Power))
+        self._mw.pulsed_MW2_Power_LineEdit.setText(str(self._odmr_logic.pulsedODMRLogic.pulsed_MW2_Power))
+        self._mw.pulsed_MW3_Power_LineEdit.setText(str(self._odmr_logic.pulsedODMRLogic.pulsed_MW3_Power))
+        self._mw.pulsed_MW4_Power_LineEdit.setText(str(self._odmr_logic.pulsedODMRLogic.pulsed_MW4_Power))
+        self._mw.pulsed_MW5_Power_LineEdit.setText(str(self._odmr_logic.pulsedODMRLogic.pulsed_MW5_Power))
+            
 
     def Update_Runtime(self):
         if self._odmr_logic.ODMRLogic.measurement_running:

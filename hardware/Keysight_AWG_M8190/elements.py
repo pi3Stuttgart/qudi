@@ -6,6 +6,7 @@ import warnings
 warnings.simplefilter(action="ignore", category=FutureWarning)
 import numpy as np
 
+from scipy import special
 import datetime
 import time
 import numpy as np
@@ -473,7 +474,7 @@ class BaseWave(Base):
 class WaveStep(BaseWave):
     def __init__(self, type='wait', phase_offset_type='coherent', frequencies=None, amplitudes=None, constant_value=None,
                  phases=None, smpl_marker=False, sync_marker=False, wave_file=None, length_mus=None,
-                 length_smpl=None, wf_start=0,  **kwargs):
+                 length_smpl=None, wf_start=0,stretching_factor=1,correction_factor=1,  **kwargs):
         super(WaveStep, self).__init__(**kwargs)
         self.length_mus = length_mus
         self.length_smpl = length_smpl
@@ -486,7 +487,9 @@ class WaveStep(BaseWave):
         self.phases = np.array([0]) if phases is None else phases
         self.smpl_marker = smpl_marker
         self.sync_marker = sync_marker
-        self.wf_start = wf_start
+        self.wf_start = wf_start # Pierres optimal control
+        self.stretching_factor=stretching_factor # Pierres optimal control
+        self.correction_factor=correction_factor # Pierres optimal control
 
     phase_offset_type = util.ret_property_list_element('phase_offset_type', ['coherent', 'absolute'])
     smpl_marker = util.ret_property_typecheck('smpl_marker', bool)
@@ -523,6 +526,8 @@ class WaveStep(BaseWave):
             if isinstance(val, WaveFile):
                 val.parent = self
                 self._wave_file = val
+            elif isinstance(val,str):
+                self._wave_file = val
             else:
                 raise Exception('wave_file can be None or of type WaveFile but is {}'.format(val))
 
@@ -532,8 +537,8 @@ class WaveStep(BaseWave):
 
     @type.setter
     def type(self, val):
-        self._type = util.check_list_element(val, 'type', ['wait', 'constant', 'sine', 'robust','gauss',
-                                                           'gauss_6ns','gauss_10ns','gauss_2_pulses','OC_test'])
+        self._type = util.check_list_element(val, 'type', ['wait', 'constant', 'sine', 'sinegauss', 'sineparabol', 'sineflattop', 'sinehermite', 'sinehermite_rf', 'sinehermite_rise',
+                                                           'sinehermite_fall', 'robust','gauss', 'gauss_6ns','gauss_10ns','gauss_2_pulses','OC_test'])
         if self.type == 'robust' and hasattr(self, '_wave_file'):
             self.length_mus = self.wave_file.length_mus
 
@@ -596,9 +601,166 @@ class WaveStep(BaseWave):
             np.sin(arg, out=arg)
             arg *= amps[i] * 2047
             samples[start:start + length_smpl] += np.int16(arg)
+    
+    def sin_gauss(self, samples, start, amps, freqs, phases, length_smpl, coherent_offset):
+        for i, freq in enumerate(freqs):
+            gaussoffset=length_smpl/2.+coherent_offset
+            sigma=1/4.*length_smpl
+            #max_rabi=max(np.transpose(pi3d.rabi_calibration_params)[1])
+            arg = np.arange(coherent_offset, length_smpl + coherent_offset, dtype=np.float)
+            arg *= 2 * np.pi * freq / __SAMPLE_FREQUENCY__
+            arg += np.radians(self.phases[i])
+            np.sin(arg, out=arg)
 
-    def OC_test(self,samples,start,amps,freqs,length_smpl):
-        data=np.loadtxt(r"z:\Pierre_Kuna\smpls_pulse_test_OC.csv")
+            gauss=np.arange(coherent_offset, length_smpl + coherent_offset, dtype=np.float)
+            gauss=(amps[i]*np.exp(-(gauss-gaussoffset)**2/(2.*sigma**2)))###*max_rabi)
+#                gauss_amp=[]
+#                for entry in gauss:
+#                    gauss_amp.append(pi3d.getAwgAmpFromRabi(entry))
+#                gauss_amp=np.array(gauss_amp)
+            ###gauss_amp=pi3d.getAwgAmpFromRabi(gauss)
+            ###gauss_amp*=2047
+            gauss_amp=2047*gauss
+            arg*=gauss_amp
+            samples[start:start + length_smpl] += np.int16(arg)
+
+    def sin_parabol(self, samples, start, amps, freqs, phases, length_smpl, coherent_offset):
+        for i, freq in enumerate(freqs):
+            paraboloffset = length_smpl / 2. + coherent_offset
+            arg = np.arange(coherent_offset, length_smpl + coherent_offset, dtype=np.float)
+            arg *= 2 * np.pi * freq / __SAMPLE_FREQUENCY__
+            arg += np.radians(self.phases[i])
+            np.sin(arg, out=arg)
+
+            parabol = np.arange(coherent_offset, length_smpl + coherent_offset, dtype=np.float)
+            parabol = amps[i] * (1 - ((parabol-paraboloffset)/(length_smpl/2))**2)
+            parabol_amp = 2047 * parabol
+            arg *= parabol_amp
+            samples[start:start + length_smpl] += np.int16(arg)
+
+    def sin_flattop(self, samples, start, amps, freqs, phases, length_smpl, coherent_offset):
+        for i, freq in enumerate(freqs):
+            flattopoffset = coherent_offset
+            a = [0.21557895, 0.41663158, 0.277263158, 0.083578947, 0.006947368]  ### Values taken from https://en.wikipedia.org/wiki/Window_function
+            arg = np.arange(coherent_offset, length_smpl + coherent_offset, dtype=np.float)
+            arg *= 2 * np.pi * freq / __SAMPLE_FREQUENCY__
+            arg += np.radians(self.phases[i])
+            np.sin(arg, out=arg)
+
+            flattop = np.arange(coherent_offset, length_smpl + coherent_offset, dtype=np.float)
+            flattop = amps[i] * (a[0] - a[1]*np.cos(2*np.pi*(flattop-flattopoffset)/length_smpl) + a[2]*np.cos(4*np.pi*(flattop-flattopoffset)/length_smpl)  - a[3]*np.cos(6*np.pi*(flattop-flattopoffset)/length_smpl) + a[4]*np.cos(8*np.pi*(flattop-flattopoffset)/length_smpl))
+            flattop_amp = 2047 * flattop
+            arg *= flattop_amp
+            samples[start:start + length_smpl] += np.int16(arg)
+
+    def sin_hermite(self, samples, start, amps, freqs, phases, length_smpl, coherent_offset):
+        for i, freq in enumerate(freqs):
+            """
+            len(samples): all samples of the sequence
+            start: first sample of this pulse in the whole sequence. Depends on what happend previous to this pulse.
+            length_smpl: number of samples of this pulse
+            coherent_offset: number of samples previous to this pulse + 10368. I guess this comes from some init timing in the beginning of each sequence
+            """
+            arg = np.arange(coherent_offset, length_smpl + coherent_offset, dtype=np.float)
+            arg *= 2 * np.pi * freq / __SAMPLE_FREQUENCY__
+            arg += np.radians(phases[i])
+            np.sin(arg, out=arg)
+            
+            #t_rise_2 = .032*__SAMPLE_FREQUENCY__
+            t_rise_2 = min(.032*__SAMPLE_FREQUENCY__,length_smpl*.25) # 10% of pulse is rise time, but not longer than 2µs*2 
+            hermite = np.arange(0, length_smpl, dtype=np.float)
+            
+            a = 0.5*special.erf(2*(t_rise_2 - hermite)/t_rise_2)
+            b = 0.5*special.erf(2*(t_rise_2 + hermite - length_smpl)/t_rise_2)
+            
+            hermite = amps[i] * (-a-b) # 1-a-b-1
+            hermite_amp = 2047 * hermite
+            
+            arg *= hermite_amp
+            samples[start:start + length_smpl] += np.int16(arg)
+    
+    def sin_hermite_rf(self, samples, start, amps, freqs, phases, length_smpl, coherent_offset):
+        for i, freq in enumerate(freqs):
+            """
+            len(samples): all samples of the sequence
+            start: first sample of this pulse in the whole sequence. Depends on what happend previous to this pulse.
+            length_smpl: number of samples of this pulse
+            coherent_offset: number of samples previous to this pulse + 10368. I guess this comes from some init timing in the beginning of each sequence
+            """
+            arg = np.arange(coherent_offset, length_smpl + coherent_offset, dtype=np.float)
+            arg *= 2 * np.pi * freq / __SAMPLE_FREQUENCY__
+            arg += np.radians(phases[i])
+            np.sin(arg, out=arg)
+            
+            t_rise_2 = min(1.024*__SAMPLE_FREQUENCY__,length_smpl*.25) # 20% of pulse is rise time, but not longer than 1µs*2 
+            hermite = np.arange(0, length_smpl, dtype=np.float)
+            
+            a = 0.5*special.erf(2*(t_rise_2 - hermite)/t_rise_2)
+            b = 0.5*special.erf(2*(t_rise_2 + hermite - length_smpl)/t_rise_2)
+            
+            hermite = amps[i] * (-a-b) # 1-a-b-1
+            hermite_amp = 2047 * hermite
+            
+            arg *= hermite_amp
+            samples[start:start + length_smpl] += np.int16(arg)
+
+    def sin_hermite_rise(self, samples, start, amps, freqs, phases, length_smpl, coherent_offset):
+        for i, freq in enumerate(freqs):
+            arg = np.arange(coherent_offset, length_smpl + coherent_offset, dtype=np.float)
+            arg *= 2 * np.pi * freq / __SAMPLE_FREQUENCY__
+            arg += np.radians(phases[i])
+            np.sin(arg, out=arg)
+
+            t_rise_2 = length_smpl/2
+            hermite = np.arange(0, length_smpl, dtype=np.float)
+            a = 0.5*special.erf(2*(t_rise_2 - hermite)/t_rise_2)
+            hermite = amps[i] * (.5-a)
+            hermite_amp = 2047 * hermite
+            arg *= hermite_amp
+            samples[start:start + length_smpl] += np.int16(arg)
+
+    def sin_hermite_fall(self, samples, start, amps, freqs, phases, length_smpl, coherent_offset):
+        for i, freq in enumerate(freqs):
+            arg = np.arange(coherent_offset, length_smpl + coherent_offset, dtype=np.float)
+            arg *= 2 * np.pi * freq / __SAMPLE_FREQUENCY__
+            arg += np.radians(phases[i])
+            np.sin(arg, out=arg)
+           
+            t_rise_2 = length_smpl/2
+            hermite = np.arange(0, length_smpl, dtype=np.float)
+            b = 0.5*special.erf(2*(t_rise_2 + hermite - length_smpl)/t_rise_2)
+            hermite = amps[i] * (.5-b)
+            hermite_amp = 2047 * hermite
+            arg *= hermite_amp
+            samples[start:start + length_smpl] += np.int16(arg)
+
+    def OC_test(self,samples,start,amps,freqs,length_smpl,filename=r"z:\Pierre_Kuna\smpls_pulse_test_OC.csv",stretching_factor=1,correction_factor=1):
+        data=np.loadtxt(filename)
+
+        if stretching_factor!=1:
+            Wave=[data[0]]
+            dur=len(data)/12e3
+
+            min_rep=len(data)
+            cter=0
+            for d in data[1:]:
+                if d!=data[-1]:
+                    if cter<min_rep:
+                        min_rep=cter
+                    cter=0
+                    Wave.append(d)
+                else:
+                    cter+=1
+                    
+            W=data.reshape(len(data)//cter,cter)
+            W=W[:,0]
+            number=dur/(len(W)/12e3)*stretching_factor
+            number_int=int(number)
+            number_decimal=number-number_int
+            res=np.repeat(W/stretching_factor,number_int,axis=0)
+            print("actual pulse stretching factor=",len(res)/len(data))
+            data=res
+
         data=data/max(data)
 
         data = data[self.wf_start:]
@@ -609,9 +771,24 @@ class WaveStep(BaseWave):
         # print('length_smpl ', length_smpl)
         # print('N ', N)
         # print('start ', start)
+
         res = np.zeros(length_smpl)
         res[0:N] = data[0:N]
-        samples[start:start + length_smpl] = np.int16(np.round(res * amps * 2047, 1))
+        res = res * amps * 2047
+
+        def sin(res, freq):
+                
+                arg = np.arange(0, len(res), dtype=np.float)
+                arg *= 2 * np.pi * freq / __SAMPLE_FREQUENCY__
+                np.sin(arg, out=arg)
+                res *= arg
+
+        if freqs!=[0]:
+            sin(res, freqs)
+        print("pulse_duration= ",len(res)/__SAMPLE_FREQUENCY__," µs")
+        samples[start:start + length_smpl]=np.int16(np.round(res/correction_factor,1))
+
+        
 
 
     def gauss(self, samples, start, amps, inv_fwhm, length_smpl):
@@ -4830,6 +5007,69 @@ class WaveStep(BaseWave):
                      phases=phases,
                      length_smpl=self.length_smpl,
                      coherent_offset=effective_coherent_offset)
+        elif self.type=='sinegauss':
+            phases = list_repeat([0.0])  # self.phases is added automatically
+            self.sin_gauss(samples=samples,
+                     start=start,
+                     amps=self.amplitudes,
+                     freqs=self.frequencies,
+                     phases=self.phases,
+                     length_smpl=self.length_smpl,
+                     coherent_offset=effective_coherent_offset)
+        elif self.type=='sineparabol':
+            phases = list_repeat([0.0])  # self.phases is added automatically
+            self.sin_parabol(samples=samples,
+                     start=start,
+                     amps=self.amplitudes,
+                     freqs=self.frequencies,
+                     phases=self.phases,
+                     length_smpl=self.length_smpl,
+                     coherent_offset=effective_coherent_offset)
+        elif self.type=='sineflattop':
+            phases = list_repeat([0.0])  # self.phases is added automatically
+            self.sin_flattop(samples=samples,
+                     start=start,
+                     amps=self.amplitudes,
+                     freqs=self.frequencies,
+                     phases=self.phases,
+                     length_smpl=self.length_smpl,
+                     coherent_offset=effective_coherent_offset)
+        elif self.type=='sinehermite':
+            phases = list_repeat([0.0])  # self.phases is added automatically
+            self.sin_hermite(samples=samples,
+                     start=start,
+                     amps=self.amplitudes,
+                     freqs=self.frequencies,
+                     phases=self.phases,
+                     length_smpl=self.length_smpl,
+                     coherent_offset=effective_coherent_offset)
+        elif self.type=='sinehermite_rf':
+            phases = list_repeat([0.0])  # self.phases is added automatically
+            self.sin_hermite_rf(samples=samples,
+                     start=start,
+                     amps=self.amplitudes,
+                     freqs=self.frequencies,
+                     phases=self.phases,
+                     length_smpl=self.length_smpl,
+                     coherent_offset=effective_coherent_offset)
+        elif self.type=='sinehermite_rise':
+            phases = list_repeat([0.0])  # self.phases is added automatically
+            self.sin_hermite_rise(samples=samples,
+                     start=start,
+                     amps=self.amplitudes,
+                     freqs=self.frequencies,
+                     phases=self.phases,
+                     length_smpl=self.length_smpl,
+                     coherent_offset=effective_coherent_offset)
+        elif self.type=='sinehermite_fall':
+            phases = list_repeat([0.0])  # self.phases is added automatically
+            self.sin_hermite_fall(samples=samples,
+                     start=start,
+                     amps=self.amplitudes,
+                     freqs=self.frequencies,
+                     phases=self.phases,
+                     length_smpl=self.length_smpl,
+                     coherent_offset=effective_coherent_offset)
         elif self.type == 'constant':
             self.constant(samples=samples,
                           start=start,
@@ -4873,7 +5113,10 @@ class WaveStep(BaseWave):
                        start=start,
                        amps=amplitudes,
                        freqs=self.frequencies,
-                       length_smpl=self.length_smpl)
+                       length_smpl=self.length_smpl,
+                       filename=self.wave_file,
+                       stretching_factor=self.stretching_factor,
+                       correction_factor=self.correction_factor)
 
         samples[start:start + self.length_smpl] *= 2 ** 4
         samples[start:start + self.length_smpl] += self.marker
@@ -4897,7 +5140,7 @@ class WaveStep(BaseWave):
 
     @property
     def normalized_avg_sine_power(self):
-        if self.type == 'sine':
+        if self.type in ['sine', 'sinegauss', 'sineparabol', 'sineflattop', 'sinehermite', 'sinehermite_rf', 'sinehermite_rise', 'sinehermite_fall']:
             return sum(self.amplitudes ** 2)
         elif self.type == 'robust':
             return sum([self.wave_file.amplitude(i[0], i[1]) ** 2 for i in itertools.product(range(self.wave_file.number_of_steps), range(len(self.frequencies)))]) / self.wave_file.number_of_steps
@@ -4927,7 +5170,7 @@ class WaveStep(BaseWave):
             l = [self.name, self.length_mus, self.type, int(self.smpl_marker), int(self.sync_marker)]
         if self.type == 'constant':
             l = [self.name, self.length_mus, self.type, self.constant_value, int(self.smpl_marker), int(self.sync_marker)]
-        elif self.type == 'sine':
+        elif self.type in ['sine', 'sinegauss', 'sineparabol', 'sineflattop', 'sinehermite', 'sinehermite_rf', 'sinehermite_rise', 'sinehermite_fall']:
             l = [self.name, self.length_mus, self.type, self.frequencies, self.amplitudes, self.phases, int(self.smpl_marker), int(self.sync_marker)]
         elif self.type == 'robust':
             l = [self.name, self.length_mus, self.type, self.frequencies, 'wave_file', self.phases, int(self.smpl_marker), int(self.sync_marker)]
@@ -4937,9 +5180,6 @@ class WaveStep(BaseWave):
         elif self.type == 'gauss_2_pulses':
             l = [self.name, self.length_mus, self.type, self.frequencies, self.amplitudes, int(self.smpl_marker),
                  int(self.sync_marker)]
-
-
-
         elif self.type == 'gauss_6ns':
             l = [self.name, self.length_mus, self.type, self.frequencies, self.amplitudes, int(self.smpl_marker),
                  int(self.sync_marker)]

@@ -85,8 +85,9 @@ __WAIT_SWITCH__ = 0.0
 __IQ_MIXER__ = False
 __TT_TRIGGER_LENGTH__ = 0.064#10*192/12e3
 __SAMPLE_FREQUENCY__ = 12e3
+
 def nuclear_rabi(mcas, new_segment=False, **kwargs):
-    type = 'robust' if 'wave_file' in kwargs else 'sine'
+    type = 'robust' if 'wave_file' in kwargs else 'sinehermite'
     if new_segment:
         mcas.start_new_segment(name='nuclear_rabi')
     if 'pd128m' in kwargs:
@@ -108,7 +109,7 @@ def electron_pi_and_rf_on(mcas, new_segment = False,iq_mixer=__IQ_MIXER__, **all
     """
     kwargs = allkwargs['d2g']
     rfkwargs = allkwargs['d128m']
-    type_mw = 'robust' if 'wave_file' in kwargs else 'sine'
+    type_mw = 'robust' if 'wave_file' in kwargs else 'sinehermite'
     type_rf = 'sine'
     if new_segment:
         mcas.start_new_segment(name='Electron Rabi with RF')
@@ -147,14 +148,62 @@ def electron_pi_and_rf_on(mcas, new_segment = False,iq_mixer=__IQ_MIXER__, **all
     else:
         mcas.asc(pd2g1=pd2g[1], name=kwargs.get('name', 'mw+rf'), **pd)
 
-def electron_rabi(mcas, name='e_rabi', iq_mixer=__IQ_MIXER__, mixer_deg=-90, new_segment=False, **kwargs):
+def electron_rabi(mcas, name='e_rabi', iq_mixer=__IQ_MIXER__, mixer_deg=-90, new_segment=False, pulseshape = 'sine', **kwargs):
 
     """
     :param transition: addressed transition in ODMR, i.e. 'left' or 'right', just like in TransitionTracker
     """
     if new_segment:
         mcas.start_new_segment(name='electron_rabi')
-    type = 'robust' if 'wave_file' in kwargs else 'sine'
+    type = 'robust' if 'wave_file' in kwargs else pulseshape
+    if 'pd2g1' in kwargs or 'pd2g2' in kwargs:
+        raise Exception('Error!')
+    pd = {}
+    
+    for awg_str, chl in mcas.ch_dict.items():
+        for ch in chl:
+            if 'pd' + awg_str + str(ch) in kwargs:
+                pd['pd' + awg_str + str(ch)] = kwargs.pop('pd' + awg_str + str(ch), None)
+    
+    if mixer_deg is None:
+        raise Exception('Error: mixer_deg must be given.')
+    elif isinstance(mixer_deg, (list, np.ndarray)):
+        if len(mixer_deg) != len(kwargs['frequencies']):
+            raise Exception
+        else:
+            mixer_deg = np.array(mixer_deg)
+    elif isinstance(mixer_deg, (int, int, float, complex)):
+        mixer_deg = np.array([mixer_deg])
+    else:
+        raise Exception
+
+    if 'phases' in kwargs:
+        if isinstance(kwargs['phases'], (np.ndarray, list)):
+            if len(kwargs['phases']) != len(kwargs['frequencies']):
+                raise Exception
+            kwargs['phases'] = np.array(kwargs['phases'])
+        elif isinstance(kwargs['phases'], (int, int, float, complex)):
+            kwargs['phases'] = np.array([kwargs['phases']])
+    else:
+        kwargs['phases'] = np.zeros(len(kwargs['frequencies']))
+    ch_list = [1, 2] if iq_mixer else [1]
+    pd2g = dict([(ch, dict(type=type, **kwargs)) for ch in ch_list])
+    if iq_mixer:
+        pd2g[2]['phases'] = np.array(pd2g[2]['phases']) + mixer_deg
+        pd2g[2]['smpl_marker'] = False
+        mcas.asc(pd2g1=pd2g[1], pd2g2=pd2g[2], name=name, **pd, **kwargs) #UNFUG
+        #mcas.asc(pd2g1=pd2g[1], pd2g2=pd2g[2], name=name, **pd) #MW is set here
+    else:
+        mcas.asc(pd2g1=pd2g[1], name=name, **pd, **kwargs)#UNFUG
+        #mcas.asc(pd2g1=pd2g[1], name=name, **pd)
+def electron_rabi_parabol(mcas, name='e_rabi', iq_mixer=__IQ_MIXER__, mixer_deg=-90, new_segment=False, **kwargs):
+
+    """
+    :param transition: addressed transition in ODMR, i.e. 'left' or 'right', just like in TransitionTracker
+    """
+    if new_segment:
+        mcas.start_new_segment(name='electron_rabi')
+    type = 'robust' if 'wave_file' in kwargs else 'sineparabol'
     if 'pd2g1' in kwargs or 'pd2g2' in kwargs:
         raise Exception('Error!')
     pd = {}
@@ -226,7 +275,7 @@ def init_state_drive(state,freqs, max_amp):
     elif '-' in state:
         amps=np.append(zeros, ones * amplitude)
     pd2g1 = {
-        'type': 'sine',
+        'type': 'sinehermite',
         'phases': [0], #*transitions_num ?
         'amplitudes': amps,        
         'frequencies': freqs
@@ -234,7 +283,7 @@ def init_state_drive(state,freqs, max_amp):
     
     return pd2g1
 
-def electron_init(mcas, state, dur, freqs_all_L, freqs_all_R, segment_length = 10, max_amp = 0.5):
+def electron_init(mcas, state, dur, freqs_all_L, freqs_all_R, segment_length = 10, max_amp = 0.5, newsegment = True):
     '''
     State could be "+(-)0(1).5", example "+1.5" or "-0.5".
     Duration (µs) will be used to calculate loop_count (int) depending on segment_length (10µs standard).
@@ -242,26 +291,46 @@ def electron_init(mcas, state, dur, freqs_all_L, freqs_all_R, segment_length = 1
     Initialization segment ends with 1024ns of decay to ensure all lasers are off.
     '''
     state = state.replace('p', '+').replace('m', '-').replace('32', '1.5').replace('12', '0.5')
-    loops, correction_mus  = shared.calculate_loop_count(dur,segment_length)
-    mcas.start_new_segment(name='init', loop_count = loops)
-    mcas.asc(
+    if newsegment:
+        loops, correction_mus  = shared.calculate_loop_count(dur,segment_length)
+        mcas.start_new_segment(name='init', loop_count = loops)
+        mcas.asc(
+            A1= '1.5' in state,
+            A2 = '0.5' in state,
+            laser = True,
+            gateMW = True,
+            length_mus=E.round_length_mus_to_x_multiple_ps(segment_length), 
+            name='resonant_init',
+            pd2g1 = init_state_drive(state, np.append(freqs_all_L, freqs_all_R), max_amp)
+        ) 
+        mcas.start_new_segment(name='init_correction', loop_count = 1)
+        mcas.asc(
+            A1= '1.5' in state,
+            A2 = '0.5' in state,
+            laser = True,
+            gateMW = True,
+            length_mus=E.round_length_mus_to_x_multiple_ps(correction_mus), 
+            name='resonant_init',
+            pd2g1 = init_state_drive(state, np.append(freqs_all_L, freqs_all_R), max_amp)
+        ) 
+    else:
+        mcas.asc(
         A1= '1.5' in state,
         A2 = '0.5' in state,
+        laser = True,
         gateMW = True,
-        length_mus=E.round_length_mus_to_x_multiple_ps(segment_length), 
+        length_mus=E.round_length_mus_to_x_multiple_ps(dur), 
         name='resonant_init',
         pd2g1 = init_state_drive(state, np.append(freqs_all_L, freqs_all_R), max_amp)
     ) 
-    mcas.start_new_segment(name='init_correction', loop_count = 1)
     mcas.asc(
         A1= '1.5' in state,
         A2 = '0.5' in state,
-        gateMW = True,
-        length_mus=E.round_length_mus_to_x_multiple_ps(correction_mus), 
+        laser = True,
+        length_mus=E.round_length_mus_to_x_multiple_ps(1.024), 
         name='resonant_init',
-        pd2g1 = init_state_drive(state, np.append(freqs_all_L, freqs_all_R), max_amp)
     ) 
-    mcas.asc(length_mus=E.round_length_mus_to_x_multiple_ps(1.024), name = 'Init Decay')  
+    mcas.asc(length_mus=E.round_length_mus_to_x_multiple_ps(0.512), name = 'Init Decay')  
 
 def repump(mcas, dur):
     mcas.start_new_segment('Repump', loop_count = 5)
@@ -710,7 +779,7 @@ class SSR(object):
                 if self.robust:
                     pd2g_dict[ch][i].update(dict(type='robust', wave_file=WaveFile(part=self.part_step(n)[i], **self.wave_file_kwargs[n])))
                 else:
-                    pd2g_dict[ch][i].update(dict(type='sine', amplitudes=self.amplitudes[n], length_mus=self.dur_step[n][i]))
+                    pd2g_dict[ch][i].update(dict(type='sinehermite', amplitudes=self.amplitudes[n], length_mus=self.dur_step[n][i]))
                 if ch == 2 and self.iq_mixer:
                     pd2g_dict[ch][i]['phases'] = np.array([self.mixer_deg])
                 else:
@@ -745,7 +814,6 @@ class SSR(object):
             self.compileMW()
 
     def compileMW(self):
-        #print('compileMW in snippets_awg')
         aa = dict()
         if self.repetitions != 0:
             self.mcas.start_new_segment(name=self.name,
@@ -777,7 +845,7 @@ class SSR(object):
                     #pd2g1 = {'frequencies': [d[1][2]['frequencies'][idx]], 'type': 'sine', 'amplitudes': [d[1][2]['amplitudes'][idx]], 'length_mus': d[1][2]['length_mus']}
                     #self.mcas.asc(pd2g1=pd2g1, gateMW=True, name='MW', **aa)
                     ## Here the frequencies are written separately :(((
-                    pd2g1 = {'frequencies': [d[1][2]['frequencies'][idx]], 'type': 'sine', 
+                    pd2g1 = {'frequencies': [d[1][2]['frequencies'][idx]], 'type': 'sinehermite', 
                              'amplitudes': [d[1][2]['amplitudes'][idx]], 'length_mus': d[1][2]['length_mus']}
                     self.mcas.asc(pd2g1=pd2g1, gateMW=True, name='MW', **aa) #Each pi pulse will be writte separately.
 
@@ -785,7 +853,7 @@ class SSR(object):
                 ### Conventional repetitive readout
                 ### ===============================
                 # read out counts after system is fully polarized
-                self.mcas.asc(length_mus=E.round_length_mus_to_x_multiple_ps(self.dur_step[alt_step][5]), A2=True, name='Laser A2', **aa)
+                self.mcas.asc(length_mus=E.round_length_mus_to_x_multiple_ps(self.dur_step[alt_step][5]), laser=True, A2=True, name='Laser A2', **aa)
                 self.mcas.asc(length_mus=E.round_length_mus_to_x_multiple_ps(self.dur_step[alt_step][6]), name='Count', **aa)
                 self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'triggerTrue2_memory')
             
@@ -826,7 +894,7 @@ class SSR(object):
                     #              )
 
                     self.mcas.asc(length_mus=self.dur_step[alt_step][5],
-                                  A1=True, A2=True,
+                                  A1=True, A2=True, laser = True,
                                   name='State_check', **aa)
 
                     self.mcas.asc(length_mus=2.0,name = 'wait')
@@ -835,7 +903,7 @@ class SSR(object):
 
                 elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_A2':
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-                    self.mcas.asc(A2=True, length_mus=E.round_length_mus_to_x_multiple_ps(self.dur_step[alt_step][5]), name = 'ple_A2_readout')
+                    self.mcas.asc(A2=True, laser = True, length_mus=E.round_length_mus_to_x_multiple_ps(self.dur_step[alt_step][5]), name = 'ple_A2_readout')
                     self.mcas.asc(length_mus=E.round_length_mus_to_x_multiple_ps(0.5),name = 'wait')
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
                 
@@ -843,7 +911,7 @@ class SSR(object):
                 elif 'nuc' in self.kwargs.keys() and self.kwargs['nuc'] == 'ple_A1':
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
                     #self.mcas.asc(A1=False, length_mus=self.dur_step[alt_step][6], name = 'initial wait') # Delete me again
-                    self.mcas.asc(A1=True, length_mus=E.round_length_mus_to_16_multiple_ps(self.dur_step[alt_step][5]), name = 'ple_A1_readout')
+                    self.mcas.asc(A1=True, laser = True, length_mus=E.round_length_mus_to_16_multiple_ps(self.dur_step[alt_step][5]), name = 'ple_A1_readout')
                     self.mcas.asc(length_mus=E.round_length_mus_to_16_multiple_ps(0.5),name = 'wait')
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
 
@@ -853,14 +921,14 @@ class SSR(object):
                     print("Using ple_A2_delay")
                     print("Delay: ", aom_A2_delay)
 
-                    self.mcas.asc(A2=True, length_mus=self.dur_step[alt_step][5], name = 'ple_A2_readout')
+                    self.mcas.asc(A2=True, laser = True, length_mus=self.dur_step[alt_step][5], name = 'ple_A2_readout')
 
                     if self.dur_step[alt_step][5] < aom_A2_delay:
                         self.mcas.asc(length_mus=aom_A2_delay-self.dur_step[alt_step][5], name = 'wait')
                         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
                     else:
-                        self.mcas.asc(A2=True, length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-                        self.mcas.asc(A2=True, length_mus=self.dur_step[alt_step][5]-(aom_A2_delay+__TT_TRIGGER_LENGTH__), name = 'ple_A2_readout')
+                        self.mcas.asc(A2=True, laser = True, length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                        self.mcas.asc(A2=True, laser = True, length_mus=self.dur_step[alt_step][5]-(aom_A2_delay+__TT_TRIGGER_LENGTH__), name = 'ple_A2_readout')
                         self.mcas.asc(length_mus=aom_A2_delay,name = 'wait')
                     self.mcas.asc(length_mus=0.1,name = 'wait')
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
@@ -871,14 +939,14 @@ class SSR(object):
                     print("Using ple_A1_delay")
                     print("Delay: ", aom_A1_delay)
 
-                    self.mcas.asc(A1=True, length_mus=self.dur_step[alt_step][5], name = 'ple_A1_readout')
+                    self.mcas.asc(A1=True, laser = True, length_mus=self.dur_step[alt_step][5], name = 'ple_A1_readout')
 
                     if self.dur_step[alt_step][5] < aom_A1_delay:
                         self.mcas.asc(length_mus=aom_A1_delay-self.dur_step[alt_step][5], name = 'wait')
                         self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
                     else:
-                        self.mcas.asc(A1=True, length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
-                        self.mcas.asc(A1=True, length_mus=self.dur_step[alt_step][5]-(aom_A1_delay+__TT_TRIGGER_LENGTH__), name = 'ple_A1_readout')
+                        self.mcas.asc(A1=True, laser = True, length_mus=__TT_TRIGGER_LENGTH__, gate=True, name='gate1')  # Gated counter
+                        self.mcas.asc(A1=True, laser = True, length_mus=self.dur_step[alt_step][5]-(aom_A1_delay+__TT_TRIGGER_LENGTH__), name = 'ple_A1_readout')
                         self.mcas.asc(length_mus=aom_A1_delay,name = 'wait')
                     self.mcas.asc(length_mus=0.1,name = 'wait')
                     self.mcas.asc(length_mus=__TT_TRIGGER_LENGTH__, memory=True,name = 'memory')
@@ -3399,3 +3467,29 @@ wfpd_all_but_standard = collections.OrderedDict(
 #         frequencies=kwargs.pop('frequencies', [pi3d.tt.mfl({'14n': [0]}) for i in range(len(wave_file_kwargs))]),
 #         wave_file_kwargs=wave_file_kwargs, **kwargs
 #     )
+
+def get_hardcoded_si5_values(state):
+    si5_freq = {'m32': 8.9915829,  'm12':4.1691871, 'p12': 0.649641, 'p32': 5.4661419}[state]
+    si5_amp = 0.9
+    si5_pi = {'m32': 15.275*0.882,  'm12':30.913, 'p12': 50, 'p32': 26.6}[state]
+    si5_pi2 = {'m32': 8.711*0.882,  'm12':16.549, 'p12': 25, 'p32': 14.407}[state]
+    return si5_freq, si5_amp, si5_pi, si5_pi2
+
+def get_hardcoded_e_values_for_control(trans):
+    trans_idx = trans[-1]
+    amp = 0.95
+    if trans[0] == 'L':
+        e_pi = {'1': .278, '2': .278}[trans_idx] # '1' not calibrated
+        e_pi2 = {'1': .170, '2': .170}[trans_idx] # '1' not calibrated
+    if trans[0] == 'R':
+        e_pi = {'1': .502, '2': .468}[trans_idx]
+        e_pi2 = {'1': .28, '2': .263}[trans_idx]
+    return amp, e_pi, e_pi2
+
+def get_hardcoded_e_values_for_readout(trans_idx):
+    R_amp = 0.95
+    L_amp = {'1': .408, '2': .486}[trans_idx] # for pi flip within 468ns.
+    e_pi = {'1': .502, '2': .468}[trans_idx]
+    e_pi2 = {'1': .28, '2': .263}[trans_idx]
+    return R_amp, L_amp, e_pi, e_pi2
+            

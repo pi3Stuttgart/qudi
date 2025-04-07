@@ -194,6 +194,7 @@ class VoltScanGui(GUIBase, ple_default_functions):
         self._voltscan_logic.sigUpdatePlots.connect(self.refresh_lines)
         self._voltscan_logic.sigScanFinished.connect(self.scan_stopped)
         self._voltscan_logic.sigScanStarted.connect(self.scan_started)
+        self._voltscan_logic.sig_refresh_numbers.connect(self.refresh_numbers)
 
         #self.sigStartScan.connect(self._voltscan_logic.start_scanning)
         #self.sigStopScan.connect(self._voltscan_logic.stop_scanning)
@@ -230,6 +231,7 @@ class VoltScanGui(GUIBase, ple_default_functions):
 
     def scan_started(self):
        pass
+    
     def scan_stopped(self):
         saved_performfit=self._voltscan_logic.PerformFit
         self._voltscan_logic.PerformFit=True
@@ -251,6 +253,13 @@ class VoltScanGui(GUIBase, ple_default_functions):
             self._mw.ple_Linewidths_Fit_Label.setText(self._voltscan_logic.Linewidths_Fit)
             #self.scan_fit_image.setData(interplolated_x_data*1000*1e6/0.30, fit_data) # 0.22 if FeedForward in turned on
             self.scan_fit_image.setData(interplolated_x_data/0.30, fit_data) # 0.22 if FeedForward in turned on
+
+    def refresh_numbers(self):
+        self._mw.constDoubleSpinBox.setValue(self._voltscan_logic._static_v)
+        self._mw.startDoubleSpinBox.setValue(self._voltscan_logic.scan_range[0])
+        self._mw.stopDoubleSpinBox.setValue(self._voltscan_logic.scan_range[1])
+        self._mw.ple_Lock_Laser_CheckBox.setChecked(self._voltscan_logic.Lock_laser*2)
+        
 
     def refresh_matrix(self):
         """ Refresh the xy-matrix image """

@@ -113,18 +113,19 @@ class GatedCounter(GenericLogic):
     def n_values(self, val):
         self._n_values = val
 
-    def set_n_values(self, mcas, sm, analyze_sequence=None):
+    def set_n_values(self, mcas, sm, analyze_sequence=None, n_vals = None):
         """
         mcas: sequence
         sm: number of simulatanious measurements
         analyze_sequence: TBU
+        n_vals: number of unique sequence runs
         """
-        # print('gated counter readout_duration set_n_values', self.readout_duration)
         analyze_sequence = self.trace.analyze_sequence if analyze_sequence is None else analyze_sequence
-        # print('analyze sequence in gated counter logic: ',analyze_sequence)
-        # for step in analyze_sequence:
-        #     print(step)
-        self.n_values = int(self.readout_duration/ (mcas.length_mus/sm) * sum([step[3] for step in analyze_sequence]))
+        if n_vals:
+            self.n_values = n_vals*sm*sum([step[3] for step in analyze_sequence])
+            self.readout_duration = mcas.length_mus*sm*n_vals
+        else:
+            self.n_values = int(self.readout_duration/ (mcas.length_mus/sm) * sum([step[3] for step in analyze_sequence]))
         
     def read_trace(self):
         self.gated_counter_data = self._fast_counter_device.gated_counter_countbetweenmarkers.getData() #If readout takes too long, ask Javid for optimized Readout sequence
@@ -187,9 +188,9 @@ class GatedCounter(GenericLogic):
 
         
         self.set_progress()
-        #UNFUG
+        
         if self.analyze_trace_during_experiment:
-            print("analyze trace during measurement in gated_counter_logic")
+            #print("analyze trace during measurement in gated_counter_logic")
             self.trace_rep = Analysis.TraceRep(trace=self.gated_counter_data[:self.progress],
                                                analyze_sequence=self.trace.analyze_sequence,
                                                number_of_simultaneous_measurements=self.trace.number_of_simultaneous_measurements)
@@ -285,42 +286,34 @@ class GatedCounter(GenericLogic):
         self.two_zpl_apd = two_zpl_apd
         self.raw_clicks_processing = raw_clicks_processing
         self.raw_clicks_processing_channels = raw_clicks_processing_channels
-        number_of_subtraces = 1 #fixme, later put a len of analyze sequence
+        number_of_subtraces = 1 #FIXME, later put a len of analyze sequence
         
         if hasattr(self, '_gui'):
             self.clear_plot_signal.emit(number_of_subtraces)
         try:
             self.set_counter()
             if not self._mcas_dict.mcas_dict.debug_mode:
-                print('start awgs in gated_counter_logic via "start_awgs(self._mcas_dict._mcas_dict.awgs)", which is direct connection to hardware file')
-                # shouldnt it be started via mcas_dict['"sequence_name"].run()
-                # How does awgs know which sequence to run?
                 start_awgs(self._mcas_dict.mcas_dict.awgs, ch_dict=ch_dict)
             self.progress = 0
             i=0
             while True:
                 if abort.is_set():
                     break
-                # print('Gated counter is falling asleep for ',self.readout_duration / 1e6)
-                # time.sleep(self.readout_duration / 1e6)
-                # break
                 ready = self._fast_counter_device.gated_counter_countbetweenmarkers.ready()
-                
-                if i%100==0:
+                if i%10==0:
                     #why get counts here already? its done at the end of measurement when self.read_trace() is called
                     # seems like read_trace() is not doing much...
                     dat=self._fast_counter_device.gated_counter_countbetweenmarkers.getData()
-                    #print("-----------------------------------------------------\n",np.sum(dat),len(dat))
+                    self.read_trace() #FIXME
+                    self.update_plot()
                 i+=1
                 if ready:
-                    # print(self._fast_counter_device.gated_counter_countbetweenmarkers.getData())
                     break
                 else:
                     #time.sleep(0.1)
                     QtTest.QTest.qSleep(100)
             self.read_trace()
             self.update_plot()
-            
         except Exception as e:
             print(e)
             abort.set()

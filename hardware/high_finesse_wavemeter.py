@@ -189,7 +189,7 @@ class HighFinesseWavemeter(Base,WavemeterInterface):
 
         try:
             # clean up by removing reference to the ctypes library object
-            del self._wavemeterdll
+            #del self._wavemeterdll
             return 0
         except:
             self.log.error('Could not unload the wlmData.dll of the '

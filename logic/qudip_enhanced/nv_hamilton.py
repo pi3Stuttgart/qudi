@@ -74,7 +74,7 @@ class NVHam:
         self._qp = {'14n': -4.945745, '15n': 0.0, '13c': 0, '29si':0}
         self._hf_para_n = {'14n': -2.165, '15n': +3.03}
         self._hf_perp_n = {'14n': -2.7, '15n': +3.65}
-        self.D = 34.9
+        self.D = 34.95
         self.dims = [4]# 3 for NV was
         self.magnet_field_cart = coordinates.Coord().coord(magnet_field, 'cart')  # magnet field in cartesian coordinates
         self.n_type = n_type #'14n', '15n', None

@@ -37,7 +37,7 @@ class SetupControlLogic(GenericLogic):
     MW1_power = StatusVar('MW1_Power', -21)
     MW2_power = StatusVar('MW2_Power', -21)
     MW3_power = StatusVar('MW3_Power', -21)
-    Repump_power = StatusVar('Repump_power', 0)
+    Repump_power = StatusVar('Repump_power', 0.0002)
     enable_MW1: bool = False
     enable_MW2: bool = False
     enable_MW3: bool = False
@@ -46,6 +46,8 @@ class SetupControlLogic(GenericLogic):
     enable_A2: bool = False
     enable_Repump: bool = False
     enable_Green: bool = False
+
+    laser: bool = False
 
     active_channels=[] # used to talk to the pulsestreamer directly
     flip_mirror=False
@@ -69,7 +71,7 @@ class SetupControlLogic(GenericLogic):
         self.ps=self._awg.mcas_dict.awgs["ps"]
 
         self._topticalaser=self.topticalaser()
-        self.actual_repump_power=self.Repump_power/1000
+        self.actual_repump_power=self.Repump_power
         self._topticalaser.set_power(self.actual_repump_power)
 
     def on_deactivate(self):
@@ -82,6 +84,7 @@ class SetupControlLogic(GenericLogic):
         self.enable_A2:bool=False
         self.enable_Repump:bool=False
         self.enable_Green:bool=False
+        self.laser:bool=False
         self.AOM_volt=0
         self._awg.mcas_dict.stop_awgs()
         self.write_to_pulsestreamer()
@@ -141,7 +144,9 @@ class SetupControlLogic(GenericLogic):
         MW3_freq:float=None,
         MW3_power:float=None,
         ):
-
+        self.laser = False
+        if enable_A1 or enable_A1:
+            self.laser = True
         self.power = []
         if self.enable_MW1:
             self.power += [self.MW1_power]
@@ -189,6 +194,7 @@ class SetupControlLogic(GenericLogic):
             seq.asc(name="without MW",
                     A1=self.enable_A1,
                     A2=self.enable_A2,
+                    laser=True,
                     repump=self.enable_Repump,
                     green=self.enable_Green,
                     length_mus=50
@@ -197,6 +203,7 @@ class SetupControlLogic(GenericLogic):
             seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": frequencies, "amplitudes": self.power},
                     A1=self.enable_A1,
                     A2=self.enable_A2,
+                    laser=True,
                     gateMW=True,
                     repump=self.enable_Repump,
                     green=self.enable_Green,
@@ -209,7 +216,7 @@ class SetupControlLogic(GenericLogic):
         return
     
     def write_to_pulsestreamer(self):
-        self.active_channels=list(filter(("").__ne__, ["A1"*self.enable_A1,"A2"*self.enable_A2,"green"*self.enable_Green,"repump"*self.enable_Repump,'FlipMirror'*self.flip_mirror]))
+        self.active_channels=list(filter(("").__ne__, ["A1"*self.enable_A1,"A2"*self.enable_A2,"laser"*self.laser,"green"*self.enable_Green,"repump"*self.enable_Repump,'FlipMirror'*self.flip_mirror]))
         #self.active_channels=list(filter(("").__ne__, [])) #This turns off all lasers when adjusting the AOM power
         self.ps.constant(pulse=(0,self.active_channels,self.AOM_volt,0)) #Ok this is actually not the power we set but the analog input on the A2 AOM
 
@@ -328,9 +335,9 @@ class SetupControlLogic(GenericLogic):
         #print('done something with set_power_DoubleSpinBox. Value=',value)
         self.AOM_volt=value
 
-    def repump_power_doubleSpinBox_Edited(self,value): 
+    def Repump_power_doubleSpinBox_Edited(self,value): 
         self.Repump_power=value
-        self.actual_repump_power=value/1000
+        self.actual_repump_power=value
 
         self._topticalaser.set_power(self.actual_repump_power)
         

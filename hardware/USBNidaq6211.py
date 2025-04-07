@@ -33,7 +33,7 @@ class streamUSBnidaq(Base, StreamUSBNidaqInterface): #Hardware file
 
     def on_activate(self):
         # Parameters
-        print("Init USB Nidaq...")
+        print("Init USB Nidaq... 6211")
         self.sampling_freq_in = int(self._sampling_freq_in)  # in Hz
         self.buffer_in_size = int(self._buffer_in_size)
         

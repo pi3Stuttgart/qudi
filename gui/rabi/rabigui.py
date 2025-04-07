@@ -263,6 +263,25 @@ class RabiGUI(GUIBase,rabi_default_functions):
             )
             self.update_colorbar() # update the colorbar
 
+    def Toggle_units_CheckBox_StateChanged(self,on):
+        if on==2:#Amp
+            self._mw.label_121.setText("Power (Amp)")
+            self._mw.label_124.setText("Power (Amp)")
+            self._mw.label_132.setText("Power (Amp)")
+            self._mw.label.setText("Powers (Amp)")
+        else:
+            self._mw.label_121.setText("Power (dBm)")
+            self._mw.label_124.setText("Power (dBm)")
+            self._mw.label_132.setText("Power (dBm)")
+            self._mw.label.setText("Powers (dBm)") 
+
+        
+        self._mw.rabi_MW1_Power_LineEdit.setText(str(self._rabi_logic.rabi_MW1_Power))
+        self._mw.rabi_MW2_Power_LineEdit.setText(str(self._rabi_logic.rabi_MW2_Power))
+        self._mw.rabi_MW3_Power_LineEdit.setText(str(self._rabi_logic.rabi_MW3_Power))
+        self._mw.rabi_MW4_Power_LineEdit.setText(str(self._rabi_logic.rabi_MW4_Power))
+        self._mw.rabi_MW5_Power_LineEdit.setText(str(self._rabi_logic.rabi_MW5_Power))
+
     def Update_Runtime(self):
         if self._rabi_logic.measurement_running:
             runtime=time.time()-self._rabi_logic.starting_time

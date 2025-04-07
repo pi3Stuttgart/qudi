@@ -423,6 +423,9 @@ class PlotData(qudip_enhanced.qtgui.gui_helpers.WithQt):
         elif self.fit_function == 'lorentz':
             from . import lmfit_custom_models
             mod = lmfit_custom_models.LorentzianModel()
+        elif self.fit_function == 'lorentzian':
+            from . import lmfit_custom_models
+            mod = lmfit_custom_models.LorentzianModel()
         try:
             pnl = [pn for pn in data_selected.parameter_names if pn != x_axis_parameter]
             for d, d_idx, idx, sub in data_selected.iterator(column_names=pnl, output_data_instance=True):

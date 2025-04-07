@@ -34,41 +34,24 @@ from qtpy import QtWidgets
 from qtpy import uic
 
 
-class SetupControlWindow(QtWidgets.QMainWindow):
+class RegisterTrackerWindow(QtWidgets.QMainWindow):
     """ Create the Main Window based on the *.ui file. """
 
     def __init__(self):
         # Get the path to the *.ui file
         this_dir = os.path.dirname(__file__)
-        ui_file = os.path.join(this_dir, 'setup_control.ui')
+        ui_file = os.path.join(this_dir, 'register.ui')
 
         # Load it
         super().__init__()
         uic.loadUi(ui_file, self)
         self.show()
 
-class SetupControlGUI(GUIBase):
+class RegisterTrackerGUI(GUIBase):
 
     ## declare connectors
-    setupcontrollogic = Connector(interface='SetupControlLogic')
-    #pulsedlogic= Connector(interface='SetupControlLogic')
-
-    # sigA1 = QtCore.Signal(bool)
-    # sigA2 = QtCore.Signal(bool)
-    # sigRepump = QtCore.Signal(bool)
-    # sigGreen = QtCore.Signal(bool)
-    # sigMW1ON = QtCore.Signal(bool)
-    # sigMW2ON = QtCore.Signal(bool)
-    # sigMW3ON = QtCore.Signal(bool)
-    # sigSetPower = QtCore.Signal(bool)
-    # sigPDzero = QtCore.Signal(bool)
-    # sigAutofocus = QtCore.Signal(bool)
-    # sigFlipMirror = QtCore.Signal(bool)
+    transition_tracker_logic = Connector(interface='TransitionTracker')
     
-
-
-
-
     def __init__(self, config, **kwargs):
         super().__init__(config=config, **kwargs)
     
@@ -76,54 +59,18 @@ class SetupControlGUI(GUIBase):
         """ Definition and initialisation of the GUI plus staring the measurement.
         """
 
-        self._setupcontrol_logic = self.setupcontrollogic() 
+        self._tt = self.transition_tracker_logic() 
 
         #####################
         # Configuring the dock widgets
         # Use the inherited class 'CounterMainWindow' to create the GUI window
-        self._mw = SetupControlWindow()
+        self._mw = RegisterTrackerWindow()
         # Setup dock widgets
         self._mw.setDockNestingEnabled(True)
         
         self.updateButtonsEnabled()
         self._mw.A1_Button.clicked.connect(self._setupcontrol_logic.A1_Button_Clicked)
         self._mw.A2_Button.clicked.connect(self._setupcontrol_logic.A2_Button_Clicked)
-        self._mw.Repump_Button.clicked.connect(self._setupcontrol_logic.Repump_Button_Clicked)
-        self._mw.Green_Button.clicked.connect(self._setupcontrol_logic.Green_Button_Clicked)
-        self._mw.MW1_on_Button.clicked.connect(self._setupcontrol_logic.MW1_on_Button_Clicked)
-        self._mw.MW1_power_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW1_power_DoubleSpinBox_Edited)
-        self._mw.MW1_freq_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW1_freq_DoubleSpinBox_Edited)
-        self._mw.MW2_on_Button.clicked.connect(self._setupcontrol_logic.MW2_on_Button_Clicked)
-        self._mw.MW2_freq_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW2_freq_DoubleSpinBox_Edited)
-        self._mw.MW2_power_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW2_power_DoubleSpinBox_Edited)
-        self._mw.MW3_on_Button.clicked.connect(self._setupcontrol_logic.MW3_on_Button_Clicked)
-        self._mw.MW3_freq_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW3_freq_DoubleSpinBox_Edited)
-        self._mw.MW3_power_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.MW3_power_DoubleSpinBox_Edited)
-        self._mw.Set_Power_DoubleSpinBox.valueChanged.connect(self._setupcontrol_logic.Set_Power_DoubleSpinBox_Edited)
-        self._mw.repump_power_doubleSpinBox.valueChanged.connect(self._setupcontrol_logic.Repump_power_doubleSpinBox_Edited)
-        self._mw.Set_Power_Button.clicked.connect(self._setupcontrol_logic.Set_Power_Button_Clicked)
-        self._mw.Read_Power_Button.clicked.connect(self._setupcontrol_logic.Read_Power_Button_Clicked)
-        self._mw.Autofocus_Button.clicked.connect(self._setupcontrol_logic.Autofocus_Button_Clicked)
-        self._mw.Flipmirror_Button.clicked.connect(self._setupcontrol_logic.Flipmirror_Button_Clicked)
-        self._mw.StartAutoMeas_Button.clicked.connect(self._setupcontrol_logic.StartAutoMeas_Button_Clicked)
-        self._mw.StopAutoMeas_Button.clicked.connect(self._setupcontrol_logic.StopAutoMeas_Button_Clicked)
-        self._mw.SavePOIs_Button.clicked.connect(self._setupcontrol_logic.SavePOIs_Button_Clicked)
-        #self._setupcontrol_logic.SigReadPower.connect(self.update_laserpower, QtCore.Qt.QueuedConnection)
-        
-        self._mw.MW1_power_DoubleSpinBox.setValue(self._setupcontrol_logic.MW1_power)
-        self._mw.MW3_freq_DoubleSpinBox.setValue(self._setupcontrol_logic.MW3_freq)
-        self._mw.MW3_power_DoubleSpinBox.setValue(self._setupcontrol_logic.MW3_power)
-        self._mw.MW2_power_DoubleSpinBox.setValue(self._setupcontrol_logic.MW2_power)
-        self._mw.MW2_freq_DoubleSpinBox.setValue(self._setupcontrol_logic.MW2_freq)
-        self._mw.MW1_freq_DoubleSpinBox.setValue(self._setupcontrol_logic.MW1_freq)
-        self._mw.Set_Power_DoubleSpinBox.setValue(self._setupcontrol_logic.AOM_volt)
-        self._mw.repump_power_doubleSpinBox.setValue(self._setupcontrol_logic.Repump_power)
-
-        # self._mw.Read_Power_Label.setText(str(self._setupcontrol_logic.read_power))
-        
-    # def update_laserpower(self):
-    #     self._mw.Read_Power_Label.setText(str(self._setupcontrol_logic.read_power))
-
 
     def on_deactivate(self):
         """ Deactivate the module properly.
@@ -216,16 +163,3 @@ class SetupControlGUI(GUIBase):
         # self._mw.PD_zero_Button.setCheckable(True)
         # self._mw.Flipmirror_Button.setCheckable(True)
         # self._mw.Autofocus_Button.setCheckable(True)
-
-    def A1_time_edited(self,val):
-        print(val)
-        A1duration=self._mw.A1_time_doubleSpinBox.value()
-        self._setupcontrol_logic.A1time=A1duration
-        print("oh")
-
-
-# TODO: Remove POIs button
-# "scannerlogic.pois = np.array([])"
-
-# TODO: Start automized measurement
-# "automationlogic.start()"

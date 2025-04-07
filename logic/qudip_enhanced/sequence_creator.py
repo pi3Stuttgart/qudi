@@ -24,6 +24,7 @@ class pd(dict):
         self.ddp['xy8'] = np.concatenate([self.ddp['xy4'], self.ddp['xy4'][::-1]])
         self.ddp['xy16'] = np.concatenate([self.ddp['xy8'], self.ddp['xy8'] + np.pi])
         self.ddp['knillpi'] = np.array([np.pi / 6., 0, np.pi / 2., 0, np.pi / 6.])
+        self.ddp['kdd2'] = np.concatenate([phasexy + self.ddp['knillpi'] for phasexy in np.array([0.0, np.pi / 2.])])
         self.ddp['kdd4'] = np.concatenate([phasexy + self.ddp['knillpi'] for phasexy in self.ddp['xy4']])
         self.ddp['kdd8'] = np.concatenate([phasexy + self.ddp['knillpi'] for phasexy in self.ddp['xy8']])
         self.ddp['kdd16'] = np.concatenate([phasexy + self.ddp['knillpi'] for phasexy in self.ddp['xy16']])
@@ -738,6 +739,211 @@ class DD(Arbitrary):
         return np.concatenate([[3 / 8. * self.rabi_period], 0.5 * self.rabi_period * np.ones(self.number_of_pi_pulses),
                                [
                                    3 / 8. * self.rabi_period]])  # effective duration of pi pulse for each waiting time. The effective phase evolution time during the pi/2 pulse is taken as half of the pulse duration
+
+    @property
+    def minimum_total_tau(self):
+        return self.eff_pulse_dur_waiting_time[0] / self.uhrig_taus_normalized[0]
+
+    @property
+    def effective_durations_dd(self):
+        if self.minimum_total_tau > self.total_tau:
+            raise Exception('Waiting times smaller than zero are not allowed. '
+                            'Total tau must be at least {} (current: {})'.format(self.minimum_total_tau,
+                                                                                 self.total_tau))
+        return self.tau_list - self.eff_pulse_dur_waiting_time
+
+class DDRF(Arbitrary):
+    def __init__(self, dd_type=None, pi_dur=None, pi2_dur=None, time_digitization=1 / 12e3, phase=0.0, rf_phase_offset=0.0, rotation_axis=0.0, azz=None, bath_larmor = None, min_wait_dur = None, constant_phase_offset = False, **kwargs):
+        self.dd_type = dd_type
+        self.rabi_period = pi_dur*2
+        self.pi_dur = pi_dur
+        self.pi2_dur = pi2_dur
+        self.time_digitization = time_digitization
+        self.phase = phase
+        self.rf_phase_offset = rf_phase_offset
+        self.rotation_axis = rotation_axis
+        self.azz = azz
+        self.bath_larmor = bath_larmor
+        self.min_wait_dur = min_wait_dur
+        self.constant_phase_offset = constant_phase_offset
+        self.set_total_tau(**kwargs)
+    
+    # TODO Implement second bath
+
+    column_dict = collections.OrderedDict([('mw', [0, 1]), ('rf', [2, 3]), ('wait', [4])])
+
+    @property
+    def sequence(self):
+        if self.number_of_pi_pulses == 0:
+            out = ['rf'] + ['rf']
+        else:
+            out = list(np.insert(['wait','rf', 'wait'] * self.n_rf, np.array(range(1, self.n_rf))*3, [['mw'] * self.number_of_pi_pulses]))
+            #out = list(np.insert(['rf'] * self.n_rf, range(1, self.n_rf), [['mw'] * self.number_of_pi_pulses]))
+        return getattr(self, '_sequence', [[i] for i in out])
+
+    def mw_array_xy(self):
+        rho, azim = tuple(np.hsplit(self.mw_array_aphi(), 2))
+        x, y, z = coordinates.sph2cart(rho, 0, azim)
+        return np.concatenate([x, y], axis=1)
+
+    def mw_array_aphi(self):
+        rho = np.ones([self.number_of_pi_pulses]) / self.rabi_period
+        return np.vstack([rho, self.phases]).T
+    
+    def rf_array_xy(self):
+        rho, azim = tuple(np.hsplit(self.rf_array_aphi(), 2))
+        x, y, z = coordinates.sph2cart(rho, 0, azim)
+        return np.concatenate([x, y], axis=1)
+
+    def rf_array_aphi(self):
+        return np.vstack([self.rf_dur_list, self.phases_rf_list()]).T
+
+    @ property
+    def rf_dur_list(self):
+        self.tau_list()
+        rf_durs = self.tau_list()-2*self.min_wait_dur # remove at least 512ns at beginning and end of each rf pulse
+        n_periods = [int(n) for n in rf_durs/self.rf_period]
+        return rf_durs
+        #return np.array(n_periods) * self.rf_period
+        
+    @property # how to combine fields_full with rf?
+    def fields_full(self):
+        out = np.zeros((len(self.sequence), self.n_columns))
+        mw_array = self.mw_array_xy()
+        rf_array = self.rf_array_xy()
+        idxmw = 0
+        idxrf = 0
+        for i, val in enumerate(self.sequence):
+            if 'mw' in val:
+                out[i, self.column_dict['mw']] = mw_array[idxmw]
+                idxmw += 1
+            if 'rf' in val:
+                out[i, self.column_dict['rf']] = rf_array[idxrf]
+                idxrf += 1
+            # if 'wait' in val:
+            #     out[i, self.column_dict['wait']] = rf_array[idxrf]
+            #     idxrf += 1
+        return getattr(self, '_fields_full', out)
+
+    @property
+    def rf_freq(self):
+        return self.bath_larmor + self.azz
+
+    @property
+    def rf_period(self):
+        return np.round(1/self.rf_freq,3) # round to single nanosecond
+    
+    @property
+    def bath_period(self):
+        return np.round(1/self.bath_larmor,3) # round to single nanosecond
+    
+    @property
+    def wait_durs(self): # TODO include also c bath
+        taus = self.tau_list()-2*self.min_wait_dur # at least 256ns before and after each pulse.
+        for t in taus: # check that no entry of tau_list is shorter than 512ns
+            if t < 0:
+                print('ERROR: RF Duration with negativ length. Please choose longer tau.')
+                break
+        n_periods = np.array([int(t) for t in taus/self.rf_period])
+        self.rf_durs = np.round(n_periods * self.rf_period,3) # round to ns
+        wait_durs = np.round(taus - self.rf_durs + 2*self.min_wait_dur,3)
+        return wait_durs
+            
+    @property
+    def times_full(self):
+        tl = self.tau_list() # interpulse duration
+        wl = self.wait_durs # wait list
+        wl = np.array([np.round(val/2,3) for val in wl for _ in (0, 1)]) # split each wait into two, one before each rf, one after each rf pulse.
+        rfl = self.rf_durs # RF list
+
+        if self.number_of_pi_pulses == 0:
+            out = tl
+        else:
+            out = np.insert(rfl, range(1, len(rfl)), [[self.pi_dur] * self.number_of_pi_pulses]) #FIXME is this correct rf dur?
+            out = np.insert(out, np.arange(0, len(out)+1,1), [wl])
+        return getattr(self, '_times_full', out)
+
+    @property
+    def phases(self):
+        name = self.dd_type
+        if name[-6:] == '_uhrig' in name:
+            name = name[:-6]
+        return np.array(__PHASES_DD__[name]) + self.phase
+
+    @property
+    def n_rf(self):
+        if self.number_of_pi_pulses == 0:
+            return 2
+        else:
+            return self.number_of_pi_pulses + 1
+
+    @property
+    def n_tau(self):
+        return self.n_rf - 1
+    
+    def find_closest_tau_to_bath(self, tau):
+        n = 1
+        while self.bath_period * n < tau:
+            n+=1
+        if np.abs(self.bath_period*(n-1) - tau) < np.abs(self.bath_period*(n) - tau):
+            n-=1
+        matched_tau = self.bath_period * n
+        return matched_tau
+
+
+    def set_total_tau(self, **kwargs):
+        if self.dd_type[-6:] == '_uhrig':
+            return kwargs['total_tau']
+        else:
+            if 'tau' in kwargs and kwargs['tau'] is not None:
+                tau = kwargs['tau']
+                tau = self.find_closest_tau_to_bath(tau)
+            else:
+                tau = kwargs['total_tau'] / self.n_tau
+                tau = self.find_closest_tau_to_bath(tau)
+        if self.time_digitization is not None:
+            tau = 2 * np.around((tau / 2.) / self.time_digitization) * self.time_digitization
+        self.total_tau = self.n_tau * tau
+        print('Total tau duration is', self.total_tau, 'µs.')
+
+    def tau_list(self):
+        name = self.dd_type
+        tau = self.total_tau / self.n_tau
+        # first and last tau only have half duration. 1/8 period + 2/8 period due to pi/2 pulse at start and pi pulse at end.
+        edge_tau = tau / 2. - 1/2*self.pi_dur - 1/2*self.pi2_dur
+        #edge_tau = tau / 2. - 3/8*self.rabi_period
+        central_tau = tau - self.pi_dur
+        return np.array([edge_tau] + [central_tau for _ in range(self.number_of_pi_pulses - 1)] + [edge_tau])
+
+    def phases_rf_list(self):
+        tl = self.tau_list()
+        phase_rf = []
+        if self.constant_phase_offset == True:
+            phi_tau = self.rf_phase_offset
+        else:
+            phi_tau = -self.azz*(2*np.pi*tl[1]) +self.rf_phase_offset
+        for i, tau in enumerate(tl):
+             if i % 2 == 0:
+                 phase_rf.append(phi_tau* i + self.rotation_axis)
+             else:
+                 phase_rf.append(phi_tau * i + np.pi + self.rotation_axis)
+        return np.array(phase_rf)
+    
+    @property
+    def number_of_pi_pulses(self):
+        return len(self.phases)
+
+    @property
+    def number_of_pulses(self):
+        raise Exception(
+            'THIS IS BULLSHIT, THIS SEQUENCE EXCLUDES THE Pi/2 pulses, i.e. number of pulses = number of pi pulses')
+        return self.number_of_pi_pulses + 2
+
+    @property
+    def eff_pulse_dur_waiting_time(self):
+        return np.concatenate([[1 / 2. * self.pi2_dur + 1 / 2. * self.pi_dur], self.pi_dur * np.ones(self.number_of_pi_pulses),
+                               [
+                                   1 / 2. * self.pi2_dur + 1 / 2. * self.pi_dur]])  # effective duration of pi pulse for each waiting time. The effective phase evolution time during the pi/2 pulse is taken as half of the pulse duration
 
     @property
     def minimum_total_tau(self):

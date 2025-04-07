@@ -68,6 +68,7 @@ class rabi_default_values_and_widget_functions:
         update_after_stop:bool=F
 
         pi_pulse:float=100 #ns
+        rabi_unit:bool=False
 
         def rabi_Stop_Button_Clicked(self,on):
                 #print('done something with rabi_Stop_Button')
@@ -84,7 +85,7 @@ class rabi_default_values_and_widget_functions:
                 self.setup_seq()
                 self.starting_time+=time.time()-self.stoping_time
                 self.time_differences=self.setup_time_tagger(n_histograms=self.number_of_points_per_line,
-                        binwidth=self.rabi_Binning*1000, #pulsed_Binning input is in ns.
+                        binwidth=self.rabi_Binning*1000, #rabi_Binning input is in ns.
                         n_bins=int(self.rabi_ReadoutTime/(self.rabi_Binning))
                         )       
                 self.time_differences.start()
@@ -394,3 +395,19 @@ class rabi_default_values_and_widget_functions:
         def rabi_SelectFit_ComboBox_currentTextChanged(self, text):
                 print("combo box sagt: ", text)
                 self.rabi_FitFunction = text
+
+        def rabi_Toggle_units_CheckBox_StateChanged(self,on):
+                self.rabi_unit=on==2
+                if self.rabi_unit:
+                        self.rabi_MW1_Power=round(self.power_to_amp(self.rabi_MW1_Power)[0],10)
+                        self.rabi_MW2_Power=round(self.power_to_amp(self.rabi_MW2_Power)[0],10)
+                        self.rabi_MW3_Power=round(self.power_to_amp(self.rabi_MW3_Power)[0],10)
+                        self.rabi_MW4_Power=round(self.power_to_amp(self.rabi_MW4_Power)[0],10)
+                        self.rabi_MW5_Power=round(self.power_to_amp(self.rabi_MW5_Power)[0],10)
+                else:
+                        self.rabi_MW1_Power=round(self.amp_to_power(self.rabi_MW1_Power)[0],10)
+                        self.rabi_MW2_Power=round(self.amp_to_power(self.rabi_MW2_Power)[0],10)
+                        self.rabi_MW3_Power=round(self.amp_to_power(self.rabi_MW3_Power)[0],10)
+                        self.rabi_MW4_Power=round(self.amp_to_power(self.rabi_MW4_Power)[0],10)
+                        self.rabi_MW5_Power=round(self.amp_to_power(self.rabi_MW5_Power)[0],10)
+                self.sigUnits.emit(on)

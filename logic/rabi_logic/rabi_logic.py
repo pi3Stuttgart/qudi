@@ -61,6 +61,7 @@ class RabiLogic(GenericLogic,rabi_default):
     SigClock= QtCore.Signal()
     SigCheckReady_Beacon = QtCore.Signal()
     sigFitPerformed= QtCore.Signal(np.float)
+    sigUnits=QtCore.Signal(int)
 
     starting_time=0
 
@@ -370,6 +371,13 @@ class RabiLogic(GenericLogic,rabi_default):
         return V_pp / self._awg.mcas_dict.awgs['2g'].ch[1].output_amplitude
         #return V_pp / float(self.awg_device.amp1) #awg_amplitude
 
+    def amp_to_power(self, power_amp, impedance=50):
+        power_amp = np.atleast_1d(power_amp)
+        V_pp= power_amp* self._awg.mcas_dict.awgs['2g'].ch[1].output_amplitude
+        V_rms=V_pp/(2 * np.sqrt(2))
+        P_watts=V_rms**2/impedance
+        power_dBm=np.log10(P_watts/1e-3)*10
+        return power_dBm
 
     # ### THIS WAS USED TO MEASURE SSR TRACE ###
     # def setup_seq(
@@ -609,6 +617,7 @@ class RabiLogic(GenericLogic,rabi_default):
             n_bins=int(self.rabi_ReadoutTime / self.rabi_Binning)
             )
 
+        #probaly unused by now
         self.power = []
         if self.rabi_MW2:
             self.power += [self.rabi_MW2_Power]
@@ -617,10 +626,20 @@ class RabiLogic(GenericLogic,rabi_default):
     
         self.power = np.asarray(self.power)
         self.power = self.power_to_amp(self.power)
-        if np.sum(self.power) > 1:
+        #until here
+
+        Powers={}
+        MWes=["MW1","MW2","MW3","MW4","MW5"]
+        _powers=[self.rabi_MW1_Power,self.rabi_MW2_Power,self.rabi_MW3_Power,self.rabi_MW4_Power,self.rabi_MW5_Power]
+        if not self.rabi_unit:
+            _powers=self.power_to_amp(_powers)
+        Powers.update(zip(MWes,_powers))
+
+
+        if (np.sum(_powers[:1]) > 1) or (_powers[0]>1):
             logger.error(
-                "Combined Microwavepower of all active channels too high! Need value below 1. Value of {} was given.",
-                np.sum(self.power))
+                "Combined Microwavepower of all active channels too high! Need value below 1. Value of {} was given. Check MW 4 and 5.",
+                np.sum(_powers))
             raise Exception
     
         seq = self._awg.mcas(name="Rabi", ch_dict={"2g": [1, 2], "ps": [1]})
@@ -640,20 +659,19 @@ class RabiLogic(GenericLogic,rabi_default):
                     repump=False)
     
         freq_init = np.array([self.rabi_MW2_Freq, self.rabi_MW3_Freq])[[self.rabi_MW2, self.rabi_MW3]]
-        power_init = self.power_to_amp(
-            np.array([self.rabi_MW2_Power, self.rabi_MW3_Power])[[self.rabi_MW2, self.rabi_MW3]])
+
+        power_init = np.array(_powers[1:3])[[self.rabi_MW2, self.rabi_MW3]]
     
         # Values for flip after tau pulse, for projection if central transition was measured
         freq_Cpi = np.asarray([self.rabi_MW4_Freq, self.rabi_MW5_Freq])[[self.rabi_MW4, self.rabi_MW5]]
-        power_Cpi = self.power_to_amp([self.rabi_MW4_Power, self.rabi_MW5_Power])[
-            [self.rabi_MW4, self.rabi_MW5]]
+
+        power_Cpi = np.array(_powers[3:])[[self.rabi_MW4, self.rabi_MW5]]
     
         # Values for flip after tau pulse if pi duration is different for MW4 and MW5
         freq_Cpi_2 = np.asarray([self.rabi_MW4_Freq, self.rabi_MW5_Freq])[
             [self.rabi_MW4 and self.rabi_MW4_Duration > self.rabi_MW5_Duration,
                 self.rabi_MW5 and self.rabi_MW4_Duration < self.rabi_MW5_Duration]]
-        power_Cpi_2 = self.power_to_amp([self.rabi_MW4_Power, self.rabi_MW5_Power])[
-            [self.rabi_MW4 and self.rabi_MW4_Duration > self.rabi_MW5_Duration,
+        power_Cpi_2 = np.array(_powers[3:])[[self.rabi_MW4 and self.rabi_MW4_Duration > self.rabi_MW5_Duration,
                 self.rabi_MW5 and self.rabi_MW4_Duration < self.rabi_MW5_Duration]]
     
         if (self.rabi_DecayInit - gateMW_dur) > 0:
@@ -669,6 +687,7 @@ class RabiLogic(GenericLogic,rabi_default):
                         pd2g1={"type": "sine", "frequencies": freq_init, "amplitudes": power_init},
                         A1=self.rabi_A1,
                         A2=self.rabi_A2,
+                        laser = True,
                         repump = self.rabi_CWRepump,
                         gateMW=True,
                         length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_InitTime, 64)
@@ -678,6 +697,7 @@ class RabiLogic(GenericLogic,rabi_default):
                 seq.asc(name='init_no_sine',
                         A1=self.rabi_A1,
                         A2=self.rabi_A2,
+                        laser = True,
                         repump = self.rabi_CWRepump,
                         length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_InitTime, 64)
                         )
@@ -689,7 +709,7 @@ class RabiLogic(GenericLogic,rabi_default):
             seq.asc(name="gateMW", gateMW=True, length_mus=E.round_length_mus_to_x_multiple_ps(gateMW_dur, 64))
             seq.asc(name="Tau_pulse" + str(duration),
                     pd2g1={"type": "sine", "frequencies": [self.rabi_MW1_Freq],
-                            "amplitudes": self.power_to_amp(self.rabi_MW1_Power)},
+                            "amplitudes":[ _powers[0]]},
                     length_mus=duration,
                     gateMW=True)  # self.rabi_piPulseDuration is divided by 1000 to be in µs
     
@@ -707,14 +727,14 @@ class RabiLogic(GenericLogic,rabi_default):
                             gateMW=True
                             )
             seq.asc(name='Tau_pulse_decay',
-                    length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_Tau_Decay / 1000, round_to),
+                    length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_Tau_Decay / 1000, round_to),# self.rabi_Tau_Decay is divided by 1000 to be in µs 
                     A1=False,
-                    A2=False)  # self.rabi_Tau_Decay is divided by 1000 to be in µs
-            
+                    A2=False)
+                   
             seq.start_new_segment("Readout")
             seq.asc(name='readout',
                     length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_ReadoutTime / 1000, 64),
-                    A1=self.rabi_A1Readout, A2=self.rabi_A2Readout, repump = self.rabi_CWRepump, gate=True)
+                    A1=self.rabi_A1Readout, A2=self.rabi_A2Readout, repump = self.rabi_CWRepump, gate=True,laser = True)
             seq.asc(name='readout_decay',
                     length_mus=E.round_length_mus_to_x_multiple_ps(self.rabi_ReadoutDecay / 1000, 64), A1=False,
                     A2=False, gate=True)

@@ -60,6 +60,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
     savelogic = Connector(interface='SaveLogic')
     mcas_holder = Connector(interface='McasDictHolderInterface')
     fitlogic = Connector(interface='FitLogic')
+    setupcontrollogic = Connector(interface = 'SetupControlLogic')
     
     wavemeterlogic= Connector(interface="WavemeterLoggerLogic")
     
@@ -81,7 +82,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
     enable_MW1 = StatusVar('enable_MW1', True)
     enable_MW2 = StatusVar('enable_MW2', True)
     enable_MW3 = StatusVar('enable_MW3', False)
-
+    peak_offset = StatusVar('peak_offset', 0) #to counter the PLE drift a bit (voltage + repump => drift when repump is off)
 
 
 
@@ -94,6 +95,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
     sigScanStarted = QtCore.Signal()
     sigFitPerformed =  QtCore.Signal(str)
     SigIonized = QtCore.Signal()
+    sig_refresh_numbers = QtCore.Signal()
 
     # to cut the scan line into smaller parts:
     slices=1
@@ -131,6 +133,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.plot_y = []
         self.plot_y2 = []
 
+        self.Range=0.3
+
     def on_activate(self):
         """ Initialisation performed during activation of the module.
         """
@@ -140,8 +144,13 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self._wavemeterlogic = self.wavemeterlogic()
         #self.ps=self._awg.mcas_dict.awgs["ps"]
         self._fit_logic = self.fitlogic()
+        self._setupcontrol_logic=self.setupcontrollogic()
         # Reads in the maximal scanning range. The unit of that scan range is
         # micrometer!
+
+        #I have to do it this strange way in order not to get an error on startup
+        self._wavemeterlogic._counter_logic._laserscanner_logic=self
+
         self.a_range = self._scanning_device.get_position_range()[3]
 
         # Initialise the current position of all four scanner channels.
@@ -369,6 +378,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         self.current_position = self._scanning_device.get_scanner_position() #Never used
         print("PLE Logic current pos", self.current_position)
 
+        self.scan_range=[min(self.scan_range),max(self.scan_range)]
         if v_min is not None:
             self.scan_range[0] = v_min
         else:
@@ -619,7 +629,8 @@ class LaserScannerLogic(GenericLogic, ple_default):
             self._awg.mcas_dict.stop_awgs()
             self.setup_seq(sequence_name=self.curr_sequence_name)
 
-        elif self.hashed == False: 
+        elif self.hashed == False:
+            print("Not Hashed")
             self._awg.mcas_dict.stop_awgs()
             self.curr_sequence_name = "ple_trace"
             self.setup_seq(sequence_name=self.curr_sequence_name)
@@ -646,64 +657,49 @@ class LaserScannerLogic(GenericLogic, ple_default):
         # either by the stop button, the runtime, or number of sequence repetitions.
         seq = self._awg.mcas(name=sequence_name, ch_dict={"2g": [1, 2], "ps": [1]})
         frequencies = np.array([self.MW1_Freq, self.MW2_Freq, self.MW3_Freq])[[self.enable_MW1, self.enable_MW2, self.enable_MW3]]
-        seq.start_new_segment("Microwaves"+str(frequencies), loop_count=500)
+        seq.start_new_segment("Microwaves", loop_count=500) #+str(frequencies)
         if len(self.power) == 0:
             print('Sequence without MW')
             seq.asc(name="without MW",
                     A1=self.enable_A1,
                     A2=self.enable_A2,
+                    laser = True,
                     repump=self.enable_Repump,
                     length_mus=10
                     )
         else:
-            # L1_freq = 5762.234
-            # L2_freq = 5763.535
-            # R1_freq = 5901.730
-            # R2_freq = 5903.030
-            
-            # seq.asc(name="with MW", length_mus=.256, gateMW = True)
-            # seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": [L1_freq], "amplitudes": [0.22]},
-            #         length_mus=.333, gateMW=True
-            #         )
-            # seq.asc(name="with MW",
-            #         A1=self.enable_A1,
-            #         A2=self.enable_A2,
-            #         repump=self.enable_Repump,
-            #         length_mus=2.048
-            #         )
-            # seq.asc(name="with MW", length_mus=.256, gateMW = True)
-            # seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": [L2_freq], "amplitudes": [0.22]},
-            #         length_mus=.333, gateMW=True
-            #         )
-            # seq.asc(name="with MW",
-            #         A1=self.enable_A1,
-            #         A2=self.enable_A2,
-            #         repump=self.enable_Repump,
-            #         length_mus=2.048
-            #         )
-            # seq.asc(name="with MW", length_mus=.256, gateMW = True)
-            # seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": [R1_freq], "amplitudes": [0.24]},
-            #         length_mus=.333, gateMW=True
-            #         )
-            # seq.asc(name="with MW",
-            #         A1=self.enable_A1,
-            #         A2=self.enable_A2,
-            #         repump=self.enable_Repump,
-            #         length_mus=2.048
-            #         )
-            # seq.asc(name="with MW", length_mus=.256, gateMW = True)
-            # seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": [R2_freq], "amplitudes": [0.24]},
-            #         length_mus=.333, gateMW=True
-            #         )
-            # seq.asc(name="with MW",
-            #         A1=self.enable_A1,
-            #         A2=self.enable_A2,
-            #         repump=self.enable_Repump,
-            #         length_mus=2.048
-            #         )
+            print('Setup with MW')
+            #enable_A1 = False
+            #enable_A2 = False
+            #print(self._scan_counter_up)
+            #if self._scan_counter_up < 11:
+            #    enable_A1 = True
+            #else: enable_A2 = True
+            #L1_freq = 5762.0740
+            #L2_freq = 5766.974029
+            #R1_freq = 5901.638
+            #R2_freq = 5906.537896
+            #seq.asc(name="with MW", length_mus=1.024*3, gateMW = True, A2 = enable_A2, A1 = enable_A1, repump = self.enable_Repump)
+            #seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": [L1_freq], "amplitudes": [0.7]},
+            #        gateMW=True,
+            #        length_mus=.228
+            #        )
+            #seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": [L2_freq], "amplitudes": [0.7]},
+            #        gateMW=True,
+            #        length_mus=.228
+            #        )
+            #seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": [R1_freq], "amplitudes": [0.7]},
+            #        gateMW=True,
+            #        length_mus=.264
+            #        )
+            #seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": [R2_freq], "amplitudes": [0.7]},
+            #        gateMW=True,
+            #        length_mus=.264
+            #        )
             seq.asc(name="with MW", pd2g1={"type": "sine", "frequencies": frequencies, "amplitudes": self.power},
                     A1=self.enable_A1,
                     A2=self.enable_A2,
+                    laser = True,
                     gateMW=True,
                     repump=self.enable_Repump,
                     length_mus=10
@@ -843,16 +839,18 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 self.volt_list.append(peak_volt)
                 self.timstap_list.append(time.time())
                 self.accepted_list.append(self.happy)
-                self._static_v = peak_volt
+                self._static_v = peak_volt+self.peak_offset
                 self.goto_voltage(self._static_v)
+                self._wavemeterlogic._counter_logic.fitted_V= self._static_v
                 #self._wavemeterlogic._wavemeter_device.get_reference_course(self.Frequencies_Fit[-1], channel=2)
 
                 # follow the defect PLE line by applying a voltage to the laser chamber
                 #Range=self.scan_range[1]-self.scan_range[0]
-                Range=0.3
+                
 
                 #self.scan_range[0],self.scan_range[1]=peak_volt-0.5*Range,peak_volt+0.05
-                self.scan_range[0],self.scan_range[1]=peak_volt-0.5*Range,peak_volt+0.5*Range
+                self.scan_range[0],self.scan_range[1]=peak_volt-0.5*self.Range,peak_volt+0.5*self.Range
+                self.sig_refresh_numbers.emit()
             else: 
                 # emit an error?
                 #retry with bigger scan range:
@@ -863,6 +861,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
                 #self.scan_range[0],self.scan_range[1]=self.scan_range[0]-1,self.scan_range[1]+1
                 #self.scan_range=list(np.clip(self.scan_range,-3,3))
                 self.start_scanning()
+            
         self.stopped=True
         return
 
@@ -897,7 +896,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         
         # prepare the data in a dict or in an OrderedDict:
         data = OrderedDict()
-        data['Applied Voltage (V)'] = self.plot_x_frequency #frequency (Hz)
+        data['Applied Voltage (V)'] = self.plot_x #_frequency #frequency (Hz) #why was this frequency? this is Voltage!
         data['trace count data (counts)'] = self.plot_y # counts/s
 
         data2 = OrderedDict()
@@ -924,6 +923,9 @@ class LaserScannerLogic(GenericLogic, ple_default):
         parameters['MW1 freq (MHz)'] = self.MW1_Freq
         parameters['MW2 freq (MHz)'] = self.MW2_Freq
         parameters['MW3 freq (MHz)'] = self.MW3_Freq
+        parameters["repump"]=self.enable_Repump
+        parameters["pulsed_repump"]=self.enable_PulsedRepump
+        parameters["repump_power (W)"]=self._setupcontrol_logic.actual_repump_power
 
 
         fig = self.draw_figure(
@@ -1110,7 +1112,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         if self.NumberOfPeaks==1:
             model,params=self._fit_logic.make_gaussian_model()
 
-            result = self._fit_logic.make_gaussian_fit(
+            fit = self._fit_logic.make_gaussian_fit(
                                 x_axis=x_data,
                                 data=y_data,
                                 units='Hz',
@@ -1120,7 +1122,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         elif self.NumberOfPeaks==2:
             model,params=self._fit_logic.make_gaussiandouble_model()
 
-            result = self._fit_logic.make_gaussiandouble_fit(
+            fit = self._fit_logic.make_gaussiandouble_fit(
                                 x_axis=x_data,
                                 data=y_data,
                                 units='Hz',
@@ -1129,7 +1131,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
         elif self.NumberOfPeaks==3:
             model,params=self._fit_logic.make_gaussiantriple_model()
 
-            result = self._fit_logic.make_gaussiantriple_fit(
+            fit = self._fit_logic.make_gaussiantriple_fit(
                                 x_axis=x_data,
                                 data=y_data,
                                 units='Hz',
@@ -1140,7 +1142,7 @@ class LaserScannerLogic(GenericLogic, ple_default):
             logger.warning("function 3 gaussian peaks not implemeted")
 
         self.interpolated_x_data=np.linspace(x_data.min(),x_data.max(),len(x_data)*5)
-        self.fit_data = model.eval(x=self.interpolated_x_data, params=result.params)
+        self.fit_data = model.eval(x=self.interpolated_x_data, params=fit.params)
         
         #using own fitlogic
         # fit_func=self._fit_logic.make_n_gauss_function(self.NumberOfPeaks)
@@ -1154,15 +1156,15 @@ class LaserScannerLogic(GenericLogic, ple_default):
 
         for i in range(self.NumberOfPeaks):
             try:
-                self.Contrast_Fit=self.Contrast_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"amplitude"].value,3))+"; " # because 1 peak and 2 peak gaussian fit dont give the same result keywords, we add the 'gi_' part (missing in the 1 peak case) by multiplying the string by 1 if paeks!=1 and remove it if peaks=1.
-                self.Frequencies_Fit=self.Frequencies_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"center"].value,7))+"; "
-                self.Linewidths_Fit=self.Linewidths_Fit+str(round(result.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"fwhm"].value,3)*2*np.sqrt(2*np.log(2)))+"; " #TODO convert linewidth from V to MHz
+                self.Contrast_Fit=self.Contrast_Fit+str(round(fit.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"amplitude"].value,3))+"; " # because 1 peak and 2 peak gaussian fit dont give the same result keywords, we add the 'gi_' part (missing in the 1 peak case) by multiplying the string by 1 if paeks!=1 and remove it if peaks=1.
+                self.Frequencies_Fit=self.Frequencies_Fit+str(round(fit.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"center"].value,7))+"; "
+                self.Linewidths_Fit=self.Linewidths_Fit+str(round(fit.params[("g"+str(i)+"_")*(self.NumberOfPeaks!=1)+"fwhm"].value,3))+"; " #*2*np.sqrt(2*np.log(2)) is not needed #TODO convert linewidth from V to MHz
             except Exception as e:
                 print("an error occured:\n", e)
 
         self.sigFitPerformed.emit(self.Frequencies_Fit)
-        self.happy=True # Grober Unfug
-        return self.interpolated_x_data,self.fit_data,result
+        self.happy=True # Grober Unfug, ok, wird aber immer noch gebraucht
+        return self.interpolated_x_data,self.fit_data,fit
     
     def convert_seq_params_to_string(self):
         return str(self.MW1_Power)+str(self.MW2_Power)+str(self.MW3_Power)+str(self.MW1_Freq)+str(self.MW2_Freq)+str(self.MW3_Freq)+str(self.enable_MW1)+str(self.enable_MW2)+str(self.enable_MW3)+str(self.enable_A1)+str(self.enable_A2)+str(self.enable_Repump)+str(self.enable_PulsedRepump)+str(self.Lock_laser)+str(self.RepumpDuration)+str(self.RepumpDecay)

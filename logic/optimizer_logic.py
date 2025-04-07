@@ -134,6 +134,8 @@ class OptimizerLogic(GenericLogic):
         self._initialize_z_refocus_image()
 
         self.refocus_finished = False
+        
+        self.optimized_positions=[]
         return 0
 
     def on_deactivate(self):
@@ -687,6 +689,8 @@ class OptimizerLogic(GenericLogic):
             self._initialize_z_refocus_image()
             self._sigScanZLine.emit()
 
+        self.optimized_positions.append([self._current_x,self._current_y,self._current_z])
+
     def set_position(self, tag, x=None, y=None, z=None, a=None):
         """ Set focus position.
 
@@ -704,3 +708,7 @@ class OptimizerLogic(GenericLogic):
             self._current_z = z
         self.sigPositionChanged.emit(self._current_x, self._current_y, self._current_z)
 
+    def undo_last_optimization(self):
+        self.optimized_positions.pop()
+        x,y,z=self.optimized_positions[-1]
+        self.set_position("scanner",x,y,z)
