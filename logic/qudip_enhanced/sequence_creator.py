@@ -753,16 +753,16 @@ class DD(Arbitrary):
         return self.tau_list - self.eff_pulse_dur_waiting_time
 
 class DDRF(Arbitrary):
-    def __init__(self, dd_type=None, pi_dur=None, pi2_dur=None, time_digitization=1 / 12e3, phase=0.0, rf_phase_offset=0.0, rotation_axis=0.0, azz=None, bath_larmor = None, min_wait_dur = None, constant_phase_offset = False, **kwargs):
+    def __init__(self, dd_type=None, pi_dur=None, pi2_dur=None, time_digitization=1 / 12e3, phase=0.0, rf_phase_increment=0.0, rotation_axis=0.0, detuning=None, bath_larmor = None, min_wait_dur = None, constant_phase_offset = False, **kwargs):
         self.dd_type = dd_type
         self.rabi_period = pi_dur*2
         self.pi_dur = pi_dur
         self.pi2_dur = pi2_dur
         self.time_digitization = time_digitization
         self.phase = phase
-        self.rf_phase_offset = rf_phase_offset
+        self.rf_phase_increment = rf_phase_increment
         self.rotation_axis = rotation_axis
-        self.azz = azz
+        self.detuning = detuning
         self.bath_larmor = bath_larmor
         self.min_wait_dur = min_wait_dur
         self.constant_phase_offset = constant_phase_offset
@@ -827,7 +827,7 @@ class DDRF(Arbitrary):
 
     @property
     def rf_freq(self):
-        return self.bath_larmor + self.azz
+        return self.bath_larmor + self.detuning
 
     @property
     def rf_period(self):
@@ -899,29 +899,29 @@ class DDRF(Arbitrary):
                 tau = kwargs['tau']
                 tau = self.find_closest_tau_to_bath(tau)
             else:
-                tau = kwargs['total_tau'] / self.n_tau
+                tau = kwargs['total_tau'] / self.n_tau / 2
                 tau = self.find_closest_tau_to_bath(tau)
         if self.time_digitization is not None:
             tau = 2 * np.around((tau / 2.) / self.time_digitization) * self.time_digitization
-        self.total_tau = self.n_tau * tau
+        self.total_tau = self.n_tau * tau * 2
         print('Total tau duration is', self.total_tau, 'µs.')
 
     def tau_list(self):
         name = self.dd_type
-        tau = self.total_tau / self.n_tau
+        tau = self.total_tau / self.n_tau / 2
         # first and last tau only have half duration. 1/8 period + 2/8 period due to pi/2 pulse at start and pi pulse at end.
-        edge_tau = tau / 2. - 1/2*self.pi_dur - 1/2*self.pi2_dur
+        edge_tau = tau - 1/2*self.pi_dur - 1/2*self.pi2_dur
         #edge_tau = tau / 2. - 3/8*self.rabi_period
-        central_tau = tau - self.pi_dur
-        return np.array([edge_tau] + [central_tau for _ in range(self.number_of_pi_pulses - 1)] + [edge_tau])
+        central_tau = tau - self.pi_dur / 2
+        return np.array([edge_tau] + [central_tau*2 for _ in range(self.number_of_pi_pulses - 1)] + [edge_tau])
 
     def phases_rf_list(self):
         tl = self.tau_list()
         phase_rf = []
         if self.constant_phase_offset == True:
-            phi_tau = self.rf_phase_offset
+            phi_tau = self.rf_phase_increment
         else:
-            phi_tau = -self.azz*(2*np.pi*tl[1]) +self.rf_phase_offset
+            phi_tau = -self.detuning*(2*np.pi*tl[1]) + self.rf_phase_increment
         for i, tau in enumerate(tl):
              if i % 2 == 0:
                  phase_rf.append(phi_tau* i + self.rotation_axis)

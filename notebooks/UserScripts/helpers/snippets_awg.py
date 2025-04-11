@@ -11,6 +11,7 @@ import copy
 import traceback
 import sys
 import hardware.Keysight_AWG_M8190.elements as E
+from logic.qudip_enhanced import *
 
 import logic.misc as misc
 #from pi3diamond import pi3d
@@ -3468,12 +3469,203 @@ wfpd_all_but_standard = collections.OrderedDict(
 #         wave_file_kwargs=wave_file_kwargs, **kwargs
 #     )
 
-def get_hardcoded_si5_values(state):
-    si5_freq = {'m32': 8.9915829,  'm12':4.1691871, 'p12': 0.649641, 'p32': 5.4661419}[state]
-    si5_amp = 0.9
-    si5_pi = {'m32': 15.275*0.882,  'm12':30.913, 'p12': 50, 'p32': 26.6}[state]
-    si5_pi2 = {'m32': 8.711*0.882,  'm12':16.549, 'p12': 25, 'p32': 14.407}[state]
-    return si5_freq, si5_amp, si5_pi, si5_pi2
+
+def ddrf(mcas,
+         global_mw_phase,
+         second_mw_phase,
+         rf_phase_increment,
+         rotation_axis,
+         pi_dur,
+         pi2_dur,
+         detuning,
+         bath_freq,
+         tau,
+         n_rep_ddrf,
+         ddrft,
+         mw_freq,
+         mw_amp,
+         rf_amp,
+         pi2_1 = True,
+         pi2_2 = True
+         ):
+    pi2 = sc.Rabi(t_rabi=pi2_dur,
+                  omega=1 / pi2_dur*4,
+                  phase=0.0,
+                  control_field='mw')
+    pi2_phi = sc.Rabi(t_rabi=pi2_dur,
+                      omega=1 / pi2_dur*4,
+                      phase=second_mw_phase,
+                      control_field='mw')
+    ddrf = sc.DDRF(dd_type='{}_{}'.format(n_rep_ddrf,ddrft),
+                    pi_dur=pi_dur,
+                    pi2_dur=pi2_dur,
+                    detuning = detuning,
+                    bath_larmor = bath_freq,
+                    rf_phase_increment = rf_phase_increment,
+                    rotation_axis= rotation_axis,
+                    tau=tau,
+                    min_wait_dur = .256
+                    )
+    sequence = []
+    if pi2_1:
+        sequence.append(pi2)
+    sequence.append(ddrf)
+    if pi2_2:
+        sequence.append(pi2_phi)
+
+    if len(sequence)>1:
+        seq = sc.Concatenated(sequence, controls=['mw', 'rf', 'wait'])
+    else:
+        seq = ddrf
+    waveform_ddrf(mcas,
+             seq,
+             global_mw_phase,
+             mw_freq = mw_freq,
+             rf_freq = bath_freq + detuning,
+             mw_amp = mw_amp,
+             rf_amp = rf_amp
+             )
+
+def waveform_ddrf(mcas,
+                  seq,
+                  global_mw_phase,
+                  mw_freq,
+                  rf_freq,
+                  mw_amp,
+                  rf_amp
+                  ):
+    def erabi(mcas, freq, length, amp, phase=0.0):
+        electron_rabi(mcas,
+                        name='electron rabi',
+                        length_mus=length,
+                        amplitudes=[amp],
+                        frequencies=[freq],
+                        phases=np.rad2deg(phase),
+                        new_segment=False,
+                        gateMW=True,
+                        gateRF=True,
+                        mixer_deg=-90,
+                        pulseshape='sinehermite',
+                        )
+    def nrabi(mcas, freq, length, amp, phase=0.0):
+        mcas.asc(
+            length_mus=E.round_length_mus_to_x_multiple_ps(length,1),
+            name='nuc',
+            gateRF = True,
+            pd2g2={"type": "sinehermite_rf", "frequencies": [freq], "amplitudes": [amp], "phases": [np.rad2deg(phase)],
+                    "phase_offset_type": 'coherent'}
+        )
+    
+    mw = seq.times_fields_aphi('mw')
+    rf = seq.times_fields_aphi('rf')
+    wait = seq.times_fields_aphi('wait')
+    
+    for k, step in enumerate(seq.sequence_steps):
+        idx = int(step[1]) - 1
+        if step[0] == 'mw':  
+            erabi(mcas,
+                  freq=mw_freq,
+                  length=mw[idx, 0],
+                  amp=mw_amp,
+                  phase=mw[idx, 2] + global_mw_phase,)                
+        elif step[0] == 'rf':
+            nrabi(mcas,
+                  freq=rf_freq,
+                  length=rf[idx, 0],
+                  amp=rf_amp,
+                  phase=rf[idx, 2])
+        if step[0] == 'wait':
+            mcas.asc(length_mus = wait[idx,0], gateMW = True, gateRF = True)
+def sedor(mcas,
+          pi2_dur,
+          n_rep_sedor,
+          sedort,
+          total_tau,
+          probe_freq,
+          probe_amp,
+          target_freq,
+          target_amp,
+          target_dur,
+          ):
+    rabi_period = pi2_dur * 4
+    pi2 = sc.Rabi(t_rabi=0.25 * rabi_period, omega=1 / rabi_period, phase=0.0, control_field='mw')
+    dd = sc.DD(dd_type='{}_{}'.format(n_rep_sedor, sedort), rabi_period=rabi_period, total_tau=total_tau)
+    seq = sc.Concatenated([pi2, dd], controls=['mw', 'wait'])
+    waveform_sedor(mcas,
+                   seq,
+                   probe_freq,
+                   probe_amp,
+                   target_freq,
+                   target_amp,
+                   target_dur
+                   )
+def waveform_sedor(mcas,
+                   seq,
+                   probe_freq,
+                   probe_amp,
+                   target_freq,
+                   target_amp,
+                   target_dur,
+                   ):
+    def nrabi(mcas, freq, length, amp, phase=0.0):
+        mcas.asc(
+            length_mus=E.round_length_mus_to_x_multiple_ps(length,1),
+            name='nuc',
+            gateRF = True,
+            pd2g2={"type": "sinehermite_rf", "frequencies": [freq], "amplitudes": [amp], "phases": [np.rad2deg(phase)],
+                    "phase_offset_type": 'coherent'}
+        )
+    mw = seq.times_fields_aphi('mw') # actually RF (originates from variable name constrains)
+    wait = seq.times_fields_aphi('wait')
+    
+    first_wait_done = False
+    for k, step in enumerate(seq.sequence_steps):
+        idx = int(step[1]) - 1
+        if step[0] == 'mw':
+            nrabi(mcas,
+                  freq=probe_freq,
+                  length=mw[idx, 0],
+                  amp=probe_amp,
+                  phase=mw[idx, 2])
+        if step[0] == 'wait':
+            if first_wait_done:
+                nrabi(mcas,
+                      freq= target_freq,
+                      length= target_dur,
+                      amp= target_amp,
+                      phase = mw[idx, 2]) # Is this phase correct?
+
+                tau_wait = wait[idx, 0] - target_dur
+            else:
+                tau_wait = wait[idx, 0]
+                
+            loops = int(tau_wait/1000)
+            rest = tau_wait%1000
+            if tau_wait != 0:
+                if loops  > 0:
+                    mcas.start_new_segment('Tau', loop_count=loops)
+                    mcas.asc(length_mus=1000)
+                mcas.start_new_segment('TauRest', loop_count=1)
+                if rest - 0.512 > 0:
+                    mcas.asc(length_mus=rest - 0.512)  
+                    mcas.asc(length_mus=0.512, gateRF = True)
+                else:
+                    mcas.asc(length_mus=rest, gateRF = True)  
+            first_wait_done = True          
+
+
+
+
+
+
+
+
+def get_hardcoded_si1_values(state):
+    si1_freq = {'m32': 8.9915829,  'm12':4.1691871, 'p12': 0.649641, 'p32': 5.4661419}[state]
+    si1_amp = 0.9
+    si1_pi = {'m32': 15.275*0.882,  'm12':30.913, 'p12': 50, 'p32': 25.27}[state]
+    si1_pi2 = {'m32': 8.711*0.882,  'm12':16.549, 'p12': 25, 'p32': 14.407}[state]
+    return si1_freq, si1_amp, si1_pi, si1_pi2
 
 def get_hardcoded_e_values_for_control(trans):
     trans_idx = trans[-1]

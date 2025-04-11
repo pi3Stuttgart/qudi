@@ -425,17 +425,15 @@ class GatedCounter(GenericLogic):
                     for t in estl:
                         if sum(t!=0)>0:
                             self.hist_list[-1].append(self.trace.hist(t))
+        
             except Exception as e:
                 logging.error(e)
                 print(e)
                 pass
-
+        
     def update_plot(self):
         if hasattr(self, '_gui'):
             self.update_plot_data()
-
-            #Instead send a signal
-            #self.gui.update_plot(self.effective_subtrace_list, self.hist_list)
             self.sigTraceUpdated.emit(self.effective_subtrace_list, self.hist_list)
 
     def clear_plot(self, number_of_subtraces):

@@ -51,7 +51,7 @@ marker_alias = {
                 'laser':     ['ps', 1, 'laser', '3'], # opens second AOM
                 # PS CHANNEL 4 IS CLOCK
                 'A1':        ['ps', 1, 'A1', '5'],
-                'tt_trigger':['ps', 1, 'tt_trigger', '6'], # Currently unused
+                'shutter':['ps', 1, 'shutter', '6'], # Currently unused
                 'gateRF':   ['ps', 1, 'gateRF', '7'],
                 }
 

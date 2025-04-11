@@ -93,6 +93,7 @@ class GatedCounterGui(GUIBase):
         self._gp = self._mw.gated_count_trace_PlotWidget
         self._gp.setLabel('left', 'Counts', units='counts/s')
         self._gp.setLabel('bottom', 'Number of Gates', units='#')
+        
         #x= []
         #y = []
         #self.pg_layout = self._mw.plotlayuowidget
@@ -127,8 +128,14 @@ class GatedCounterGui(GUIBase):
         self._fit_image = pg.PlotCurveItem()
         self._hp_l[0].addItem(self._fit_image)
 
+        # setting the y axis scale correctly
+        self._gp.enableAutoRange(axis='y')
+        self._gp.setAutoVisible(y=True)
+
         # setting the x axis length correctly
         self._gp.setXRange(0, self._counter_logic.get_count_length())
+        self._gp.enableAutoRange(axis='x')
+        self._gp.setAutoVisible(x=True)
         #self._mw.hist_bins_SpinBox_2.setRange(1, self._counter_logic.get_count_length())
 
         # set up the slider with the values of the logic:
@@ -280,10 +287,11 @@ class GatedCounterGui(GUIBase):
 
     def update_histogram(self, i,bins, hist):
         """ Update procedure for the histogram to display the new data. """
-        self._histoplot1[i].setData(x=bins,
-                                 y=hist,
-                                 stepMode=True, fillLevel=0,
-                                 brush=self.colors_fill[i])
+        if len(bins) > 1: # Last change
+            self._histoplot1[i].setData(x=bins,
+                                    y=hist,
+                                    stepMode=True, fillLevel=0,
+                                    brush=self.colors_fill[i])
 
     def num_bins_changed(self, num_bins):
         """
