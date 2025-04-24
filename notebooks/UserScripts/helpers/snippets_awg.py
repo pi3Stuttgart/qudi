@@ -3586,6 +3586,7 @@ def sedor(mcas,
           target_freq,
           target_amp,
           target_dur,
+          shutter = False
           ):
     rabi_period = pi2_dur * 4
     pi2 = sc.Rabi(t_rabi=0.25 * rabi_period, omega=1 / rabi_period, phase=0.0, control_field='mw')
@@ -3597,7 +3598,9 @@ def sedor(mcas,
                    probe_amp,
                    target_freq,
                    target_amp,
-                   target_dur
+                   target_dur,
+                   total_tau,
+                   shutter
                    )
 def waveform_sedor(mcas,
                    seq,
@@ -3606,34 +3609,53 @@ def waveform_sedor(mcas,
                    target_freq,
                    target_amp,
                    target_dur,
+                   total_tau,
+                   shutter
                    ):
-    def nrabi(mcas, freq, length, amp, phase=0.0):
+    def nrabi(mcas, freq, length, amp, phase=0.0, shutter = False):
         mcas.asc(
             length_mus=E.round_length_mus_to_x_multiple_ps(length,1),
             name='nuc',
             gateRF = True,
+            shutter = shutter,
             pd2g2={"type": "sinehermite_rf", "frequencies": [freq], "amplitudes": [amp], "phases": [np.rad2deg(phase)],
                     "phase_offset_type": 'coherent'}
         )
     mw = seq.times_fields_aphi('mw') # actually RF (originates from variable name constrains)
     wait = seq.times_fields_aphi('wait')
     
+    end_time = mcas.length_mus + total_tau
+    
     first_wait_done = False
     for k, step in enumerate(seq.sequence_steps):
+        # open shutter when close to end of SEDOR
         idx = int(step[1]) - 1
+        if step[0] == 'mw':
+            step_duration = mw[idx, 0]
+        else:
+            step_duration = wait[idx, 0]
+        time_left_after_step = end_time - mcas.length_mus - step_duration
+        if time_left_after_step < 100000:
+            shutter = False
+        
+        # SEDOR
         if step[0] == 'mw':
             nrabi(mcas,
                   freq=probe_freq,
                   length=mw[idx, 0],
                   amp=probe_amp,
-                  phase=mw[idx, 2])
+                  phase=mw[idx, 2],
+                  shutter = shutter
+                  )
         if step[0] == 'wait':
             if first_wait_done:
                 nrabi(mcas,
                       freq= target_freq,
                       length= target_dur,
                       amp= target_amp,
-                      phase = mw[idx, 2]) # Is this phase correct?
+                      phase = mw[idx, 2],
+                      shutter = shutter
+                      )
 
                 tau_wait = wait[idx, 0] - target_dur
             else:
@@ -3644,14 +3666,15 @@ def waveform_sedor(mcas,
             if tau_wait != 0:
                 if loops  > 0:
                     mcas.start_new_segment('Tau', loop_count=loops)
-                    mcas.asc(length_mus=1000)
+                    mcas.asc(length_mus=1000, shutter = shutter)
                 mcas.start_new_segment('TauRest', loop_count=1)
                 if rest - 0.512 > 0:
                     mcas.asc(length_mus=rest - 0.512)  
-                    mcas.asc(length_mus=0.512, gateRF = True)
+                    mcas.asc(length_mus=0.512, gateRF = True, shutter = shutter)
                 else:
-                    mcas.asc(length_mus=rest, gateRF = True)  
-            first_wait_done = True          
+                    mcas.asc(length_mus=rest, gateRF = True, shutter = shutter)  
+            first_wait_done = True     
+
 
 
 
@@ -3665,6 +3688,7 @@ def get_hardcoded_si1_values(state):
     si1_amp = 0.9
     si1_pi = {'m32': 15.275*0.882,  'm12':30.913, 'p12': 50, 'p32': 25.27}[state]
     si1_pi2 = {'m32': 8.711*0.882,  'm12':16.549, 'p12': 25, 'p32': 14.407}[state]
+    si1_pi = si1_pi * 4
     return si1_freq, si1_amp, si1_pi, si1_pi2
 
 def get_hardcoded_e_values_for_control(trans):

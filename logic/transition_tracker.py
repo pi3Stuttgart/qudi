@@ -578,34 +578,207 @@ class Transition:
 
 class Register():
     def __init__(self):
-        #super().__init__()
-        #self.df = df
-        reg = {'name': ['C1', 'Si1'],'azz': ['20', '4820']}
-        self.df = pd.DataFrame(pd.DataFrame.from_dict(reg))  # Empty initial DataFrame
-    
 
-    def get_nuc(self, name, state):
-        """ Return all data of a single nuclear spin in a certain electron state."""
-        return self.df[(self.df["name"] == name) & (self.df["state"] == state)]
-    
-    def get_freqs_in_subspace(self, state):
-        """ Return absolute freqs of all nuclei of a certain electron state"""
-        return self.df.loc[self.df.state == state].trans_freq.unique()
-    
-    def val(self, key, name, state = None):
-        """ Return arbitrary entry."""
-        if key in ['name' 'atom' 'azz' 'azx']:
-            return self.df[(self.df["name"] == name)][key].iloc[0]
-        try:
-            return self.df[(self.df["name"] == name) & (self.df["state"] == state)][key].iloc[0]
-        except:
-            print("For this state no match was found in the register.")
+        if False:#
+            pass#.path.exists(r"C:\src\qudi\register_df_live.hdf"):
+            #self.df = pd.read_hdf(r"C:\src\qudi\register_df_live.hdf", key="data")
 
-    def reload_register(self, folder = r"C:\src\qudi\log\transition_tracker_log"):
-        self.df = pd.read_hdf(folder + r'\register.hdf', 'df')
-        
-    def keys(self):
-        return self.df.columns.values
+        elif False:#os.path.exists(r"C:\src\qudi\register_df_backup.hdf"):
+            #self.df = pd.read_hdf(r"C:\src\qudi\register_df_backup.hdf", key="data")
+            pass
+        else:
+            # data = {
+            #     'spin_name': ['C1', 'Si4', 'Si4', 'Si4', 'Si4'],
+            #     'subspace': ['3/2', '1/2', '-1/2', '3/2', '-3/2'],
+            #     'dd_method': ['knillpi', 'knillpi', 'knillpi', 'knillpi', 'xy4'],
+            #     'Trans': [10, 20, 30, 40, 50],
+            #     'Azz': [0.1, 0.01, 0.01, 0.01, 0.01],
+            #     'Aperp': [0.1, 0.01, 0.01, 0.01, 0.01],
+            #     'rattlesnake': [1, 3, 4, 6, 8]
+            # }
+            # self.df = pd.DataFrame(data)
+            data = {
+                'spin_name': ['C1', 'C1', 'C1', 'C1'],
+                'subspace': ['3/2', '1/2', '-1/2', '-3/2'],
+                'dd_method': ['knillpi', 'knillpi', 'knillpi', 'knillpi'],
+                'trans': [2.267683080, 2.24519308, 2.22394308, 2.201943],
+                'Azz': [0.02175, 0.02175, 0.02175, 0.02175],
+                'Aperp': [0.02363, 0.02363, 0.02363, 0.02363],
+                'ddrf_tau': [20, 20, 20, 20],
+                'ddrf_amp': [np.nan, np.nan, np.nan, 0.4],
+                'ddrf_phase_inc': [np.nan, np.nan, np.nan, 0.72],
+                'ddrf_phase_init': [np.nan, np.nan, np.nan, 0.72],
+                'ddrf_phase_read': [np.nan, np.nan, np.nan, 0.72],
+                
+            }
+            df_c1 = pd.DataFrame(data)
+
+            data = {
+                'spin name': ['Si2', 'Si2', 'Si2', 'Si2'],
+                'subspace': ['3/2', '1/2', '-1/2', '-3/2'],
+                'dd_method': ['knillpi', 'knillpi', 'knillpi', 'knillpi'],
+                'trans': [2.585488, 2.038085, 1.492570, 0.951619],
+                'Azz': [0.5453, 0.5453, 0.5453, 0.5453],
+                'Aperp': [0.131, 0.131, 0.131, 0.131],
+                'ddrf_tau': [20, 20, 20, 20],
+                'ddrf_amp': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_inc': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_init': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_read': [np.nan, np.nan, np.nan, np.nan],
+                'pi2_amp': [np.nan, np.nan, np.nan, np.nan], # for 200µs pulse
+                
+            }
+            df_si2 = pd.DataFrame(data)
+
+            data = {
+                'spin name': ['Si3', 'Si3', 'Si3', 'Si3'],
+                'subspace': ['3/2', '1/2', '-1/2', '-3/2'],
+                'dd_method': ['knillpi', 'knillpi', 'knillpi', 'knillpi'],
+                'trans': [1.521245, 1.683775, 1.8501, 2.01],
+                'Azz': [-0.1628, -0.1628, -0.1628, -0.1628],
+                'Aperp': [0.0345, 0.0345, 0.0345, 0.0345],
+                'ddrf_tau': [20, 20, 20, 20],
+                'ddrf_amp': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_inc': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_init': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_read': [np.nan, np.nan, np.nan, np.nan],
+                'pi2_amp': [np.nan, np.nan, np.nan, np.nan], # for 200µs pulse
+                
+            }
+            df_si3 = pd.DataFrame(data)
+
+            data = {
+                'spin name': ['Si4', 'Si4', 'Si4', 'Si4'],
+                'subspace': ['3/2', '1/2', '-1/2', '-3/2'],
+                'dd_method': ['knillpi', 'knillpi', 'knillpi', 'knillpi'],
+                'trans': [1.5810515, np.nan, np.nan, 1.949872],
+                'Azz': [-0.1229, -0.1229, -0.1229, -0.1229],
+                'Aperp': [0.0866, 0.0866, 0.0866, 0.0866],
+                'ddrf_tau': [20, 20, 20, 20],
+                'ddrf_amp': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_inc': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_init': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_read': [np.nan, np.nan, np.nan, np.nan],
+                'pi2_amp': [np.nan, np.nan, np.nan, np.nan], # for 200µs pulse
+                
+            }
+            df_si4 = pd.DataFrame(data)
+
+            data = {
+                'spin name': ['Si5', 'Si5', 'Si5', 'Si5'],
+                'subspace': ['3/2', '1/2', '-1/2', '-3/2'],
+                'dd_method': ['knillpi', 'knillpi', 'knillpi', 'knillpi'],
+                'trans': [np.nan, np.nan, 1.7523455, 1.726645],
+                'Azz': [0.0289, 0.0289, 0.0289, 0.0289],
+                'Aperp': [0.0739, 0.0739, 0.0739, 0.0739],
+                'ddrf_tau': [20, 20, 20, 20],
+                'ddrf_amp': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_inc': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_init': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_read': [np.nan, np.nan, np.nan, np.nan],
+                'pi2_amp': [np.nan, np.nan, np.nan, np.nan], # for 200µs pulse
+                
+            }
+            df_si5 = pd.DataFrame(data)
+
+            data = {
+                'spin name': ['Si6', 'Si6', 'Si6', 'Si6'],
+                'subspace': ['3/2', '1/2', '-1/2', '-3/2'],
+                'dd_method': ['knillpi', 'knillpi', 'knillpi', 'knillpi'],
+                'trans': [np.nan, np.nan, 1.7523455, 1.7266455],
+                'Azz': [0.0289, 0.0289, 0.0289, 0.0289],
+                'Aperp': [0.0739, 0.0739, 0.0739, 0.0739],
+                'ddrf_tau': [20, 20, 20, 20],
+                'ddrf_amp': [np.nan, np.nan, np.nan, 0.3272],
+                'ddrf_phase_inc': [np.nan, np.nan, np.nan, 5.499],
+                'ddrf_phase_init': [np.nan, np.nan, np.nan, 2.761],
+                'ddrf_phase_read': [np.nan, np.nan, np.nan, 4.829],
+                'pi2_amp': [np.nan, np.nan, np.nan, 0.468], # for 200µs pulse
+                
+            }
+            df_si6 = pd.DataFrame(data)
+
+
+            data = {
+                'spin name': ['Si7', 'Si7', 'Si7', 'Si7'],
+                'subspace': ['3/2', '1/2', '-1/2', '-3/2'],
+                'dd_method': ['knillpi', 'knillpi', 'knillpi', 'knillpi'],
+                'trans': [np.nan, np.nan, np.nan, 1.782045],
+                'Azz': [np.nan, np.nan, np.nan, np.nan],
+                'Aperp': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_tau': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_amp': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_inc': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_init': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_read': [np.nan, np.nan, np.nan, np.nan],
+                'pi2_amp': [np.nan, np.nan, np.nan, np.nan], # for 200µs pulse
+                
+            }
+            df_si7 = pd.DataFrame(data)
+
+
+            data = {
+                'spin name': ['Si8', 'Si8', 'Si8', 'Si8'],
+                'subspace': ['3/2', '1/2', '-1/2', '-3/2'],
+                'dd_method': ['knillpi', 'knillpi', 'knillpi', 'knillpi'],
+                'trans': [np.nan, np.nan, np.nan, 1.778345],
+                'Azz': [np.nan, np.nan, np.nan, np.nan],
+                'Aperp': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_tau': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_amp': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_inc': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_init': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_read': [np.nan, np.nan, np.nan, np.nan],
+                'pi2_amp': [np.nan, np.nan, np.nan, np.nan], # for 200µs pulse
+                
+            }
+            df_si8 = pd.DataFrame(data)
+            data = {
+                'spin name': ['Si9', 'Si9', 'Si9', 'Si9'],
+                'subspace': ['3/2', '1/2', '-1/2', '-3/2'],
+                'dd_method': ['knillpi', 'knillpi', 'knillpi', 'knillpi'],
+                'trans': [np.nan, np.nan, np.nan, 1.803245],
+                'Azz': [np.nan, np.nan, np.nan, np.nan],
+                'Aperp': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_tau': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_amp': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_inc': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_init': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_read': [np.nan, np.nan, np.nan, np.nan],
+                'pi2_amp': [np.nan, np.nan, np.nan, np.nan], # for 200µs pulse
+                
+            }
+            df_si9 = pd.DataFrame(data)
+
+            data = {
+                'spin name': ['Si10', 'Si10', 'Si10', 'Si10'],
+                'subspace': ['3/2', '1/2', '-1/2', '-3/2'],
+                'dd_method': ['knillpi', 'knillpi', 'knillpi', 'knillpi'],
+                'trans': [np.nan, np.nan, np.nan, 1.76235],
+                'Azz': [np.nan, np.nan, np.nan, np.nan],
+                'Aperp': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_tau': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_amp': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_inc': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_init': [np.nan, np.nan, np.nan, np.nan],
+                'ddrf_phase_read': [np.nan, np.nan, np.nan, np.nan],
+                'pi2_amp': [np.nan, np.nan, np.nan, np.nan], # for 200µs pulse
+                
+            }
+            df_si10 = pd.DataFrame(data)
+            self.df = pd.concat([df_c1, df_si2, df_si3, df_si4, df_si5, df_si6, df_si7, df_si8, df_si9, df_si10], ignore_index = True)
+    
+    def get_spin(self, spin_name, subspace, dd_method):
+        """
+        Returns the DataFrame filtered by spin name, subspace, and dd_method.
+        If subspace or dd_method is '_none_', that criterion is ignored.
+        """
+        filtered = self.df[self.df['spin_name'] == spin_name]
+        if subspace != "_none_":
+            filtered = filtered[filtered['subspace'] == subspace]
+        if dd_method != "_none_":
+            filtered = filtered[filtered['dd_method'] == dd_method]
+        return filtered
     
 class TransitionTracker(GenericLogic):
     c13_list = []#'13c5']#['13c414', '13c90', '13c13', '13c6', '13c-5', '13c-6']
@@ -625,7 +798,6 @@ class TransitionTracker(GenericLogic):
     update_tt_electron_gui = pyqtSignal() #is it connected?
     Spin_Names_List=['14N', '13C414', '13C90','29Si8', '13C5','29Si8.00',"29Si2.2","29Si8.74"]
 
-    register = Register()
     def __init__(self,config, **kwargs):
         super().__init__(config=config, **kwargs)
 
@@ -664,6 +836,8 @@ class TransitionTracker(GenericLogic):
             self.load_rabi_parameters()
         self.update_stuff()
         #self._transition_tracker_gui = self.transition_tracker_gui()
+
+        self.Register=Register()
     
     def on_deactivate(self):
         pass
@@ -1097,6 +1271,7 @@ class TransitionTracker(GenericLogic):
 
 
     def update_stuff(self):
+        print("updating stuff")
         for attr_name in ['_current_local_oscillator_freq', '_mw_mixing_frequency_L',
                           '_zero_field_splitting','mw_mixing_frequency_R','_ple_A2','_ple_A1','_ple_repump',
                           'ple_A2_fit_params','ple_A1_fit_params','interferometer_fit_params','interferometer_history']: #needs "ple_Ex", but where is this "ple_Ex" called?
@@ -1365,6 +1540,7 @@ class TransitionTracker(GenericLogic):
             )
 
     def update_nuclear_parameter(self, typ, val, old_val, transition_list, nuc, filename, test_mode=False):
+        
         log_text = 'The {} of {} was changed from {} to {} from measurement of [{}].'.format(typ, nuc, old_val, val, ",".join(transition_list))
         if test_mode:
             #todo change loogger

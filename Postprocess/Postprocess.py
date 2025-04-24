@@ -23,6 +23,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from lmfit import Model, Parameters
 import pyqtgraph as pg
 from scipy.signal import find_peaks,peak_widths
+import seaborn as sns
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QGridLayout, QLineEdit, QPushButton,
@@ -30,8 +31,14 @@ from PyQt5.QtWidgets import (
     QSpinBox, QProgressBar, QFileDialog, QStackedWidget, QTabWidget, QListWidget, QTreeView,
     QAbstractItemView, QPlainTextEdit, QInputDialog, QMessageBox,QMenu
 )
-from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QFont, QSyntaxHighlighter, QTextCharFormat, QPalette, QPixmap,QIcon
+from PyQt5.QtGui import QStandardItemModel, QStandardItem, QColor, QFont, QSyntaxHighlighter, QTextCharFormat, QPalette, QPixmap,QIcon,QKeySequence
 from PyQt5.QtCore import Qt, QRegExp,Signal
+
+sns.set_context("paper")
+sns.set(font_scale=1, style='white')
+sns.set_style("ticks", {"xtick.major.size": 2.5, "ytick.major.size": 0, "xtick.direction": "in"})
+
+cmap = sns.color_palette("colorblind")
 
 class TabWidget(QTabWidget):
 
@@ -66,6 +73,27 @@ class TabWidget(QTabWidget):
         # If the delete action was triggered, remove the tab
         if action == delete_action:
             self.removeTab(tab_index)
+
+class EnhancedTable(QTableWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def keyPressEvent(self, event):
+        if event.matches(QKeySequence.Copy):
+            selected = self.selectedItems()
+            if selected:
+                copied_text = []
+                for item in selected:
+                    base = item.text()
+                    extra = item.toolTip()
+                    copied_text.append(f"{base} (+-{extra})" if extra else base)
+                clipboard_text = "\n".join(copied_text)
+                QApplication.clipboard().setText(clipboard_text)
+            else:
+                super().keyPressEvent(event)
+        else:
+            super().keyPressEvent(event)
+
 
 class SQLiteHistoryManager:
     def __init__(self, db_path="history.db", max_size=100):
@@ -686,7 +714,7 @@ class FitManager:
             "expression": expression,
             "machine_expression": modified_expression,
             "parameters_blueprint": {
-                param: {"initial_guess": 1.0, "fitted_value": None, "vary": True}
+                param: {"initial_guess": 1.0, "fitted_value": None, "vary": True, "std":None}
                 for param in parameters
             },
             "display_name": display_name or name,
@@ -765,8 +793,17 @@ class DataProcessor:
             for folder in self.folder:
                 store = pa.HDFStore(os.path.join(folder,'data.hdf'))
                 df = store['/df']
-                for key in ["Datatypes"]:
-                    setattr(df, f"_{key}", getattr(store.get_storer("df").attrs, key))
+
+                #if getattr(store.get_storer("df").attrs, "Datatypes"):
+                try:
+                    for key in ["Datatypes"]:
+                        print(1)
+                        setattr(df, f"_{key}", getattr(store.get_storer("df").attrs, key))
+                except Exception as e:
+                    print(2,e)
+                    for key in ["Datatypes"]:
+                        setattr(df, f"_{key}", df.dtypes)
+
                 df = df.astype(df._Datatypes)
                 df["__None__"]=0
 
@@ -777,8 +814,18 @@ class DataProcessor:
                         df[f"recalculated_{col.replace('result_','')}"]=0.0#self.df[col]
                         added_observations.append(f"recalculated_{col.replace('result_','')}")
 
-                for key in ["parameter_names","observation_names","dtypes","Datatypes"]:
+                for key in ["parameter_names","observation_names","dtypes"]:
                     setattr(df, f"_{key}", getattr(store.get_storer("df").attrs, key))
+
+                try: #TODO do this more concisely
+                    for key in ["Datatypes"]:
+                        print(3)
+                        setattr(df, f"_{key}", getattr(store.get_storer("df").attrs, key))
+                except Exception as e:
+                    print(4,e)
+                    for key in ["Datatypes"]:
+                        setattr(df, f"_{key}", df.dtypes)
+
                 df._Datatypes["__None__"]=np.dtype("int16")
                 store.close()
 
@@ -1233,6 +1280,7 @@ class DataProcessor:
                 # Update the fit parameters with the results
                 for param in parameters:
                     parameters[param]["fitted_value"] = result.params[param].value
+                    parameters[param]["std"] = result.params[param].stderr
 
                 #self.fit_parameters[name][parameter_combination] = copy.deepcopy(self.fits[name]["parameters_blueprint"])
 
@@ -1255,6 +1303,7 @@ class DataProcessor:
                 # Update the fit parameters with the results
                 for param in parameters:
                     parameters[param]["fitted_value"] = result.params[param].value
+                    parameters[param]["std"] = result.params[param].stderr
 
 
                 # Save the updated parameters and the expression
@@ -1340,7 +1389,7 @@ class FitApp(QMainWindow):
         self.label_ncols=2
         self.label_frontsize=10
 
-        self.setWindowTitle("Postprocess v0.2")
+        self.setWindowTitle("Postprocess v1.0")
         self.setGeometry(100, 100, 1200, 800)
 
         self.fit_manager = FitManager()
@@ -1376,7 +1425,10 @@ class FitApp(QMainWindow):
         self.stacked_widget = QStackedWidget()
         self.left_layout.addWidget(self.stacked_widget)
 
-        self.parameter_table = QTableWidget(0, 5)
+        self.parameter_table = EnhancedTable()
+
+        self.parameter_table.setColumnCount(5)
+        self.parameter_table.setRowCount(0)
         self.parameter_table.setHorizontalHeaderLabels(["Parameter", "Initial Guess", "Fitted Value", "Vary","Set initial guess"])
         self.parameter_table.itemChanged.connect(self.on_table_item_changed)
         self.stacked_widget.addWidget(self.parameter_table)
@@ -2816,7 +2868,8 @@ class FitApp(QMainWindow):
                 parameters[param_name] = {
                     "initial_guess": initial_guess,
                     "fitted_value": fitted_value,
-                    "vary": vary
+                    "vary": vary,
+                    "std":fitted_value_item.toolTip()
                 }
             Parameters_dict[param_combi]=parameters
 
@@ -2854,7 +2907,9 @@ class FitApp(QMainWindow):
                 row=row+1
                 self.parameter_table.setItem(row, 0, QTableWidgetItem(param))
                 self.parameter_table.setItem(row, 4*k+1, QTableWidgetItem(str(data["initial_guess"])))
-                self.parameter_table.setItem(row, 4*k+2, QTableWidgetItem(str(data["fitted_value"] or "")))
+                item=QTableWidgetItem(str(data["fitted_value"] or ""))
+                item.setToolTip(str(data["std"] or ""))
+                self.parameter_table.setItem(row, 4*k+2, item)
                 checkbox = QCheckBox()
                 checkbox.setChecked(data["vary"])
                 checkbox.stateChanged.connect(lambda state, p=param, combi=combi: self.update_vary_state(p, state,combi))
@@ -2869,7 +2924,7 @@ class FitApp(QMainWindow):
         try:
             params,use_y=extract_parameters(new_literal)
             parsed_parameters = {
-                param: {"initial_guess": 1.0, "fitted_value": None, "vary": True}
+                param: {"initial_guess": 1.0, "fitted_value": None, "vary": True, "std":None}
                 for param in params
             }
 
@@ -3658,6 +3713,6 @@ if __name__ == "__main__":
     else:
         root=""
     window = FitApp(root)
-    window.setWindowIcon(icon)
+    #window.setWindowIcon(icon)
     window.show()
     app.exec_()

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Transition Tracker</string>
   </property>
   <property name="windowOpacity">
    <double>1.000000000000000</double>
@@ -30,28 +30,6 @@
    </property>
    <property name="text">
     <string>Remove next script</string>
-   </property>
-  </widget>
-  <widget class="QTableWidgetEnhancedDrop" name="script_queue_table">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>220</y>
-     <width>731</width>
-     <height>561</height>
-    </rect>
-   </property>
-   <property name="autoFillBackground">
-    <bool>false</bool>
-   </property>
-   <property name="frameShape">
-    <enum>QFrame::Panel</enum>
-   </property>
-   <property name="selectionMode">
-    <enum>QAbstractItemView::MultiSelection</enum>
    </property>
   </widget>
   <widget class="QPushButton" name="set_stop_request_button">
@@ -112,10 +90,10 @@
     </rect>
    </property>
    <property name="text">
-    <string>current_local_oscillator_freq_p1</string>
+    <string>mw_mixing_frequency_L (MHz)</string>
    </property>
   </widget>
-  <widget class="QTextBrowser" name="current_local_oscillator_freq_p1_text_field">
+  <widget class="QTextBrowser" name="mw_mixing_frequency_L_text_field">
    <property name="enabled">
     <bool>true</bool>
    </property>
@@ -144,7 +122,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>mw_mixing_frequency (MHz)</string>
+    <string>B field</string>
    </property>
   </widget>
   <widget class="QLabel" name="current_local_oscillator_freq_label_4">
@@ -160,7 +138,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>mw_mixing_frequency_p1</string>
+    <string>mw_mixing_frequency_C</string>
    </property>
   </widget>
   <widget class="QLabel" name="current_local_oscillator_freq_label_5">
@@ -176,7 +154,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>mw_transition_frequency</string>
+    <string>off axis B field</string>
    </property>
   </widget>
   <widget class="QLabel" name="current_local_oscillator_freq_label_6">
@@ -192,10 +170,10 @@
     </rect>
    </property>
    <property name="text">
-    <string>mw_transition_frequency_p1</string>
+    <string>mw_mixing_frequency_R</string>
    </property>
   </widget>
-  <widget class="QTextBrowser" name="mw_mixing_frequency_text_field">
+  <widget class="QTextBrowser" name="Bfield_text_field">
    <property name="enabled">
     <bool>true</bool>
    </property>
@@ -211,7 +189,7 @@
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="QTextBrowser" name="mw_mixing_frequency_p1_text_field">
+  <widget class="QTextBrowser" name="mw_mixing_frequency_C_text_field">
    <property name="enabled">
     <bool>true</bool>
    </property>
@@ -227,7 +205,7 @@
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="QTextBrowser" name="mw_transition_frequency_text_field">
+  <widget class="QTextBrowser" name="off_axis_B_field_text_field">
    <property name="enabled">
     <bool>true</bool>
    </property>
@@ -243,7 +221,7 @@
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="QTextBrowser" name="mw_transition_frequency_p1_text_field">
+  <widget class="QTextBrowser" name="mw_mixing_frequency_R_text_field">
    <property name="enabled">
     <bool>true</bool>
    </property>
@@ -355,14 +333,40 @@
     <string>PLE A1 (V)</string>
    </property>
   </widget>
+  <widget class="QTabWidget" name="tabWidget">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>200</y>
+     <width>731</width>
+     <height>581</height>
+    </rect>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <widget class="QWidget" name="auxiliary_nuclear_spin">
+    <attribute name="title">
+     <string>auxiliary_nuclear_spin_freqs</string>
+    </attribute>
+    <widget class="QTableWidget" name="script_queue_table">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>1</y>
+       <width>721</width>
+       <height>551</height>
+      </rect>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="Register">
+    <attribute name="title">
+     <string>Register</string>
+    </attribute>
+   </widget>
+  </widget>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>QTableWidgetEnhancedDrop</class>
-   <extends>QTableWidget</extends>
-   <header>logic/qudip_enhanced/qtgui/custom_widgets.h</header>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>
